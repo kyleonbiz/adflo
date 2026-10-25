@@ -1,0 +1,592 @@
+import { DmsError } from "../errors";
+import { MAX_STORED_TEXT } from "../extract/limits";
+import { applyDocumentQuery } from "../query";
+import type {
+  AuditEntry,
+  BeginUploadArgs,
+  BeginUploadResult,
+  DocumentPatch,
+  DocumentRepository,
+  ObjectStorage,
+  TeamRepository,
+} from "../ports";
+import type {
+  ContentStatus,
+  DocumentQuery,
+  DocumentRecord,
+  DocumentVersion,
+  FileLink,
+  Folder,
+  FolderColor,
+  FolderWithCount,
+  Invite,
+  Member,
+  Role,
+  ShareLinkInfo,
+  StorageUsage,
+  UploadTarget,
+  Workspace,
+} from "../types";
+
+type StoredVersion = DocumentVersion & { status: "pending" | "ready"; workspaceId: string };
+
+export interface StoredAudit extends AuditEntry {
+  id: string;
+  workspaceId: string;
+  actorId: string;
+  createdAt: string;
+}
+
+export interface StoredShare {
+  id: string;
+  workspaceId: string;
+  documentId: string;
+  tokenHash: string;
+  expiresAt: string;
+  createdAt: string;
+  revokedAt: string | null;
+  createdBy: string;
+}
+
+export type StoredMember = Member & { workspaceId: string };
+export type StoredInvite = Invite & { workspaceId: string };
+
+/** Plain data container so a store can be seeded, shared and inspected in tests. */
+export class MemoryStore {
+  workspaces = new Map<string, Workspace>();
+  folders = new Map<string, Folder>();
+  documents = new Map<string, DocumentRecord>();
+  versions = new Map<string, StoredVersion[]>();
+  /** documentId -> tag names */
+  tags = new Map<string, string[]>();
+  shares: StoredShare[] = [];
+  /** keyed by `${workspaceId}:${userId}` */
+  members = new Map<string, StoredMember>();
+  invites: StoredInvite[] = [];
+  audit: StoredAudit[] = [];
+  blobs = new Map<string, { bytes: Uint8Array; mimeType: string }>();
+  /** Extracted text per document id (never part of a DocumentRecord). */
+  contentText = new Map<string, string>();
+}
+
+export class MemoryRepository implements DocumentRepository, TeamRepository {
+  constructor(
+    private readonly store: MemoryStore,
+    private readonly opts: { newId?: () => string; now?: () => Date } = {},
+  ) {}
+
+  private id() {
+    return (this.opts.newId ?? (() => globalThis.crypto.randomUUID()))();
+  }
+  private now() {
+    return (this.opts.now ?? (() => new Date()))();
+  }
+
+  private doc(ws: string, id: string): DocumentRecord {
+    const d = this.store.documents.get(id);
+    if (!d || d.workspaceId !== ws) throw new DmsError("not_found", "Document not found.");
+    return d;
+  }
+
+  async getWorkspace(workspaceId: string) {
+    return this.store.workspaces.get(workspaceId) ?? null;
+  }
+
+  async listFolders(ws: string): Promise<FolderWithCount[]> {
+    const counts = new Map<string, number>();
+    for (const d of this.store.documents.values()) {
+      if (d.workspaceId === ws && d.status === "ready" && !d.deletedAt && d.folderId) {
+        counts.set(d.folderId, (counts.get(d.folderId) ?? 0) + 1);
+      }
+    }
+    return [...this.store.folders.values()]
+      .filter((f) => f.workspaceId === ws)
+      .sort((a, b) => Number(b.isSystem) - Number(a.isSystem) || a.createdAt.localeCompare(b.createdAt))
+      .map((f) => ({ ...f, documentCount: counts.get(f.id) ?? 0 }));
+  }
+
+  async getFolder(ws: string, id: string) {
+    const f = this.store.folders.get(id);
+    return f && f.workspaceId === ws ? f : null;
+  }
+
+  async createFolder(a: { workspaceId: string; name: string; color: FolderColor; userId: string }) {
+    const folder: Folder = {
+      id: this.id(),
+      workspaceId: a.workspaceId,
+      name: a.name,
+      color: a.color,
+      isSystem: false,
+      defaultCategory: null,
+      createdAt: this.now().toISOString(),
+    };
+    this.store.folders.set(folder.id, folder);
+    return folder;
+  }
+
+  async renameFolder(ws: string, id: string, name: string) {
+    const f = await this.getFolder(ws, id);
+    if (!f) throw new DmsError("not_found", "Folder not found.");
+    const next = { ...f, name };
+    this.store.folders.set(id, next);
+    return next;
+  }
+
+  async deleteFolder(ws: string, id: string) {
+    const f = await this.getFolder(ws, id);
+    if (!f) throw new DmsError("not_found", "Folder not found.");
+    this.store.folders.delete(id);
+    for (const [k, d] of this.store.documents) {
+      if (d.workspaceId === ws && d.folderId === id) {
+        this.store.documents.set(k, { ...d, folderId: null });
+      }
+    }
+  }
+
+  async listTags(ws: string) {
+    const names = new Map<string, string>();
+    for (const d of this.store.documents.values()) {
+      if (d.workspaceId !== ws || d.deletedAt) continue;
+      for (const t of d.tags) names.set(t.toLowerCase(), names.get(t.toLowerCase()) ?? t);
+    }
+    return [...names.values()].sort((a, b) => a.localeCompare(b));
+  }
+
+  async queryDocuments(ws: string, q: DocumentQuery) {
+    const docs = [...this.store.documents.values()].filter((d) => d.workspaceId === ws);
+    return applyDocumentQuery(docs, q, this.now(), this.store.contentText);
+  }
+
+  async getDocument(ws: string, id: string) {
+    const d = this.store.documents.get(id);
+    return d && d.workspaceId === ws ? d : null;
+  }
+
+  async listVersions(ws: string, id: string): Promise<DocumentVersion[]> {
+    this.doc(ws, id);
+    return (this.store.versions.get(id) ?? [])
+      .filter((v) => v.status === "ready")
+      .map(stripVersion)
+      .sort((a, b) => b.versionNumber - a.versionNumber);
+  }
+
+  private usedBytes(ws: string) {
+    let used = 0;
+    let count = 0;
+    for (const vs of this.store.versions.values()) {
+      for (const v of vs) if (v.workspaceId === ws) used += v.sizeBytes;
+    }
+    for (const d of this.store.documents.values()) {
+      if (d.workspaceId === ws && d.status === "ready" && !d.deletedAt) count++;
+    }
+    return { used, count };
+  }
+
+  async beginUpload(a: BeginUploadArgs): Promise<BeginUploadResult> {
+    const ws = this.store.workspaces.get(a.workspaceId);
+    if (!ws) throw new DmsError("not_found", "Workspace not found.");
+    const { used } = this.usedBytes(a.workspaceId);
+    if (used + a.sizeBytes > ws.storageQuotaBytes) {
+      throw new DmsError("quota_exceeded", "Not enough storage left in this workspace.");
+    }
+    const nowIso = this.now().toISOString();
+    let document: DocumentRecord;
+    let versionNumber = 1;
+    if (a.documentId) {
+      document = this.doc(a.workspaceId, a.documentId);
+      const all = this.store.versions.get(document.id) ?? [];
+      if (all.some((v) => v.status === "pending")) {
+        throw new DmsError("conflict", "Another upload for this document is in progress.");
+      }
+      versionNumber = Math.max(...all.map((v) => v.versionNumber), 0) + 1;
+    } else {
+      document = {
+        id: a.newDocumentId,
+        workspaceId: a.workspaceId,
+        folderId: a.folderId,
+        originalName: a.originalName,
+        displayName: a.displayName,
+        storageKey: "",
+        mimeType: a.mimeType,
+        sizeBytes: a.sizeBytes,
+        category: a.category,
+        tags: [],
+        uploadedBy: a.userId,
+        uploadedByName: a.userName,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        expiresAt: null,
+        starred: false,
+        status: "pending",
+        deletedAt: null,
+        currentVersion: 0,
+        contentStatus: "pending",
+        contentReason: null,
+        contentIndexedAt: null,
+      };
+      this.store.documents.set(document.id, document);
+    }
+    const version: StoredVersion = {
+      id: this.id(),
+      documentId: document.id,
+      workspaceId: a.workspaceId,
+      versionNumber,
+      storageKey: a.storageKey(versionNumber),
+      mimeType: a.mimeType,
+      sizeBytes: a.sizeBytes,
+      createdBy: a.userId,
+      createdByName: a.userName,
+      createdAt: nowIso,
+      status: "pending",
+    };
+    this.store.versions.set(document.id, [...(this.store.versions.get(document.id) ?? []), version]);
+    return { document, version: stripVersion(version) };
+  }
+
+  async getVersion(ws: string, documentId: string, versionNumber: number) {
+    const d = await this.getDocument(ws, documentId);
+    if (!d) return null;
+    const v = (this.store.versions.get(documentId) ?? []).find((x) => x.versionNumber === versionNumber);
+    return v ? { ...stripVersion(v), status: v.status } : null;
+  }
+
+  async completeUpload(a: {
+    workspaceId: string;
+    documentId: string;
+    versionNumber: number;
+    sizeBytes: number;
+    mimeType: string;
+  }) {
+    const d = this.doc(a.workspaceId, a.documentId);
+    const vs = this.store.versions.get(d.id) ?? [];
+    const v = vs.find((x) => x.versionNumber === a.versionNumber && x.status === "pending");
+    if (!v) throw new DmsError("not_found", "Upload not found.");
+    v.status = "ready";
+    v.sizeBytes = a.sizeBytes;
+    const next: DocumentRecord = {
+      ...d,
+      status: "ready",
+      storageKey: v.storageKey,
+      sizeBytes: a.sizeBytes,
+      mimeType: a.mimeType,
+      currentVersion: a.versionNumber,
+      updatedAt: this.now().toISOString(),
+      // A new version invalidates the previous version's text.
+      contentStatus: "pending",
+      contentReason: null,
+      contentIndexedAt: null,
+    };
+    this.store.contentText.delete(d.id);
+    this.store.documents.set(d.id, next);
+    return next;
+  }
+
+  async setDocumentContent(a: {
+    workspaceId: string;
+    documentId: string;
+    versionNumber: number;
+    status: Exclude<ContentStatus, "pending">;
+    reason: string | null;
+    text: string | null;
+  }) {
+    const d = this.store.documents.get(a.documentId);
+    if (!d || d.workspaceId !== a.workspaceId || d.status !== "ready" || d.currentVersion !== a.versionNumber) {
+      return false;
+    }
+    let status = a.status;
+    let reason = a.reason;
+    let text: string | null = null;
+    if (status === "indexed") {
+      // Mirrors dms__store_content: strip highlight delimiters and control characters, cap the length.
+      text = (a.text ?? "")
+         
+        .replace(/[\uE000\uE001\u0000]/g, "")
+         
+        .replace(/[\u0001-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, " ");
+      if (text.length > MAX_STORED_TEXT) {
+        text = text.slice(0, MAX_STORED_TEXT);
+        reason = "truncated";
+      }
+      if (!/[\p{L}\p{N}]/u.test(text)) {
+        status = "unsupported";
+        reason = "no_text_found";
+        text = null;
+      }
+    }
+    if (text) this.store.contentText.set(d.id, text);
+    else this.store.contentText.delete(d.id);
+    this.store.documents.set(d.id, {
+      ...d,
+      contentStatus: status,
+      contentReason: reason,
+      contentIndexedAt: this.now().toISOString(),
+    });
+    return true;
+  }
+
+  async listDocumentsNeedingIndex(ws: string, opts: { limit: number; includeFailed: boolean }) {
+    return [...this.store.documents.values()]
+      .filter(
+        (d) =>
+          d.workspaceId === ws &&
+          d.status === "ready" &&
+          !d.deletedAt &&
+          (d.contentStatus === "pending" || (opts.includeFailed && d.contentStatus === "failed")),
+      )
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id))
+      .slice(0, Math.min(Math.max(opts.limit, 1), 500))
+      .map((d) => ({ id: d.id, currentVersion: d.currentVersion }));
+  }
+
+  async abortUpload(ws: string, documentId: string, versionNumber: number) {
+    const d = await this.getDocument(ws, documentId);
+    if (!d) return null;
+    const vs = this.store.versions.get(documentId) ?? [];
+    const v = vs.find((x) => x.versionNumber === versionNumber && x.status === "pending");
+    if (!v) return null;
+    const rest = vs.filter((x) => x !== v);
+    this.store.versions.set(documentId, rest);
+    if (rest.length === 0) {
+      this.store.documents.delete(documentId);
+      this.store.versions.delete(documentId);
+    }
+    return v.storageKey;
+  }
+
+  async updateDocument(ws: string, id: string, patch: DocumentPatch) {
+    const d = this.doc(ws, id);
+    const next: DocumentRecord = { ...d, ...patch, updatedAt: this.now().toISOString() };
+    this.store.documents.set(id, next);
+    return next;
+  }
+
+  async setTags(ws: string, id: string, tags: string[]) {
+    const d = this.doc(ws, id);
+    this.store.documents.set(id, { ...d, tags: [...tags], updatedAt: this.now().toISOString() });
+    return [...tags];
+  }
+
+  async softDelete(ws: string, id: string) {
+    const d = this.doc(ws, id);
+    const next = { ...d, deletedAt: this.now().toISOString() };
+    this.store.documents.set(id, next);
+    return next;
+  }
+
+  async restore(ws: string, id: string) {
+    const d = this.doc(ws, id);
+    const next = { ...d, deletedAt: null };
+    this.store.documents.set(id, next);
+    return next;
+  }
+
+  async purge(ws: string, id: string) {
+    this.doc(ws, id);
+    const keys = (this.store.versions.get(id) ?? []).map((v) => v.storageKey);
+    this.store.documents.delete(id);
+    this.store.versions.delete(id);
+    this.store.contentText.delete(id);
+    return keys;
+  }
+
+  async getUsage(ws: string): Promise<StorageUsage> {
+    const w = this.store.workspaces.get(ws);
+    const { used, count } = this.usedBytes(ws);
+    return { usedBytes: used, quotaBytes: w?.storageQuotaBytes ?? 0, documentCount: count };
+  }
+
+  async countTrash(ws: string) {
+    let n = 0;
+    for (const d of this.store.documents.values()) {
+      if (d.workspaceId === ws && d.status === "ready" && d.deletedAt) n++;
+    }
+    return n;
+  }
+
+  async createShareLink(a: {
+    workspaceId: string;
+    documentId: string;
+    tokenHash: string;
+    expiresAt: string;
+    userId: string;
+  }) {
+    this.doc(a.workspaceId, a.documentId);
+    this.store.shares.push({
+      id: this.id(),
+      createdAt: this.now().toISOString(),
+      revokedAt: null,
+      workspaceId: a.workspaceId,
+      documentId: a.documentId,
+      tokenHash: a.tokenHash,
+      expiresAt: a.expiresAt,
+      createdBy: a.userId,
+    });
+  }
+
+  async listShareLinks(ws: string, documentId: string): Promise<ShareLinkInfo[]> {
+    const now = this.now().getTime();
+    return this.store.shares
+      .filter((l) => l.workspaceId === ws && l.documentId === documentId && !l.revokedAt && Date.parse(l.expiresAt) > now)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map((l) => ({
+        id: l.id,
+        createdAt: l.createdAt,
+        expiresAt: l.expiresAt,
+        createdBy: l.createdBy,
+        createdByName: this.store.members.get(`${ws}:${l.createdBy}`)?.displayName ?? "",
+      }));
+  }
+
+  async revokeShareLink(ws: string, linkId: string) {
+    const link = this.store.shares.find((l) => l.id === linkId && l.workspaceId === ws && !l.revokedAt);
+    if (!link) throw new DmsError("not_found", "Share link not found.");
+    link.revokedAt = this.now().toISOString();
+  }
+
+  /* ------------------------------ team ------------------------------ */
+
+  async listMembers(ws: string): Promise<Member[]> {
+    return [...this.store.members.values()]
+      .filter((m) => m.workspaceId === ws)
+      .map(({ workspaceId: _w, ...m }) => (void _w, m))
+      .sort((a, b) => a.joinedAt.localeCompare(b.joinedAt) || a.email.localeCompare(b.email));
+  }
+
+  async listInvites(ws: string): Promise<Invite[]> {
+    const now = this.now().getTime();
+    return this.store.invites
+      .filter((i) => i.workspaceId === ws && Date.parse(i.expiresAt) > now)
+      .map(({ workspaceId: _w, ...i }) => (void _w, i))
+      .sort((a, b) => b.invitedAt.localeCompare(a.invitedAt));
+  }
+
+  async createInvite(a: { workspaceId: string; userId: string; email: string; role: Role }): Promise<Invite> {
+    const nowD = this.now();
+    const existing = this.store.invites.find((i) => i.workspaceId === a.workspaceId && i.email === a.email);
+    const base = {
+      email: a.email,
+      role: a.role,
+      invitedAt: nowD.toISOString(),
+      expiresAt: new Date(nowD.getTime() + 14 * 86_400_000).toISOString(),
+    };
+    if (existing) {
+      Object.assign(existing, base);
+      const { workspaceId: _w, ...out } = existing;
+      return (void _w, out);
+    }
+    const invite = { id: this.id(), workspaceId: a.workspaceId, ...base };
+    this.store.invites.push(invite);
+    const { workspaceId: _w, ...out } = invite;
+    return (void _w, out);
+  }
+
+  async revokeInvite(ws: string, inviteId: string): Promise<Invite | null> {
+    const i = this.store.invites.findIndex((x) => x.id === inviteId && x.workspaceId === ws);
+    if (i < 0) return null;
+    const [gone] = this.store.invites.splice(i, 1);
+    const { workspaceId: _w, ...out } = gone;
+    return (void _w, out);
+  }
+
+  async setMemberRole(ws: string, userId: string, role: Role) {
+    const m = this.store.members.get(`${ws}:${userId}`);
+    if (!m) throw new DmsError("not_found", "Member not found.");
+    this.store.members.set(`${ws}:${userId}`, { ...m, role });
+  }
+
+  async removeMember(ws: string, userId: string) {
+    if (!this.store.members.delete(`${ws}:${userId}`)) throw new DmsError("not_found", "Member not found.");
+  }
+
+  async recordAudit(ws: string, userId: string, entry: AuditEntry) {
+    this.store.audit.push({
+      ...entry,
+      id: this.id(),
+      workspaceId: ws,
+      actorId: userId,
+      createdAt: this.now().toISOString(),
+    });
+  }
+}
+
+function stripVersion(v: StoredVersion): DocumentVersion {
+  const { status: _s, workspaceId: _w, ...rest } = v;
+  void _s;
+  void _w;
+  return rest;
+}
+
+/** In-memory object storage. Bytes never leave the process; "URLs" are blob: URLs in the browser. */
+export class MemoryStorage implements ObjectStorage {
+  constructor(
+    private readonly store: MemoryStore,
+    private readonly opts: {
+      /** Builds an upload URL for the server-side dev route. Omit in the browser demo. */
+      uploadUrl?: (key: string) => string;
+      downloadUrl?: (key: string, o: { fileName: string; disposition: "inline" | "attachment"; ttlSeconds: number }) => string;
+      /** Lets the demo synthesise bytes for seeded sample records. */
+      synthesize?: (key: string) => { bytes: Uint8Array; mimeType: string } | null;
+    } = {},
+  ) {}
+
+  async createUploadTarget(key: string, o: { mimeType: string; sizeBytes: number }): Promise<UploadTarget> {
+    if (this.opts.uploadUrl) {
+      return {
+        kind: "put",
+        url: this.opts.uploadUrl(key),
+        method: "PUT",
+        headers: { "content-type": o.mimeType },
+      };
+    }
+    return { kind: "memory", url: key, method: "PUT", headers: {} };
+  }
+
+  put(key: string, bytes: Uint8Array, mimeType: string) {
+    this.store.blobs.set(key, { bytes, mimeType });
+  }
+
+  private blob(key: string) {
+    return this.store.blobs.get(key) ?? this.opts.synthesize?.(key) ?? null;
+  }
+
+  async stat(key: string) {
+    const b = this.store.blobs.get(key);
+    return b ? { sizeBytes: b.bytes.byteLength, mimeType: b.mimeType } : null;
+  }
+
+  async readHead(key: string, bytes: number) {
+    const b = this.store.blobs.get(key);
+    return b ? b.bytes.slice(0, bytes) : null;
+  }
+
+  async read(key: string, maxBytes: number) {
+    const b = this.blob(key);
+    if (!b) return null;
+    return b.bytes.byteLength > maxBytes ? { tooLarge: true as const } : { bytes: b.bytes };
+  }
+
+  async createDownloadUrl(
+    key: string,
+    o: { fileName: string; disposition: "inline" | "attachment"; ttlSeconds: number },
+  ): Promise<FileLink> {
+    const expiresAt = new Date(Date.now() + o.ttlSeconds * 1000).toISOString();
+    if (this.opts.downloadUrl) {
+      if (!this.blob(key)) throw new DmsError("not_found", "File content is not available.");
+      return { url: this.opts.downloadUrl(key, o), expiresAt };
+    }
+    const blob = this.blob(key);
+    if (!blob) {
+      throw new DmsError("not_found", "This sample record has no file content in the demo.");
+    }
+    const copy = new Uint8Array(blob.bytes);
+    return { url: URL.createObjectURL(new Blob([copy], { type: blob.mimeType })), expiresAt };
+  }
+
+  readBlob(key: string) {
+    return this.blob(key);
+  }
+
+  async remove(keys: string[]) {
+    for (const k of keys) this.store.blobs.delete(k);
+  }
+}
