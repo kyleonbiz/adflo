@@ -1,0 +1,78 @@
+import { expect, test } from "@playwright/test";
+
+test.describe("platform modules", () => {
+  test("the overview lists all eleven modules and links the two that exist", async ({ page }) => {
+    await page.goto("/demo/overview");
+    await expect(page.getByTestId("module-tile")).toHaveCount(11);
+    await expect(page.getByRole("link", { name: /Licenses & Renewals/ }).first()).toBeVisible();
+    await page.getByRole("link", { name: /03.*Licenses & Renewals/ }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Licenses & Renewals" })).toBeVisible();
+  });
+
+  test("licenses: summary, tasks, filtering, documents checklist and renewal", async ({ page }) => {
+    await page.goto("/demo/licenses");
+    await expect(page.getByRole("note")).toContainText("Nothing is saved");
+    await expect(page.getByTestId("license-card")).toHaveCount(5);
+
+    const summary = page.getByRole("region", { name: "Summary" });
+    await expect(summary).toContainText("Expired");
+    await expect(page.getByRole("region", { name: "Licenses" })).toBeVisible();
+    await expect(page.getByText("Renew City Operating Permit")).toBeVisible();
+    await expect(page.getByText("Renew State Business License")).toBeVisible();
+
+    await page.getByRole("textbox", { name: "Search licenses" }).fill("insurance");
+    await expect(page.getByTestId("license-card")).toHaveCount(1);
+    await page.getByRole("textbox", { name: "Search licenses" }).fill("");
+
+    const permit = page.getByTestId("license-card").filter({ hasText: "City Operating Permit" });
+    await expect(permit.getByText("Expired", { exact: true })).toBeVisible();
+    await permit.getByRole("button", { name: /Required documents/ }).click();
+    await permit.getByRole("checkbox", { name: "Signed application" }).check();
+
+    await permit.getByRole("button", { name: "Mark renewed" }).click();
+    await expect(page.getByRole("status")).toContainText("City Operating Permit renewed");
+    await expect(permit.getByText("Active", { exact: true })).toBeVisible();
+    await expect(page.getByText("Renew City Operating Permit")).toHaveCount(0);
+  });
+
+  test("licenses: add, validate, edit and delete", async ({ page }) => {
+    await page.goto("/demo/licenses");
+    await page.getByRole("button", { name: "Add license" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    await expect(dialog.getByRole("alert").first()).toContainText("Enter a name");
+
+    await dialog.getByLabel("License name").fill("Food Handler Permit");
+    await dialog.getByLabel("Issuing authority").fill("Health Department");
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    await expect(dialog).toBeHidden();
+    const card = page.getByTestId("license-card").filter({ hasText: "Food Handler Permit" });
+    await expect(card).toBeVisible();
+    await expect(page.getByTestId("license-card")).toHaveCount(6);
+
+    await card.getByRole("button", { name: "Edit Food Handler Permit" }).click();
+    await page.getByRole("dialog").getByLabel("License name").fill("Food Handler Card");
+    await page.getByRole("dialog").getByRole("button", { name: "Save changes" }).click();
+    await expect(page.getByTestId("license-card").filter({ hasText: "Food Handler Card" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Delete Food Handler Card" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+    await expect(page.getByTestId("license-card")).toHaveCount(5);
+  });
+
+  test("licenses fit a phone screen without horizontal scroll", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/demo/licenses");
+    await expect(page.getByTestId("license-card").first()).toBeVisible();
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test("the signed-in app shows the module tabs in development mode", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await expect(page.getByRole("navigation", { name: "Modules" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Licenses & Renewals" })).toBeVisible();
+    await page.getByRole("link", { name: "Documents", exact: true }).click();
+    await expect(page.getByTestId("document-card").first()).toBeVisible();
+  });
+});

@@ -12,6 +12,19 @@ Tailwind and shadcn/ui-style components.
 * **Development mode** – with no Supabase variables (and not in production), `/app` runs on
   server-memory sample data with no login, clearly labelled "Development mode".
 
+## Platform modules
+
+The app is growing from a document manager into a client portal of eleven service modules
+(`src/lib/modules/registry.ts`). Today two exist: **01 Documents** and **03 Licenses & Renewals**
+(`src/lib/licenses/` for the rules, `src/components/licenses/` for the UI). The other nine are listed
+on the overview page as "Planned".
+
+* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/licenses`, behind the same gate as before.
+* **Public demo:** `/demo/overview` and `/demo/licenses`, sample data in the browser tab, nothing saved.
+* **Licenses are not persisted yet.** They are seeded sample data held in component state; there is no
+  table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
+  renewal tasks) but no email is sent yet.
+
 ## Contents
 1. [Quick start (no credentials)](#quick-start-no-credentials)
 2. [Supabase setup](#supabase-setup)

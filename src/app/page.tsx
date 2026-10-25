@@ -10,9 +10,14 @@ export default function HomePage() {
       <div className="hero-gradient flex-1">
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6" aria-label="Main">
           <Brand light />
-          <Button asChild variant="outline" size="sm" className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white">
-            <Link href="/app">Open workspace</Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" size="sm" className="text-white hover:bg-white/10 hover:text-white">
+              <Link href="/demo/overview">Modules</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white">
+              <Link href="/app">Open workspace</Link>
+            </Button>
+          </div>
         </nav>
         <main>
           <Hero />
