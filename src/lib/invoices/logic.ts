@@ -1,4 +1,4 @@
-import { addDays, addMonths, daysBetween } from "@/lib/dates";
+import { addDays, advanceDay, daysBetween } from "@/lib/dates";
 import type { Invoice, InvoiceAlert, InvoiceState, Recurrence } from "./types";
 
 /** Within this many days of the due date an unpaid invoice is "due soon". */
@@ -66,13 +66,7 @@ export function nextOverdueNotice(inv: Invoice, today: string): string | null {
 }
 
 export function advance(day: string, recurrence: Recurrence): string {
-  switch (recurrence) {
-    case "weekly": return addDays(day, 7);
-    case "monthly": return addMonths(day, 1);
-    case "quarterly": return addMonths(day, 3);
-    case "yearly": return addMonths(day, 12);
-    case "none": return day;
-  }
+  return recurrence === "none" ? day : advanceDay(day, recurrence);
 }
 
 /** `INV-0041` -> `INV-0042`, skipping any number already in use. Falls back to appending `-2`. */

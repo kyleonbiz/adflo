@@ -15,15 +15,17 @@ Tailwind and shadcn/ui-style components.
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
-(`src/lib/modules/registry.ts`). Today three exist: **01 Documents**, **02 Invoices**
-(`src/lib/invoices/`, `src/components/invoices/`) and **03 Licenses & Renewals** (`src/lib/licenses/`,
-`src/components/licenses/`). The other eight are listed on the overview page as "Planned".
+(`src/lib/modules/registry.ts`). Today four exist: **01 Documents**, **02 Invoices**
+(`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
+`src/components/licenses/`) and **06 Projects** (`src/lib/projects/`, `src/components/projects/`).
+The other seven are listed on the overview page as "Planned".
 
-* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, behind the same gate as before.
-* **Public demo:** `/demo/overview`, `/demo/invoices` and `/demo/licenses`, sample data in the browser tab, nothing saved.
-* **Invoices and licenses are not persisted yet.** They are seeded sample data held in component state; there is no
+* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/projects`, behind the same gate as before.
+* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,projects}`, sample data in the browser tab, nothing saved.
+* **Invoices, licenses and projects are not persisted yet.** They are seeded sample data held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
-  renewal tasks, overdue notices) but no email is sent yet. Invoices support recurring series ("Create
+  renewal tasks, overdue notices) but no email is sent yet. Projects flag overdue tasks and repeating tasks
+  schedule their next occurrence when completed, with a plain-text status report. Invoices support recurring series ("Create
   next" drafts the following invoice) and a CSV report whose cells are neutralised against spreadsheet formulas.
 
 ## Contents

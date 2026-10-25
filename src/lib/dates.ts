@@ -48,3 +48,16 @@ export function formatDayLong(day: string): string {
     year: "numeric", month: "short", day: "numeric", timeZone: "UTC",
   });
 }
+
+export type Every = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
+
+/** The next occurrence of a repeating schedule after `day`. */
+export function advanceDay(day: string, every: Every): string {
+  switch (every) {
+    case "daily": return addDays(day, 1);
+    case "weekly": return addDays(day, 7);
+    case "monthly": return addMonths(day, 1);
+    case "quarterly": return addMonths(day, 3);
+    case "yearly": return addMonths(day, 12);
+  }
+}

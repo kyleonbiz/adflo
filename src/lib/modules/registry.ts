@@ -22,7 +22,7 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Supplier profiles, intake forms, document collection and approval routing." },
   { id: "crm", number: "05", name: "CRM & Data", status: "planned",
     summary: "Import contacts, detect duplicates, validate fields and export clean data." },
-  { id: "projects", number: "06", name: "Projects", status: "planned",
+  { id: "projects", number: "06", name: "Projects", slug: "projects", status: "available",
     summary: "Projects, tasks, recurring work, deadlines and status reports." },
   { id: "forms", number: "07", name: "Forms & Paperwork", status: "planned",
     summary: "Reusable forms, submission tracking, document generation and approvals." },
