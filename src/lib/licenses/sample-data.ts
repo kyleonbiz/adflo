@@ -1,4 +1,4 @@
-import { addDays, addMonths } from "./dates";
+import { addDays, addMonths } from "@/lib/dates";
 import type { License, RequiredDocument } from "./types";
 
 const docs = (id: string, items: [string, boolean][]): RequiredDocument[] =>

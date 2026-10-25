@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { daysLeft, licenseAlerts, licenseStatus, missingDocuments, nextReminder } from "@/lib/licenses/logic";
-import { formatDayLong } from "@/lib/licenses/dates";
+import { formatDayLong } from "@/lib/dates";
 import { LICENSE_CATEGORIES, RENEWAL_STAGES, type License, type RenewalStage } from "@/lib/licenses/types";
 import { cn } from "@/lib/utils";
 import { SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
@@ -64,7 +64,7 @@ export function LicenseCard({ license, today, actions }: { license: License; tod
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <BellRing className="size-3.5" aria-hidden />
             {reminder
-              ? `Next reminder ${formatDayLong(reminder.on)} (${reminder.daysBefore} days before expiry)`
+              ? `Next reminder ${formatDayLong(reminder.on)} (${reminder.daysBefore} day${reminder.daysBefore === 1 ? "" : "s"} before expiry)`
               : "All reminders have been sent"}
           </p>
         </div>

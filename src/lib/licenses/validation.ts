@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { isDay } from "./dates";
+import { isDay } from "@/lib/dates";
 import { LICENSE_CATEGORIES } from "./types";
 
 const day = z.string().refine(isDay, "Enter a valid date");

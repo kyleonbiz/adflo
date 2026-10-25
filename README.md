@@ -15,15 +15,16 @@ Tailwind and shadcn/ui-style components.
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
-(`src/lib/modules/registry.ts`). Today two exist: **01 Documents** and **03 Licenses & Renewals**
-(`src/lib/licenses/` for the rules, `src/components/licenses/` for the UI). The other nine are listed
-on the overview page as "Planned".
+(`src/lib/modules/registry.ts`). Today three exist: **01 Documents**, **02 Invoices**
+(`src/lib/invoices/`, `src/components/invoices/`) and **03 Licenses & Renewals** (`src/lib/licenses/`,
+`src/components/licenses/`). The other eight are listed on the overview page as "Planned".
 
-* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/licenses`, behind the same gate as before.
-* **Public demo:** `/demo/overview` and `/demo/licenses`, sample data in the browser tab, nothing saved.
-* **Licenses are not persisted yet.** They are seeded sample data held in component state; there is no
+* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, behind the same gate as before.
+* **Public demo:** `/demo/overview`, `/demo/invoices` and `/demo/licenses`, sample data in the browser tab, nothing saved.
+* **Invoices and licenses are not persisted yet.** They are seeded sample data held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
-  renewal tasks) but no email is sent yet.
+  renewal tasks, overdue notices) but no email is sent yet. Invoices support recurring series ("Create
+  next" drafts the following invoice) and a CSV report whose cells are neutralised against spreadsheet formulas.
 
 ## Contents
 1. [Quick start (no credentials)](#quick-start-no-credentials)

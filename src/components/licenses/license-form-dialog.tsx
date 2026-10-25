@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { addDays, addMonths } from "@/lib/licenses/dates";
+import { addDays, addMonths } from "@/lib/dates";
 import { LICENSE_CATEGORIES, type License } from "@/lib/licenses/types";
 import { licenseFormSchema, type LicenseFormInput, type LicenseFormValues } from "@/lib/licenses/validation";
 

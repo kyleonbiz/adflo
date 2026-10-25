@@ -1,4 +1,4 @@
-import { addDays, addMonths, daysBetween } from "./dates";
+import { addDays, addMonths, daysBetween } from "@/lib/dates";
 import type { License, LicenseAlert, LicenseStatus, RenewalTask } from "./types";
 
 /** Within this many days of expiry a license counts as "expiring". */

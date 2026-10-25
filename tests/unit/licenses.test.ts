@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, addMonths, daysBetween, isDay } from "@/lib/licenses/dates";
+import { addDays, addMonths, daysBetween, isDay } from "@/lib/dates";
 import {
   licenseAlerts, licenseStatus, missingDocuments, nextReminder, renewLicense, renewalTasks, summarize,
 } from "@/lib/licenses/logic";

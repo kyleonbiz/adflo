@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, FileWarning, Plus, Search, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,9 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDayLong, todayLocal } from "@/lib/licenses/dates";
+import { SummaryTile } from "@/components/modules/summary-tile";
+import { useToday } from "@/components/modules/use-today";
+import { formatDayLong } from "@/lib/dates";
 import { licenseStatus, renewalTasks, renewLicense, summarize } from "@/lib/licenses/logic";
 import { sampleLicenses } from "@/lib/licenses/sample-data";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
@@ -17,24 +19,7 @@ import { LicenseCard, type LicenseActions } from "./license-card";
 import { LicenseFormDialog } from "./license-form-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
 
-const subscribe = () => () => {};
-/** The local calendar day, or null during server rendering so the first paint never mismatches. */
-function useToday(): string | null {
-  return useSyncExternalStore(subscribe, () => todayLocal(), () => null);
-}
-
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
-
-function Tile({ icon: Icon, label, value, tone }: { icon: typeof ShieldCheck; label: string; value: number; tone: string }) {
-  return (
-    <div className="rounded-2xl border bg-card p-4 shadow-panel">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Icon className={`size-4 ${tone}`} aria-hidden /> {label}
-      </div>
-      <p className="mt-1 text-3xl font-semibold tabular-nums">{value}</p>
-    </div>
-  );
-}
 
 /**
  * Licenses & Renewals. Records live in this component's state (seeded with sample data) until the
@@ -122,10 +107,10 @@ export function LicensesPage({ preview }: { preview?: string }) {
       <p role="status" aria-live="polite" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
 
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Tile icon={ShieldCheck} label="Active" value={summary.active} tone="text-emerald-600" />
-        <Tile icon={CalendarClock} label="Expiring in 30 days" value={summary.expiring} tone="text-amber-600" />
-        <Tile icon={AlertTriangle} label="Expired" value={summary.expired} tone="text-red-600" />
-        <Tile icon={FileWarning} label="Documents missing" value={summary.missingDocuments} tone="text-primary" />
+        <SummaryTile icon={ShieldCheck} label="Active" value={summary.active} tone="text-emerald-600" />
+        <SummaryTile icon={CalendarClock} label="Expiring in 30 days" value={summary.expiring} tone="text-amber-600" />
+        <SummaryTile icon={AlertTriangle} label="Expired" value={summary.expired} tone="text-red-600" />
+        <SummaryTile icon={FileWarning} label="Documents missing" value={summary.missingDocuments} tone="text-primary" />
       </section>
 
       <section aria-labelledby="tasks-heading" className="rounded-2xl border bg-card p-4 shadow-panel">

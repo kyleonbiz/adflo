@@ -14,7 +14,7 @@ export interface PlatformModule {
 export const MODULES: readonly PlatformModule[] = [
   { id: "documents", number: "01", name: "Documents", slug: "documents", status: "available",
     summary: "Upload, organize and search files; versioning, sharing and an audit trail." },
-  { id: "invoices", number: "02", name: "Invoices", status: "planned",
+  { id: "invoices", number: "02", name: "Invoices", slug: "invoices", status: "available",
     summary: "Invoice tracking, recurring schedules, due-date reminders and overdue alerts." },
   { id: "licenses", number: "03", name: "Licenses & Renewals", slug: "licenses", status: "available",
     summary: "Track licenses and expiry dates, collect required documents, get renewal reminders." },
