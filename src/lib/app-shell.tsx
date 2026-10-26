@@ -17,7 +17,7 @@ function Frame({ topRight, children }: { topRight: React.ReactNode; children: Re
  */
 export async function renderAppShell(
   nextPath: string,
-  content: (mode: "live" | "preview") => React.ReactNode,
+  content: (mode: "live" | "preview", user?: { name: string }) => React.ReactNode,
 ): Promise<React.ReactNode> {
   if (getSupabaseEnv()) {
     const supabase = await createServerSupabase();
@@ -38,7 +38,7 @@ export async function renderAppShell(
     const { data: ws } = await supabase.from("workspaces").select("name").eq("id", membership.workspaceId).maybeSingle();
     return (
       <Frame topRight={<AppTopBar workspaceName={ws?.name} userLabel={email} />}>
-        {content("live")}
+        {content("live", { name: fullName })}
       </Frame>
     );
   }

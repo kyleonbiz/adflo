@@ -5,8 +5,9 @@ import { renderAppShell } from "@/lib/app-shell";
 export const metadata: Metadata = { title: "Invoices" };
 export const dynamic = "force-dynamic";
 
-export default function InvoicesRoute() {
+export default async function InvoicesRoute({ searchParams }: PageProps<"/app/invoices">) {
+  const { new: startNew } = await searchParams;
   return renderAppShell("/app/invoices", () => (
-    <InvoicesPage preview="Sample data that lives only in this browser tab. Nothing is saved and no emails are sent." />
+    <InvoicesPage startNew={startNew === "1"} preview="Sample data that lives only in this browser tab. Nothing is saved and no emails are sent." />
   ));
 }

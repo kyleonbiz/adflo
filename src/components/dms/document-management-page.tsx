@@ -22,9 +22,9 @@ const MODE_NOTICE: Record<DmsApi["mode"], string | null> = {
 };
 
 /** The whole workspace UI. Data access is injected through `api`; this component owns no I/O. */
-export function DocumentManagementPage({ api }: { api: DmsApi }) {
+export function DocumentManagementPage({ api, startUpload }: { api: DmsApi; startUpload?: boolean }) {
   const m = useDocumentManager(api);
-  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(!!startUpload);
   const [uploadFolder, setUploadFolder] = useState<string | null>(null);
   const [teamOpen, setTeamOpen] = useState(false);
 

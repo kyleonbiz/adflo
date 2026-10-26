@@ -6,6 +6,8 @@ import { renderAppShell } from "@/lib/app-shell";
 export const metadata: Metadata = { title: "Documents" };
 export const dynamic = "force-dynamic";
 
-export default function AppPage() {
-  return renderAppShell("/app", (mode) => (mode === "preview" ? <DemoWorkspace /> : <LiveWorkspace mode="live" />));
+export default async function AppPage({ searchParams }: PageProps<"/app">) {
+  const { upload } = await searchParams;
+  const startUpload = upload === "1";
+  return renderAppShell("/app", (mode) => (mode === "preview" ? <DemoWorkspace startUpload={startUpload} /> : <LiveWorkspace mode="live" startUpload={startUpload} />));
 }

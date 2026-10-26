@@ -14,8 +14,10 @@ test.describe("today's to-do list", () => {
 
     await todos.getByRole("checkbox", { name: "Complete Send the Q4 invoices" }).click();
     await expect(todos).toContainText("nothing left to do");
+    await expect(todos.getByTestId("todo-item")).toHaveCount(0); // completed tasks are tucked away
 
     await page.reload();
+    await todos.getByRole("button", { name: "Show completed (1)" }).click();
     await expect(todos.getByTestId("todo-item")).toHaveCount(1);
 
     await todos.getByRole("button", { name: "Delete Send the Q4 invoices" }).click();
