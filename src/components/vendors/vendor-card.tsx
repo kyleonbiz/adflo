@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronDown, Pencil, Plus, Power, RotateCcw, Send, Trash2, X, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,10 +33,13 @@ function DocumentRow({ vendor, d, today, actions }: { vendor: Vendor; d: VendorD
         <span className="truncate font-medium">{d.type}</span>
         {!d.required && <Badge variant="outline">Optional</Badge>}
       </span>
-      <Badge variant={DOC_BADGE[state]}>{DOC_LABEL[state]}</Badge>
+      <span className="flex flex-col items-start gap-0.5">
+        <Badge variant={DOC_BADGE[state]}>{DOC_LABEL[state]}</Badge>
+        {!d.receivedOn && d.expiresOn && <span className="text-[11px] text-muted-foreground">Add a received date</span>}
+      </span>
       <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <span className="shrink-0">Received</span>
-        <Input type="date" value={d.receivedOn ?? ""} onChange={(e) => set({ receivedOn: e.target.value || null })} aria-label={`${d.type} received on`} className="h-8 text-xs" />
+        <Input type="date" max={today} value={d.receivedOn ?? ""} onChange={(e) => set({ receivedOn: e.target.value || null })} aria-label={`${d.type} received on`} className="h-8 text-xs" />
       </label>
       <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <span className="shrink-0">Expires</span>
@@ -47,8 +50,19 @@ function DocumentRow({ vendor, d, today, actions }: { vendor: Vendor; d: VendorD
   );
 }
 
-export function VendorCard({ vendor, today, actions }: { vendor: Vendor; today: string; actions: VendorActions }) {
-  const [open, setOpen] = useState(false);
+/** `focusKey` changes whenever the page wants this card shown: it opens the documents and scrolls to the card. */
+export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendor; today: string; actions: VendorActions; focusKey?: number }) {
+  // Onboarding is mostly collecting documents, so start with them in view.
+  const [open, setOpen] = useState(() => vendor.status === "onboarding" && approvalBlockers(vendor, today).length > 0);
+  const ref = useRef<HTMLLIElement>(null);
+  const [seenFocus, setSeenFocus] = useState(focusKey);
+  if (focusKey !== seenFocus) {
+    setSeenFocus(focusKey);
+    if (focusKey !== undefined) setOpen(true);
+  }
+  useEffect(() => {
+    if (focusKey !== undefined) ref.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focusKey]);
   const [comment, setComment] = useState("");
   const [newDoc, setNewDoc] = useState("");
   const [newRequired, setNewRequired] = useState(true);
@@ -58,7 +72,7 @@ export function VendorCard({ vendor, today, actions }: { vendor: Vendor; today: 
   const panelId = `vendor-docs-${vendor.id}`;
 
   return (
-    <li className="rounded-2xl border bg-card shadow-panel" data-testid="vendor-card">
+    <li ref={ref} className="scroll-mt-4 rounded-2xl border bg-card shadow-panel" data-testid="vendor-card">
       <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -89,8 +103,8 @@ export function VendorCard({ vendor, today, actions }: { vendor: Vendor; today: 
             {vendor.status === "pending_approval" && (
               <>
                 <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (optional)" aria-label={`Comment on ${vendor.name}`} className="h-8 w-44 text-xs" maxLength={200} />
-                <Button size="sm" variant="outline" aria-label={`Approve ${vendor.name}`} onClick={() => actions.onDecide(vendor, "approved", comment)}><CheckCircle2 /> Approve</Button>
-                <Button size="sm" variant="outline" aria-label={`Reject ${vendor.name}`} onClick={() => actions.onDecide(vendor, "rejected", comment)}><XCircle /> Reject</Button>
+                <Button size="sm" variant="outline" aria-label={`Approve ${vendor.name}`} onClick={() => { actions.onDecide(vendor, "approved", comment); setComment(""); }}><CheckCircle2 /> Approve</Button>
+                <Button size="sm" variant="outline" aria-label={`Reject ${vendor.name}`} onClick={() => { actions.onDecide(vendor, "rejected", comment); setComment(""); }}><XCircle /> Reject</Button>
               </>
             )}
             {vendor.status === "rejected" && <Button size="sm" variant="outline" onClick={() => actions.onReopen(vendor)}><RotateCcw /> Reopen</Button>}
