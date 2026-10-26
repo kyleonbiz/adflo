@@ -15,6 +15,8 @@ import { licenseStatus, renewalTasks, renewLicense, summarize } from "@/lib/lice
 import { sampleLicenses } from "@/lib/licenses/sample-data";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
 import type { LicenseFormValues } from "@/lib/licenses/validation";
+import { useSetupConfig } from "@/lib/setup/storage";
+import { installedLicenses } from "@/lib/setup/templates";
 import { LicenseCard, type LicenseActions } from "./license-card";
 import { LicenseFormDialog } from "./license-form-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
@@ -35,7 +37,12 @@ export function LicensesPage({ preview }: { preview?: string }) {
   const [deleting, setDeleting] = useState<License | null>(null);
   const [notice, setNotice] = useState("");
 
-  const licenses = useMemo(() => edited ?? (today ? sampleLicenses(today) : []), [edited, today]);
+  const setup = useSetupConfig();
+  // Starter records installed by Back Office Setup (only once setup is finished) sit after the samples.
+  const licenses = useMemo(
+    () => edited ?? (today ? [...sampleLicenses(today), ...installedLicenses(setup?.completedOn ? setup.templates : [], today)] : []),
+    [edited, today, setup],
+  );
 
   if (!today) {
     return (

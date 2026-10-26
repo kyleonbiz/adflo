@@ -11,6 +11,8 @@ import { useToday } from "@/components/modules/use-today";
 import { createSubmission, decide, generateDocument, submissionsToCsv, summarize } from "@/lib/forms/logic";
 import { sampleForms, sampleSubmissions } from "@/lib/forms/sample-data";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
+import { useSetupConfig } from "@/lib/setup/storage";
+import { installedForms } from "@/lib/setup/templates";
 import type { FormBuilderValues } from "@/lib/forms/validation";
 import { FillFormDialog } from "./fill-form-dialog";
 import { FormBuilderDialog } from "./form-builder-dialog";
@@ -42,7 +44,9 @@ export function FormsPage({ preview }: { preview?: string }) {
   const [deleting, setDeleting] = useState<FormTemplate | null>(null);
   const [notice, setNotice] = useState("");
 
-  const forms = useMemo(() => editedForms ?? sampleForms(), [editedForms]);
+  const setup = useSetupConfig();
+  // Forms installed by Back Office Setup (only once setup is finished) sit after the samples.
+  const forms = useMemo(() => editedForms ?? [...sampleForms(), ...installedForms(setup?.completedOn ? setup.templates : [])], [editedForms, setup]);
   const subs = useMemo(() => editedSubs ?? (today ? sampleSubmissions(today) : []), [editedSubs, today]);
 
   if (!today) {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SetupStatus } from "@/components/setup/setup-status";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 
 /** Catalogue of the eleven modules; the ones that exist link through, the rest are marked as planned. */
@@ -13,6 +14,7 @@ export function ModuleOverview({ base }: { base: "/app" | "/demo" }) {
           One portal for the administrative work you would otherwise hand off. Modules switch on as they are released.
         </p>
       </div>
+      <SetupStatus base={base} />
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {MODULES.map((m) => {
           const href = moduleHref(m, base);

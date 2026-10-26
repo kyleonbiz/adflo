@@ -19,6 +19,8 @@ import {
 } from "@/lib/admin/logic";
 import { sampleRequests, sampleRoutines } from "@/lib/admin/sample-data";
 import { CATEGORIES, type AdminRequest, type Category, type RequestStatus, type Routine } from "@/lib/admin/types";
+import { useSetupConfig } from "@/lib/setup/storage";
+import { installedRoutines } from "@/lib/setup/templates";
 import { PRIORITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
 import { RequestDialog } from "./request-dialog";
 import { RoutineDialog } from "./routine-dialog";
@@ -98,7 +100,12 @@ export function AdminPage({ preview }: { preview?: string }) {
   const [notice, setNotice] = useState("");
 
   const requests = useMemo(() => editedRequests ?? (today ? sampleRequests(today) : []), [editedRequests, today]);
-  const routines = useMemo(() => editedRoutines ?? (today ? sampleRoutines(today) : []), [editedRoutines, today]);
+  const setup = useSetupConfig();
+  // Recurring tasks installed by Back Office Setup (only once setup is finished) sit after the samples.
+  const routines = useMemo(
+    () => editedRoutines ?? (today ? [...sampleRoutines(today), ...installedRoutines(setup?.completedOn ? setup.templates : [], today)] : []),
+    [editedRoutines, today, setup],
+  );
 
   if (!today) {
     return (
