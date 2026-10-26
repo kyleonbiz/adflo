@@ -15,6 +15,7 @@ export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?
   const [open, setOpen] = useState(false);
   return (
     <div className="min-h-dvh lg:flex">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-float focus:outline-none focus:ring-2 focus:ring-ring">Skip to content</a>
       <aside className="hidden border-r border-white/5 bg-brand-navy lg:sticky lg:top-0 lg:block lg:h-dvh lg:w-64 lg:shrink-0 lg:overflow-y-auto">
         <SidebarNav base={base} />
       </aside>
@@ -46,7 +47,7 @@ export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?
             <div className="ml-auto flex min-w-0 items-center gap-3">{topRight}</div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-3 py-6 sm:px-6">{children}</main>
+        <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-3 py-6 outline-none sm:px-6">{children}</main>
       </div>
     </div>
   );

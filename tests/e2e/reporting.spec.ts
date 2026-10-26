@@ -203,6 +203,38 @@ test.describe("reporting module", () => {
     await expect(dialog.getByRole("alert")).toContainText("never closed");
   });
 
+  test("long values are cut short instead of stretching the table, and paging returns to the top", async ({ page }) => {
+    const lines = ["Id,Notes"];
+    for (let i = 0; i < 250; i++) lines.push(`${1000 + i},${"word ".repeat(40).trim()} ${i}`);
+    await page.goto("/app/reporting");
+    await page.getByRole("button", { name: "Import CSV" }).first().click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Or paste CSV text").fill(lines.join("\n"));
+    await dialog.getByRole("button", { name: "Next" }).click();
+    await expect(dialog.getByRole("combobox", { name: "Type of Id" })).toContainText("Text"); // identifiers are not amounts
+    await dialog.getByRole("button", { name: "Review" }).click();
+    await dialog.getByRole("button", { name: "Load 250 rows" }).click();
+    await expect(page.getByTestId("record-row").first()).toContainText("1000"); // no thousands separator
+    const height = await page.getByTestId("record-row").first().evaluate((el) => el.getBoundingClientRect().height);
+    expect(height).toBeLessThan(60);
+    await expect(page.getByRole("region", { name: "Summary", exact: true })).not.toContainText("Number columns");
+
+    const box = page.locator(".max-h-96");
+    await box.evaluate((el) => { el.scrollTop = 500; });
+    await page.getByRole("button", { name: "Next page" }).click();
+    await expect(page.getByText("Page 2 of 3")).toBeVisible();
+    await expect.poll(() => box.evaluate((el) => el.scrollTop)).toBe(0);
+  });
+
+  test("has a skip link that moves focus to the page", async ({ page }) => {
+    await page.goto("/app/reporting");
+    await page.keyboard.press("Tab");
+    const skip = page.getByRole("link", { name: "Skip to content" });
+    await expect(skip).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#main-content")).toBeFocused();
+  });
+
   test("fits a phone screen without horizontal scroll", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await importExpenses(page);

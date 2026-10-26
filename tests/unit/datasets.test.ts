@@ -245,6 +245,16 @@ describe("xlsx export", () => {
   });
 });
 
+describe("suggestColumns", () => {
+  it("starts identifier-like columns as text so they are not summed or given thousands separators", () => {
+    const parsed = parseCsv("Id,Invoice Number,ZIP,Phone,Order #,Amount,Qty,Account No.\n1001,5001,90210,5551234567,77,12.5,3,9001\n1002,5002,10001,5557654321,78,8,4,9002");
+    expect(suggestColumns(parsed).map((c) => [c.name, c.type])).toEqual([
+      ["Id", "text"], ["Invoice Number", "text"], ["ZIP", "text"], ["Phone", "text"], ["Order #", "text"],
+      ["Amount", "number"], ["Qty", "number"], ["Account No.", "text"],
+    ]);
+  });
+});
+
 describe("xlsx import", () => {
   it("round-trips an exported workbook through the reader", () => {
     const { dataset } = loadSample();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, BarChart3, CalendarClock, ChevronLeft, ChevronRight, Columns3, Database, Download, FileSpreadsheet, Rows3, Search, Upload } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
 import { SummaryTile } from "@/components/modules/summary-tile";
@@ -61,7 +61,11 @@ export function ReportingPage({ preview }: { preview?: string }) {
   const report = useMemo(() => (dataset ? groupReport(dataset, groupBy, measure, aggregate) : []), [dataset, groupBy, measure, aggregate]);
   const stats = useMemo(() => (dataset ? dataset.columns.map((_c, i) => columnStats(dataset, i)) : []), [dataset]);
   const fixedCols = useMemo(() => (dataset ? dataset.columns.map((_c, i) => needsDecimals(dataset, i)) : []), [dataset]);
-  const records = useMemo(() => (dataset ? viewRecords(dataset, query, sort) : []), [dataset, query, sort]);
+  // The search box stays instant; filtering a big dataset catches up between keystrokes.
+  const deferredQuery = useDeferredValue(query);
+  const records = useMemo(() => (dataset ? viewRecords(dataset, deferredQuery, sort) : []), [dataset, deferredQuery, sort]);
+  const recordsBox = useRef<HTMLDivElement>(null);
+  useEffect(() => { recordsBox.current?.scrollTo({ top: 0 }); }, [page, deferredQuery, sort, dataset]);
   const summary = useMemo(() => (dataset && today ? summaryText(dataset, today) : ""), [dataset, today]);
 
   if (!today) {
@@ -138,15 +142,11 @@ export function ReportingPage({ preview }: { preview?: string }) {
         </section>
       ) : (
         <>
-          <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <section aria-label="Summary" className={`grid grid-cols-2 gap-3 ${numberCols.length > 0 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
             <SummaryTile icon={Rows3} label="Rows" value={dataset.rows.length} tone="text-primary" />
             <SummaryTile icon={Columns3} label="Columns" value={dataset.columns.length} tone="text-sky-600" />
             <SummaryTile icon={Database} label="Blank cells" value={blanks} tone="text-amber-600" />
-            {numberCols[0] ? (
-              <SummaryTile icon={BarChart3} label={`Total ${numberCols[0].c.name}`} value={money(stats[numberCols[0].i].sum ?? 0)} tone="text-emerald-600" />
-            ) : (
-              <SummaryTile icon={BarChart3} label="Number columns" value={0} tone="text-emerald-600" />
-            )}
+            {numberCols[0] && <SummaryTile icon={BarChart3} label={`Total ${numberCols[0].c.name}`} value={money(stats[numberCols[0].i].sum ?? 0)} tone="text-emerald-600" />}
           </section>
 
           {setAside && (setAside.rejected.length > 0 || setAside.repeated > 0) && (
@@ -169,9 +169,9 @@ export function ReportingPage({ preview }: { preview?: string }) {
           <section aria-labelledby="columns-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
             <h2 id="columns-heading" className="text-base font-semibold">{dataset.name}: columns</h2>
             <div className="mt-2 overflow-x-auto">
-              <table className="w-full min-w-[34rem] text-left text-sm">
+              <table className="w-full text-left text-sm">
                 <thead className="text-xs text-muted-foreground">
-                  <tr><th className="py-1.5 pr-3 font-medium">Column</th><th className="pr-3 font-medium">Type</th><th className="pr-3 font-medium">Filled</th><th className="pr-3 font-medium">Blank</th><th className="font-medium">Details</th></tr>
+                  <tr><th className="py-1.5 pr-3 font-medium">Column</th><th className="pr-3 font-medium">Type</th><th className="hidden pr-3 font-medium sm:table-cell">Filled</th><th className="hidden pr-3 font-medium sm:table-cell">Blank</th><th className="font-medium">Details</th></tr>
                 </thead>
                 <tbody className="divide-y">
                   {dataset.columns.map((c, i) => {
@@ -182,9 +182,10 @@ export function ReportingPage({ preview }: { preview?: string }) {
                       : `${s.distinct} distinct`;
                     return (
                       <tr key={c.name} data-testid="column-stat">
-                        <td className="py-1.5 pr-3 font-medium">{c.name}{c.required && <span className="text-destructive"> *</span>}</td>
-                        <td className="pr-3 capitalize">{c.type}</td><td className="pr-3 tabular-nums">{s.filled}</td><td className="pr-3 tabular-nums">{s.blank}</td>
-                        <td className="text-muted-foreground">{details}</td>
+                        <td className="max-w-[10rem] break-words py-1.5 pr-3 align-top font-medium">{c.name}{c.required && <span className="text-destructive"> *</span>}</td>
+                        <td className="py-1.5 pr-3 align-top capitalize">{c.type}</td>
+                        <td className="hidden pr-3 tabular-nums sm:table-cell">{s.filled}</td><td className="hidden pr-3 tabular-nums sm:table-cell">{s.blank}</td>
+                        <td className="py-1.5 align-top text-muted-foreground">{details}<span className="block text-xs sm:hidden">{s.filled} filled · {s.blank} blank</span></td>
                       </tr>
                     );
                   })}
@@ -225,12 +226,12 @@ export function ReportingPage({ preview }: { preview?: string }) {
             </div>
             <ul className="mt-4 space-y-2" aria-label="Report results">
               {shownGroups.map((r) => (
-                <li key={r.group} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-sm" data-testid="report-row">
-                  <span className="truncate font-medium" title={r.group}>{r.group}</span>
-                  <span className="h-3 rounded-full bg-secondary" aria-hidden>
+                <li key={r.group} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,10rem)_1fr_auto]" data-testid="report-row">
+                  <span className="order-1 truncate font-medium" title={r.group}>{r.group}</span>
+                  <span className="order-3 col-span-2 h-3 rounded-full bg-secondary sm:order-2 sm:col-span-1" aria-hidden>
                     <span className="block h-full rounded-full bg-gradient-to-r from-blue-500 to-brand-violet" style={{ width: `${maxValue > 0 ? Math.max(0, (r.value / maxValue) * 100) : 0}%` }} />
                   </span>
-                  <span className="tabular-nums">{money(r.value)} <span className="text-xs text-muted-foreground">({r.rows} row{r.rows === 1 ? "" : "s"})</span></span>
+                  <span className="order-2 text-right tabular-nums sm:order-3">{money(r.value)} <span className="text-xs text-muted-foreground">({r.rows} row{r.rows === 1 ? "" : "s"})</span></span>
                 </li>
               ))}
             </ul>
@@ -263,7 +264,7 @@ export function ReportingPage({ preview }: { preview?: string }) {
                 <Input aria-label="Search records" type="search" className="pl-9" placeholder="Search records" value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} />
               </div>
             </div>
-            <div className="mt-2 max-h-96 overflow-auto rounded-xl border">
+            <div ref={recordsBox} className="mt-2 max-h-96 overflow-auto rounded-xl border">
               <table className="w-full min-w-[34rem] text-left text-sm">
                 <thead className="sticky top-0 bg-muted text-xs">
                   <tr>
@@ -271,8 +272,8 @@ export function ReportingPage({ preview }: { preview?: string }) {
                       const active = sort?.column === i ? sort.direction : null;
                       return (
                         <th key={c.name} scope="col" aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : "none"} className={`font-medium ${c.type === "number" ? "text-right" : ""}`}>
-                          <button type="button" onClick={() => sortBy(i)} className={`flex w-full items-center gap-1 px-3 py-2 hover:bg-secondary ${c.type === "number" ? "justify-end" : ""}`} aria-label={`Sort by ${c.name}`}>
-                            {c.name}
+                          <button type="button" onClick={() => sortBy(i)} className={`flex w-full max-w-[16rem] items-center gap-1 px-3 py-2 hover:bg-secondary ${c.type === "number" ? "ml-auto justify-end" : ""}`} aria-label={`Sort by ${c.name}`}>
+                            <span className="truncate" title={c.name}>{c.name}</span>
                             {active === "asc" && <ArrowUp className="size-3" aria-hidden />}
                             {active === "desc" && <ArrowDown className="size-3" aria-hidden />}
                           </button>
@@ -284,7 +285,10 @@ export function ReportingPage({ preview }: { preview?: string }) {
                 <tbody className="divide-y">
                   {pageRows.map((row, r) => (
                     <tr key={pageStart + r} data-testid="record-row">
-                      {row.map((cell, i) => <td key={i} className={`px-3 py-1.5 ${dataset.columns[i].type === "number" ? "text-right tabular-nums" : ""}`}>{displayCell(cell, dataset.columns[i].type, fixedCols[i])}</td>)}
+                      {row.map((cell, i) => {
+                        const shown = displayCell(cell, dataset.columns[i].type, fixedCols[i]);
+                        return <td key={i} title={shown.length > 40 ? shown : undefined} className={`max-w-[16rem] truncate px-3 py-1.5 ${dataset.columns[i].type === "number" ? "text-right tabular-nums" : ""}`}>{shown}</td>;
+                      })}
                     </tr>
                   ))}
                 </tbody>

@@ -5,9 +5,15 @@ import { runImport, type ImportOutcome } from "@/lib/import/run";
 import { inferColumnType, parseCell } from "./parse";
 import type { Cell, Column, Dataset } from "./types";
 
-/** Starting column definitions for a parsed file: types guessed from the data, nothing required. */
+/** Headings that name an identifier (Id, Invoice Number, ZIP, Phone): numbers in them are labels, not amounts to add up. */
+const IDENTIFIER_HEADING = /(^|[^a-z])(id|sku|zip|postal|phone|code|ref|reference|no|num|number)\.?$|#|^(zip|postal|phone)/i;
+
+/** Starting column definitions for a parsed file: types guessed from the data, nothing required. Identifier-like columns start as text. */
 export function suggestColumns(parsed: ParsedCsv): Column[] {
-  return parsed.headers.map((name, i) => ({ name, type: inferColumnType(parsed.rows.map((r) => r[i])), required: false }));
+  return parsed.headers.map((name, i) => {
+    const guess = inferColumnType(parsed.rows.map((r) => r[i]));
+    return { name, type: guess === "number" && IDENTIFIER_HEADING.test(name.trim()) ? "text" : guess, required: false };
+  });
 }
 
 /** 1200 -> "1,200", 1200.5 -> "1,200.50". With `fixed`, whole amounts also get two decimals ("1,200.00"). */
