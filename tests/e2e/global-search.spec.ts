@@ -27,3 +27,22 @@ test("searching documents from the top bar fills in the document search", async 
   await expect(page).toHaveURL(/\/app\?q=lease/);
   await expect(page.getByRole("searchbox")).toHaveValue("lease");
 });
+
+test("pressing / focuses the search box", async ({ page }) => {
+  await page.goto("/app/overview");
+  await page.locator("body").press("/");
+  await expect(page.getByRole("combobox", { name: "Search Adflo" })).toBeFocused();
+});
+
+test.describe("on a phone", () => {
+  test.use({ viewport: { width: 360, height: 740 } });
+  test("the search box sits under the top bar without sideways scrolling", async ({ page }) => {
+    await page.goto("/app/overview");
+    const box = page.getByRole("combobox", { name: "Search Adflo" });
+    await expect(box).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    await box.fill("vendors");
+    await box.press("Enter");
+    await expect(page).toHaveURL(/\/app\/vendors/);
+  });
+});
