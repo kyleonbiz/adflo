@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2, Download, Plus, Receipt, Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -13,8 +12,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import {
-  formatMoney, describeItems, hasNextInvoice, invoiceAlerts, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
-  nextRecurringInvoice, summarize,
+  formatMoney, describeItems, groupInvoices, hasNextInvoice, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent,   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
 import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
 import { sampleInvoices } from "@/lib/invoices/sample-data";
@@ -23,7 +21,6 @@ import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
-import { SEVERITY_BADGE } from "./status";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
 type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
@@ -128,12 +125,12 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
 
   const payError = paying ? paymentDateError(paying, payDate, today) : null;
   const summary = summarize(invoices, today);
-  const attention = needsAttention(invoices, today);
   const q = query.trim().toLowerCase();
   const visible = invoices
     .filter((i) => matchesFilter(i, stateFilter, today))
     .filter((i) => !q || [i.number, i.client, i.description].some((f) => f.toLowerCase().includes(q)))
-    .sort((a, b) => (a.dueOn < b.dueOn ? 1 : a.dueOn > b.dueOn ? -1 : 0));
+;
+  const groups = groupInvoices(visible, today);
 
   return (
     <div className="space-y-5">
@@ -145,7 +142,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => downloadCsv(invoicesToCsv(visible, today), `invoice-report-${today}.csv`)}
+            onClick={() => downloadCsv(invoicesToCsv(groups.flatMap((g) => g.invoices), today), `invoice-report-${today}.csv`)}
             disabled={visible.length === 0}
           >
             <Download /> Export CSV
@@ -164,28 +161,6 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
         <SummaryTile icon={AlertTriangle} label={`Overdue (${summary.overdueCount})`} value={formatMoney(summary.overdueCents)} tone="text-red-600" />
         <SummaryTile icon={CalendarClock} label="Due in 7 days" value={summary.dueSoonCount} tone="text-amber-600" />
         <SummaryTile icon={CheckCircle2} label="Paid this month" value={formatMoney(summary.paidThisMonthCents)} tone="text-emerald-600" />
-      </section>
-
-      <section aria-labelledby="attention-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
-        <h2 id="attention-heading" className="text-base font-semibold">Needs attention</h2>
-        {attention.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">Nothing overdue or due this week.</p>
-        ) : (
-          <ul className="mt-2 divide-y">
-            {attention.map((i) => {
-              const alert = invoiceAlerts(i, today)[0];
-              return (
-                <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                  <span><span className="font-medium">{i.number}</span> · {i.client}</span>
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="tabular-nums">{formatMoney(i.amountCents)}</span>
-                    {alert && <Badge variant={SEVERITY_BADGE[alert.severity]}>{alert.message}</Badge>}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
       </section>
 
       <section aria-label="Invoices" className="space-y-3">
@@ -216,9 +191,18 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
             {invoices.length === 0 ? "No invoices yet. Create your first one." : "No invoices match these filters."}
           </div>
         ) : (
-          <ul className="space-y-3">
-            {visible.map((i) => <InvoiceCard key={i.id} invoice={i} today={today} actions={actions} />)}
-          </ul>
+          <div className="space-y-5">
+            {groups.map((g) => (
+              <div key={g.key} role="group" aria-labelledby={`group-${g.key}`}>
+                <h2 id={`group-${g.key}`} className="mb-2 flex items-baseline gap-2 text-sm font-semibold">
+                  {g.label} <span className="font-normal text-muted-foreground">{g.invoices.length}</span>
+                </h2>
+                <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-panel">
+                  {g.invoices.map((i) => <InvoiceCard key={i.id} invoice={i} today={today} actions={actions} />)}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </section>
 
@@ -231,7 +215,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
         onSubmit={saveForm}
       />
 
-      <InvoicePreview invoice={viewing} onOpenChange={(o) => !o && setViewing(null)} onEdit={(i) => setFormFor(i)} />
+      <InvoicePreview invoice={viewing} today={today} onOpenChange={(o) => !o && setViewing(null)} onEdit={(i) => setFormFor(i)} />
 
       <Dialog open={!!voiding} onOpenChange={(o) => !o && setVoiding(null)}>
         <DialogContent variant="alert">

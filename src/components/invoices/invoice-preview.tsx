@@ -1,9 +1,10 @@
 "use client";
 
-import { Building2, CreditCard, Download, Mail, MapPin, Pencil, Phone } from "lucide-react";
+import { BellRing, Building2, CreditCard, Download, Mail, MapPin, Pencil, Phone } from "lucide-react";
+import { formatDayLong } from "@/lib/dates";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { formatMoney, invoiceTotals, lineCents } from "@/lib/invoices/logic";
+import { formatMoney, invoiceTotals, lineCents, nextOverdueNotice, nextReminder } from "@/lib/invoices/logic";
 import type { Invoice } from "@/lib/invoices/types";
 import { downloadInvoice } from "./download";
 
@@ -14,24 +15,27 @@ function Contact({ icon: Icon, children }: { icon: typeof Mail; children?: strin
 
 /** Read-only view of one invoice, with download and edit. */
 export function InvoicePreview({
-  invoice, onOpenChange, onEdit,
+  invoice, today, onOpenChange, onEdit,
 }: {
   invoice: Invoice | null;
+  today: string;
   onOpenChange: (open: boolean) => void;
   onEdit: (invoice: Invoice) => void;
 }) {
   return (
     <Dialog open={!!invoice} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
-        {invoice && <Body invoice={invoice} onDownload={() => downloadInvoice(invoice)} onEdit={() => { onOpenChange(false); onEdit(invoice); }} />}
+        {invoice && <Body invoice={invoice} today={today} onDownload={() => downloadInvoice(invoice)} onEdit={() => { onOpenChange(false); onEdit(invoice); }} />}
       </DialogContent>
     </Dialog>
   );
 }
 
-function Body({ invoice, onDownload, onEdit }: { invoice: Invoice; onDownload: () => void; onEdit: () => void }) {
+function Body({ invoice, today, onDownload, onEdit }: { invoice: Invoice; today: string; onDownload: () => void; onEdit: () => void }) {
   const { subtotalCents, taxCents, totalCents } = invoiceTotals(invoice.items, invoice.taxRate);
   const s = invoice.sender;
+  const reminder = nextReminder(invoice, today);
+  const notice = nextOverdueNotice(invoice, today);
   return (
     <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
       <div className="flex items-start justify-between gap-4 border-b pb-4">
@@ -101,6 +105,15 @@ function Body({ invoice, onDownload, onEdit }: { invoice: Invoice; onDownload: (
           <h3 className="mb-1 text-xs font-semibold">Notes</h3>
           <p className="whitespace-pre-line">{invoice.notes}</p>
         </section>
+      )}
+
+      {(reminder || notice) && (
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <BellRing className="size-3.5" aria-hidden />
+          {notice
+            ? `Next overdue notice ${formatDayLong(notice)}`
+            : `Next reminder ${formatDayLong(reminder!.on)} (${reminder!.daysBefore} day${reminder!.daysBefore === 1 ? "" : "s"} before due)`}
+        </p>
       )}
 
       <div className="space-y-2 border-t pt-4">

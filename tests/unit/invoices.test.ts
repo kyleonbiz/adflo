@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
   invoiceAlerts, invoiceState, invoicesToCsv, markPaid, markSent, needsAttention, nextInvoiceNumber,
-  nextOverdueNotice, nextRecurringInvoice, nextReminder, hasNextInvoice, invoiceTotals, describeItems, generateInvoiceNumber, paymentDateError, reopen, voidInvoice, summarize, formatMoney, daysOverdue,
+  nextOverdueNotice, nextRecurringInvoice, nextReminder, groupInvoices, hasNextInvoice, invoiceTotals, describeItems, generateInvoiceNumber, paymentDateError, reopen, voidInvoice, summarize, formatMoney, daysOverdue,
 } from "@/lib/invoices/logic";
 import { sampleInvoices } from "@/lib/invoices/sample-data";
 import type { Invoice } from "@/lib/invoices/types";
@@ -239,5 +239,19 @@ describe("invoice email", () => {
     expect(ok("a@b.co")).toBe(true);
     expect(ok("a@b.co, c@d.co")).toBe(false);
     expect(ok("nope")).toBe(false);
+  });
+});
+
+describe("groupInvoices", () => {
+  it("groups by urgency, earliest due first, and drops empty groups", () => {
+    const list = [
+      inv({ id: "a", dueOn: addDays(TODAY, -2) }), inv({ id: "b", dueOn: addDays(TODAY, -9) }),
+      inv({ id: "c", dueOn: addDays(TODAY, 3) }), inv({ id: "d", status: "draft" }),
+      inv({ id: "e", status: "paid", dueOn: "2026-08-01" }), inv({ id: "f", status: "void", dueOn: "2026-09-01" }),
+    ];
+    const groups = groupInvoices(list, TODAY);
+    expect(groups.map((g) => [g.key, g.invoices.map((i) => i.id)])).toEqual([
+      ["overdue", ["b", "a"]], ["due_soon", ["c"]], ["draft", ["d"]], ["closed", ["f", "e"]],
+    ]);
   });
 });

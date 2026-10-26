@@ -17,10 +17,12 @@ test.describe("invoices module", () => {
     await expect(summary).toContainText("$5,855.00"); // outstanding: 1850 + 625 + 2400 + 980
     await expect(summary).toContainText("$2,475.00"); // overdue: 1850 + 625
 
-    const attention = page.getByRole("region", { name: "Needs attention" });
-    await expect(attention).toContainText("INV-0041");
-    await expect(attention).toContainText("10 days overdue");
-    await expect(attention).not.toContainText("INV-0044"); // not due for 25 days
+    const overdue = page.getByRole("group", { name: /^Overdue/ });
+    await expect(overdue).toContainText("INV-0041");
+    await expect(overdue).toContainText("10 days overdue");
+    await expect(overdue).not.toContainText("INV-0044"); // not due for 25 days
+    await expect(page.getByRole("group", { name: /^Due soon/ })).toContainText("INV-0043");
+    await expect(page.getByRole("group", { name: /^Drafts/ })).toContainText("INV-0045");
 
     await page.getByRole("combobox", { name: "Filter by status" }).click();
     await page.getByRole("option", { name: "Overdue" }).click();
@@ -41,7 +43,7 @@ test.describe("invoices module", () => {
     await overdue.getByRole("button", { name: "Mark paid" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Mark paid" }).click();
     await expect(overdue.getByText("Paid", { exact: true })).toBeVisible();
-    await expect(page.getByRole("region", { name: "Needs attention" })).not.toContainText("INV-0041");
+    await expect(page.getByRole("group", { name: /^Overdue/ })).not.toContainText("INV-0041");
 
     await menu(page, overdue, "INV-0041", "Create next");
     await expect(page.getByRole("status")).toContainText("Draft INV-0046");

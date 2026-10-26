@@ -187,3 +187,31 @@ export function invoicesToCsv(invoices: Invoice[], today: string): string {
   ]);
   return [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
+
+export interface InvoiceGroup {
+  key: "overdue" | "due_soon" | "draft" | "sent" | "closed";
+  label: string;
+  invoices: Invoice[];
+}
+
+const GROUPS: { key: InvoiceGroup["key"]; label: string; states: InvoiceState[] }[] = [
+  { key: "overdue", label: "Overdue", states: ["overdue"] },
+  { key: "due_soon", label: "Due soon", states: ["due_today", "due_soon"] },
+  { key: "draft", label: "Drafts", states: ["draft"] },
+  { key: "sent", label: "Sent", states: ["upcoming"] },
+  { key: "closed", label: "Paid and void", states: ["paid", "void"] },
+];
+
+/**
+ * Invoices grouped by urgency, empty groups left out. Open groups list the earliest due date first;
+ * paid and void list the most recent first.
+ */
+export function groupInvoices(invoices: Invoice[], today: string): InvoiceGroup[] {
+  return GROUPS.map(({ key, label, states }) => ({
+    key,
+    label,
+    invoices: invoices
+      .filter((i) => states.includes(invoiceState(i, today)))
+      .sort((a, b) => (key === "closed" ? (a.dueOn < b.dueOn ? 1 : a.dueOn > b.dueOn ? -1 : 0) : a.dueOn < b.dueOn ? -1 : a.dueOn > b.dueOn ? 1 : 0)),
+  })).filter((g) => g.invoices.length > 0);
+}
