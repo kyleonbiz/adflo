@@ -79,7 +79,6 @@ export function FilesPage({ preview }: { preview?: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-primary">Module 10</p>
           <h1 className="text-2xl font-semibold tracking-tight">Business File Reset</h1>
           <p className="text-sm text-muted-foreground">Find duplicates, tidy names and sort a messy folder, with a preview and your approval before anything moves.</p>
         </div>

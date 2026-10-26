@@ -83,7 +83,7 @@ test.describe("back office setup module", () => {
     await page.goto("/app/setup");
     await page.getByRole("button", { name: /Review/ }).click(); // jump straight to the end with nothing filled in
     await expect(page.getByTestId("check").filter({ hasText: "Business profile" })).toHaveAttribute("data-status", "fail");
-    await expect(page.getByTestId("check").filter({ hasText: "Modules chosen" })).toHaveAttribute("data-status", "fail");
+    await expect(page.getByTestId("check").filter({ hasText: "Services chosen" })).toHaveAttribute("data-status", "fail");
     await expect(page.getByRole("button", { name: "Finish setup" })).toBeDisabled();
     await expect(page.getByText("Fix the items marked with a cross to finish.")).toBeVisible();
     await page.getByRole("button", { name: "Fix Business profile" }).click();
@@ -156,7 +156,7 @@ test.describe("back office setup module", () => {
     await next(page).click();
     await moduleBox(page, "Vendors").check();
     await page.reload();
-    await expect(page.getByRole("button", { name: /Modules/ })).toHaveAttribute("aria-current", "step");
+    await expect(page.getByRole("button", { name: /Services/ })).toHaveAttribute("aria-current", "step");
     await expect(moduleBox(page, "Vendors")).toBeChecked();
     await page.getByRole("button", { name: /Business/ }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("Saved & Sound");
@@ -167,7 +167,7 @@ test.describe("back office setup module", () => {
     await page.goto("/app/overview");
     const status = page.getByTestId("setup-status");
     await expect(status).toHaveAttribute("data-state", "complete");
-    await expect(status).toContainText("Acme Studio is set up: 7 modules");
+    await expect(status).toContainText("Acme Studio is set up: 7 services");
     await status.getByRole("link", { name: "View setup" }).click();
     await page.getByRole("button", { name: "Start over" }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("");

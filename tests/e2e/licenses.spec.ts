@@ -70,7 +70,7 @@ test.describe("platform modules", () => {
 
   test("the signed-in app shows the module tabs in development mode", async ({ page }) => {
     await page.goto("/app/licenses");
-    await expect(page.getByRole("navigation", { name: "Modules" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Services" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name: "Licenses & Renewals" })).toBeVisible();
     await page.getByRole("link", { name: "Documents", exact: true }).click();
     await expect(page.getByTestId("document-card").first()).toBeVisible();

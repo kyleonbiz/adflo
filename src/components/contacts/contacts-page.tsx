@@ -86,7 +86,6 @@ export function ContactsPage({ preview }: { preview?: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-primary">Module 05</p>
           <h1 className="text-2xl font-semibold tracking-tight">CRM &amp; Data</h1>
           <p className="text-sm text-muted-foreground">Import your contact lists, clean them up, remove duplicates and export tidy data.</p>
         </div>

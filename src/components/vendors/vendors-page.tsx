@@ -107,7 +107,6 @@ export function VendorsPage({ preview }: { preview?: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-primary">Module 04</p>
           <h1 className="text-2xl font-semibold tracking-tight">Vendors</h1>
           <p className="text-sm text-muted-foreground">Onboard suppliers, collect their documents and catch expiries and duplicates.</p>
         </div>

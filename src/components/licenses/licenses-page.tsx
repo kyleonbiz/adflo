@@ -101,7 +101,6 @@ export function LicensesPage({ preview }: { preview?: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-primary">Module 03</p>
           <h1 className="text-2xl font-semibold tracking-tight">Licenses &amp; Renewals</h1>
           <p className="text-sm text-muted-foreground">Track expiry dates, collect required documents and stay ahead of every renewal.</p>
         </div>

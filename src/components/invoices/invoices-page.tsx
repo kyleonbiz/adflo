@@ -99,7 +99,6 @@ export function InvoicesPage({ preview }: { preview?: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-primary">Module 02</p>
           <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
           <p className="text-sm text-muted-foreground">Track what is owed, repeat recurring invoices and chase overdue payments.</p>
         </div>

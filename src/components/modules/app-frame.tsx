@@ -33,7 +33,7 @@ export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?
                   <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-slate-950/30 backdrop-blur-[2px] lg:hidden" />
                   <DialogPrimitive.Content className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] animate-fade-in overflow-y-auto bg-brand-navy shadow-float outline-none lg:hidden">
                     <DialogPrimitive.Title className="sr-only">Menu</DialogPrimitive.Title>
-                    <DialogPrimitive.Description className="sr-only">Choose a module</DialogPrimitive.Description>
+                    <DialogPrimitive.Description className="sr-only">Choose a service</DialogPrimitive.Description>
                     <DialogPrimitive.Close aria-label="Close menu" className="absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full text-slate-300 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-brand-sky">
                       <X className="size-4" aria-hidden />
                     </DialogPrimitive.Close>

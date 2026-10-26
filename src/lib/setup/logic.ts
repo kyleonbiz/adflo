@@ -122,8 +122,8 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
 
   checks.push(
     c.modules.length > 0
-      ? { id: "modules", status: "pass", title: "Modules chosen", detail: `${c.modules.length} selected: ${c.modules.map(nameOf).join(", ")}.`, step: 1 }
-      : { id: "modules", status: "fail", title: "Modules chosen", detail: "Pick at least one module.", step: 1 },
+      ? { id: "modules", status: "pass", title: "Services chosen", detail: `${c.modules.length} selected: ${c.modules.map(nameOf).join(", ")}.`, step: 1 }
+      : { id: "modules", status: "fail", title: "Services chosen", detail: "Pick at least one service.", step: 1 },
   );
 
   for (const id of c.modules) {

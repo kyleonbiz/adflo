@@ -68,16 +68,16 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
           <Rocket className="mt-1 size-6 text-primary" aria-hidden />
           <div>
             <h2 className="text-xl font-semibold">{config.business.name.trim()} is set up</h2>
-            <p className="text-sm text-muted-foreground">{chosen.length} modules, {installed.length} templates installed, {score}% of setup checks passed.</p>
+            <p className="text-sm text-muted-foreground">{chosen.length} services, {installed.length} templates installed, {score}% of setup checks passed.</p>
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
-          <SummaryTile icon={Rocket} label="Modules" value={chosen.length} tone="text-primary" />
+          <SummaryTile icon={Rocket} label="Services" value={chosen.length} tone="text-primary" />
           <SummaryTile icon={Sparkles} label="Templates installed" value={installed.length} tone="text-sky-600" />
           <SummaryTile icon={CheckCircle2} label="Checks passed" value={`${score}%`} tone="text-emerald-600" />
         </div>
         <div>
-          <h3 className="text-sm font-medium">Your modules</h3>
+          <h3 className="text-sm font-medium">Your services</h3>
           <ul className="mt-2 flex flex-wrap gap-2">
             {chosen.map((id) => {
               const m = MODULES.find((x) => x.id === id);
@@ -94,7 +94,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
             </ul>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">Saved in this browser until the database is connected. Installed templates now show up inside their modules. Editing the setup takes it back to a draft until you finish it again.</p>
+        <p className="text-xs text-muted-foreground">Saved in this browser until the database is connected. Installed templates now show up inside their services. Editing the setup takes it back to a draft until you finish it again.</p>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => update((c) => ({ ...c, step: 0, completedOn: null }))}>Edit setup</Button>
           <Button variant="ghost" onClick={() => { clearConfig(); setConfig(emptyConfig()); }}>Start over</Button>
@@ -125,7 +125,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
       <section aria-label={STEPS[config.step]} className="space-y-4 rounded-2xl border bg-card p-5 shadow-panel">
         {config.step === 0 && (
           <>
-            <div><h2 className="text-lg font-semibold">Tell us about your business</h2><p className="text-sm text-muted-foreground">We use this to recommend the right modules.</p></div>
+            <div><h2 className="text-lg font-semibold">Tell us about your business</h2><p className="text-sm text-muted-foreground">We use this to recommend the right services.</p></div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="biz-name">Business name</Label>
@@ -152,7 +152,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
         {config.step === 1 && (
           <>
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <div><h2 className="text-lg font-semibold">Choose your modules</h2><p className="text-sm text-muted-foreground">Recommended for {config.business.industry || "your business"}. Change anything.</p></div>
+              <div><h2 className="text-lg font-semibold">Choose your services</h2><p className="text-sm text-muted-foreground">Recommended for {config.business.industry || "your business"}. Change anything.</p></div>
               <Button size="sm" variant="outline" onClick={() => update((c) => ({ ...c, completedOn: null, modules: recs.map((r) => r.id) }))}><Sparkles /> Use recommended</Button>
             </div>
             <ul className="grid gap-2 sm:grid-cols-2" data-testid="module-choices">
@@ -173,8 +173,8 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
 
         {config.step === 2 && (
           <>
-            <div><h2 className="text-lg font-semibold">Install templates</h2><p className="text-sm text-muted-foreground">Ready-made forms, recurring tasks and records. They appear inside their modules when you finish.</p></div>
-            {chosen.length === 0 && <p className="text-sm text-muted-foreground">Choose modules first.</p>}
+            <div><h2 className="text-lg font-semibold">Install templates</h2><p className="text-sm text-muted-foreground">Ready-made forms, recurring tasks and records. They appear inside their services when you finish.</p></div>
+            {chosen.length === 0 && <p className="text-sm text-muted-foreground">Choose services first.</p>}
             {chosen.map((id) => {
               const list = templatesFor(id);
               return (
@@ -200,8 +200,8 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
 
         {config.step === 3 && (
           <>
-            <div><h2 className="text-lg font-semibold">Bring in your existing data</h2><p className="text-sm text-muted-foreground">Open a module to import, then come back and tick it off. Your setup is saved as you go.</p></div>
-            {chosen.filter((id) => IMPORTABLE[id]).length === 0 && <p className="text-sm text-muted-foreground">None of your modules have data to bring in.</p>}
+            <div><h2 className="text-lg font-semibold">Bring in your existing data</h2><p className="text-sm text-muted-foreground">Open a service to import, then come back and tick it off. Your setup is saved as you go.</p></div>
+            {chosen.filter((id) => IMPORTABLE[id]).length === 0 && <p className="text-sm text-muted-foreground">None of your services have data to bring in.</p>}
             <ul className="space-y-2" data-testid="data-list">
               {chosen.filter((id) => IMPORTABLE[id]).map((id) => {
                 const m = MODULES.find((x) => x.id === id)!;
@@ -266,9 +266,8 @@ export function SetupPage({ base, preview }: { base: "/app"; preview?: string })
   return (
     <div className="space-y-5">
       <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-primary">Module 11</p>
         <h1 className="text-2xl font-semibold tracking-tight">Back Office Setup</h1>
-        <p className="text-sm text-muted-foreground">Five short steps to get your modules, templates and checks in place.</p>
+        <p className="text-sm text-muted-foreground">Five short steps to get your services, templates and checks in place.</p>
       </div>
       {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
       {!today ? (

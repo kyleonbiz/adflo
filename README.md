@@ -11,7 +11,7 @@ AdFlo is software, not a website: opening the site address goes straight into th
 
 * **With Supabase configured** – real sign-in, workspaces and (for Documents) a real database and storage.
 * **Without Supabase** – the app still opens, as a **preview** labelled "Preview · sample data" in the top
-  bar. Every module runs on sample data held in the visitor's own browser, so nothing is shared between
+  bar. Every service runs on sample data held in the visitor's own browser, so nothing is shared between
   visitors and nothing is stored on the server. The server-memory API (`/api/dms/dev/*`) remains for
   development only and is refused in production unless `DMS_ALLOW_DEV_MODE=true`.
 * **Old demo links** – `/demo/...` redirects to the same page under `/app/...`.
@@ -27,7 +27,7 @@ The app is growing from a document manager into a client portal of eleven servic
 (`src/lib/forms/`, `src/components/forms/`) and **08 Data Entry & Reporting**
 (`src/lib/datasets/`, `src/components/reporting/`) and **09 Admin Support** (`src/lib/admin/`,
 `src/components/admin/`) **10 Business File Reset** (`src/lib/files/`, `src/components/files/`) and **11 Back Office Setup**
-(`src/lib/setup/`, `src/components/setup/`). Every module runs on sample data until the database is
+(`src/lib/setup/`, `src/components/setup/`). Every service runs on sample data until the database is
 connected (see the limits below).
 
 **Shared import engine** (`src/lib/import/`): `parseCsv` (RFC 4180 quoting, BOM, CRLF, comma/semicolon/tab,

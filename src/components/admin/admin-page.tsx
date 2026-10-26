@@ -137,7 +137,6 @@ export function AdminPage({ preview }: { preview?: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-primary">Module 09</p>
           <h1 className="text-2xl font-semibold tracking-tight">Admin Support</h1>
           <p className="text-sm text-muted-foreground">One inbox for requests, recurring tasks and reminders, with approval for anything risky.</p>
         </div>

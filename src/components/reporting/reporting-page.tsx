@@ -102,7 +102,6 @@ export function ReportingPage({ preview }: { preview?: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-primary">Module 08</p>
           <h1 className="text-2xl font-semibold tracking-tight">Data Entry &amp; Reporting</h1>
           <p className="text-sm text-muted-foreground">Turn a raw spreadsheet into clean records, summaries and reports.</p>
         </div>

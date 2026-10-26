@@ -33,7 +33,7 @@ export const MODULES: readonly PlatformModule[] = [
   { id: "file-reset", number: "10", name: "Business File Reset", slug: "file-reset", status: "available",
     summary: "Guided cleanup: duplicates, folder structure and filenames, with preview and approval." },
   { id: "setup", number: "11", name: "Back Office Setup", slug: "setup", status: "available",
-    summary: "Guided onboarding: pick modules, import data and configure recurring workflows." },
+    summary: "Guided onboarding: pick services, import data and configure recurring workflows." },
 ];
 
 /** Where a module lives, under `base` (the app). The documents module is the app's own front page. */

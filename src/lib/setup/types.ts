@@ -7,7 +7,7 @@ export type Industry = (typeof INDUSTRIES)[number];
 export const TEAM_SIZES = ["Just me", "2-5 people", "6-20 people", "21+ people"] as const;
 export type TeamSize = (typeof TEAM_SIZES)[number];
 
-export const STEPS = ["Business", "Modules", "Templates", "Your data", "Review"] as const;
+export const STEPS = ["Business", "Services", "Templates", "Your data", "Review"] as const;
 
 export interface SetupConfig {
   version: 1;

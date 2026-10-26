@@ -4,7 +4,7 @@ const NAMES = [
   "Home", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
   "Data Entry & Reporting", "Admin Support", "Business File Reset", "Back Office Setup",
 ];
-const nav = (page: Page) => page.getByRole("navigation", { name: "Modules" });
+const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
 
 test.describe("module sidebar on a wide screen", () => {
   test("lists every module in a vertical column with Setup apart at the bottom", async ({ page }) => {
@@ -91,7 +91,7 @@ test.describe("module menu on a phone", () => {
     await page.getByRole("button", { name: "Open menu" }).click();
     const drawer = page.getByRole("dialog", { name: "Menu" });
     await expect(drawer).toBeVisible();
-    await expect(drawer.getByRole("navigation", { name: "Modules" }).getByRole("link")).toHaveText(NAMES);
+    await expect(drawer.getByRole("navigation", { name: "Services" }).getByRole("link")).toHaveText(NAMES);
     const box = await drawer.boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(360);

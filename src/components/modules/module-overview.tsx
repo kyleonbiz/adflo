@@ -11,7 +11,7 @@ export function ModuleOverview({ base }: { base: "/app" }) {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Your back office</h1>
         <p className="text-sm text-muted-foreground">
-          One portal for the administrative work you would otherwise hand off. Modules switch on as they are released.
+          One portal for the administrative work you would otherwise hand off. Each service switches on as it is released.
         </p>
       </div>
       <SetupStatus base={base} />

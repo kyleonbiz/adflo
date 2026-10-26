@@ -5,7 +5,7 @@ test.describe("AdFlo opens as software, not a website", () => {
     await page.goto("/");
     await expect(page).toHaveURL(/\/app\/overview$/);
     await expect(page).toHaveTitle("Home · AdFlo");
-    await expect(page.getByRole("navigation", { name: "Modules" }).getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading", { level: 1, name: "Your back office" })).toBeVisible();
     await expect(page.getByTestId("module-tile")).toHaveCount(11);
   });
@@ -22,7 +22,7 @@ test.describe("AdFlo opens as software, not a website", () => {
     await page.goto("/app/overview");
     await expect(page.getByText("Preview · sample data")).toBeVisible();
     await expect(page.getByText("Not configured")).toHaveCount(0);
-    await page.getByRole("navigation", { name: "Modules" }).getByRole("link", { name: "Invoices", exact: true }).click();
+    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Invoices", exact: true }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Invoices" })).toBeVisible();
     await expect(page.getByRole("note")).toContainText("Nothing is saved");
   });

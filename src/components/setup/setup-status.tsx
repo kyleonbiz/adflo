@@ -8,7 +8,7 @@ import { runSetupChecks, setupScore } from "@/lib/setup/logic";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { STEPS } from "@/lib/setup/types";
 
-/** The call to action (or progress) for Back Office Setup, shown above the module list. */
+/** The call to action (or progress) for Back Office Setup, shown above the service list. */
 export function SetupStatus({ base }: { base: "/app" }) {
   const ready = useToday() !== null; // the saved setup is only known in the browser
   const config = useSetupConfig();
@@ -20,7 +20,7 @@ export function SetupStatus({ base }: { base: "/app" }) {
   if (config?.completedOn) {
     return (
       <section aria-label="Setup status" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900" data-testid="setup-status" data-state="complete">
-        <p className="flex items-center gap-2 text-sm"><CheckCircle2 className="size-5" aria-hidden /> <span><strong>{config.business.name.trim()}</strong> is set up: {config.modules.length} modules, {setupScore(runSetupChecks(config))}% of checks passed.</span></p>
+        <p className="flex items-center gap-2 text-sm"><CheckCircle2 className="size-5" aria-hidden /> <span><strong>{config.business.name.trim()}</strong> is set up: {config.modules.length} services, {setupScore(runSetupChecks(config))}% of checks passed.</span></p>
         <Button asChild size="sm" variant="outline"><Link href={href}>View setup</Link></Button>
       </section>
     );
