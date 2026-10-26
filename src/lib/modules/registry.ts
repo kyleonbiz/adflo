@@ -30,7 +30,7 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Turn raw files into organized records and scheduled reports." },
   { id: "admin", number: "09", name: "Admin Support", slug: "admin", status: "available",
     summary: "Requests, recurring tasks and reminders in one place." },
-  { id: "file-reset", number: "10", name: "Business File Reset", status: "planned",
+  { id: "file-reset", number: "10", name: "Business File Reset", slug: "file-reset", status: "available",
     summary: "Guided cleanup: duplicates, folder structure and filenames, with preview and approval." },
   { id: "setup", number: "11", name: "Back Office Setup", status: "planned",
     summary: "Guided onboarding: pick modules, import data and configure recurring workflows." },

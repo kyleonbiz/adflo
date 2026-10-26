@@ -15,14 +15,15 @@ Tailwind and shadcn/ui-style components.
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
-(`src/lib/modules/registry.ts`). Today nine exist: **01 Documents**, **02 Invoices**
+(`src/lib/modules/registry.ts`). Today ten exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
 **05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Projects**
 (`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Data Entry & Reporting**
 (`src/lib/datasets/`, `src/components/reporting/`) and **09 Admin Support** (`src/lib/admin/`,
-`src/components/admin/`). The other two are listed on the overview page as "Planned".
+`src/components/admin/`) and **10 Business File Reset** (`src/lib/files/`, `src/components/files/`).
+The last one (11, Back Office Setup) is listed on the overview page as "Planned".
 
 **Shared import engine** (`src/lib/import/`): `parseCsv` (RFC 4180 quoting, BOM, CRLF, comma/semicolon/tab,
 limits of 5,000 rows, 50 columns and 2,000 characters per cell, control characters stripped, line numbers
@@ -31,8 +32,8 @@ alias), and `runImport` (validate each row, then sort into accepted, rejected an
 its first user; modules 08 (Data Entry) and 10 (File Reset) are meant to reuse it. Files are read in the
 browser and never uploaded.
 
-* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/admin`, behind the same gate as before.
-* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,vendors,contacts,projects,forms,reporting,admin}`, sample data in the browser tab, nothing saved.
+* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/admin`, `/app/file-reset`, behind the same gate as before.
+* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,vendors,contacts,projects,forms,reporting,admin,file-reset}`, sample data in the browser tab, nothing saved.
 * **Invoices, licenses, vendors, contacts, projects, forms and report data, requests and recurring tasks are not persisted yet.** They are seeded sample data held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
   renewal tasks, overdue notices) but no email is sent yet. Vendors get required documents by category, can only be
@@ -51,7 +52,17 @@ browser and never uploaded.
   money, changes access, deletes or commits the business until a person approves it, fills a request from a
   pasted email (subject, sender, body; quoted replies dropped), creates one request per due recurring task
   (never a pile after missed runs), shows a daily digest on screen, and exports an `.ics` calendar of due dates.
-  No email is sent or read and no calendar is connected: those need a backend. Forms are built in the app, validated on submit,
+  No email is sent or read and no calendar is connected: those need a backend. Business File Reset reads a folder chosen in the browser,
+  hashes every file there (SHA-256, files up to 50 MB, 500 MB in total) so identical files are found without
+  uploading anything, and builds a plan: standardized names, duplicates moved to a review folder (never
+  deleted), misplaced files moved to the right folder, and optionally everything sorted into suggested
+  folders. Each change is shown with its reason and must be approved before the plan CSV, a move script and
+  an undo script can be downloaded. **A browser cannot change files on a computer, so the app itself never
+  moves or deletes anything.** The scripts are POSIX `sh`, quote every path, use `mv -n`, skip anything missing
+  or that would overwrite, and contain no delete command; the tests run them under a real shell against names
+  with quotes, `$HOME`, backticks, a leading dash and `*`, and check that undo restores the exact original tree.
+  Paths with `..`, drive letters or control characters are skipped. A pasted list can be used instead of a
+  folder (duplicates are then only "likely"). Forms are built in the app, validated on submit,
   routed to a named approver when required, and turned into a text document by filling `{{Field label}}`
   placeholders in a single pass (submitted text is never re-expanded); submissions export to CSV.
   Projects flag overdue tasks and repeating tasks
