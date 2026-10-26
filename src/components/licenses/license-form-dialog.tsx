@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addMonths, isDay } from "@/lib/dates";
+import { needsReview } from "@/lib/licenses/logic";
 import { DEFAULT_DOCUMENTS, LICENSE_CATEGORIES, type License, type LicenseCategory } from "@/lib/licenses/types";
 import { readLicenseFile, LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { cn } from "@/lib/utils";
@@ -25,13 +26,13 @@ function defaults(license: License | undefined, today: string): LicenseFormInput
       name: license.name, category: license.category, issuer: license.issuer, number: license.number,
       holder: license.holder, issuedOn: license.issuedOn, expiresOn: license.expiresOn,
       renewalTermMonths: String(license.renewalTermMonths), reminderDays: license.reminderDays.join(", "),
-      notes: license.notes, documents: "",
+      notes: license.notes, documents: "", reviewed: false,
     };
   }
   return {
     name: "", category: "business", issuer: "", number: "", holder: "", issuedOn: today,
     expiresOn: addMonths(today, 12), renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "",
-    documents: DEFAULT_DOCUMENTS.business.join("\n"),
+    documents: DEFAULT_DOCUMENTS.business.join("\n"), reviewed: false,
   };
 }
 
@@ -135,9 +136,11 @@ export function LicenseFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <div className="border-b px-5 py-4 pr-14">
-          <DialogTitle>{license ? "Edit license" : "Add license"}</DialogTitle>
+          <DialogTitle>{license ? (needsReview(license) ? "Review license" : "Edit license") : "Add license"}</DialogTitle>
           <DialogDescription className="mt-1">
-            Reminders fire the listed number of days before the expiry date.
+            {license && needsReview(license)
+              ? "Check each detail against the license itself, correct anything that is off, then confirm."
+              : "Reminders fire the listed number of days before the expiry date."}
           </DialogDescription>
         </div>
         <form onSubmit={submit} noValidate className="flex min-h-0 flex-1 flex-col">
@@ -244,6 +247,18 @@ export function LicenseFormDialog({
                 />
               </Field>
             </div>
+          </div>
+          <div className="space-y-1.5 border-t px-5 py-3">
+            <label className="flex cursor-pointer items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 rounded border-input accent-primary"
+                {...invalid("reviewed")}
+                {...register("reviewed")}
+              />
+              <span>I have checked these details against the license document.</span>
+            </label>
+            {errors.reviewed && <p id="lic-reviewed-error" role="alert" className="text-xs text-destructive">{errors.reviewed.message}</p>}
           </div>
           <div className="flex justify-end gap-2 border-t px-5 py-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

@@ -24,6 +24,8 @@ export const licenseFormSchema = z
           .max(8, "Use at most 8 reminders"),
       ),
     notes: z.string().trim().max(1000, "Keep notes under 1000 characters"),
+    /** Every license is checked against the real document before it is saved. */
+    reviewed: z.boolean().refine((v) => v, "Confirm you have checked these details against the license"),
     /** One required document per line. Only used when adding; existing licenses manage theirs on the card. */
     documents: z
       .string()

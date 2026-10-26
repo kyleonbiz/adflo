@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, CheckCircle2, ChevronDown, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { BellRing, CheckCircle2, ClipboardCheck, ChevronDown, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { daysLeft, expiryText, plural, licenseAlerts, licenseStatus, missingDocuments, nextReminder } from "@/lib/licenses/logic";
+import { daysLeft, expiryText, plural, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder } from "@/lib/licenses/logic";
 import { formatDayLong } from "@/lib/dates";
 import { LICENSE_CATEGORIES, RENEWAL_STAGES, type License, type RenewalStage } from "@/lib/licenses/types";
 import { cn } from "@/lib/utils";
@@ -58,6 +58,7 @@ export function LicenseCard({ license, today, actions, focusToken = 0 }: { licen
             <h3 className="truncate text-base font-semibold">{license.name}</h3>
             <Badge variant={STATUS_BADGE[status]}>{STATUS_LABEL[status]}</Badge>
             <Badge variant="muted">{category}</Badge>
+            {needsReview(license) && <Badge variant="warning">Needs review</Badge>}
           </div>
           <p className="text-sm text-muted-foreground">
             {[license.issuer, license.number && `#${license.number}`, license.holder].filter(Boolean).join(" · ") || "No details added"}
@@ -71,6 +72,7 @@ export function LicenseCard({ license, today, actions, focusToken = 0 }: { licen
               {alerts.map((a) => <li key={a.message}><Badge variant={SEVERITY_BADGE[a.severity]}>{a.message}</Badge></li>)}
             </ul>
           )}
+          {license.verifiedOn && <p className="text-xs text-muted-foreground">Details reviewed {formatDayLong(license.verifiedOn)}.</p>}
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <BellRing className="size-3.5" aria-hidden />
             {reminder
@@ -88,6 +90,11 @@ export function LicenseCard({ license, today, actions, focusToken = 0 }: { licen
                 </SelectContent>
               </Select>
             </div>
+          )}
+          {needsReview(license) && (
+            <Button size="sm" onClick={() => actions.onEdit(license)} aria-label={`Review ${license.name}`}>
+              <ClipboardCheck /> Review
+            </Button>
           )}
           <Button size="sm" variant="outline" onClick={() => actions.onRenew(license)}>
             <RefreshCw /> Mark renewed

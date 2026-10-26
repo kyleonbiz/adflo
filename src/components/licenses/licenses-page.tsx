@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { expiryText, licenseStatus, missingDocuments, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
+import { expiryText, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
 import type { LicenseFormValues } from "@/lib/licenses/validation";
@@ -25,7 +25,7 @@ import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
 
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
 
-type Filter = "all" | "attention" | "missing_docs" | LicenseStatus;
+type Filter = "all" | "attention" | "missing_docs" | "needs_review" | LicenseStatus;
 type Sort = "expiry" | "name";
 const NOTICE_MS = 8000;
 
@@ -107,15 +107,16 @@ export function LicensesPage({ preview }: { preview?: string }) {
   };
 
   const saveForm = (values: LicenseFormValues) => {
-    const { documents, ...fields } = values;
+    const { documents, reviewed, ...fields } = values;
+    if (!reviewed) return; // the form already refuses this; never save a license nobody checked
     const category = values.category as License["category"];
     if (formFor && formFor !== "new") {
-      patch(formFor.id, (x) => ({ ...x, ...fields, category, datesConfirmed: true }));
+      patch(formFor.id, (x) => ({ ...x, ...fields, category, verifiedOn: today }));
       say(`${values.name} updated.`);
     } else {
       const id = newId();
       const requiredDocuments = documents.map((label, i) => ({ id: `${id}-d${i}`, label, received: false }));
-      setEdited([...licenses, { ...fields, category, id, stage: "not_started", requiredDocuments, datesConfirmed: true }]);
+      setEdited([...licenses, { ...fields, category, id, stage: "not_started", requiredDocuments, verifiedOn: today }]);
       say(`${values.name} added.`);
     }
   };
@@ -134,6 +135,7 @@ export function LicensesPage({ preview }: { preview?: string }) {
     if (statusFilter === "all") return true;
     if (statusFilter === "attention") return licenseStatus(l, today) !== "active";
     if (statusFilter === "missing_docs") return missingDocuments(l) > 0;
+    if (statusFilter === "needs_review") return needsReview(l);
     return licenseStatus(l, today) === statusFilter;
   };
   const visible = licenses
@@ -188,6 +190,15 @@ export function LicensesPage({ preview }: { preview?: string }) {
           </>
         )}
       </div>
+
+      {summary.needsReview > 0 && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900" data-testid="review-banner">
+          <span>
+            {summary.needsReview === 1 ? "1 license still needs" : `${summary.needsReview} licenses still need`} review. Every license must be checked against its document before you rely on it.
+          </span>
+          <button type="button" className="font-medium underline" onClick={() => setStatusFilter("needs_review")}>Show them</button>
+        </p>
+      )}
 
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <SummaryTile icon={ShieldCheck} label="Active" value={summary.active} tone="text-emerald-600" pressed={statusFilter === "active"} onClick={() => toggleFilter("active")} />
@@ -245,6 +256,7 @@ export function LicensesPage({ preview }: { preview?: string }) {
                 <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="attention">Needs attention</SelectItem>
                 <SelectItem value="missing_docs">Documents missing</SelectItem>
+                <SelectItem value="needs_review">Needs review</SelectItem>
                 {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>

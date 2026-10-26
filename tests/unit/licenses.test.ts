@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays, addMonths, daysBetween, isDay } from "@/lib/dates";
 import {
-  expiryText, licenseAlerts, licenseStatus, missingDocuments, nextReminder, renewLicense, renewalTasks, suggestedExpiry, summarize,
+  expiryText, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder, renewLicense, renewalTasks, suggestedExpiry, summarize,
 } from "@/lib/licenses/logic";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import type { License } from "@/lib/licenses/types";
@@ -12,7 +12,7 @@ const TODAY = "2026-10-25";
 const lic = (over: Partial<License> = {}): License => ({
   id: "x", name: "Test license", category: "business", issuer: "", number: "", holder: "",
   issuedOn: "2026-01-01", expiresOn: "2027-01-01", renewalTermMonths: 12, reminderDays: [60, 30, 7],
-  stage: "not_started", requiredDocuments: [], notes: "", ...over,
+  stage: "not_started", requiredDocuments: [], notes: "", verifiedOn: "2026-10-01", ...over,
 });
 
 describe("dates", () => {
@@ -80,10 +80,16 @@ describe("submitted renewals", () => {
   });
 });
 
-describe("placeholder dates", () => {
-  it("warns until the dates are confirmed", () => {
-    const a = licenseAlerts(lic({ datesConfirmed: false, expiresOn: addDays(TODAY, 300) }), TODAY);
-    expect(a.map((x) => x.message)).toEqual(["Placeholder dates. Enter the real number and expiry."]);
+describe("review", () => {
+  it("flags a license nobody has checked against its document", () => {
+    const l = lic({ verifiedOn: undefined, expiresOn: addDays(TODAY, 300) });
+    expect(needsReview(l)).toBe(true);
+    expect(licenseAlerts(l, TODAY).map((x) => x.message)).toEqual(["Needs review. Check these details against the license."]);
+    expect(needsReview(lic())).toBe(false);
+  });
+  it("does not let a review reminder raise the renewal task's urgency", () => {
+    const l = lic({ id: "r", verifiedOn: undefined, expiresOn: addDays(TODAY, 50) });
+    expect(renewalTasks([l], TODAY)[0].severity).toBe("info");
   });
 });
 
@@ -140,7 +146,7 @@ describe("renewLicense with the issuer's dates", () => {
     const r = renewLicense(l, TODAY, { expiresOn: "2028-03-01", number: "NEW" });
     expect(r.expiresOn).toBe("2028-03-01");
     expect(r.number).toBe("NEW");
-    expect(r.datesConfirmed).toBe(true);
+    expect(r.verifiedOn).toBe(TODAY);
     expect(r.renewals).toEqual([{ on: TODAY, previousExpiresOn: l.expiresOn, newExpiresOn: "2028-03-01" }]);
     expect(suggestedExpiry(l, TODAY)).toBe(addMonths(l.expiresOn, 12));
   });
@@ -149,7 +155,7 @@ describe("renewLicense with the issuer's dates", () => {
 describe("summarize", () => {
   it("counts every sample status", () => {
     expect(summarize(sampleLicenses(TODAY), TODAY)).toEqual({
-      total: 5, active: 2, renewalWindow: 1, expiring: 1, expired: 1, missingDocuments: 5,
+      total: 5, active: 2, renewalWindow: 1, expiring: 1, expired: 1, missingDocuments: 5, needsReview: 5,
     });
   });
 });
@@ -157,13 +163,18 @@ describe("summarize", () => {
 describe("licenseFormSchema", () => {
   const valid = {
     name: "Food Handler Permit", category: "permit", issuer: "Health Dept", number: "FH-1", holder: "",
-    issuedOn: "2026-01-01", expiresOn: "2027-01-01", renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "", documents: "Annual report\n\n  Fee receipt ",
+    issuedOn: "2026-01-01", expiresOn: "2027-01-01", renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "", reviewed: true, documents: "Annual report\n\n  Fee receipt ",
   };
   it("parses reminder days and coerces the term", () => {
     const r = licenseFormSchema.parse(valid);
     expect(r.reminderDays).toEqual([60, 30, 7]);
     expect(r.renewalTermMonths).toBe(12);
     expect(r.documents).toEqual(["Annual report", "Fee receipt"]);
+  });
+  it("will not accept a license that was not reviewed", () => {
+    const r = licenseFormSchema.safeParse({ ...valid, reviewed: false });
+    expect(r.success).toBe(false);
+    expect(JSON.stringify(r.success ? [] : r.error.issues)).toContain("checked these details");
   });
   it("explains bad reminder input plainly", () => {
     const r = licenseFormSchema.safeParse({ ...valid, reminderDays: "30, abc" });
