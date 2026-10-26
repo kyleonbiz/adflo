@@ -137,7 +137,7 @@ export function useDocumentManager(api: DmsApi) {
   );
 
   // Text is indexed shortly after an upload finishes. While any listed document is still waiting,
-  // re-read the first page quietly so its status and any content matches appear without a manual refresh.
+  // re-read the first page quietly (backing off from 3s to 12s) so its status and any content matches appear without a manual refresh.
   const waiting = items.some((d) => d.contentStatus === "pending" && d.status === "ready");
   const pollCount = useRef(0);
   useEffect(() => {
@@ -149,7 +149,7 @@ export function useDocumentManager(api: DmsApi) {
     const t = setTimeout(() => {
       pollCount.current += 1;
       void fetchPage({ ...query, page: 1 }, false, true);
-    }, 3000);
+    }, Math.min(3000 * 2 ** Math.floor(pollCount.current / 3), 12000));
     return () => clearTimeout(t);
   }, [waiting, listState, items, query, fetchPage]);
 
@@ -220,6 +220,10 @@ export function useDocumentManager(api: DmsApi) {
 
   const update = useCallback(
     async (id: string, changes: DocumentChanges, success?: string) => {
+      // Show simple field edits immediately; moves stay server-confirmed because they remove cards.
+      const before = items.find((d) => d.id === id) ?? (detail?.id === id ? detail : null);
+      const optimistic = before && changes.folderId === undefined;
+      if (optimistic) applyLocal({ ...before, ...changes });
       try {
         const doc = await api.updateDocument(id, changes);
         applyLocal(doc);
@@ -231,11 +235,12 @@ export function useDocumentManager(api: DmsApi) {
         }
         return doc;
       } catch (e) {
+        if (optimistic) applyLocal(before);
         notify("error", toDmsError(e).message);
         return null;
       }
     },
-    [api, applyLocal, notify, reload, query.folderId],
+    [api, applyLocal, detail, items, notify, reload, query.folderId],
   );
 
   const toggleStar = useCallback(
