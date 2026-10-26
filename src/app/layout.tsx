@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     template: "%s · AdFlo",
   },
   description:
-    "Store, organize, and manage all business documents securely in one place.",
+    "AdFlo turns the paperwork, invoices, renewals and projects you used to hand off into simple tools your team runs itself.",
   robots: { index: true, follow: true },
 };
 

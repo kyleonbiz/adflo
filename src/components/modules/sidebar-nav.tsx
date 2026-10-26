@@ -2,18 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3, ClipboardList, FileText, FolderKanban, FolderTree, Home, Inbox, Receipt, Settings, ShieldCheck, Store, Users,
-  type LucideIcon,
-} from "lucide-react";
+import { FileText } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
+import { MODULE_ICONS } from "./module-icons";
 import { cn } from "@/lib/utils";
-
-const ICONS: Record<string, LucideIcon> = {
-  overview: Home, documents: FileText, invoices: Receipt, licenses: ShieldCheck, vendors: Store, crm: Users,
-  projects: FolderKanban, forms: ClipboardList, reporting: BarChart3, admin: Inbox, "file-reset": FolderTree, setup: Settings,
-};
 
 interface Item { id: string; label: string; href: string }
 
@@ -22,7 +15,7 @@ const isActive = (pathname: string, href: string, base: string) =>
   href === base ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
 function NavLink({ item, active, onNavigate }: { item: Item; active: boolean; onNavigate?: () => void }) {
-  const Icon = ICONS[item.id] ?? FileText;
+  const Icon = MODULE_ICONS[item.id] ?? FileText;
   return (
     <Link
       href={item.href}

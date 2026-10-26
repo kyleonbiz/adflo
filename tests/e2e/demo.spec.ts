@@ -3,12 +3,8 @@ import { expect, test } from "@playwright/test";
 test.describe("public demo page", () => {
   test("shows the hero and a working demo workspace", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "Document Management System" })).toBeVisible();
-    await expect(page.getByText("Store, organize, and manage all business documents securely in one place.")).toBeVisible();
-    for (const pill of ["Folder & Tag Organization", "File Metadata Tracking", "Full-Text Search"]) {
-      await expect(page.getByText(pill, { exact: true })).toBeVisible();
-    }
-    await expect(page.getByRole("note")).toContainText("not saved or uploaded anywhere");
+    await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place." })).toBeVisible();
+    await expect(page.getByRole("note").filter({ hasText: "not saved or uploaded anywhere" })).toBeVisible();
     await expect(page.getByTestId("document-card").first()).toBeVisible();
 
     await page.getByRole("button", { name: "Contracts, 3 documents" }).click();

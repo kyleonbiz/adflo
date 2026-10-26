@@ -6,8 +6,9 @@ XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
 Tailwind and shadcn/ui-style components.
 
-* **Public page (`/`)** – marketing hero plus a fully working **demo workspace** that runs
-  the real business logic against in-browser sample data. Nothing is uploaded or saved.
+* **Public page (`/`)** – the AdFlo landing page: what it is, all eleven modules (each linking into its
+  demo), how it works, how it stays careful, and a fully working **document demo** that runs the real
+  business logic against in-browser sample data. Nothing is uploaded or saved.
 * **App (`/app`)** – the authenticated workspace, with no hero. Requires Supabase.
 * **Development mode** – with no Supabase variables (and not in production), `/app` runs on
   server-memory sample data with no login, clearly labelled "Development mode".

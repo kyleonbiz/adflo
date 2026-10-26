@@ -20,7 +20,7 @@ test.describe("development-mode app (server API)", () => {
   test("renders the authenticated workspace without the marketing hero", async ({ page }) => {
     await page.goto("/app");
     await expect(page.getByText("Development mode", { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Document Management System" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Your back office, in one place." })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
     await expect(page.getByTestId("document-card").first()).toBeVisible();
   });

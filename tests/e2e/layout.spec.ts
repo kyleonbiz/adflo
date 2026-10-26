@@ -59,14 +59,14 @@ for (const vp of VIEWPORTS) {
 
     test("public demo page", async ({ page }) => {
       await gotoReady(page, "/");
-      await expect(page.getByRole("heading", { name: "Document Management System" })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place." })).toBeVisible();
       await noHorizontalScroll(page, "demo page");
       await nothingClippedHorizontally(page, page.locator("main"), "demo page");
       await shot(page, "demo", true);
 
-      // Hero pills wrap instead of overflowing.
-      for (const label of ["Folder & Tag Organization", "File Metadata Tracking", "Full-Text Search"]) {
-        await fitsViewport(page, page.getByText(label, { exact: true }), `pill "${label}"`);
+      // The hero buttons and the module cards wrap instead of overflowing.
+      for (const name of ["Try the demo", "Explore the modules"]) {
+        await fitsViewport(page, page.getByRole("link", { name: new RegExp(name) }).first(), `hero button "${name}"`);
       }
     });
 
