@@ -1,4 +1,4 @@
-import { addDays, advanceDay, daysBetween } from "@/lib/dates";
+import { addDays, advanceDay, daysBetween, isDay } from "@/lib/dates";
 import { csvCell } from "@/lib/csv";
 import type { Invoice, InvoiceAlert, InvoiceState, Recurrence } from "./types";
 
@@ -110,7 +110,19 @@ export function hasNextInvoice(inv: Invoice, all: Invoice[]): boolean {
 }
 
 export const markSent = (inv: Invoice): Invoice => ({ ...inv, status: "sent", paidOn: null });
-export const markPaid = (inv: Invoice, today: string): Invoice => ({ ...inv, status: "paid", paidOn: today });
+export const markPaid = (inv: Invoice, paidOn: string): Invoice => ({ ...inv, status: "paid", paidOn });
+export const voidInvoice = (inv: Invoice): Invoice => ({ ...inv, status: "void", paidOn: null });
+/** Undo a void (back to draft) or a payment (back to sent, outstanding again). */
+export const reopen = (inv: Invoice): Invoice =>
+  inv.status === "void" ? { ...inv, status: "draft" } : inv.status === "paid" ? { ...inv, status: "sent", paidOn: null } : inv;
+
+/** Why `day` can't be the payment date for `inv`, or null when it can. */
+export function paymentDateError(inv: Invoice, day: string, today: string): string | null {
+  if (!isDay(day)) return "Enter a valid date";
+  if (day < inv.issuedOn) return "Payment can't be before the invoice was issued";
+  if (day > today) return "Payment date can't be in the future";
+  return null;
+}
 
 export interface InvoiceSummary {
   outstandingCents: number;

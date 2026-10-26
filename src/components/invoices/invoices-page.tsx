@@ -6,13 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import {
-  formatMoney, hasNextInvoice, invoiceAlerts, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
+  formatMoney, hasNextInvoice, invoiceAlerts, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
 import { invoicePath } from "@/lib/invoices/share";
@@ -52,6 +53,9 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
   const [formFor, setFormFor] = useState<Invoice | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Invoice | null>(null);
+  const [voiding, setVoiding] = useState<Invoice | null>(null);
+  const [paying, setPaying] = useState<Invoice | null>(null);
+  const [payDate, setPayDate] = useState("");
   const [notice, setNotice] = useState("");
 
   const invoices = useMemo(() => edited ?? (today ? sampleInvoices(today) : []), [edited, today]);
@@ -73,8 +77,12 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
     onEdit: (i) => setFormFor(i),
     onDelete: (i) => setDeleting(i),
     onSend: (i) => { patch(i.id, markSent); setNotice(`${i.number} marked as sent.`); },
-    onPay: (i) => { patch(i.id, (x) => markPaid(x, today)); setNotice(`${i.number} marked as paid.`); },
-    onVoid: (i) => { patch(i.id, (x) => ({ ...x, status: "void" })); setNotice(`${i.number} voided.`); },
+    onPay: (i) => { setPayDate(today); setPaying(i); },
+    onVoid: (i) => setVoiding(i),
+    onReopen: (i) => {
+      patch(i.id, reopen);
+      setNotice(i.status === "void" ? `${i.number} reopened as a draft.` : `${i.number} payment undone.`);
+    },
     onCopyLink: async (i) => {
       const link = `${window.location.origin}${invoicePath(i)}`;
       try { await navigator.clipboard.writeText(link); setNotice(`Link to ${i.number} copied.`); }
@@ -101,6 +109,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
     }
   };
 
+  const payError = paying ? paymentDateError(paying, payDate, today) : null;
   const summary = summarize(invoices, today);
   const attention = needsAttention(invoices, today);
   const q = query.trim().toLowerCase();
@@ -204,6 +213,64 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
       />
+
+      <Dialog open={!!voiding} onOpenChange={(o) => !o && setVoiding(null)}>
+        <DialogContent variant="alert">
+          <DialogTitle>Void invoice?</DialogTitle>
+          <DialogDescription className="mt-1">
+            {voiding?.number} for {voiding?.client} will stop counting as owed. You can reopen it later.
+          </DialogDescription>
+          <div className="mt-5 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setVoiding(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (voiding) {
+                  patch(voiding.id, voidInvoice);
+                  setNotice(`${voiding.number} voided.`);
+                }
+                setVoiding(null);
+              }}
+            >
+              Void
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!paying} onOpenChange={(o) => !o && setPaying(null)}>
+        <DialogContent variant="alert">
+          <DialogTitle>Mark as paid</DialogTitle>
+          <DialogDescription className="mt-1">When did {paying?.client} pay {paying?.number}?</DialogDescription>
+          <div className="mt-3 space-y-1.5">
+            <Label htmlFor="pay-date">Payment date</Label>
+            <Input
+              id="pay-date"
+              type="date"
+              value={payDate}
+              onChange={(e) => setPayDate(e.target.value)}
+              aria-invalid={!!payError}
+              aria-describedby={payError ? "pay-date-error" : undefined}
+            />
+            {payError && <p id="pay-date-error" role="alert" className="text-xs text-destructive">{payError}</p>}
+          </div>
+          <div className="mt-5 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPaying(null)}>Cancel</Button>
+            <Button
+              disabled={!!payError}
+              onClick={() => {
+                if (paying && !payError) {
+                  patch(paying.id, (x) => markPaid(x, payDate));
+                  setNotice(`${paying.number} marked as paid.`);
+                  setPaying(null);
+                }
+              }}
+            >
+              Mark paid
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <DialogContent variant="alert">

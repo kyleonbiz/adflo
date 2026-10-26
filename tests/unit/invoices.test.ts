@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
   invoiceAlerts, invoiceState, invoicesToCsv, markPaid, markSent, needsAttention, nextInvoiceNumber,
-  nextOverdueNotice, nextRecurringInvoice, nextReminder, hasNextInvoice, summarize, formatMoney, daysOverdue,
+  nextOverdueNotice, nextRecurringInvoice, nextReminder, hasNextInvoice, paymentDateError, reopen, voidInvoice, summarize, formatMoney, daysOverdue,
 } from "@/lib/invoices/logic";
 import { sampleInvoices } from "@/lib/invoices/sample-data";
 import type { Invoice } from "@/lib/invoices/types";
@@ -175,5 +175,21 @@ describe("shared invoice link", () => {
     const { decodeInvoice } = await import("@/lib/invoices/share");
     expect(decodeInvoice("not*valid")).toBeNull();
     expect(decodeInvoice("e30")).toBeNull(); // {}
+  });
+});
+
+describe("void, reopen and payment date", () => {
+  it("reopens a void invoice as a draft and an unpaid-again invoice as sent", () => {
+    expect(reopen(voidInvoice(inv())).status).toBe("draft");
+    const paid = markPaid(inv(), "2026-10-20");
+    expect(reopen(paid)).toMatchObject({ status: "sent", paidOn: null });
+    expect(reopen(inv({ status: "draft" })).status).toBe("draft");
+  });
+  it("accepts a past payment date but not one before issue, in the future or invalid", () => {
+    const i = inv({ issuedOn: "2026-10-01" });
+    expect(paymentDateError(i, "2026-10-10", TODAY)).toBeNull();
+    expect(paymentDateError(i, "2026-09-30", TODAY)).toMatch(/before/);
+    expect(paymentDateError(i, "2026-10-26", TODAY)).toMatch(/future/);
+    expect(paymentDateError(i, "nope", TODAY)).toMatch(/valid/);
   });
 });

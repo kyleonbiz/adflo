@@ -31,6 +31,7 @@ test.describe("invoices module", () => {
 
     const overdue = page.getByTestId("invoice-card").filter({ hasText: "INV-0041" });
     await overdue.getByRole("button", { name: "Mark paid" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Mark paid" }).click();
     await expect(overdue.getByText("Paid", { exact: true })).toBeVisible();
     await expect(page.getByRole("region", { name: "Needs attention" })).not.toContainText("INV-0041");
 
@@ -65,7 +66,14 @@ test.describe("invoices module", () => {
     await expect(page.getByTestId("invoice-card").filter({ hasText: "Globex Inc" })).toBeVisible();
 
     await page.getByRole("button", { name: "Void INV-0046" }).click();
-    await expect(page.getByTestId("invoice-card").filter({ hasText: "Globex Inc" }).getByText("Void", { exact: true })).toBeVisible();
+    await page.getByRole("dialog").getByRole("button", { name: "Void" }).click();
+    const voided = page.getByTestId("invoice-card").filter({ hasText: "Globex Inc" });
+    await expect(voided.getByText("Void", { exact: true })).toBeVisible();
+
+    await voided.getByRole("button", { name: "Reopen" }).click();
+    await expect(voided.getByText("Draft", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Void INV-0046" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Void" }).click();
 
     await page.getByRole("button", { name: "Delete INV-0046" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();

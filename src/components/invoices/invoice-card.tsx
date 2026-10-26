@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Link2 } from "lucide-react";
+import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Link2, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDayLong } from "@/lib/dates";
@@ -15,6 +15,7 @@ export interface InvoiceActions {
   onPay: (invoice: Invoice) => void;
   onVoid: (invoice: Invoice) => void;
   onNext: (invoice: Invoice) => void;
+  onReopen: (invoice: Invoice) => void;
   onCopyLink: (invoice: Invoice) => void;
 }
 
@@ -72,6 +73,11 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
               <Button size="sm" variant="outline" onClick={() => actions.onNext(invoice)}><Copy /> Create next</Button>
             )}
             <Button size="sm" variant="outline" onClick={() => actions.onCopyLink(invoice)}><Link2 /> Copy link</Button>
+            {!open && (
+              <Button size="sm" variant="outline" onClick={() => actions.onReopen(invoice)}>
+                <Undo2 /> {invoice.status === "void" ? "Reopen" : "Undo payment"}
+              </Button>
+            )}
             {open && (
               <Button size="icon-sm" variant="ghost" aria-label={`Void ${invoice.number}`} onClick={() => actions.onVoid(invoice)}><Ban /></Button>
             )}
