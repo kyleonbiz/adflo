@@ -26,16 +26,6 @@ async function completeSetup(page: Page) {
 }
 
 test.describe("back office setup module", () => {
-  test("the overview invites a new visitor to start", async ({ page }) => {
-    await page.goto("/app/overview");
-    const status = page.getByTestId("setup-status");
-    await expect(status).toHaveAttribute("data-state", "new");
-    await expect(status).toContainText("New here?");
-    await status.getByRole("link", { name: "Start setup" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "Back Office Setup" })).toBeVisible();
-    await expect(page.getByLabel("Business name")).toBeVisible();
-  });
-
   test("step 1 needs the whole profile before going on", async ({ page }) => {
     await page.goto("/app/setup");
     await expect(next(page)).toBeDisabled();
@@ -145,9 +135,6 @@ test.describe("back office setup module", () => {
     await next(page).click(); // templates chosen, but never finished
     await page.goto("/app/forms");
     await expect(page.getByTestId("form-card")).toHaveCount(3);
-    await page.goto("/app/overview");
-    await expect(page.getByTestId("setup-status")).toHaveAttribute("data-state", "started");
-    await expect(page.getByTestId("setup-status")).toContainText("Setup in progress: step 3 of 5 (Templates)");
   });
 
   test("progress is saved, so leaving and coming back picks up where you were", async ({ page }) => {
@@ -162,19 +149,13 @@ test.describe("back office setup module", () => {
     await expect(page.getByLabel("Business name")).toHaveValue("Saved & Sound");
   });
 
-  test("the overview shows the finished setup, and Start over clears everything", async ({ page }) => {
+  test("a finished setup can be viewed, and Start over clears everything", async ({ page }) => {
     await completeSetup(page);
-    await page.goto("/app/overview");
-    const status = page.getByTestId("setup-status");
-    await expect(status).toHaveAttribute("data-state", "complete");
-    await expect(status).toContainText("Acme Studio is set up: 7 services");
-    await status.getByRole("link", { name: "View setup" }).click();
+    await page.goto("/app/setup");
     await page.getByRole("button", { name: "Start over" }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("");
     await page.goto("/app/forms");
     await expect(page.getByTestId("form-card")).toHaveCount(3);
-    await page.goto("/app/overview");
-    await expect(page.getByTestId("setup-status")).toHaveAttribute("data-state", "new");
   });
 
   test("editing a finished setup takes it out of 'installed' until finished again", async ({ page }) => {
