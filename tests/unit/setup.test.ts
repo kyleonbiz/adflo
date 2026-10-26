@@ -147,7 +147,7 @@ describe("runSetupChecks", () => {
     expect(c["templates-forms"]).toMatchObject({ status: "pass", detail: "1 of 3 installed." });
     expect(byId(config({ modules: ["crm"] }))["templates-crm"]).toBeUndefined(); // CRM has no templates to install
   });
-  it("wants a recurring task when Admin Support is on", () => {
+  it("wants a recurring task when Requests is on", () => {
     expect(byId(config({ modules: ["admin"] })).recurring.status).toBe("warn");
     expect(byId(config({ modules: ["admin"], templates: ["routine-team-agenda"] })).recurring.status).toBe("pass");
     expect(byId(config({ modules: ["crm"] })).recurring).toBeUndefined();
@@ -178,6 +178,7 @@ describe("runSetupChecks", () => {
     const ids = new Set(MODULES.map((m) => m.id));
     for (const m of AVAILABLE_MODULE_IDS) expect(ids.has(m)).toBe(true);
     expect(AVAILABLE_MODULE_IDS).not.toContain("setup");
-    expect(AVAILABLE_MODULE_IDS).toHaveLength(10);
+    expect(AVAILABLE_MODULE_IDS).not.toContain("file-reset"); // a one-time tool, not a service
+    expect(AVAILABLE_MODULE_IDS).toHaveLength(9);
   });
 });

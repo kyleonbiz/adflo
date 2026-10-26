@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { FilesPage } from "@/components/files/files-page";
 import { renderAppShell } from "@/lib/app-shell";
 
-export const metadata: Metadata = { title: "Business File Reset" };
+export const metadata: Metadata = { title: "Tidy up files" };
 export const dynamic = "force-dynamic";
 
 export default function FileResetRoute() {

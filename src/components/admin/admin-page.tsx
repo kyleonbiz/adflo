@@ -84,7 +84,7 @@ function RequestCard({
 }
 
 /**
- * Admin Support. Requests and recurring tasks live in this component's state (starting empty
+ * Requests. Requests and recurring tasks live in this component's state (starting empty
  * data) until the database is connected. Categories and approval flags come from fixed keyword rules,
  * not an AI service, and the digest is shown on screen rather than emailed.
  */
@@ -138,7 +138,7 @@ export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: 
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin Support</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Requests</h1>
           <p className="text-sm text-muted-foreground">One inbox for requests, recurring tasks and reminders, with approval for anything risky.</p>
         </div>
         <div className="flex flex-wrap gap-2">

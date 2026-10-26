@@ -37,7 +37,7 @@ export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: ()
   const pathname = usePathname();
   const modules: Item[] = MODULES.flatMap((m) => {
     const href = moduleHref(m, base);
-    return href && m.id !== "setup" ? [{ id: m.id, label: m.name, href }] : [];
+    return href && m.id !== "setup" && !m.hidden ? [{ id: m.id, label: m.name, href }] : [];
   });
   const setup = MODULES.find((m) => m.id === "setup");
   const setupHref = setup ? moduleHref(setup, base) : null;

@@ -26,7 +26,7 @@ const textareaClass = "flex w-full rounded-lg border border-input bg-card px-3 p
 interface LoadNotes { skipped: SkippedFile[]; unhashed: number; truncated: boolean; source: string }
 
 /**
- * Business File Reset. Files are read in the browser and compared there; nothing is uploaded and nothing
+ * Tidy up files. Files are read in the browser and compared there; nothing is uploaded and nothing
  * on the computer is changed. The result is a reviewed plan plus scripts that only move and rename.
  */
 export function FilesPage({ preview }: { preview?: string }) {
@@ -78,8 +78,8 @@ export function FilesPage({ preview }: { preview?: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Business File Reset</h1>
-          <p className="text-sm text-muted-foreground">Find duplicates, tidy names and sort a messy folder, with a preview and your approval before anything moves.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Tidy up files</h1>
+          <p className="text-sm text-muted-foreground">A one-time cleanup: find duplicates, tidy names and sort a messy folder, with a preview and your approval before anything moves.</p>
         </div>
         {files && <Button variant="outline" onClick={() => { setFiles(null); setNotes(null); setApproved(false); setNotice(""); }}>Start over</Button>}
       </div>

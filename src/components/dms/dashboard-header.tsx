@@ -1,4 +1,5 @@
-import { Upload, Users } from "lucide-react";
+import { FolderTree, Upload, Users } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import type { StorageUsage } from "@/lib/dms/types";
 import { StorageUsageIndicator } from "./storage-usage-indicator";
@@ -29,6 +30,9 @@ export function DashboardHeader({
             <StorageUsageIndicator usage={usage} compact />
           </div>
         )}
+        <Button variant="outline" asChild className="w-full sm:w-auto">
+          <Link href="/app/file-reset"><FolderTree /> Tidy up files</Link>
+        </Button>
         {onTeam && (
           <Button variant="outline" onClick={onTeam} className="w-full sm:w-auto">
             <Users /> Team

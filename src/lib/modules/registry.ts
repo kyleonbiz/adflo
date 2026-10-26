@@ -8,6 +8,8 @@ export interface PlatformModule {
   /** Path segment under /app (or /demo). Only set for modules that exist. */
   slug?: string;
   status: ModuleStatus;
+  /** One-time tools: reachable by link, but not a service in the menu or in setup. */
+  hidden?: boolean;
 }
 
 /** The eleven service modules of the client portal, in catalogue order. */
@@ -28,10 +30,10 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Reusable forms, submission tracking, document generation and approvals." },
   { id: "reporting", number: "08", name: "Reporting", slug: "reporting", status: "available",
     summary: "Turn raw files into organized records and scheduled reports." },
-  { id: "admin", number: "09", name: "Admin Support", slug: "admin", status: "available",
+  { id: "admin", number: "09", name: "Requests", slug: "admin", status: "available",
     summary: "Requests, recurring tasks and reminders in one place." },
-  { id: "file-reset", number: "10", name: "Business File Reset", slug: "file-reset", status: "available",
-    summary: "Guided cleanup: duplicates, folder structure and filenames, with preview and approval." },
+  { id: "file-reset", number: "10", name: "Tidy up files", slug: "file-reset", status: "available", hidden: true,
+    summary: "One-time cleanup: duplicates, folder structure and filenames, with preview and approval." },
   { id: "setup", number: "11", name: "Settings", slug: "setup", status: "available",
     summary: "Guided onboarding: pick services, import data and configure recurring workflows." },
 ];

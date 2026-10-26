@@ -202,7 +202,11 @@ test.describe("business file reset module", () => {
 
   test("is available in the signed-in app too", async ({ page }) => {
     await page.goto("/app/file-reset");
-    await expect(page.getByRole("heading", { level: 1, name: "Business File Reset" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Business File Reset", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1, name: "Tidy up files" })).toBeVisible();
+    // A one-time tool: not in the menu, reached from Documents and from setup.
+    await expect(page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Tidy up files" })).toHaveCount(0);
+    await page.goto("/app");
+    await page.getByRole("link", { name: "Tidy up files" }).click();
+    await expect(page).toHaveURL(/\/app\/file-reset$/);
   });
 });
