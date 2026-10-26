@@ -181,7 +181,7 @@ test.describe("admin support module", () => {
 
   test("is available in the signed-in app too", async ({ page }) => {
     await page.goto("/app/admin");
-    await expect(page.getByRole("heading", { level: 1, name: "Admin Support" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Admin Support", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1, name: "Requests" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Requests", exact: true })).toHaveAttribute("aria-current", "page");
   });
 });

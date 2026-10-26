@@ -25,8 +25,8 @@ The app is growing from a document manager into a client portal of eleven servic
 **05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Projects**
 (`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
-(`src/lib/datasets/`, `src/components/reporting/`) and **09 Admin Support** (`src/lib/admin/`,
-`src/components/admin/`) **10 Business File Reset** (`src/lib/files/`, `src/components/files/`) and **11 Settings**
+(`src/lib/datasets/`, `src/components/reporting/`) and **09 Requests** (`src/lib/admin/`,
+`src/components/admin/`) **10 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **11 Settings**
 (`src/lib/setup/`, `src/components/setup/`). Every service starts empty and keeps its records in the browser until the database is
 connected (see the limits below).
 
@@ -53,12 +53,12 @@ browser and never uploaded.
   break the rules with the file line and reason, drops exact repeats, then builds grouped reports (dates by
   month) and exports CSV or a real `.xlsx` workbook (written with `fflate`; text is stored as plain text, so
   `=CMD()` can never run as a formula). Scheduled summaries show the next send date and a preview but nothing
-  is emailed until there is a backend. Admin Support suggests a category and priority
+  is emailed until there is a backend. Requests suggests a category and priority
   from fixed keyword rules (**not an AI service**, and it shows which words matched), holds anything that moves
   money, changes access, deletes or commits the business until a person approves it, fills a request from a
   pasted email (subject, sender, body; quoted replies dropped), creates one request per due recurring task
   (never a pile after missed runs), shows a daily digest on screen, and exports an `.ics` calendar of due dates.
-  No email is sent or read and no calendar is connected: those need a backend. Business File Reset reads a folder chosen in the browser,
+  No email is sent or read and no calendar is connected: those need a backend. Tidy up files reads a folder chosen in the browser,
   hashes every file there (SHA-256, files up to 50 MB, 500 MB in total) so identical files are found without
   uploading anything, and builds a plan: standardized names, duplicates moved to a review folder (never
   deleted), misplaced files moved to the right folder, and optionally everything sorted into suggested
@@ -72,7 +72,7 @@ browser and never uploaded.
   modules with industry and team-size recommendations, templates, existing data, automatic checks). Progress
   is saved in the browser after every change (`localStorage`, validated and cleaned on load, so damaged or
   hand-edited data is ignored). Finishing installs the chosen templates for real: forms appear in Forms &
-  Paperwork, recurring tasks in Admin Support and starter records in Licenses & Renewals. An unfinished or
+  Paperwork, recurring tasks in Requests and starter records in Licenses & Renewals. An unfinished or
   edited setup installs nothing. Choices are per browser, not per account, until the database is connected.
   Forms are built in the app, validated on submit,
   routed to a named approver when required, and turned into a text document by filling `{{Field label}}`

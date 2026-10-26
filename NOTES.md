@@ -6,6 +6,6 @@
 - [x] **Settings page** — renamed; tabs: Business profile, Team, Notifications, Appearance, Guided setup (`/app/setup?tab=...`).
 - [ ] **Admin research** — what else can an admin do?
 - [x] **Rename "Data Entry & Reporting" → "Reporting"** — already done (commit 87dacd6); verify no leftover labels.
-- [ ] **Admin Support (module 09)** — is it needed? What does it mean?
-- [ ] **Business File Reset (module 10)** — discuss whether it's needed at all.
+- [~] **Requests (was Admin Support)** — renamed. Still to do: move recurring tasks into Projects so repeating work lives in one place; approvals stay in Requests.
+- [x] **File reset** — now a one-time "Tidy up files" tool: out of the sidebar, linked from Documents and Guided setup.
 - [x] **Day/Night view switch** — done, in Settings › Appearance (Day, Night, Match my device).

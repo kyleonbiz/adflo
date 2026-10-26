@@ -218,6 +218,10 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
                 );
               })}
             </ul>
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-dashed p-3 text-sm">
+              <span><span className="font-medium">Messy folder?</span><span className="block text-xs text-muted-foreground">Tidy it up once before you upload: duplicates, names and folders, with a preview.</span></span>
+              <Link href={`${base}/file-reset`} className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">Tidy up files <ExternalLink className="size-3.5" aria-hidden /></Link>
+            </div>
           </>
         )}
 
@@ -258,7 +262,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
 
 /**
  * Guided setup (a Settings tab). The choices are saved in this browser (not a database), so nothing leaves the
- * device. Templates installed here appear inside Forms, Admin Support and Licenses once setup is finished.
+ * device. Templates installed here appear inside Forms, Requests and Licenses once setup is finished.
  */
 export function SetupPage({ base, preview }: { base: "/app"; preview?: string }) {
   const today = useToday();

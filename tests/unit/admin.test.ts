@@ -217,7 +217,7 @@ describe("ics", () => {
   });
   it("ends the year correctly and handles an empty list", () => {
     expect(toIcs([{ uid: "x", day: "2026-12-31", summary: "s" }], "2026-10-25")).toContain("DTEND;VALUE=DATE:20270101");
-    expect(toIcs([], "2026-10-25")).toBe("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//AdFlo//Admin Support//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nEND:VCALENDAR\r\n");
+    expect(toIcs([], "2026-10-25")).toBe("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//AdFlo//Requests//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nEND:VCALENDAR\r\n");
   });
   it("includes active dated requests and every routine, skipping done and undated ones", () => {
     const events = calendarEvents(sampleRequests(TODAY), sampleRoutines(TODAY));

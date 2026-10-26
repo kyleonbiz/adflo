@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AdminPage } from "@/components/admin/admin-page";
 import { renderAppShell } from "@/lib/app-shell";
 
-export const metadata: Metadata = { title: "Admin Support" };
+export const metadata: Metadata = { title: "Requests" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminRoute({ searchParams }: PageProps<"/app/admin">) {

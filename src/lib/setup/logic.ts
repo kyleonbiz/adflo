@@ -68,13 +68,12 @@ export function recommendModules(industry: Industry | "", teamSize: TeamSize | "
   return list.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
 }
 
-export const AVAILABLE_MODULE_IDS = MODULES.filter((m) => m.status === "available" && m.id !== "setup").map((m) => m.id);
+export const AVAILABLE_MODULE_IDS = MODULES.filter((m) => m.status === "available" && m.id !== "setup" && !m.hidden).map((m) => m.id);
 
 /** Modules that have existing data worth bringing in, and where to do it. */
 export const IMPORTABLE: Record<string, string> = {
   crm: "Import your contact list (CSV).",
   reporting: "Import a spreadsheet to clean and report on.",
-  "file-reset": "Scan a messy folder and tidy it.",
   documents: "Upload your existing files.",
   invoices: "Add your open invoices.",
   vendors: "Add your current suppliers.",
@@ -142,7 +141,7 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
     checks.push(
       recurring
         ? { id: "recurring", status: "pass", title: "Recurring workflow", detail: "Recurring tasks are set up.", step: 2 }
-        : { id: "recurring", status: "warn", title: "Recurring workflow", detail: "Admin Support is on, but no recurring task is installed. Add one so routine work creates itself.", step: 2 },
+        : { id: "recurring", status: "warn", title: "Recurring workflow", detail: "Requests is on, but no recurring task is installed. Add one so routine work creates itself.", step: 2 },
     );
   }
   if (has("vendors") && !has("forms")) {
@@ -152,7 +151,7 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
     checks.push({ id: "invoices-crm", status: "warn", title: "Client contacts", detail: "Add CRM & Data to keep the contacts behind your invoices clean.", step: 1 });
   }
   if (has("licenses") && !has("admin")) {
-    checks.push({ id: "licenses-admin", status: "warn", title: "Renewal follow-up", detail: "Admin Support gives renewal work a place to land.", step: 1 });
+    checks.push({ id: "licenses-admin", status: "warn", title: "Renewal follow-up", detail: "Requests gives renewal work a place to land.", step: 1 });
   }
   for (const id of c.modules) {
     if (!IMPORTABLE[id]) continue;

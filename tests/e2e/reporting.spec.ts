@@ -46,7 +46,7 @@ test.describe("reporting module", () => {
     await expect(report).toContainText("Billed by client");
     expect(await page.getByTestId("report-record").count()).toBeGreaterThan(0);
 
-    for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork", "Admin Support"]) {
+    for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork", "Requests"]) {
       await page.getByRole("tab", { name }).click();
       await expect(page.getByTestId("module-report")).toContainText(name);
       expect(await page.getByTestId("report-metric").count()).toBe(4);

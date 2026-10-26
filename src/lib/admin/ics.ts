@@ -37,7 +37,7 @@ const compact = (day: string) => day.replace(/-/g, "");
 
 /** A calendar file (.ics) of all-day events. `stamp` is the creation day, used for DTSTAMP. */
 export function toIcs(events: CalendarEvent[], stamp: string): string {
-  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//AdFlo//Admin Support//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//AdFlo//Requests//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
   for (const e of events) {
     lines.push(
       "BEGIN:VEVENT",
