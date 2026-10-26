@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 const NAMES = [
-  "Home", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
+  "Home", "AI Assistant", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
   "Reporting", "Admin Support", "Business File Reset", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
@@ -21,11 +21,11 @@ test.describe("module sidebar on a wide screen", () => {
     for (let i = 1; i < boxes.length; i++) expect(boxes[i]!.y).toBeGreaterThan(boxes[i - 1]!.y);
     for (const b of boxes) expect(b!.x + b!.width).toBeLessThanOrEqual(270); // inside a sidebar about 256px wide, no sideways scrolling
 
-    const gapBeforeSetup = boxes[11]!.y - (boxes[10]!.y + boxes[10]!.height);
-    const gapBetweenOthers = boxes[5]!.y - (boxes[4]!.y + boxes[4]!.height);
+    const gapBeforeSetup = boxes[12]!.y - (boxes[11]!.y + boxes[11]!.height);
+    const gapBetweenOthers = boxes[6]!.y - (boxes[5]!.y + boxes[5]!.height);
     expect(gapBeforeSetup).toBeGreaterThan(gapBetweenOthers + 20); // set apart
     const viewport = page.viewportSize()!;
-    expect(boxes[11]!.y + boxes[11]!.height).toBeGreaterThan(viewport.height - 120); // down at the bottom
+    expect(boxes[12]!.y + boxes[12]!.height).toBeGreaterThan(viewport.height - 120); // down at the bottom
   });
 
   test("highlights the current module and moves the highlight when you navigate", async ({ page }) => {
