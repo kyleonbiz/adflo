@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  cleanValues, createSubmission, decide, generateDocument, submissionsToCsv, summarize, validateSubmission,
+  approvalQueue, formNameTaken, sortSubmissions, cleanValues, createSubmission, decide, generateDocument, submissionsToCsv, summarize, validateSubmission,
 } from "@/lib/forms/logic";
 import { sampleForms, sampleSubmissions } from "@/lib/forms/sample-data";
 import type { FormTemplate } from "@/lib/forms/types";
-import { formBuilderSchema } from "@/lib/forms/validation";
+import { installedForms, TEMPLATES } from "@/lib/setup/templates";
+import { formBuilderSchema, unknownPlaceholders } from "@/lib/forms/validation";
 
 const TODAY = "2026-10-25";
 const forms = sampleForms();
@@ -114,5 +115,52 @@ describe("formBuilderSchema", () => {
     const r = formBuilderSchema.safeParse({ ...ok, ...patch });
     expect(r.success).toBe(false);
     if (!r.success) expect(JSON.stringify(r.error.issues)).toContain(text);
+  });
+});
+
+describe("approvalQueue", () => {
+  it("lists pending submissions, longest-waiting first, with days waiting", () => {
+    const q = approvalQueue(forms, sampleSubmissions(TODAY), TODAY);
+    expect(q.map((x) => [x.submission.id, x.daysWaiting])).toEqual([["s-1", 2], ["s-3", 1]]);
+    expect(q[0].form.id).toBe("form-vendor");
+  });
+  it("ignores submissions whose form no longer exists", () => {
+    expect(approvalQueue(forms.filter((f) => f.id !== "form-vendor"), sampleSubmissions(TODAY), TODAY).map((x) => x.submission.id)).toEqual(["s-3"]);
+  });
+});
+
+describe("sortSubmissions", () => {
+  it("puts pending first, then newest first", () => {
+    const subs = sampleSubmissions(TODAY).filter((s) => s.formId !== "form-feedback");
+    expect(sortSubmissions(subs).map((s) => s.id)).toEqual(["s-3", "s-1", "s-2", "s-4"]);
+  });
+});
+
+describe("formNameTaken", () => {
+  it("compares names ignoring case and spacing, and skips the form being edited", () => {
+    expect(formNameTaken(forms, "  time-off REQUEST ")).toBe(true);
+    expect(formNameTaken(forms, "time-off request", "form-leave")).toBe(false);
+    expect(formNameTaken(forms, "Something new")).toBe(false);
+  });
+});
+
+describe("document template placeholders", () => {
+  const base = { name: "Request", description: "", requiresApproval: false, approver: "",
+    fields: [{ id: "a", label: "Item", type: "text", required: true, options: [] }] };
+  it("lists unknown placeholders once, ignoring case and spacing", () => {
+    expect(unknownPlaceholders("{{ item }} {{Cost}} {{cost}} {{Who}}", new Set(["item"]))).toEqual(["Cost", "Who"]);
+  });
+  it("rejects a template that names a field that does not exist", () => {
+    const r = formBuilderSchema.safeParse({ ...base, documentTemplate: "Needs {{Item}} and {{Cost}}" });
+    expect(r.success).toBe(false);
+    expect(r.error?.issues[0].message).toContain("{{Cost}}");
+    expect(formBuilderSchema.safeParse({ ...base, documentTemplate: "Needs {{item}}" }).success).toBe(true);
+  });
+  it("accepts every form that Back Office Setup can install", () => {
+    const ids = TEMPLATES.filter((t) => t.kind === "form").map((t) => t.id);
+    for (const f of installedForms(ids)) {
+      const r = formBuilderSchema.safeParse({ ...f, fields: f.fields });
+      expect(r.error?.issues ?? [], f.name).toEqual([]);
+    }
   });
 });

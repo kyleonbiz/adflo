@@ -1,4 +1,4 @@
-import { formatDayLong, isDay } from "@/lib/dates";
+import { daysBetween, formatDayLong, isDay } from "@/lib/dates";
 import { toCsv } from "@/lib/csv";
 import type { FormField, FormTemplate, Submission } from "./types";
 
@@ -103,6 +103,33 @@ export function submissionsToCsv(form: FormTemplate, subs: Submission[]): string
       ...form.fields.map((f) => displayValue(f, s.values[f.id])),
     ]),
   ]);
+}
+
+export interface QueueItem {
+  form: FormTemplate;
+  submission: Submission;
+  daysWaiting: number;
+}
+
+/** Every submission still waiting for a decision, longest-waiting first. */
+export function approvalQueue(forms: FormTemplate[], subs: Submission[], today: string): QueueItem[] {
+  const byId = new Map(forms.map((f) => [f.id, f]));
+  return subs
+    .filter((s) => s.status === "pending" && byId.has(s.formId))
+    .map((s) => ({ form: byId.get(s.formId)!, submission: s, daysWaiting: Math.max(0, daysBetween(s.submittedOn, today)) }))
+    .sort((a, b) => b.daysWaiting - a.daysWaiting || a.submission.submittedBy.localeCompare(b.submission.submittedBy));
+}
+
+/** Newest first, with anything awaiting a decision on top. */
+export function sortSubmissions(subs: Submission[]): Submission[] {
+  return [...subs].sort((a, b) =>
+    Number(b.status === "pending") - Number(a.status === "pending") || (a.submittedOn < b.submittedOn ? 1 : a.submittedOn > b.submittedOn ? -1 : 0));
+}
+
+/** True when another form already uses this name (ignoring case and spacing). */
+export function formNameTaken(forms: FormTemplate[], name: string, exceptId?: string): boolean {
+  const key = name.trim().toLowerCase();
+  return forms.some((f) => f.id !== exceptId && f.name.trim().toLowerCase() === key);
 }
 
 export interface PortfolioSummary {

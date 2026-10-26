@@ -13,6 +13,16 @@ const fieldSchema = z
     path: ["options"], message: "A dropdown needs at least two options",
   });
 
+/** Placeholder names in `{{...}}` form that are not in `labels` (lower-case). Each is listed once. */
+export function unknownPlaceholders(template: string, labels: Set<string>): string[] {
+  const out = new Map<string, string>();
+  for (const m of template.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)) {
+    const name = m[1];
+    if (!labels.has(name.toLowerCase()) && !out.has(name.toLowerCase())) out.set(name.toLowerCase(), name);
+  }
+  return [...out.values()];
+}
+
 export const formBuilderSchema = z
   .object({
     name: z.string().trim().min(2, "Enter a form name").max(120, "Keep it under 120 characters"),
@@ -28,6 +38,12 @@ export const formBuilderSchema = z
       const key = f.label.trim().toLowerCase();
       if (seen.has(key)) ctx.addIssue({ code: "custom", path: ["fields"], message: `Two fields are called "${f.label.trim()}". Labels must be unique.` });
       seen.add(key);
+    }
+    // A placeholder that matches no field label would silently print as blank in the document.
+    const labels = new Set(v.fields.map((f) => f.label.trim().toLowerCase()));
+    const unknown = unknownPlaceholders(v.documentTemplate, labels);
+    if (unknown.length > 0) {
+      ctx.addIssue({ code: "custom", path: ["documentTemplate"], message: `The document template uses ${unknown.map((u) => `{{${u}}}`).join(", ")}, but no field has ${unknown.length === 1 ? "that label" : "those labels"}.` });
     }
     if (v.requiresApproval && v.approver.trim() === "") ctx.addIssue({ code: "custom", path: ["approver"], message: "Enter who approves submissions" });
   });
