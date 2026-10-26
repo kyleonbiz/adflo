@@ -15,7 +15,7 @@ export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?
   const [open, setOpen] = useState(false);
   return (
     <div className="min-h-dvh lg:flex">
-      <aside className="hidden border-r bg-card lg:sticky lg:top-0 lg:block lg:h-dvh lg:w-64 lg:shrink-0 lg:overflow-y-auto">
+      <aside className="hidden border-r border-white/5 bg-brand-navy lg:sticky lg:top-0 lg:block lg:h-dvh lg:w-64 lg:shrink-0 lg:overflow-y-auto">
         <SidebarNav base={base} />
       </aside>
 
@@ -31,10 +31,10 @@ export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?
                 </DialogPrimitive.Trigger>
                 <DialogPrimitive.Portal>
                   <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-slate-950/30 backdrop-blur-[2px] lg:hidden" />
-                  <DialogPrimitive.Content className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] animate-fade-in overflow-y-auto bg-card shadow-float outline-none lg:hidden">
+                  <DialogPrimitive.Content className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] animate-fade-in overflow-y-auto bg-brand-navy shadow-float outline-none lg:hidden">
                     <DialogPrimitive.Title className="sr-only">Menu</DialogPrimitive.Title>
                     <DialogPrimitive.Description className="sr-only">Choose a module</DialogPrimitive.Description>
-                    <DialogPrimitive.Close aria-label="Close menu" className="absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring">
+                    <DialogPrimitive.Close aria-label="Close menu" className="absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full text-slate-300 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-brand-sky">
                       <X className="size-4" aria-hidden />
                     </DialogPrimitive.Close>
                     <SidebarNav base={base} onNavigate={() => setOpen(false)} />

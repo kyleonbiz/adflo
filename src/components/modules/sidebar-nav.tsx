@@ -22,8 +22,8 @@ function NavLink({ item, active, onNavigate }: { item: Item; active: boolean; on
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-        active ? "bg-accent text-primary" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        "flex h-10 items-center gap-3 rounded-xl px-3 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand-sky",
+        active ? "bg-brand-blue/20 text-white shadow-[inset_3px_0_0_0_var(--brand-sky)]" : "text-slate-300 hover:bg-white/8 hover:text-white",
       )}
     >
       <Icon className="size-[18px] shrink-0" aria-hidden />
@@ -44,8 +44,8 @@ export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: ()
   const overview: Item = { id: "overview", label: "Home", href: `${base}/overview` };
 
   return (
-    <div className="flex h-full flex-col gap-4 p-4">
-      <Brand wordmark href={`${base}/overview`} className="w-44 px-1" />
+    <div className="flex h-full flex-col gap-4 bg-brand-navy p-4">
+      <Brand wordmark light href={`${base}/overview`} className="w-44 px-1" />
       <nav aria-label="Modules" className="flex flex-1 flex-col">
         <ul className="space-y-1">
           {[overview, ...modules].map((item) => (
@@ -53,7 +53,7 @@ export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: ()
           ))}
         </ul>
         {setup && setupHref && (
-          <ul className="mt-auto space-y-1 border-t pt-3">
+          <ul className="mt-auto space-y-1 border-t border-white/10 pt-3">
             <li><NavLink item={{ id: "setup", label: setup.name, href: setupHref }} active={isActive(pathname, setupHref, base)} onNavigate={onNavigate} /></li>
           </ul>
         )}
