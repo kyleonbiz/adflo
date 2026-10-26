@@ -99,14 +99,14 @@ test.describe("projects module", () => {
     await expect(dialog.getByText(/^Checklist/)).toHaveCount(0);
 
     await dialog.getByRole("combobox", { name: "Start from a template" }).click();
-    await page.getByRole("option", { name: "Vendor onboarding" }).click();
-    await expect(dialog.getByLabel("Project name")).toHaveValue("Vendor onboarding");
+    await page.getByRole("option", { name: "Vendor Onboarding" }).click();
+    await expect(dialog.getByLabel("Project name")).toHaveValue("Vendor Onboarding");
     await expect(dialog).toContainText("7 of 7 tasks will be added");
     await dialog.getByRole("checkbox", { name: /Collect business license copy/ }).uncheck();
     await expect(dialog).toContainText("6 of 7 tasks will be added");
     await dialog.getByRole("button", { name: "Create project" }).click();
 
-    const card = page.getByTestId("project-card").filter({ hasText: "Vendor onboarding" });
+    const card = page.getByTestId("project-card").filter({ hasText: "Vendor Onboarding" });
     await expect(card).toContainText("0 of 6 tasks");
     await expect(page.getByRole("status")).toContainText("created with 6 tasks");
     // The new project opens so the checklist is visible straight away.

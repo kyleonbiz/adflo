@@ -23,7 +23,7 @@ export interface ProjectTemplate {
 export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   {
     id: "client-onboarding",
-    name: "Client onboarding",
+    name: "Client Onboarding",
     summary: "Welcome a new client and get their records and access set up.",
     description: "Set up the client's workspace, collect their files and train their team.",
     durationDays: 30,
@@ -42,7 +42,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   },
   {
     id: "employee-onboarding",
-    name: "Employee onboarding",
+    name: "Employee Onboarding",
     summary: "Paperwork, access and first-week setup for a new hire.",
     description: "Complete hiring paperwork, set up accounts and equipment, and plan the first 30 days.",
     durationDays: 30,
@@ -59,7 +59,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   },
   {
     id: "vendor-onboarding",
-    name: "Vendor onboarding",
+    name: "Vendor Onboarding",
     summary: "Approve a new vendor with the right paperwork on file.",
     description: "Collect compliance documents and approve the vendor before the first payment.",
     durationDays: 14,
@@ -75,7 +75,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   },
   {
     id: "license-renewal",
-    name: "License and permit renewal",
+    name: "License And Permit Renewal",
     summary: "Renew expiring licenses, permits and insurance on time.",
     description: "Audit what expires, file renewals and keep copies in the right folders.",
     durationDays: 45,
@@ -91,7 +91,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   },
   {
     id: "monthly-close",
-    name: "Monthly bookkeeping close",
+    name: "Monthly Bookkeeping Close",
     summary: "A repeatable month-end checklist.",
     description: "Reconcile accounts, chase missing receipts and send the monthly summary.",
     durationDays: 10,
@@ -107,7 +107,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   },
   {
     id: "records-cleanup",
-    name: "Records cleanup",
+    name: "Records Cleanup",
     summary: "Tidy files, remove duplicates and fix naming.",
     description: "Standardize file names, remove duplicates and archive what is no longer needed.",
     durationDays: 30,
