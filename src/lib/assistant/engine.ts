@@ -47,7 +47,7 @@ function askNext(config: SetupConfig): Reply {
   };
 }
 
-function deploy(config: SetupConfig, today: string): Reply {
+export function deploy(config: SetupConfig, today: string): Reply {
   const templates = [...new Set(config.modules.flatMap((id) => templatesFor(id).map((t) => t.id)))];
   const deployed = { ...config, templates, step: 4 };
   const checks = runSetupChecks(deployed);
