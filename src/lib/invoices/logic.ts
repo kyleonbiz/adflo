@@ -1,6 +1,6 @@
 import { addDays, advanceDay, daysBetween, isDay } from "@/lib/dates";
 import { csvCell } from "@/lib/csv";
-import type { Invoice, InvoiceAlert, InvoiceState, Recurrence } from "./types";
+import type { Invoice, InvoiceAlert, InvoiceItem, InvoiceState, Recurrence } from "./types";
 
 /** Within this many days of the due date an unpaid invoice is "due soon". */
 export const DUE_SOON_DAYS = 7;
@@ -11,6 +11,32 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export function formatMoney(cents: number): string {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+export const lineCents = (item: InvoiceItem) => Math.round(item.qty * item.rateCents);
+
+/** Subtotal, tax and total in cents. Tax is rounded to the nearest cent on the whole subtotal. */
+export function invoiceTotals(items: InvoiceItem[], taxRate: number) {
+  const subtotalCents = items.reduce((sum, i) => sum + lineCents(i), 0);
+  const taxCents = Math.round((subtotalCents * taxRate) / 100);
+  return { subtotalCents, taxCents, totalCents: subtotalCents + taxCents };
+}
+
+/** "File reorg" or "File reorg +2 more". */
+export function describeItems(items: InvoiceItem[]): string {
+  if (items.length === 0) return "";
+  return items.length === 1 ? items[0].description : `${items[0].description} +${items.length - 1} more`;
+}
+
+/** `INV-260914-7415`: the issue date (YY MM DD) plus four digits, avoiding numbers already in use. */
+export function generateInvoiceNumber(issuedOn: string, taken: Iterable<string>, random: () => number = Math.random): string {
+  const used = new Set([...taken].map((n) => n.toLowerCase()));
+  const stamp = issuedOn.slice(2).replace(/-/g, "");
+  for (let tries = 0; tries < 50; tries++) {
+    const candidate = `INV-${stamp}-${String(Math.floor(random() * 9000) + 1000)}`;
+    if (!used.has(candidate.toLowerCase())) return candidate;
+  }
+  return nextInvoiceNumber(`INV-${stamp}-1000`, used);
 }
 
 export function invoiceState(inv: Invoice, today: string): InvoiceState {

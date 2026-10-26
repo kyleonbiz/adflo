@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
   invoiceAlerts, invoiceState, invoicesToCsv, markPaid, markSent, needsAttention, nextInvoiceNumber,
-  nextOverdueNotice, nextRecurringInvoice, nextReminder, hasNextInvoice, paymentDateError, reopen, voidInvoice, summarize, formatMoney, daysOverdue,
+  nextOverdueNotice, nextRecurringInvoice, nextReminder, hasNextInvoice, invoiceTotals, describeItems, generateInvoiceNumber, paymentDateError, reopen, voidInvoice, summarize, formatMoney, daysOverdue,
 } from "@/lib/invoices/logic";
 import { sampleInvoices } from "@/lib/invoices/sample-data";
 import type { Invoice } from "@/lib/invoices/types";
@@ -12,6 +12,8 @@ const TODAY = "2026-10-25";
 
 const inv = (over: Partial<Invoice> = {}): Invoice => ({
   id: "x", number: "INV-0001", client: "Acme", clientEmail: "", description: "", amountCents: 10_000,
+  items: [{ description: "Work", qty: 1, rateCents: 10_000 }], taxRate: 0, paymentMethods: ["Cash"],
+  sender: { name: "Me LLC", address: "Nashville, TN", phone: "", email: "" },
   issuedOn: "2026-10-01", dueOn: "2026-10-31", status: "sent", paidOn: null,
   recurrence: "none", reminderDays: [7, 1], notes: "", ...over,
 });
@@ -133,16 +135,27 @@ describe("money and form validation", () => {
   it.each(["", "abc", "1.234", "-5", "1,25", "1e3", "12 50"])("rejects %j", (text) => expect(parseDollars(text)).toBeNull());
 
   const valid = {
-    number: "INV-9", client: "Acme Corp", clientEmail: "", description: "", amount: "100", issuedOn: "2026-10-01", dueOn: "2026-10-31",
+    number: "INV-9", fromName: "Me LLC", fromAddress: "Nashville, TN", fromPhone: "", fromEmail: "",
+    client: "Acme Corp", clientEmail: "", items: [{ description: "File reorg", qty: "1", rate: "44.87" }, { description: "x2", qty: "12", rate: "2.00" }],
+    taxRate: "0.925", issuedOn: "2026-10-01", dueOn: "2026-10-31", paymentMethods: "Cash\nCheck",
     recurrence: "none", reminderDays: "7, 1", notes: "",
   };
   it("accepts a valid form and allows no reminders", () => {
-    expect(invoiceFormSchema.parse(valid)).toMatchObject({ amount: 10_000, reminderDays: [7, 1] });
+    expect(invoiceFormSchema.parse(valid)).toMatchObject({
+      items: [{ description: "File reorg", qty: 1, rate: 4_487 }, { description: "x2", qty: 12, rate: 200 }],
+      taxRate: 0.925, paymentMethods: ["Cash", "Check"], reminderDays: [7, 1],
+    });
     expect(invoiceFormSchema.parse({ ...valid, reminderDays: "" }).reminderDays).toEqual([]);
+    expect(invoiceFormSchema.parse({ ...valid, taxRate: "" }).taxRate).toBe(0);
   });
   it.each([
-    [{ amount: "0" }, "more than zero"],
-    [{ amount: "ten" }, "amount like"],
+    [{ items: [{ description: "x", qty: "1", rate: "0" }] }, "more than zero"],
+    [{ items: [{ description: "x", qty: "1", rate: "ten" }] }, "rate like"],
+    [{ items: [{ description: "x", qty: "0", rate: "5" }] }, "quantity above zero"],
+    [{ items: [{ description: "", qty: "1", rate: "5" }] }, "Describe the service"],
+    [{ items: [] }, "at least one"],
+    [{ taxRate: "abc" }, "tax rate"],
+    [{ fromName: "" }, "business name"],
     [{ dueOn: "2026-09-30" }, "before the issue date"],
     [{ client: "A" }, "client name"],
     [{ reminderDays: "0" }, "1 day or more"],
@@ -150,6 +163,19 @@ describe("money and form validation", () => {
     const r = invoiceFormSchema.safeParse({ ...valid, ...patch });
     expect(r.success).toBe(false);
     if (!r.success) expect(JSON.stringify(r.error.issues)).toContain(text);
+  });
+});
+
+describe("totals and invoice numbers", () => {
+  it("matches the reference invoice: $68.87 + 0.925% tax = $69.51", () => {
+    const items = [{ description: "file reorg", qty: 1, rateCents: 4_487 }, { description: "x2", qty: 12, rateCents: 200 }];
+    expect(invoiceTotals(items, 0.925)).toEqual({ subtotalCents: 6_887, taxCents: 64, totalCents: 6_951 });
+    expect(invoiceTotals(items, 0).totalCents).toBe(6_887);
+    expect(describeItems(items)).toBe("file reorg +1 more");
+  });
+  it("numbers new invoices from the issue date and skips numbers in use", () => {
+    expect(generateInvoiceNumber("2026-09-14", [], () => 0.5)).toBe("INV-260914-5500");
+    expect(generateInvoiceNumber("2026-09-14", ["inv-260914-5500"], (() => { let n = 0; return () => [0.5, 0.1][n++]; })())).toBe("INV-260914-1900");
   });
 });
 
@@ -169,7 +195,10 @@ describe("shared invoice link", () => {
     const shared = decodeInvoice(encodeInvoice(inv({ client: "Zoë <b>", notes: "Thanks" })))!;
     expect(shared.client).toBe("Zoë <b>");
     expect(shared).not.toHaveProperty("reminderDays");
-    expect(invoiceHtml(shared)).toContain("Zoë &lt;b&gt;");
+    const html = invoiceHtml(shared);
+    expect(html).toContain("Zoë &lt;b&gt;");
+    expect(html).toContain("Subtotal");
+    expect(html).toContain("Total");
   });
   it("rejects tampered or malformed tokens", async () => {
     const { decodeInvoice } = await import("@/lib/invoices/share");
@@ -204,7 +233,7 @@ describe("invoice email", () => {
     expect(body).toContain("https://app.test/invoice/");
   });
   it("accepts an empty or single valid client email only", () => {
-    const base = { number: "INV-1", client: "Acme", description: "", amount: "10", issuedOn: "2026-10-01", dueOn: "2026-10-31", recurrence: "none", reminderDays: "7", notes: "" };
+    const base = { number: "INV-1", fromName: "Me LLC", fromAddress: "", fromPhone: "", fromEmail: "", client: "Acme", items: [{ description: "x", qty: "1", rate: "10" }], taxRate: "", paymentMethods: "", issuedOn: "2026-10-01", dueOn: "2026-10-31", recurrence: "none", reminderDays: "7", notes: "" };
     const ok = (clientEmail: string) => invoiceFormSchema.safeParse({ ...base, clientEmail }).success;
     expect(ok("")).toBe(true);
     expect(ok("a@b.co")).toBe(true);

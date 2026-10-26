@@ -44,38 +44,53 @@ test.describe("invoices module", () => {
     await page.goto("/app/invoices");
     await page.getByRole("button", { name: "New invoice" }).click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByLabel("Invoice number")).toHaveValue("INV-0046");
+    await expect(dialog.getByLabel("Invoice number")).toHaveValue(/^INV-\d{6}-\d{4}$/);
+    const number = await dialog.getByLabel("Invoice number").inputValue();
     await dialog.getByRole("button", { name: "Create invoice" }).click();
     await expect(dialog.getByRole("alert").first()).toBeVisible();
 
+    await dialog.getByLabel("Business name").fill("Sample Co");
     await dialog.getByLabel("Client", { exact: true }).fill("Globex Corp");
-    await dialog.getByLabel("Amount (USD)").fill("abc");
+    await dialog.getByLabel("Description", { exact: true }).fill("Setup");
+    await dialog.getByLabel("Rate", { exact: true }).fill("abc");
     await dialog.getByRole("button", { name: "Create invoice" }).click();
-    await expect(dialog.getByRole("alert")).toContainText("Enter an amount like 1250.00");
-    await dialog.getByLabel("Amount (USD)").fill("1,250.50");
+    await expect(dialog.getByRole("alert")).toContainText("Enter a rate like 45.00");
+    await dialog.getByLabel("Rate", { exact: true }).fill("1,250.50");
+    await dialog.getByLabel("Tax rate (%)").fill("10");
+    await expect(dialog.getByRole("list", { name: "Totals" }).or(dialog.getByLabel("Totals"))).toContainText("$1,375.55");
     await dialog.getByRole("button", { name: "Create invoice" }).click();
-    await expect(dialog).toBeHidden();
+
+    // creating opens the invoice view
+    const view = page.getByRole("dialog");
+    await expect(view).toContainText("INVOICE");
+    await expect(view).toContainText("Total Due:");
+    await expect(view).toContainText("$1,375.55");
+    const download = page.waitForEvent("download");
+    await view.getByRole("button", { name: "Download invoice" }).click();
+    expect((await download).suggestedFilename()).toMatch(/^invoice-INV-.*\.html$/);
+    await view.getByRole("button", { name: "Close" }).click();
+    await expect(view).toBeHidden();
 
     const card = page.getByTestId("invoice-card").filter({ hasText: "Globex Corp" });
-    await expect(card).toContainText("$1,250.50");
+    await expect(card).toContainText("$1,375.55");
     await expect(card.getByText("Draft", { exact: true })).toBeVisible();
 
-    await card.getByRole("button", { name: "Edit INV-0046" }).click();
+    await card.getByRole("button", { name: `Edit ${number}` }).click();
     await page.getByRole("dialog").getByLabel("Client", { exact: true }).fill("Globex Inc");
     await page.getByRole("dialog").getByRole("button", { name: "Save changes" }).click();
     await expect(page.getByTestId("invoice-card").filter({ hasText: "Globex Inc" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Void INV-0046" }).click();
+    await page.getByRole("button", { name: `Void ${number}` }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Void" }).click();
     const voided = page.getByTestId("invoice-card").filter({ hasText: "Globex Inc" });
     await expect(voided.getByText("Void", { exact: true })).toBeVisible();
 
     await voided.getByRole("button", { name: "Reopen" }).click();
     await expect(voided.getByText("Draft", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Void INV-0046" }).click();
+    await page.getByRole("button", { name: `Void ${number}` }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Void" }).click();
 
-    await page.getByRole("button", { name: "Delete INV-0046" }).click();
+    await page.getByRole("button", { name: `Delete ${number}` }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
     await expect(page.getByTestId("invoice-card")).toHaveCount(7);
   });

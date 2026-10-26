@@ -13,7 +13,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import {
-  formatMoney, hasNextInvoice, invoiceAlerts, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
+  formatMoney, describeItems, hasNextInvoice, invoiceAlerts, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
 import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
@@ -22,6 +22,7 @@ import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
+import { InvoicePreview } from "./invoice-preview";
 import { SEVERITY_BADGE } from "./status";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
@@ -53,6 +54,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
   const [formFor, setFormFor] = useState<Invoice | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Invoice | null>(null);
+  const [viewing, setViewing] = useState<Invoice | null>(null);
   const [voiding, setVoiding] = useState<Invoice | null>(null);
   const [paying, setPaying] = useState<Invoice | null>(null);
   const [payDate, setPayDate] = useState("");
@@ -74,6 +76,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   const patch = (id: string, change: (i: Invoice) => Invoice) => update((all) => all.map((i) => (i.id === id ? change(i) : i)));
 
   const actions: InvoiceActions = {
+    onView: (i) => setViewing(i),
     onEdit: (i) => setFormFor(i),
     onDelete: (i) => setDeleting(i),
     onSend: (i) => { patch(i.id, markSent); setNotice(`${i.number} marked as sent.`); },
@@ -103,13 +106,22 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   };
 
   const saveForm = (values: InvoiceFormValues) => {
-    const { amount, recurrence, ...rest } = values;
-    const fields = { ...rest, recurrence: recurrence as Invoice["recurrence"], amountCents: amount };
+    const items = values.items.map((i) => ({ description: i.description, qty: i.qty, rateCents: i.rate }));
+    const fields = {
+      number: values.number, client: values.client, clientEmail: values.clientEmail,
+      items, taxRate: values.taxRate, description: describeItems(items), amountCents: invoiceTotals(items, values.taxRate).totalCents,
+      sender: { name: values.fromName, address: values.fromAddress, phone: values.fromPhone, email: values.fromEmail },
+      paymentMethods: values.paymentMethods, issuedOn: values.issuedOn, dueOn: values.dueOn,
+      recurrence: values.recurrence as Invoice["recurrence"], reminderDays: values.reminderDays, notes: values.notes,
+    };
     if (formFor && formFor !== "new") {
-      patch(formFor.id, (x) => ({ ...x, ...fields }));
+      const updated = { ...formFor, ...fields };
+      patch(formFor.id, () => updated);
       setNotice(`${values.number} updated.`);
     } else {
-      update((all) => [...all, { ...fields, id: newId(), status: "draft", paidOn: null }]);
+      const created: Invoice = { ...fields, id: newId(), status: "draft", paidOn: null };
+      update((all) => [...all, created]);
+      setViewing(created);
       setNotice(`${values.number} created as a draft.`);
     }
   };
@@ -218,6 +230,8 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
       />
+
+      <InvoicePreview invoice={viewing} onOpenChange={(o) => !o && setViewing(null)} onEdit={(i) => setFormFor(i)} />
 
       <Dialog open={!!voiding} onOpenChange={(o) => !o && setVoiding(null)}>
         <DialogContent variant="alert">

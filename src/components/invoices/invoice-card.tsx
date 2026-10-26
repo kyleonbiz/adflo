@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Link2, Mail, Undo2 } from "lucide-react";
+import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Eye, Link2, Mail, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDayLong } from "@/lib/dates";
@@ -9,6 +9,7 @@ import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
 import { SEVERITY_BADGE, STATE_BADGE, STATE_LABEL } from "./status";
 
 export interface InvoiceActions {
+  onView: (invoice: Invoice) => void;
   onEdit: (invoice: Invoice) => void;
   onDelete: (invoice: Invoice) => void;
   onSend: (invoice: Invoice) => void;
@@ -85,6 +86,7 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
             {open && (
               <Button size="icon-sm" variant="ghost" aria-label={`Void ${invoice.number}`} onClick={() => actions.onVoid(invoice)}><Ban /></Button>
             )}
+            <Button size="icon-sm" variant="ghost" aria-label={`View ${invoice.number}`} onClick={() => actions.onView(invoice)}><Eye /></Button>
             <Button size="icon-sm" variant="ghost" aria-label={`Edit ${invoice.number}`} onClick={() => actions.onEdit(invoice)}><Pencil /></Button>
             <Button size="icon-sm" variant="ghost" aria-label={`Delete ${invoice.number}`} onClick={() => actions.onDelete(invoice)}><Trash2 /></Button>
           </div>
