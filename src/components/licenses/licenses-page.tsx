@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { AlertTriangle, CalendarClock, FileWarning, Plus, Search, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AlertTriangle, CalendarClock, FileWarning, Hourglass, Plus, Search, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { licenseStatus, renewalTasks, renewLicense, summarize } from "@/lib/licenses/logic";
+import { expiryText, licenseStatus, missingDocuments, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { sampleLicenses } from "@/lib/licenses/sample-data";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
 import type { LicenseFormValues } from "@/lib/licenses/validation";
@@ -19,9 +19,14 @@ import { useSetupConfig } from "@/lib/setup/storage";
 import { installedLicenses } from "@/lib/setup/templates";
 import { LicenseCard, type LicenseActions } from "./license-card";
 import { LicenseFormDialog } from "./license-form-dialog";
+import { RenewDialog } from "./renew-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
 
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
+
+type Filter = "all" | "attention" | "missing_docs" | LicenseStatus;
+type Sort = "expiry" | "name";
+const NOTICE_MS = 8000;
 
 /**
  * Licenses & Renewals. Records live in this component's state (seeded with sample data) until the
@@ -31,11 +36,14 @@ export function LicensesPage({ preview }: { preview?: string }) {
   const today = useToday();
   const [edited, setEdited] = useState<License[] | null>(null);
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | LicenseStatus>("all");
+  const [statusFilter, setStatusFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<Sort>("expiry");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [formFor, setFormFor] = useState<License | "new" | null>(null);
   const [deleting, setDeleting] = useState<License | null>(null);
-  const [notice, setNotice] = useState("");
+  const [renewing, setRenewing] = useState<License | null>(null);
+  const [focus, setFocus] = useState<{ id: string; token: number }>({ id: "", token: 0 });
+  const [notice, setNotice] = useState<{ id: number; text: string; undo?: () => void } | null>(null);
 
   const setup = useSetupConfig();
   // Starter records installed by Back Office Setup (only once setup is finished) sit after the samples.
@@ -43,6 +51,14 @@ export function LicensesPage({ preview }: { preview?: string }) {
     () => edited ?? (today ? [...sampleLicenses(today), ...installedLicenses(setup?.completedOn ? setup.templates : [], today)] : []),
     [edited, today, setup],
   );
+
+  // The confirmation fades on its own so it never lingers as stale text.
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), NOTICE_MS);
+    return () => window.clearTimeout(t);
+  }, [notice]);
+  const say = useCallback((text: string, undo?: () => void) => setNotice({ id: Date.now(), text, undo }), []);
 
   if (!today) {
     return (
@@ -54,21 +70,26 @@ export function LicensesPage({ preview }: { preview?: string }) {
     );
   }
 
-  const update = (fn: (all: License[]) => License[]) => setEdited(fn(licenses));
-  const patch = (id: string, change: (l: License) => License) => update((all) => all.map((l) => (l.id === id ? change(l) : l)));
+  const patch = (id: string, change: (l: License) => License) => setEdited(licenses.map((l) => (l.id === id ? change(l) : l)));
+  /** Applies a change that can be undone from the confirmation. */
+  const commit = (next: License[], text: string) => {
+    const before = licenses;
+    setEdited(next);
+    say(text, () => { setEdited(before); setNotice(null); });
+  };
+
+  const confirmRenewal = (l: License, input: Required<RenewalInput>) => {
+    const renewed = renewLicense(l, today, input);
+    commit(licenses.map((x) => (x.id === l.id ? renewed : x)), `${l.name} renewed. New expiry ${formatDayLong(renewed.expiresOn)}.`);
+    setRenewing(null);
+  };
 
   const actions: LicenseActions = {
     onEdit: (l) => setFormFor(l),
     onDelete: (l) => setDeleting(l),
-    onRenew: (l) => {
-      const renewed = renewLicense(l, today);
-      patch(l.id, () => renewed);
-      setNotice(`${l.name} renewed. New expiry ${formatDayLong(renewed.expiresOn)}.`);
-    },
-    onStage: (l, stage: RenewalStage) => {
-      patch(l.id, (x) => ({ ...x, stage }));
-      setNotice(`${l.name}: renewal ${STAGE_LABEL[stage].toLowerCase()}.`);
-    },
+    onRenew: (l) => setRenewing(l),
+    onStage: (l, stage: RenewalStage) =>
+      commit(licenses.map((x) => (x.id === l.id ? { ...x, stage } : x)), `${l.name}: renewal ${STAGE_LABEL[stage].toLowerCase()}.`),
     onToggleDocument: (l, id) =>
       patch(l.id, (x) => ({ ...x, requiredDocuments: x.requiredDocuments.map((d) => (d.id === id ? { ...d, received: !d.received } : d)) })),
     onAddDocument: (l, label) =>
@@ -78,24 +99,40 @@ export function LicensesPage({ preview }: { preview?: string }) {
   };
 
   const saveForm = (values: LicenseFormValues) => {
+    const { documents, ...fields } = values;
     const category = values.category as License["category"];
     if (formFor && formFor !== "new") {
-      patch(formFor.id, (x) => ({ ...x, ...values, category }));
-      setNotice(`${values.name} updated.`);
+      patch(formFor.id, (x) => ({ ...x, ...fields, category, datesConfirmed: true }));
+      say(`${values.name} updated.`);
     } else {
-      update((all) => [...all, { ...values, category, id: newId(), stage: "not_started", requiredDocuments: [] }]);
-      setNotice(`${values.name} added.`);
+      const id = newId();
+      const requiredDocuments = documents.map((label, i) => ({ id: `${id}-d${i}`, label, received: false }));
+      setEdited([...licenses, { ...fields, category, id, stage: "not_started", requiredDocuments, datesConfirmed: true }]);
+      say(`${values.name} added.`);
     }
   };
+
+  /** Clears the filters, then reveals a license's card (the renewal task list uses this). */
+  const reveal = (id: string) => {
+    setQuery(""); setStatusFilter("all"); setCategoryFilter("all");
+    setFocus((f) => ({ id, token: f.token + 1 }));
+  };
+  const toggleFilter = (f: Filter) => setStatusFilter((cur) => (cur === f ? "all" : f));
 
   const summary = summarize(licenses, today);
   const tasks = renewalTasks(licenses, today);
   const q = query.trim().toLowerCase();
+  const matchesFilter = (l: License) => {
+    if (statusFilter === "all") return true;
+    if (statusFilter === "attention") return licenseStatus(l, today) !== "active";
+    if (statusFilter === "missing_docs") return missingDocuments(l) > 0;
+    return licenseStatus(l, today) === statusFilter;
+  };
   const visible = licenses
-    .filter((l) => statusFilter === "all" || licenseStatus(l, today) === statusFilter)
+    .filter(matchesFilter)
     .filter((l) => categoryFilter === "all" || l.category === categoryFilter)
     .filter((l) => !q || [l.name, l.issuer, l.number, l.holder].some((f) => f.toLowerCase().includes(q)))
-    .sort((a, b) => (a.expiresOn < b.expiresOn ? -1 : a.expiresOn > b.expiresOn ? 1 : 0));
+    .sort((a, b) => (sort === "name" ? a.name.localeCompare(b.name) : a.expiresOn < b.expiresOn ? -1 : a.expiresOn > b.expiresOn ? 1 : 0));
 
   return (
     <div className="space-y-5">
@@ -110,13 +147,28 @@ export function LicensesPage({ preview }: { preview?: string }) {
       {preview && (
         <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
       )}
-      <p role="status" aria-live="polite" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
+      <div
+        role="status"
+        aria-live="polite"
+        className={notice ? "fixed inset-x-4 bottom-4 z-40 flex items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 text-sm shadow-float sm:left-auto sm:max-w-md" : "sr-only"}
+      >
+        {notice && (
+          <>
+            <span>{notice.text}</span>
+            <span className="flex shrink-0 items-center gap-1">
+              {notice.undo && <Button size="sm" variant="outline" onClick={notice.undo}>Undo</Button>}
+              <Button size="sm" variant="ghost" onClick={() => setNotice(null)}>Dismiss</Button>
+            </span>
+          </>
+        )}
+      </div>
 
-      <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryTile icon={ShieldCheck} label="Active" value={summary.active} tone="text-emerald-600" />
-        <SummaryTile icon={CalendarClock} label="Expiring in 30 days" value={summary.expiring} tone="text-amber-600" />
-        <SummaryTile icon={AlertTriangle} label="Expired" value={summary.expired} tone="text-red-600" />
-        <SummaryTile icon={FileWarning} label="Documents missing" value={summary.missingDocuments} tone="text-primary" />
+      <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <SummaryTile icon={ShieldCheck} label="Active" value={summary.active} tone="text-emerald-600" selected={statusFilter === "active"} onSelect={() => toggleFilter("active")} />
+        <SummaryTile icon={Hourglass} label="Renewal window" value={summary.renewalWindow} tone="text-sky-600" selected={statusFilter === "renewal_window"} onSelect={() => toggleFilter("renewal_window")} />
+        <SummaryTile icon={CalendarClock} label="Expiring in 30 days" value={summary.expiring} tone="text-amber-600" selected={statusFilter === "expiring"} onSelect={() => toggleFilter("expiring")} />
+        <SummaryTile icon={AlertTriangle} label="Expired" value={summary.expired} tone="text-red-600" selected={statusFilter === "expired"} onSelect={() => toggleFilter("expired")} />
+        <SummaryTile icon={FileWarning} label="Documents missing" value={summary.missingDocuments} tone="text-primary" selected={statusFilter === "missing_docs"} onSelect={() => toggleFilter("missing_docs")} />
       </section>
 
       <section aria-labelledby="tasks-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
@@ -131,8 +183,16 @@ export function LicensesPage({ preview }: { preview?: string }) {
                 <span className="flex flex-wrap items-center gap-2">
                   <Badge variant="muted">{STAGE_LABEL[t.stage]}</Badge>
                   <Badge variant={SEVERITY_BADGE[t.severity]}>
-                    {t.daysLeft < 0 ? `${-t.daysLeft} days overdue` : `due ${formatDayLong(t.dueOn)}`}
+                    {t.daysLeft < 0 ? expiryText(t.daysLeft) : `due ${formatDayLong(t.dueOn)} · ${expiryText(t.daysLeft)}`}
                   </Badge>
+                  {t.stage === "not_started" && (
+                    <Button size="sm" variant="outline" aria-label={`Start renewal: ${t.title}`} onClick={() => {
+                      const l = licenses.find((x) => x.id === t.licenseId);
+                      if (l) actions.onStage(l, "in_progress");
+                      reveal(t.licenseId);
+                    }}>Start renewal</Button>
+                  )}
+                  <Button size="sm" variant="ghost" aria-label={`View ${t.title}`} onClick={() => reveal(t.licenseId)}>View</Button>
                 </span>
               </li>
             ))}
@@ -153,10 +213,12 @@ export function LicensesPage({ preview }: { preview?: string }) {
             />
           </div>
           <div className="sm:w-48">
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as Filter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="attention">Needs attention</SelectItem>
+                <SelectItem value="missing_docs">Documents missing</SelectItem>
                 {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -170,15 +232,29 @@ export function LicensesPage({ preview }: { preview?: string }) {
               </SelectContent>
             </Select>
           </div>
+          <div className="sm:w-44">
+            <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
+              <SelectTrigger aria-label="Sort licenses"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="expiry">Soonest expiry</SelectItem>
+                <SelectItem value="name">Name A–Z</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {visible.length === 0 ? (
           <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            {licenses.length === 0 ? "No licenses yet. Add your first one to start tracking renewals." : "No licenses match these filters."}
+            {licenses.length === 0 ? "No licenses yet. Add your first one to start tracking renewals." : (
+              <>
+                No licenses match these filters.{" "}
+                <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setQuery(""); setStatusFilter("all"); setCategoryFilter("all"); }}>Clear filters</button>
+              </>
+            )}
           </div>
         ) : (
           <ul className="space-y-3">
-            {visible.map((l) => <LicenseCard key={l.id} license={l} today={today} actions={actions} />)}
+            {visible.map((l) => <LicenseCard key={l.id} license={l} today={today} actions={actions} focusToken={focus.id === l.id ? focus.token : 0} />)}
           </ul>
         )}
       </section>
@@ -190,6 +266,8 @@ export function LicensesPage({ preview }: { preview?: string }) {
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
       />
+
+      <RenewDialog license={renewing} today={today} onCancel={() => setRenewing(null)} onConfirm={confirmRenewal} />
 
       <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <DialogContent variant="alert">
@@ -203,8 +281,7 @@ export function LicensesPage({ preview }: { preview?: string }) {
               variant="destructive"
               onClick={() => {
                 if (deleting) {
-                  update((all) => all.filter((l) => l.id !== deleting.id));
-                  setNotice(`${deleting.name} deleted.`);
+                  commit(licenses.filter((l) => l.id !== deleting.id), `${deleting.name} deleted.`);
                 }
                 setDeleting(null);
               }}
