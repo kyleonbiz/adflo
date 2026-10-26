@@ -69,13 +69,38 @@ test.describe("reporting module", () => {
     await page.getByRole("option", { name: "Date (by month)" }).click();
     await page.getByLabel("Calculate").click();
     await page.getByRole("option", { name: "Total" }).click();
-    await expect(rows.first()).toContainText("2026-08");
-    await expect(rows.first()).toContainText("2,810");
+    await expect(rows.first()).toContainText("July 2026"); // months run oldest to newest
+    await expect(rows.first()).toContainText("1,989.25");
+    await expect(rows.nth(1)).toContainText("August 2026");
+    await expect(rows.nth(1)).toContainText("2,810");
 
     await page.getByLabel("Measure").click();
     await page.getByRole("option", { name: "Count of rows" }).click();
     await expect(page.getByLabel("Calculate")).toBeDisabled();
     await expect(rows.first()).toContainText("3 rows");
+  });
+
+  test("records: search, sort and the rows-to-fix download", async ({ page }) => {
+    await importExpenses(page);
+    const rows = page.getByTestId("record-row");
+    await page.getByLabel("Search records").fill("globex");
+    await expect(rows).toHaveCount(1);
+    await expect(page.getByTestId("records-count")).toContainText("1 of 8 rows match");
+    await page.getByLabel("Search records").fill("zzz");
+    await expect(rows).toHaveCount(0);
+    await expect(page.getByTestId("records-count")).toContainText("No rows match");
+    await page.getByLabel("Search records").fill("");
+
+    await page.getByRole("button", { name: "Sort by Amount" }).click();
+    await expect(rows.first()).toContainText("-150.25");
+    await page.getByRole("button", { name: "Sort by Amount" }).click();
+    await expect(rows.first()).toContainText("2,500.00");
+
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download rows to fix" }).click();
+    const lines = (await readDownload(await download)).toString("utf8").trimEnd().split("\r\n");
+    expect(lines[0]).toBe("Line,Problems,Date,Vendor,Category,Amount,Notes");
+    expect(lines).toHaveLength(3);
   });
 
   test("exports CSV, a real Excel workbook, and the report", async ({ page }) => {

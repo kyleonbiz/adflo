@@ -63,8 +63,10 @@ export function columnStats(dataset: Dataset, index: number): ColumnStats {
   if (values.length === 0) return stats;
   if (col.type === "number") {
     const nums = values as number[];
-    const sum = nums.reduce((a, b) => a + b, 0);
-    Object.assign(stats, { sum: round2(sum), avg: round2(sum / nums.length), min: Math.min(...nums), max: Math.max(...nums) });
+    // A loop, not Math.min(...nums): spreading a very large column overflows the call stack.
+    let sum = 0, min = nums[0], max = nums[0];
+    for (const n of nums) { sum += n; if (n < min) min = n; if (n > max) max = n; }
+    Object.assign(stats, { sum: round2(sum), avg: round2(sum / nums.length), min, max });
   } else if (col.type === "date") {
     const sorted = [...(values as string[])].sort();
     Object.assign(stats, { min: sorted[0], max: sorted[sorted.length - 1] });
@@ -73,30 +75,47 @@ export function columnStats(dataset: Dataset, index: number): ColumnStats {
 }
 
 export type Aggregate = "sum" | "avg" | "count";
-export interface GroupRow { group: string; rows: number; value: number }
+/** `group` is the display label ("March 2026"); `key` is the sortable value ("2026-03") used in exports. */
+export interface GroupRow { group: string; key: string; rows: number; value: number }
+
+const BLANK = "(blank)";
+const monthLabel = (key: string) =>
+  new Date(`${key}-01T00:00:00Z`).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+
+/** What the report's value column holds: "Rows", "Total Amount", "Average Amount" or "Count of Amount". */
+export function aggregateLabel(dataset: Dataset, measure: number | null, aggregate: Aggregate): string {
+  if (measure === null) return "Rows";
+  const name = dataset.columns[measure].name;
+  return aggregate === "sum" ? `Total ${name}` : aggregate === "avg" ? `Average ${name}` : `Count of ${name}`;
+}
 
 /**
  * Groups rows by a column (dates are grouped by month) and totals a number column, or just counts rows.
- * Biggest value first; blank groups are labelled "(blank)".
+ * "Count" with a measure counts the filled values in that column. Biggest value first, except date groups,
+ * which run oldest to newest; blank groups are labelled "(blank)" and sort last for dates.
  */
 export function groupReport(dataset: Dataset, groupBy: number, measure: number | null, aggregate: Aggregate): GroupRow[] {
   const groupCol = dataset.columns[groupBy];
   const buckets = new Map<string, { rows: number; sum: number; n: number }>();
   for (const row of dataset.rows) {
     const raw = row[groupBy];
-    const key = raw === null ? "(blank)" : groupCol.type === "date" ? String(raw).slice(0, 7) : String(raw);
+    const key = raw === null ? BLANK : groupCol.type === "date" ? String(raw).slice(0, 7) : String(raw);
     const b = buckets.get(key) ?? { rows: 0, sum: 0, n: 0 };
     b.rows++;
     const m = measure === null ? null : row[measure];
     if (typeof m === "number") { b.sum += m; b.n++; }
     buckets.set(key, b);
   }
-  return [...buckets.entries()]
-    .map(([group, b]) => ({
-      group, rows: b.rows,
-      value: round2(measure === null || aggregate === "count" ? b.rows : aggregate === "avg" ? (b.n ? b.sum / b.n : 0) : b.sum),
-    }))
-    .sort((a, b) => b.value - a.value || a.group.localeCompare(b.group));
+  const byDate = groupCol.type === "date";
+  const rows = [...buckets.entries()].map(([key, b]): GroupRow => ({
+    key, rows: b.rows,
+    group: byDate && key !== BLANK ? monthLabel(key) : key,
+    value: round2(
+      measure === null ? b.rows : aggregate === "count" ? b.n : aggregate === "avg" ? (b.n ? b.sum / b.n : 0) : b.sum,
+    ),
+  }));
+  if (byDate) return rows.sort((a, b) => (a.key === BLANK ? 1 : b.key === BLANK ? -1 : a.key.localeCompare(b.key)));
+  return rows.sort((a, b) => b.value - a.value || a.group.localeCompare(b.group));
 }
 
 export function datasetToCsv(dataset: Dataset): string {
@@ -107,11 +126,41 @@ export function datasetToCsv(dataset: Dataset): string {
 }
 
 export function reportToCsv(dataset: Dataset, groupBy: number, measure: number | null, aggregate: Aggregate): string {
-  const label = measure === null || aggregate === "count" ? "Rows" : `${aggregate === "sum" ? "Total" : "Average"} ${dataset.columns[measure].name}`;
+  const label = aggregateLabel(dataset, measure, aggregate);
   return toCsv([
     [dataset.columns[groupBy].name, "Rows", label === "Rows" ? "Value" : label],
-    ...groupReport(dataset, groupBy, measure, aggregate).map((g) => [g.group, g.rows, g.value]),
+    ...groupReport(dataset, groupBy, measure, aggregate).map((g) => [g.key, g.rows, g.value]),
   ]);
+}
+
+/** The rows that did not load, as a CSV (line number and problems first, then the original values) to fix and re-import. */
+export function rejectedToCsv(parsed: ParsedCsv, rejected: ImportOutcome<Cell[]>["rejected"]): string {
+  const rowAt = new Map(parsed.lines.map((line, i) => [line, parsed.rows[i]]));
+  return toCsv([
+    ["Line", "Problems", ...parsed.headers],
+    ...rejected.map((r) => [r.line, r.errors.join("; "), ...(rowAt.get(r.line) ?? [])]),
+  ]);
+}
+
+export interface RecordSort { column: number; direction: "asc" | "desc" }
+
+/** Rows matching `query` (any cell, as shown or as stored), ordered by `sort`; blanks always last. */
+export function viewRecords(dataset: Dataset, query: string, sort: RecordSort | null): Cell[][] {
+  const q = query.trim().toLowerCase();
+  const fixed = dataset.columns.map((_c, i) => needsDecimals(dataset, i));
+  let rows = q === ""
+    ? dataset.rows
+    : dataset.rows.filter((row) => row.some((c, i) => c !== null && (String(c).toLowerCase().includes(q) || displayCell(c, dataset.columns[i].type, fixed[i]).toLowerCase().includes(q))));
+  if (sort) {
+    const { column, direction } = sort;
+    const sign = direction === "asc" ? 1 : -1;
+    rows = [...rows].sort((a, b) => {
+      const x = a[column], y = b[column];
+      if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1;
+      return sign * (typeof x === "number" && typeof y === "number" ? x - y : String(x).localeCompare(String(y)));
+    });
+  }
+  return rows;
 }
 
 /** Plain-text summary: row count and, per column, the totals that make sense for its type. */

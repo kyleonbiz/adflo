@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { suggestColumns, validateDataset } from "@/lib/datasets/logic";
+import { rejectedToCsv, suggestColumns, validateDataset } from "@/lib/datasets/logic";
 import type { Column, ColumnType, Dataset } from "@/lib/datasets/types";
 import { CsvError, parseCsv, type ParsedCsv } from "@/lib/import/csv";
 import type { ImportOutcome } from "@/lib/import/run";
@@ -19,10 +19,10 @@ const TYPES: { value: ColumnType; label: string }[] = [
   { value: "text", label: "Text" }, { value: "number", label: "Number" }, { value: "date", label: "Date" },
 ];
 
-export interface LoadedData { dataset: Dataset; outcome: ImportOutcome<Cell[]> }
+export interface LoadedData { dataset: Dataset; outcome: ImportOutcome<Cell[]>; rejectedCsv: string }
 
 function Body({ onClose, onLoad }: { onClose: () => void; onLoad: (loaded: LoadedData) => void }) {
-  const input = useCsvInput();
+  const input = useCsvInput({ allowExcel: true });
   const { error, setError } = input;
   const [step, setStep] = useState<Step>("input");
   const [parsed, setParsed] = useState<ParsedCsv | null>(null);
@@ -51,14 +51,14 @@ function Body({ onClose, onLoad }: { onClose: () => void; onLoad: (loaded: Loade
       <div className="border-b px-5 py-4 pr-14">
         <DialogTitle>Import data</DialogTitle>
         <DialogDescription className="mt-1">
-          {step === "input" && "Step 1 of 3: choose a CSV file or paste its contents."}
+          {step === "input" && "Step 1 of 3: choose a CSV or Excel file, or paste CSV text."}
           {step === "columns" && "Step 2 of 3: check each column's type and mark the ones that must be filled in."}
           {step === "review" && "Step 3 of 3: review the result before loading it."}
         </DialogDescription>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
-        {step === "input" && <CsvSource input={input} placeholder={"Date,Vendor,Amount\n03/14/2026,Acme,$1,200.00"} />}
+        {step === "input" && <CsvSource input={input} allowExcel placeholder={"Date,Vendor,Amount\n03/14/2026,Acme,$1,200.00"} />}
 
         {step === "columns" && parsed && (
           <>
@@ -127,7 +127,11 @@ function Body({ onClose, onLoad }: { onClose: () => void; onLoad: (loaded: Loade
               type="button"
               disabled={outcome.accepted.length === 0}
               onClick={() => {
-                onLoad({ dataset: { name: name.trim(), columns, rows: outcome.accepted.map((a) => a.value) }, outcome });
+                onLoad({
+                  dataset: { name: name.trim(), columns, rows: outcome.accepted.map((a) => a.value) },
+                  outcome,
+                  rejectedCsv: parsed ? rejectedToCsv(parsed, outcome.rejected) : "",
+                });
                 onClose();
               }}
             >

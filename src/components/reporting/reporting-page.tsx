@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BarChart3, CalendarClock, Columns3, Database, Download, FileSpreadsheet, Rows3, Upload } from "lucide-react";
+import { ArrowDown, ArrowUp, BarChart3, CalendarClock, ChevronLeft, ChevronRight, Columns3, Database, Download, FileSpreadsheet, Rows3, Search, Upload } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
@@ -12,14 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDayLong } from "@/lib/dates";
 import {
-  columnStats, datasetToCsv, displayCell, groupReport, money, needsDecimals, nextSummaryDate, reportToCsv, summaryText,
-  type Aggregate, type Frequency,
+  aggregateLabel, columnStats, datasetToCsv, displayCell, groupReport, money, needsDecimals, nextSummaryDate, reportToCsv, summaryText, viewRecords,
+  type Aggregate, type Frequency, type RecordSort,
 } from "@/lib/datasets/logic";
 import type { Dataset } from "@/lib/datasets/types";
 import { datasetToXlsx } from "@/lib/datasets/xlsx";
 import { DataImportDialog, type LoadedData } from "./data-import-dialog";
 
-const PREVIEW_ROWS = 100;
+const PAGE_ROWS = 100;
+const REPORT_GROUPS = 25;
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "data";
 
@@ -30,10 +31,10 @@ function downloadXlsx(bytes: Uint8Array, name: string) {
   a.href = url;
   a.download = name;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000); // revoking at once can cancel the download in some browsers
 }
 
-interface SetAside { rejected: LoadedData["outcome"]["rejected"]; repeated: number }
+interface SetAside { rejected: LoadedData["outcome"]["rejected"]; repeated: number; csv: string }
 
 /**
  * Reporting. The loaded data lives in this component's state, so nothing here is saved
@@ -51,8 +52,17 @@ export function ReportingPage({ preview }: { preview?: string }) {
   const [frequency, setFrequency] = useState<Frequency>("weekly");
   const [email, setEmail] = useState("");
   const [showSummary, setShowSummary] = useState(false);
+  const [showAllGroups, setShowAllGroups] = useState(false);
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<RecordSort | null>(null);
+  const [page, setPage] = useState(0);
 
+  // Derived from the dataset only, so typing in the email box or paging records never recomputes them.
   const report = useMemo(() => (dataset ? groupReport(dataset, groupBy, measure, aggregate) : []), [dataset, groupBy, measure, aggregate]);
+  const stats = useMemo(() => (dataset ? dataset.columns.map((_c, i) => columnStats(dataset, i)) : []), [dataset]);
+  const fixedCols = useMemo(() => (dataset ? dataset.columns.map((_c, i) => needsDecimals(dataset, i)) : []), [dataset]);
+  const records = useMemo(() => (dataset ? viewRecords(dataset, query, sort) : []), [dataset, query, sort]);
+  const summary = useMemo(() => (dataset && today ? summaryText(dataset, today) : ""), [dataset, today]);
 
   if (!today) {
     return (
@@ -64,7 +74,7 @@ export function ReportingPage({ preview }: { preview?: string }) {
     );
   }
 
-  const load = ({ dataset: d, outcome }: LoadedData) => {
+  const load = ({ dataset: d, outcome, rejectedCsv }: LoadedData) => {
     const firstNumber = d.columns.findIndex((c) => c.type === "number");
     const firstText = d.columns.findIndex((c) => c.type === "text");
     setDataset(d);
@@ -72,18 +82,29 @@ export function ReportingPage({ preview }: { preview?: string }) {
     setMeasure(firstNumber >= 0 ? firstNumber : null);
     setAggregate("sum");
     setShowSummary(false);
-    setSetAside({ rejected: outcome.rejected, repeated: outcome.duplicates.length });
+    setShowAllGroups(false);
+    setQuery("");
+    setSort(null);
+    setPage(0);
+    setSetAside({ rejected: outcome.rejected, repeated: outcome.duplicates.length, csv: rejectedCsv });
     setNotice(`Loaded ${d.rows.length} row${d.rows.length === 1 ? "" : "s"} into "${d.name}". ${outcome.rejected.length} need fixing, ${outcome.duplicates.length} repeated.`);
   };
 
-  const fixedCols = dataset ? dataset.columns.map((_c, i) => needsDecimals(dataset, i)) : [];
   const numberCols = dataset ? dataset.columns.map((c, i) => ({ c, i })).filter((x) => x.c.type === "number") : [];
-  const blanks = dataset ? dataset.columns.reduce((n, _c, i) => n + columnStats(dataset, i).blank, 0) : 0;
+  const blanks = stats.reduce((n, s) => n + s.blank, 0);
+  const shownGroups = showAllGroups ? report : report.slice(0, REPORT_GROUPS);
+  const pageCount = Math.max(1, Math.ceil(records.length / PAGE_ROWS));
+  const currentPage = Math.min(page, pageCount - 1);
+  const pageStart = currentPage * PAGE_ROWS;
+  const pageRows = records.slice(pageStart, pageStart + PAGE_ROWS);
+  const sortBy = (column: number) => {
+    setPage(0);
+    setSort((s) => (s?.column !== column ? { column, direction: "asc" } : s.direction === "asc" ? { column, direction: "desc" } : null));
+  };
   const maxValue = Math.max(0, ...report.map((r) => r.value));
   const emailOk = EMAIL.test(email.trim());
   const nextDate = nextSummaryDate(today, frequency);
-  const measureName = measure === null ? null : dataset!.columns[measure].name;
-  const aggLabel = measure === null || aggregate === "count" ? "Rows" : aggregate === "sum" ? `Total ${measureName}` : `Average ${measureName}`;
+  const aggLabel = dataset ? aggregateLabel(dataset, measure, aggregate) : "";
 
   return (
     <div className="space-y-5">
@@ -122,7 +143,7 @@ export function ReportingPage({ preview }: { preview?: string }) {
             <SummaryTile icon={Columns3} label="Columns" value={dataset.columns.length} tone="text-sky-600" />
             <SummaryTile icon={Database} label="Blank cells" value={blanks} tone="text-amber-600" />
             {numberCols[0] ? (
-              <SummaryTile icon={BarChart3} label={`Total ${numberCols[0].c.name}`} value={money(columnStats(dataset, numberCols[0].i).sum ?? 0)} tone="text-emerald-600" />
+              <SummaryTile icon={BarChart3} label={`Total ${numberCols[0].c.name}`} value={money(stats[numberCols[0].i].sum ?? 0)} tone="text-emerald-600" />
             ) : (
               <SummaryTile icon={BarChart3} label="Number columns" value={0} tone="text-emerald-600" />
             )}
@@ -130,11 +151,16 @@ export function ReportingPage({ preview }: { preview?: string }) {
 
           {setAside && (setAside.rejected.length > 0 || setAside.repeated > 0) && (
             <section aria-labelledby="aside-heading" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              <h2 id="aside-heading" className="font-semibold">Rows set aside</h2>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 id="aside-heading" className="font-semibold">Rows set aside</h2>
+                {setAside.rejected.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={() => downloadText(setAside.csv, `rows-to-fix-${slug(dataset.name)}-${today}.csv`)}><Download /> Download rows to fix</Button>
+                )}
+              </div>
               <p className="mt-1">{setAside.rejected.length} row{setAside.rejected.length === 1 ? "" : "s"} could not be loaded and {setAside.repeated} repeated row{setAside.repeated === 1 ? " was" : "s were"} removed.</p>
               {setAside.rejected.length > 0 && (
-                <ul className="mt-2 space-y-1 text-xs" data-testid="set-aside-list">
-                  {setAside.rejected.slice(0, 10).map((r) => <li key={r.line}><span className="font-medium">Line {r.line}:</span> {r.errors.join("; ")}</li>)}
+                <ul className="mt-2 max-h-48 space-y-1 overflow-y-auto text-xs" data-testid="set-aside-list">
+                  {setAside.rejected.map((r) => <li key={r.line}><span className="font-medium">Line {r.line}:</span> {r.errors.join("; ")}</li>)}
                 </ul>
               )}
             </section>
@@ -149,7 +175,7 @@ export function ReportingPage({ preview }: { preview?: string }) {
                 </thead>
                 <tbody className="divide-y">
                   {dataset.columns.map((c, i) => {
-                    const s = columnStats(dataset, i);
+                    const s = stats[i];
                     const details = c.type === "number" && s.sum !== undefined
                       ? `Total ${money(s.sum)} · average ${money(s.avg!)} · ${money(s.min as number)} to ${money(s.max as number)}`
                       : c.type === "date" && s.min ? `${formatDayLong(s.min as string)} to ${formatDayLong(s.max as string)}`
@@ -172,7 +198,7 @@ export function ReportingPage({ preview }: { preview?: string }) {
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
                 <Label htmlFor="group-by">Group By</Label>
-                <Select value={String(groupBy)} onValueChange={(v) => setGroupBy(Number(v))}>
+                <Select value={String(groupBy)} onValueChange={(v) => { setGroupBy(Number(v)); setShowAllGroups(false); }}>
                   <SelectTrigger id="group-by"><SelectValue /></SelectTrigger>
                   <SelectContent>{dataset.columns.map((c, i) => <SelectItem key={i} value={String(i)}>{c.name}{c.type === "date" ? " (By Month)" : ""}</SelectItem>)}</SelectContent>
                 </Select>
@@ -198,9 +224,9 @@ export function ReportingPage({ preview }: { preview?: string }) {
               </div>
             </div>
             <ul className="mt-4 space-y-2" aria-label="Report results">
-              {report.map((r) => (
+              {shownGroups.map((r) => (
                 <li key={r.group} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-sm" data-testid="report-row">
-                  <span className="truncate font-medium">{r.group}</span>
+                  <span className="truncate font-medium" title={r.group}>{r.group}</span>
                   <span className="h-3 rounded-full bg-secondary" aria-hidden>
                     <span className="block h-full rounded-full bg-gradient-to-r from-blue-500 to-brand-violet" style={{ width: `${maxValue > 0 ? Math.max(0, (r.value / maxValue) * 100) : 0}%` }} />
                   </span>
@@ -208,33 +234,73 @@ export function ReportingPage({ preview }: { preview?: string }) {
                 </li>
               ))}
             </ul>
+            {report.length > REPORT_GROUPS && (
+              <Button size="sm" variant="ghost" className="mt-2" aria-expanded={showAllGroups} onClick={() => setShowAllGroups((v) => !v)}>
+                {showAllGroups ? `Show top ${REPORT_GROUPS}` : `Show all ${report.length} groups`}
+              </Button>
+            )}
             <div className="mt-3 flex items-center justify-between gap-2">
-              <p className="text-xs text-muted-foreground">{aggLabel} by {dataset.columns[groupBy].name}</p>
+              <p className="text-xs text-muted-foreground">{aggLabel} by {dataset.columns[groupBy].name}{report.length > REPORT_GROUPS && !showAllGroups ? ` (top ${REPORT_GROUPS} of ${report.length}; the download has all)` : ""}</p>
               <Button size="sm" variant="outline" onClick={() => downloadText(reportToCsv(dataset, groupBy, measure, aggregate), `report-${slug(dataset.name)}-${today}.csv`)}><Download /> Download report</Button>
             </div>
           </section>
 
           <section aria-labelledby="records-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
-            <h2 id="records-heading" className="text-base font-semibold">Records</h2>
-            <p className="text-xs text-muted-foreground">{dataset.rows.length > PREVIEW_ROWS ? `Showing the first ${PREVIEW_ROWS} of ${dataset.rows.length} rows. Export to get them all.` : `${dataset.rows.length} rows`}</p>
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 id="records-heading" className="text-base font-semibold">Records</h2>
+                <p className="text-xs text-muted-foreground" data-testid="records-count">
+                  {records.length === 0
+                    ? "No rows match"
+                    : query.trim() !== ""
+                      ? `${records.length} of ${dataset.rows.length} rows match`
+                      : `${dataset.rows.length} row${dataset.rows.length === 1 ? "" : "s"}`}
+                  {records.length > PAGE_ROWS && ` · showing ${pageStart + 1} to ${pageStart + pageRows.length}`}
+                </p>
+              </div>
+              <div className="relative w-full sm:w-64">
+                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+                <Input aria-label="Search records" type="search" className="pl-9" placeholder="Search records" value={query} onChange={(e) => { setQuery(e.target.value); setPage(0); }} />
+              </div>
+            </div>
             <div className="mt-2 max-h-96 overflow-auto rounded-xl border">
               <table className="w-full min-w-[34rem] text-left text-sm">
                 <thead className="sticky top-0 bg-muted text-xs">
-                  <tr>{dataset.columns.map((c) => <th key={c.name} className={`px-3 py-2 font-medium ${c.type === "number" ? "text-right" : ""}`}>{c.name}</th>)}</tr>
+                  <tr>
+                    {dataset.columns.map((c, i) => {
+                      const active = sort?.column === i ? sort.direction : null;
+                      return (
+                        <th key={c.name} scope="col" aria-sort={active === "asc" ? "ascending" : active === "desc" ? "descending" : "none"} className={`font-medium ${c.type === "number" ? "text-right" : ""}`}>
+                          <button type="button" onClick={() => sortBy(i)} className={`flex w-full items-center gap-1 px-3 py-2 hover:bg-secondary ${c.type === "number" ? "justify-end" : ""}`} aria-label={`Sort by ${c.name}`}>
+                            {c.name}
+                            {active === "asc" && <ArrowUp className="size-3" aria-hidden />}
+                            {active === "desc" && <ArrowDown className="size-3" aria-hidden />}
+                          </button>
+                        </th>
+                      );
+                    })}
+                  </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {dataset.rows.slice(0, PREVIEW_ROWS).map((row, r) => (
-                    <tr key={r} data-testid="record-row">
+                  {pageRows.map((row, r) => (
+                    <tr key={pageStart + r} data-testid="record-row">
                       {row.map((cell, i) => <td key={i} className={`px-3 py-1.5 ${dataset.columns[i].type === "number" ? "text-right tabular-nums" : ""}`}>{displayCell(cell, dataset.columns[i].type, fixedCols[i])}</td>)}
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            {pageCount > 1 && (
+              <div className="mt-2 flex items-center justify-end gap-2">
+                <span className="text-xs text-muted-foreground">Page {currentPage + 1} of {pageCount}</span>
+                <Button size="sm" variant="outline" aria-label="Previous page" disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)}><ChevronLeft /></Button>
+                <Button size="sm" variant="outline" aria-label="Next page" disabled={currentPage >= pageCount - 1} onClick={() => setPage(currentPage + 1)}><ChevronRight /></Button>
+              </div>
+            )}
           </section>
 
           <section aria-labelledby="schedule-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
-            <h2 id="schedule-heading" className="flex items-center gap-2 text-base font-semibold"><CalendarClock className="size-4 text-primary" aria-hidden /> Scheduled summary</h2>
+            <h2 id="schedule-heading" className="flex items-center gap-2 text-base font-semibold"><CalendarClock className="size-4 text-primary" aria-hidden /> Scheduled summary <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">Preview only</span></h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-[10rem_1fr]">
               <div className="space-y-1.5">
                 <Label htmlFor="frequency">How Often</Label>
@@ -255,9 +321,9 @@ export function ReportingPage({ preview }: { preview?: string }) {
             <p className="mt-1 text-xs text-muted-foreground">Preview only: summaries are not emailed until saving and email sending are connected.</p>
             <div className="mt-3 flex flex-wrap gap-2">
               <Button size="sm" variant="outline" aria-expanded={showSummary} onClick={() => setShowSummary((s) => !s)}>{showSummary ? "Hide" : "Preview"} summary</Button>
-              <Button size="sm" variant="outline" onClick={() => downloadText(summaryText(dataset, today), `summary-${slug(dataset.name)}-${today}.txt`, "text/plain")}><Download /> Download summary</Button>
+              <Button size="sm" variant="outline" onClick={() => downloadText(summary, `summary-${slug(dataset.name)}-${today}.txt`, "text/plain")}><Download /> Download summary</Button>
             </div>
-            {showSummary && <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs" data-testid="summary-preview">{summaryText(dataset, today)}</pre>}
+            {showSummary && <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-xl bg-muted p-3 text-xs" data-testid="summary-preview">{summary}</pre>}
           </section>
         </>
       )}

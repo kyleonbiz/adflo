@@ -1,13 +1,14 @@
-import { strFromU8, unzipSync } from "fflate";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { parseCsv } from "@/lib/import/csv";
 import {
-  columnStats, datasetToCsv, groupReport, nextSummaryDate, reportToCsv, suggestColumns, summaryText, validateDataset,
+  aggregateLabel, columnStats, datasetToCsv, groupReport, nextSummaryDate, reportToCsv, rejectedToCsv, suggestColumns, summaryText, validateDataset, viewRecords,
 } from "@/lib/datasets/logic";
 import { inferColumnType, parseCell, parseDate, parseNumber } from "@/lib/datasets/parse";
 import { SAMPLE_CSV, SAMPLE_NAME, sampleColumnRules } from "../support/datasets-sample-data";
 import type { Dataset } from "@/lib/datasets/types";
 import { columnLetter, datasetToXlsx, sheetName } from "@/lib/datasets/xlsx";
+import { xlsxToCsv } from "@/lib/datasets/xlsx-read";
 
 describe("parseNumber", () => {
   it.each([
@@ -103,17 +104,48 @@ describe("stats and reports", () => {
     ]);
   });
   it("averages and counts", () => {
-    expect(groupReport(dataset, 2, 3, "avg")[0]).toEqual({ group: "Services", rows: 2, value: 2150 });
+    expect(groupReport(dataset, 2, 3, "avg")[0]).toEqual({ group: "Services", key: "Services", rows: 2, value: 2150 });
     expect(groupReport(dataset, 1, null, "count").map((g) => [g.group, g.value])).toEqual([
       ["Acme Office Supply", 3], ["Hooli Logistics", 2], ["Initech Staffing", 2], ["Globex Software", 1],
     ]);
   });
   it("groups dates by month and labels blanks", () => {
     expect(groupReport(dataset, 0, 3, "sum").map((g) => [g.group, g.value])).toEqual([
-      ["2026-08", 2810], ["2026-09", 2108.39], ["2026-07", 1989.25],
+      ["July 2026", 1989.25], ["August 2026", 2810], ["September 2026", 2108.39],
     ]);
+    expect(groupReport(dataset, 0, 3, "sum").map((g) => g.key)).toEqual(["2026-07", "2026-08", "2026-09"]);
     const withBlank: Dataset = { ...dataset, rows: [[null, "x", null, 5, null], ...dataset.rows] };
     expect(groupReport(withBlank, 2, 3, "sum").some((g) => g.group === "(blank)")).toBe(true);
+  });
+  it("counts the filled values of a measure, and puts blank dates last", () => {
+    const rows: Dataset["rows"] = [[null, "x", "A", 5, null], ["2026-01-02", "x", "A", null, null], ["2026-01-09", "y", "B", 7, null]];
+    const d: Dataset = { ...dataset, rows };
+    expect(groupReport(d, 2, 3, "count").map((g) => [g.group, g.value])).toEqual([["A", 1], ["B", 1]]);
+    expect(groupReport(d, 2, null, "count").map((g) => [g.group, g.value])).toEqual([["A", 2], ["B", 1]]);
+    expect(groupReport(d, 0, 3, "sum").map((g) => g.group)).toEqual(["January 2026", "(blank)"]);
+    expect(aggregateLabel(d, 3, "count")).toBe("Count of Amount");
+    expect(reportToCsv(d, 2, 3, "count").split("\r\n")[0]).toBe("Category,Rows,Count of Amount");
+  });
+  it("finds min and max of a very large column without overflowing the stack", () => {
+    const rows: Dataset["rows"] = Array.from({ length: 300_000 }, (_x, i) => [i]);
+    const big: Dataset = { name: "big", columns: [{ name: "N", type: "number", required: false }], rows };
+    expect(columnStats(big, 0)).toMatchObject({ min: 0, max: 299_999, filled: 300_000 });
+  });
+  it("exports the rejected rows with their problems for fixing", () => {
+    const { parsed, outcome } = loadSample();
+    const lines = rejectedToCsv(parsed, outcome.rejected).trimEnd().split("\r\n");
+    expect(lines[0]).toBe("Line,Problems,Date,Vendor,Category,Amount,Notes");
+    expect(lines[1]).toBe("6,Vendor is required,08/09/2026,,Travel,420.75,Missing vendor");
+    expect(lines).toHaveLength(3);
+  });
+  it("searches and sorts records", () => {
+    expect(viewRecords(dataset, "globex", null)).toHaveLength(1);
+    expect(viewRecords(dataset, "1,240", null)).toHaveLength(1); // as displayed
+    expect(viewRecords(dataset, "zzz", null)).toEqual([]);
+    expect(viewRecords(dataset, "", { column: 3, direction: "desc" }).map((r) => r[3]).slice(0, 2)).toEqual([2500, 1800]);
+    const withBlank: Dataset = { ...dataset, rows: [[null, "x", null, null, null], ...dataset.rows] };
+    expect(viewRecords(withBlank, "", { column: 3, direction: "asc" }).at(-1)![3]).toBeNull();
+    expect(viewRecords(withBlank, "", { column: 3, direction: "desc" }).at(-1)![3]).toBeNull();
   });
   it("writes CSV for the data and the report", () => {
     const csv = datasetToCsv(dataset).trimEnd().split("\r\n");
@@ -210,5 +242,35 @@ describe("xlsx export", () => {
     expect(sheetName("")).toBe("Data");
     expect(sheetName("[]:*?/\\")).toBe("Data");
     expect(sheetName("  Q3  report ")).toBe("Q3 report");
+  });
+});
+
+describe("xlsx import", () => {
+  it("round-trips an exported workbook through the reader", () => {
+    const { dataset } = loadSample();
+    const csv = xlsxToCsv(datasetToXlsx(dataset));
+    const parsed = parseCsv(csv);
+    expect(parsed.headers).toEqual(["Date", "Vendor", "Category", "Amount", "Notes"]);
+    expect(parsed.rows).toHaveLength(8);
+    expect(parsed.rows[2]).toEqual(["2026-07-21", "Hooli Logistics", "Shipping", "-150.25", "Refund"]);
+  });
+  it("reads shared strings, date styles and serial dates", () => {
+    const xml = (s: string) => strToU8(s);
+    const bytes = zipSync({
+      "xl/workbook.xml": xml('<workbook><sheets><sheet name="A" sheetId="1" r:id="rId9"/></sheets></workbook>'),
+      "xl/_rels/workbook.xml.rels": xml('<Relationships><Relationship Id="rId9" Type="x" Target="worksheets/data.xml"/></Relationships>'),
+      "xl/sharedStrings.xml": xml('<sst><si><t>Day</t></si><si><t>Net</t></si><si><r><t>Ac</t></r><r><t>me &amp; Co</t></r></si></sst>'),
+      "xl/styles.xml": xml('<styleSheet><cellXfs><xf numFmtId="0"/><xf numFmtId="14"/></cellXfs></styleSheet>'),
+      "xl/worksheets/data.xml": xml('<worksheet><sheetData>'
+        + '<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="C1" t="inlineStr"><is><t>Who</t></is></c></row>'
+        + '<row r="2"><c r="A2" s="1"><v>46082</v></c><c r="B2"><v>-150.5</v></c><c r="C2" t="s"><v>2</v></c></row>'
+        + '<row r="3"><c r="B3"><v>1E-3</v></c></row>'
+        + '</sheetData></worksheet>'),
+    });
+    expect(xlsxToCsv(bytes)).toBe("Day,Net,Who\r\n2026-03-01,-150.5,Acme & Co\r\n,0.001,\r\n");
+  });
+  it("explains files that are not workbooks", () => {
+    expect(() => xlsxToCsv(new Uint8Array([1, 2, 3]))).toThrow("not a valid Excel workbook");
+    expect(() => xlsxToCsv(zipSync({ "xl/worksheets/sheet1.xml": strToU8("<worksheet><sheetData/></worksheet>") }))).toThrow("no data");
   });
 });
