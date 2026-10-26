@@ -92,6 +92,33 @@ test.describe("projects module", () => {
     await expect(page.getByTestId("project-card")).toHaveCount(5);
   });
 
+  test("creates a project from a template and lets you trim the checklist", async ({ page }) => {
+    await page.goto("/app/projects");
+    await page.getByRole("button", { name: "New project" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/^Checklist/)).toHaveCount(0);
+
+    await dialog.getByRole("combobox", { name: "Start from a template" }).click();
+    await page.getByRole("option", { name: "Vendor onboarding" }).click();
+    await expect(dialog.getByLabel("Project name")).toHaveValue("Vendor onboarding");
+    await expect(dialog).toContainText("7 of 7 tasks will be added");
+    await dialog.getByRole("checkbox", { name: /Collect business license copy/ }).uncheck();
+    await expect(dialog).toContainText("6 of 7 tasks will be added");
+    await dialog.getByRole("button", { name: "Create project" }).click();
+
+    const card = page.getByTestId("project-card").filter({ hasText: "Vendor onboarding" });
+    await expect(card).toContainText("0 of 6 tasks");
+    await expect(page.getByRole("status")).toContainText("created with 6 tasks");
+    // The new project opens so the checklist is visible straight away.
+    await expect(card.getByRole("checkbox", { name: /^Collect W-9/ })).toBeVisible();
+    await expect(card.getByRole("checkbox", { name: /Collect business license copy/ })).toHaveCount(0);
+
+    // Reopening the dialog starts blank again.
+    await page.getByRole("button", { name: "New project" }).click();
+    await expect(page.getByRole("dialog").getByLabel("Project name")).toHaveValue("");
+    await expect(page.getByRole("dialog").getByText(/^Checklist/)).toHaveCount(0);
+  });
+
   test("sorts, filters from the summary tiles and clears filters", async ({ page }) => {
     await page.goto("/app/projects");
     await expect(page.getByTestId("project-card")).toHaveCount(4);

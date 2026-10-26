@@ -4,6 +4,7 @@ import {
   allTasksDone, completeTask, overdueTasks, progress, projectHealth, projectsReport, reopenTask, sortProjects, sortTasks, summarize, taskAlerts, taskState,
 } from "@/lib/projects/logic";
 import { sampleProjects } from "@/lib/projects/sample-data";
+import { PROJECT_TEMPLATES, buildTasks, templateById, templateDueOn } from "@/lib/projects/templates";
 import type { Project, Task } from "@/lib/projects/types";
 import { projectFormSchema, taskFormSchema } from "@/lib/projects/validation";
 
@@ -190,5 +191,34 @@ describe("forms", () => {
     expect(taskFormSchema.safeParse({ title: "A", assignee: "", dueOn: "", repeat: "weekly" }).success).toBe(false);
     expect(taskFormSchema.safeParse({ title: "", assignee: "", dueOn: "", repeat: "none" }).success).toBe(false);
     expect(taskFormSchema.safeParse({ title: "A", assignee: "", dueOn: "2026-02-30", repeat: "none" }).success).toBe(false);
+  });
+});
+
+describe("project templates", () => {
+  it("has unique ids and a sensible, valid checklist in each template", () => {
+    expect(new Set(PROJECT_TEMPLATES.map((t) => t.id)).size).toBe(PROJECT_TEMPLATES.length);
+    for (const t of PROJECT_TEMPLATES) {
+      expect(t.tasks.length).toBeGreaterThanOrEqual(5);
+      expect(new Set(t.tasks.map((x) => x.title)).size).toBe(t.tasks.length);
+      for (const item of t.tasks) {
+        expect(item.offsetDays).toBeGreaterThanOrEqual(0);
+        expect(item.offsetDays).toBeLessThanOrEqual(t.durationDays);
+        expect(taskFormSchema.safeParse({ title: item.title, assignee: "", dueOn: "2026-10-25", repeat: item.repeat ?? "none" }).success).toBe(true);
+      }
+    }
+  });
+  it("dates tasks from the start date and suggests a due date", () => {
+    const t = templateById("vendor-onboarding")!;
+    let n = 0;
+    const tasks = buildTasks(t.tasks, "2026-11-01", () => `n${++n}`);
+    expect(tasks).toHaveLength(t.tasks.length);
+    expect(tasks[0]).toMatchObject({ id: "n1", dueOn: addDays("2026-11-01", t.tasks[0].offsetDays), done: false, assignee: "", repeat: "none" });
+    expect(tasks.every((x) => x.dueOn! <= templateDueOn(t, "2026-11-01"))).toBe(true);
+  });
+  it("carries repeats through so completing one schedules the next", () => {
+    const t = templateById("client-onboarding")!;
+    const tasks = buildTasks(t.tasks, "2026-11-01", (() => { let i = 0; return () => `n${++i}`; })());
+    const weekly = tasks.find((x) => x.repeat === "weekly")!;
+    expect(completeTask(tasks, weekly.id, "2026-11-08", "next").find((x) => x.id === "next")!.dueOn).toBe("2026-11-15");
   });
 });

@@ -13,6 +13,7 @@ import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { completeTask, overdueTasks, projectsReport, reopenTask, sortProjects, summarize, taskAlerts, type ProjectSort } from "@/lib/projects/logic";
 import { sampleProjects } from "@/lib/projects/sample-data";
+import { buildTasks, type TemplateTask } from "@/lib/projects/templates";
 import { PROJECT_STATUSES, type Project, type ProjectStatus, type Task } from "@/lib/projects/types";
 import type { ProjectFormValues, TaskFormValues } from "@/lib/projects/validation";
 import { ProjectCard, type ProjectActions } from "./project-card";
@@ -151,14 +152,17 @@ function ProjectsView({ today, preview }: { today: string; preview?: string }) {
     },
   };
 
-  const saveForm = (values: ProjectFormValues) => {
+  const saveForm = (values: ProjectFormValues, templateTasks: TemplateTask[]) => {
     const status = values.status as ProjectStatus;
     if (formFor && formFor !== "new") {
       patch(formFor.id, (x) => ({ ...x, ...values, status }));
       setNotice(`${values.name} updated.`);
     } else {
-      setProjects((all) => [...all, { ...values, status, id: rid("p"), tasks: [] }]);
-      setNotice(`${values.name} created.`);
+      const id = rid("p");
+      const tasks = buildTasks(templateTasks, values.startOn, () => rid("t"));
+      setProjects((all) => [...all, { ...values, status, id, tasks }]);
+      if (tasks.length > 0) setOpen((o) => ({ ...o, [id]: true }));
+      setNotice(tasks.length > 0 ? `${values.name} created with ${plural(tasks.length, "task")}.` : `${values.name} created.`);
     }
   };
 
