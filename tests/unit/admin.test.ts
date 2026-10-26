@@ -206,7 +206,7 @@ describe("ics", () => {
     const lines = ics.split("\r\n");
     expect(lines[0]).toBe("BEGIN:VCALENDAR");
     expect(lines).toContain("VERSION:2.0");
-    expect(lines).toContain("UID:request-1-a@aurumventura");
+    expect(lines).toContain("UID:request-1-a@adflo");
     expect(lines).toContain("DTSTAMP:20261025T000000Z");
     expect(lines).toContain("DTSTART;VALUE=DATE:20261031");
     expect(lines).toContain("DTEND;VALUE=DATE:20261101");
@@ -217,7 +217,7 @@ describe("ics", () => {
   });
   it("ends the year correctly and handles an empty list", () => {
     expect(toIcs([{ uid: "x", day: "2026-12-31", summary: "s" }], "2026-10-25")).toContain("DTEND;VALUE=DATE:20270101");
-    expect(toIcs([], "2026-10-25")).toBe("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Aurum Ventura//Admin Support//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nEND:VCALENDAR\r\n");
+    expect(toIcs([], "2026-10-25")).toBe("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//AdFlo//Admin Support//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nEND:VCALENDAR\r\n");
   });
   it("includes active dated requests and every routine, skipping done and undated ones", () => {
     const events = calendarEvents(sampleRequests(TODAY), sampleRoutines(TODAY));

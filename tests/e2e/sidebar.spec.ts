@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const NAMES = [
-  "Overview", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
+  "Home", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
   "Data Entry & Reporting", "Admin Support", "Business File Reset", "Back Office Setup",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Modules" });
@@ -57,7 +57,7 @@ test.describe("module sidebar on a wide screen", () => {
     await page.getByRole("button", { name: "Load sample data" }).click();
     await expect(page.getByTestId("record-row").first()).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const box = await nav(page).getByRole("link", { name: "Overview", exact: true }).boundingBox();
+    const box = await nav(page).getByRole("link", { name: "Home", exact: true }).boundingBox();
     expect(box!.y).toBeGreaterThanOrEqual(0);
     expect(box!.y).toBeLessThan(200);
     await expect(nav(page).getByRole("link", { name: "Back Office Setup" })).toBeInViewport();
@@ -74,7 +74,7 @@ test.describe("module sidebar on a wide screen", () => {
     await page.goto("/app");
     await expect(page.getByText("Development mode", { exact: true }).first()).toBeVisible();
     await expect(nav(page).getByRole("link", { name: "Documents", exact: true })).toHaveAttribute("aria-current", "page");
-    await expect(nav(page).getByRole("link", { name: "Overview", exact: true })).toHaveAttribute("href", "/app/overview");
+    await expect(nav(page).getByRole("link", { name: "Home", exact: true })).toHaveAttribute("href", "/app/overview");
     await nav(page).getByRole("link", { name: "Licenses & Renewals", exact: true }).click();
     await expect(page).toHaveURL(/\/app\/licenses$/);
     await expect(nav(page).getByRole("link", { name: "Licenses & Renewals", exact: true })).toHaveAttribute("aria-current", "page");

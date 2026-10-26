@@ -48,7 +48,7 @@ export function SidebarNav({ base, onNavigate }: { base: "/app" | "/demo"; onNav
   });
   const setup = MODULES.find((m) => m.id === "setup");
   const setupHref = setup ? moduleHref(setup, base) : null;
-  const overview: Item = { id: "overview", label: "Overview", href: `${base}/overview` };
+  const overview: Item = { id: "overview", label: "Home", href: `${base}/overview` };
 
   return (
     <div className="flex h-full flex-col gap-4 p-4">

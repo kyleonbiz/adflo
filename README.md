@@ -1,6 +1,6 @@
-# Aurum Ventura · Document Management System
+# AdFlo
 
-A multi-tenant document manager for Aurum Ventura's client-facing admin platform:
+The client-facing back-office platform from Aurum Ventura Enterprise LLC. It started as a multi-tenant document manager:
 folders and tags, metadata, filename/metadata and **document-text search** (text-based PDF, DOCX,
 XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),

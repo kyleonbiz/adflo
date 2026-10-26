@@ -5,8 +5,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Document Management System · Aurum Ventura",
-    template: "%s · Aurum Ventura",
+    default: "AdFlo · Your back office in one place",
+    template: "%s · AdFlo",
   },
   description:
     "Store, organize, and manage all business documents securely in one place.",

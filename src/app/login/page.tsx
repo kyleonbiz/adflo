@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Sign in" };
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { next } = await searchParams;
   return (
-    <AuthCard title="Sign in" subtitle="Access your Aurum Ventura document workspace.">
+    <AuthCard title="Sign in" subtitle="Access your AdFlo workspace.">
       {getSupabaseEnv() ? (
         <AuthForm mode="login" next={typeof next === "string" ? next : undefined} />
       ) : (

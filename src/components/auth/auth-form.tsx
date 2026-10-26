@@ -84,7 +84,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
         {formState.isSubmitting ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
       </Button>
       <p className="text-center text-sm text-muted-foreground">
-        {isSignup ? "Already have an account? " : "New to Aurum Ventura? "}
+        {isSignup ? "Already have an account? " : "New to AdFlo? "}
         <Link href={isSignup ? "/login" : "/signup"} className="font-medium text-primary hover:underline">
           {isSignup ? "Sign in" : "Create an account"}
         </Link>
