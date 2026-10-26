@@ -1,10 +1,13 @@
 import { LogOut } from "lucide-react";
+import { NotificationBell } from "@/components/notification-bell";
 import { Button } from "@/components/ui/button";
+import type { AttentionItem } from "@/lib/dashboard/logic";
 
 /** The right-hand side of the top bar for signed-in pages: workspace name, mode badge, who is signed in. */
-export function AppTopBar({ workspaceName, userLabel, badge }: { workspaceName?: string; userLabel?: string; badge?: string }) {
+export function AppTopBar({ workspaceName, userLabel, badge, notifications }: { workspaceName?: string; userLabel?: string; badge?: string; notifications?: { items: AttentionItem[]; today: string } }) {
   return (
     <>
+      {notifications && <NotificationBell items={notifications.items} serverToday={notifications.today} />}
       {workspaceName && (
         <span className="hidden truncate rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground sm:inline">{workspaceName}</span>
       )}

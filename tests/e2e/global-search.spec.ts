@@ -46,3 +46,11 @@ test.describe("on a phone", () => {
     await expect(page).toHaveURL(/\/app\/vendors/);
   });
 });
+
+test("the notification bell opens and offers the dashboard", async ({ page }) => {
+  await page.goto("/app/vendors");
+  await page.getByRole("button", { name: /^Notifications/ }).click();
+  await expect(page.getByText("You're all caught up.")).toBeVisible();
+  await page.getByRole("link", { name: "Open dashboard" }).click();
+  await expect(page).toHaveURL(/\/app\/overview/);
+});

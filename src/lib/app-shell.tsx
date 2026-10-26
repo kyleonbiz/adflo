@@ -1,11 +1,20 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppTopBar } from "@/components/app-header";
 import { AuthCard } from "@/components/auth/auth-card";
 import { OnboardingForm } from "@/components/auth/onboarding-form";
 import { AppFrame } from "@/components/modules/app-frame";
+import { loadDashboardSources } from "@/lib/dashboard/data";
+import { buildDashboard, dayInZone } from "@/lib/dashboard/logic";
 import { acceptPendingInvites, findMembership } from "@/lib/dms/server/context";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
+
+/** The same attention list as the dashboard, for the bell in the top bar. */
+async function loadNotifications() {
+  const today = dayInZone((await headers()).get("x-vercel-ip-timezone"));
+  return { items: buildDashboard(await loadDashboardSources(), today).items, today };
+}
 
 function Frame({ topRight, children }: { topRight: React.ReactNode; children: React.ReactNode }) {
   return <AppFrame base="/app" topRight={topRight}>{children}</AppFrame>;
@@ -37,7 +46,7 @@ export async function renderAppShell(
     }
     const { data: ws } = await supabase.from("workspaces").select("name").eq("id", membership.workspaceId).maybeSingle();
     return (
-      <Frame topRight={<AppTopBar workspaceName={ws?.name} userLabel={email} />}>
+      <Frame topRight={<AppTopBar workspaceName={ws?.name} userLabel={email} notifications={await loadNotifications()} />}>
         {content("live", { name: fullName })}
       </Frame>
     );
@@ -46,7 +55,7 @@ export async function renderAppShell(
   // No database yet: the app opens anyway, as a preview. Everything runs on records held in this
   // browser, so nothing is shared between visitors and nothing is stored on the server.
   return (
-    <Frame topRight={<AppTopBar badge="Preview" />}>
+    <Frame topRight={<AppTopBar badge="Preview" notifications={await loadNotifications()} />}>
       {content("preview")}
     </Frame>
   );
