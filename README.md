@@ -24,7 +24,7 @@ The app is growing from a document manager into a client portal of eleven servic
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
 **05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Projects**
 (`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
-(`src/lib/forms/`, `src/components/forms/`) and **08 Data Entry & Reporting**
+(`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
 (`src/lib/datasets/`, `src/components/reporting/`) and **09 Admin Support** (`src/lib/admin/`,
 `src/components/admin/`) **10 Business File Reset** (`src/lib/files/`, `src/components/files/`) and **11 Back Office Setup**
 (`src/lib/setup/`, `src/components/setup/`). Every service starts empty and keeps its records in the browser until the database is
@@ -48,7 +48,7 @@ browser and never uploaded.
   added and across the list. CRM & Data imports in three steps (choose or paste a
   file, map columns, review) and shows every rejected row by file line before anything changes; matching
   contacts are skipped or updated, and the contact list can be de-duplicated and exported. Scheduled
-  synchronization with other systems needs the backend and is not built. Data Entry & Reporting
+  synchronization with other systems needs the backend and is not built. Reporting
   guesses column types (dates as `3/14/2026` or ISO, money as `$1,200.50` or `(150.25)`), rejects rows that
   break the rules with the file line and reason, drops exact repeats, then builds grouped reports (dates by
   month) and exports CSV or a real `.xlsx` workbook (written with `fflate`; text is stored as plain text, so

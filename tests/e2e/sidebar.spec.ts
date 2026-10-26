@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 
 const NAMES = [
   "Home", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
-  "Data Entry & Reporting", "Admin Support", "Business File Reset", "Back Office Setup",
+  "Reporting", "Admin Support", "Business File Reset", "Back Office Setup",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
 

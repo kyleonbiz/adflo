@@ -45,7 +45,7 @@ test.describe("back office setup module", () => {
     for (const name of ["Documents", "Invoices", "Admin Support", "Projects", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) {
       await expect(moduleBox(page, name)).toBeChecked();
     }
-    for (const name of ["Vendors", "Data Entry & Reporting", "Business File Reset"]) await expect(moduleBox(page, name)).not.toBeChecked();
+    for (const name of ["Vendors", "Reporting", "Business File Reset"]) await expect(moduleBox(page, name)).not.toBeChecked();
     await expect(list).toContainText("Client work needs tasks, deadlines and status reports.");
 
     await moduleBox(page, "Documents").uncheck();

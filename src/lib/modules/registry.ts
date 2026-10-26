@@ -26,7 +26,7 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Projects, tasks, recurring work, deadlines and status reports." },
   { id: "forms", number: "07", name: "Forms & Paperwork", slug: "forms", status: "available",
     summary: "Reusable forms, submission tracking, document generation and approvals." },
-  { id: "reporting", number: "08", name: "Data Entry & Reporting", slug: "reporting", status: "available",
+  { id: "reporting", number: "08", name: "Reporting", slug: "reporting", status: "available",
     summary: "Turn raw files into organized records and scheduled reports." },
   { id: "admin", number: "09", name: "Admin Support", slug: "admin", status: "available",
     summary: "Requests, recurring tasks and reminders in one place." },
