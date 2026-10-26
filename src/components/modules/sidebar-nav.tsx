@@ -45,7 +45,7 @@ export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: ()
 
   return (
     <div className="flex h-full flex-col gap-4 p-4">
-      <Brand wordmark href={`${base}/overview`} />
+      <Brand wordmark href={`${base}/overview`} className="w-44 px-1" />
       <nav aria-label="Modules" className="flex flex-1 flex-col">
         <ul className="space-y-1">
           {[overview, ...modules].map((item) => (

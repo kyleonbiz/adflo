@@ -10,11 +10,11 @@ export function AdFloMark({ className }: { className?: string }) {
 /** `compact` shows only the logo mark on a phone, where the top bar is tight; the name returns from `sm` up. */
 export function Brand({ className, href = "/", light, compact, wordmark }: { className?: string; href?: string; light?: boolean; compact?: boolean; wordmark?: boolean }) {
   if (wordmark) {
-    // The full logo has white lettering, so it sits on its own dark navy panel (matches the logo artwork).
+    // Transparent artwork: dark lettering for light surfaces, white lettering when `light` (on the sign-in gradient).
     return (
-      <Link href={href} aria-label="AdFlo home" className={cn("block rounded-xl bg-[#050a1d] px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}>
+      <Link href={href} aria-label="AdFlo home" className={cn("block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-wordmark.png" alt="AdFlo" width={1015} height={325} className="h-auto w-full" />
+        <img src={light ? "/logo-wordmark-light.png" : "/logo-wordmark.png"} alt="AdFlo" width={1015} height={325} className="h-auto w-full" />
       </Link>
     );
   }
