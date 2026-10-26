@@ -104,7 +104,7 @@ export function ProjectFormDialog({
                   <Select value={templateId} onValueChange={pickTemplate}>
                     <SelectTrigger id="proj-template"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="blank">Blank project</SelectItem>
+                      <SelectItem value="blank">Blank Project</SelectItem>
                       {PROJECT_TEMPLATES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
