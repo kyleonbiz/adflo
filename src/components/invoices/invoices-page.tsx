@@ -45,10 +45,10 @@ function downloadCsv(text: string, name: string) {
  * Invoice administration. Records live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits and no reminder emails are sent.
  */
-export function InvoicesPage({ preview, startNew }: { preview?: string; startNew?: boolean }) {
+export function InvoicesPage({ preview, startNew, initialQuery = "" }: { preview?: string; startNew?: boolean; initialQuery?: string }) {
   const today = useToday();
   const [edited, setEdited] = useState<Invoice[] | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
   const [formFor, setFormFor] = useState<Invoice | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Invoice | null>(null);

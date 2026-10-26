@@ -6,8 +6,8 @@ export const metadata: Metadata = { title: "Admin Support" };
 export const dynamic = "force-dynamic";
 
 export default async function AdminRoute({ searchParams }: PageProps<"/app/admin">) {
-  const { new: startNew } = await searchParams;
+  const { new: startNew, q } = await searchParams;
   return renderAppShell("/app/admin", () => (
-    <AdminPage startNew={startNew === "1"} preview="Records live only in this browser tab. Nothing is saved and nothing is emailed." />
+    <AdminPage initialQuery={typeof q === "string" ? q : ""} startNew={startNew === "1"} preview="Records live only in this browser tab. Nothing is saved and nothing is emailed." />
   ));
 }

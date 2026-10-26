@@ -43,10 +43,10 @@ const linkClass = "rounded underline-offset-2 hover:text-foreground hover:underl
  * CRM & Data. Contacts live in this component's state (starting empty) until the database is
  * connected, so nothing here is saved between visits. Imports are read in the browser and never uploaded.
  */
-export function ContactsPage({ preview }: { preview?: string }) {
+export function ContactsPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
   const today = useToday();
   const [edited, setEdited] = useState<Contact[] | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<"all" | ContactCategory>("all");
   const [quick, setQuick] = useState<Quick>("all");
   const [sort, setSort] = useState<SortKey>("name");

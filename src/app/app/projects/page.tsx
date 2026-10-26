@@ -5,8 +5,9 @@ import { renderAppShell } from "@/lib/app-shell";
 export const metadata: Metadata = { title: "Projects" };
 export const dynamic = "force-dynamic";
 
-export default function ProjectsRoute() {
+export default async function ProjectsRoute({ searchParams }: PageProps<"/app/projects">) {
+  const { q } = await searchParams;
   return renderAppShell("/app/projects", () => (
-    <ProjectsPage preview="Records live only in this browser tab. Nothing is saved and no notifications are sent." />
+    <ProjectsPage initialQuery={typeof q === "string" ? q : ""} preview="Records live only in this browser tab. Nothing is saved and no notifications are sent." />
   ));
 }

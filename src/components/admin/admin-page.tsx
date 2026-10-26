@@ -88,11 +88,11 @@ function RequestCard({
  * data) until the database is connected. Categories and approval flags come from fixed keyword rules,
  * not an AI service, and the digest is shown on screen rather than emailed.
  */
-export function AdminPage({ preview, startNew }: { preview?: string; startNew?: boolean }) {
+export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: string; startNew?: boolean; initialQuery?: string }) {
   const today = useToday();
   const [editedRequests, setEditedRequests] = useState<AdminRequest[] | null>(null);
   const [editedRoutines, setEditedRoutines] = useState<Routine[] | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | RequestStatus>("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | Category>("all");
   const [requesting, setRequesting] = useState(!!startNew);

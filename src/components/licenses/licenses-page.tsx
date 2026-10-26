@@ -34,10 +34,10 @@ const NOTICE_MS = 8000;
  * Licenses & Renewals. Records live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits.
  */
-export function LicensesPage({ preview }: { preview?: string }) {
+export function LicensesPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
   const today = useToday();
   const [edited, setEdited] = useState<License[] | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("expiry");
   const [categoryFilter, setCategoryFilter] = useState("all");
