@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { TriangleAlert } from "lucide-react";
@@ -46,6 +46,12 @@ function VendorFormBody({
   });
   const { errors } = formState;
   const [matches, setMatches] = useState<ReturnType<typeof findDuplicates>>([]);
+
+  const warning = useRef<HTMLDivElement>(null);
+  // Move focus to the warning so keyboard and screen-reader users notice it and the changed button.
+  useEffect(() => {
+    if (matches.length > 0) warning.current?.focus();
+  }, [matches.length]);
 
   const finish = (values: VendorFormValues) => { onSubmit(values); onOpenChange(false); };
   const submit = handleSubmit((values) => {
@@ -110,7 +116,7 @@ function VendorFormBody({
               </Field>
             </div>
             {matches.length > 0 && (
-              <div role="alert" className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 sm:col-span-2" data-testid="duplicate-warning">
+              <div ref={warning} tabIndex={-1} role="alert" className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:col-span-2" data-testid="duplicate-warning">
                 <p className="flex items-center gap-2 font-medium"><TriangleAlert className="size-4" aria-hidden /> This may already be in your vendor list</p>
                 <ul className="list-disc pl-5">
                   {matches.map((m) => <li key={m.vendor.id}>{m.vendor.name}: {m.reasons.join(", ").toLowerCase()}</li>)}

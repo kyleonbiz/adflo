@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { createSubmission, decide, generateDocument, submissionsToCsv, summarize } from "@/lib/forms/logic";
-import { sampleForms, sampleSubmissions } from "@/lib/forms/sample-data";
+import { starterForms } from "@/lib/forms/starter-forms";
+import { e2eSeed } from "@/lib/e2e-seed";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedForms } from "@/lib/setup/templates";
@@ -31,7 +32,7 @@ function download(text: string, name: string, type: string) {
 }
 
 /**
- * Forms & Paperwork. Forms and submissions live in this component's state (seeded with sample data)
+ * Forms & Paperwork. Forms and submissions live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
 export function FormsPage({ preview }: { preview?: string }) {
@@ -45,9 +46,9 @@ export function FormsPage({ preview }: { preview?: string }) {
   const [notice, setNotice] = useState("");
 
   const setup = useSetupConfig();
-  // Forms installed by Back Office Setup (only once setup is finished) sit after the samples.
-  const forms = useMemo(() => editedForms ?? [...sampleForms(), ...installedForms(setup?.completedOn ? setup.templates : [])], [editedForms, setup]);
-  const subs = useMemo(() => editedSubs ?? (today ? sampleSubmissions(today) : []), [editedSubs, today]);
+  // Forms installed by Back Office Setup (only once setup is finished) sit alongside your own records.
+  const forms = useMemo(() => editedForms ?? [...starterForms(), ...installedForms(setup?.completedOn ? setup.templates : [])], [editedForms, setup]);
+  const subs = useMemo(() => editedSubs ?? e2eSeed<Submission>("submissions") ?? [], [editedSubs]);
 
   if (!today) {
     return (

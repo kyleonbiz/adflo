@@ -4,7 +4,7 @@ import { DmsError } from "../errors";
 import { loadUploadLimits } from "../config";
 import { SupabaseRepository } from "../supabase/repository";
 import { SupabaseStorage } from "../supabase/storage";
-import { SAMPLE_USER_ID, SAMPLE_WORKSPACE_ID } from "../memory/sample-data";
+import { DEV_USER_ID, DEV_WORKSPACE_ID } from "../memory/workspace";
 import { devModeAllowed, getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 import type { Role } from "../types";
@@ -88,14 +88,14 @@ export async function getDms(): Promise<Dms> {
   const kit = getDevKit();
   return {
     mode: "dev",
-    userId: SAMPLE_USER_ID,
+    userId: DEV_USER_ID,
     service: new DocumentService({
       repo: kit.repo,
       team: kit.repo,
       storage: kit.storage,
       limits: loadUploadLimits(),
       userEmail: "dev@localhost",
-      ctx: { workspaceId: SAMPLE_WORKSPACE_ID, userId: SAMPLE_USER_ID, userName: "Dev User", role: "owner" },
+      ctx: { workspaceId: DEV_WORKSPACE_ID, userId: DEV_USER_ID, userName: "Dev User", role: "owner" },
     }),
   };
 }

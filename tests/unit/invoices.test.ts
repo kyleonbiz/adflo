@@ -4,7 +4,7 @@ import {
   invoiceAlerts, invoiceState, invoicesToCsv, markPaid, markSent, needsAttention, nextInvoiceNumber,
   nextOverdueNotice, nextRecurringInvoice, nextReminder, groupInvoices, hasNextInvoice, invoiceTotals, describeItems, generateInvoiceNumber, paymentDateError, reopen, voidInvoice, summarize, formatMoney, daysOverdue,
 } from "@/lib/invoices/logic";
-import { sampleInvoices } from "@/lib/invoices/sample-data";
+import { sampleInvoices } from "../support/invoices-sample-data";
 import type { Invoice } from "@/lib/invoices/types";
 import { invoiceFormSchema, parseDollars } from "@/lib/invoices/validation";
 

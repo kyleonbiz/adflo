@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 const card = (page: import("@playwright/test").Page, name: string) =>
   page.getByTestId("vendor-card").filter({ has: page.getByRole("heading", { name, exact: true }) });
@@ -45,6 +45,8 @@ test.describe("vendors module", () => {
 
     await initech.getByLabel("Comment on Initech Staffing LLC").fill("Welcome aboard");
     await initech.getByRole("button", { name: "Approve Initech Staffing LLC" }).click();
+    await expect(page.getByRole("dialog")).toContainText("Welcome aboard");
+    await page.getByRole("dialog").getByRole("button", { name: "Approve", exact: true }).click();
     await expect(initech).toContainText("Approved by Operations manager");
     await expect(initech).toContainText("Welcome aboard");
     await initech.getByRole("button", { name: "Deactivate" }).click();
@@ -74,10 +76,97 @@ test.describe("vendors module", () => {
     await expect(card(page, "Globex Software").getByRole("button", { name: /^Documents/ })).toHaveAttribute("aria-expanded", "true");
   });
 
+  test("cancelling the approval dialog leaves the vendor awaiting approval", async ({ page }) => {
+    await page.goto("/app/vendors");
+    const hooli = card(page, "Hooli Logistics");
+    await hooli.getByRole("button", { name: "Approve Hooli Logistics" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+    await expect(hooli.getByText("Awaiting approval", { exact: true }).first()).toBeVisible();
+  });
+
+  test("removing a document and deleting a vendor can be undone", async ({ page }) => {
+    await page.goto("/app/vendors");
+    const acme = card(page, "Acme Office Supply");
+    await acme.getByRole("button", { name: /^Documents/ }).click();
+    await acme.getByRole("button", { name: "Remove W-9" }).click();
+    await expect(acme.getByTestId("vendor-doc")).toHaveCount(1);
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(acme.getByTestId("vendor-doc")).toHaveCount(2);
+
+    await acme.getByRole("button", { name: "Delete Acme Office Supply" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(5);
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(6);
+  });
+
+  test("a possible duplicate can be dismissed and restored, or merged", async ({ page }) => {
+    await page.goto("/app/vendors");
+    const dupes = page.getByRole("region", { name: "Possible duplicates" });
+    await dupes.getByRole("button", { name: /are not duplicates/ }).click();
+    await expect(dupes.getByTestId("duplicate-pair")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /^Possible duplicates/ })).toContainText("0");
+    await dupes.getByRole("button", { name: /Show 1 dismissed/ }).click();
+    await expect(dupes.getByTestId("duplicate-pair")).toHaveCount(1);
+
+    await dupes.getByRole("button", { name: /^Merge / }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Merge", exact: true }).click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(5);
+    await expect(dupes.getByTestId("duplicate-pair")).toHaveCount(0);
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(6);
+  });
+
+  test("a file can be attached to a document and removed again", async ({ page }) => {
+    await page.goto("/app/vendors");
+    const initech = card(page, "Initech Staffing LLC");
+    await initech.getByLabel("W-9 file").setInputFiles({ name: "w9.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+    await expect(initech.getByRole("link", { name: "w9.pdf" })).toBeVisible();
+    await expect(initech.getByLabel("W-9 received on")).not.toHaveValue("");
+    await initech.getByRole("button", { name: "Remove file from W-9" }).click();
+    await expect(initech.getByRole("link", { name: "w9.pdf" })).toHaveCount(0);
+
+    await initech.getByLabel("W-9 file").setInputFiles({ name: "w9.exe", mimeType: "application/octet-stream", buffer: Buffer.from("x") });
+    await expect(page.getByRole("status")).toContainText("not a PDF, image or Word file");
+  });
+
+  test("vendors can be filtered by category, and many categories are offered", async ({ page }) => {
+    await page.goto("/app/vendors");
+    await page.getByRole("combobox", { name: "Filter by category" }).click();
+    await expect(page.getByRole("option")).toHaveCount(44); // "All categories" plus 43
+    await page.getByRole("option", { name: "Logistics", exact: true }).click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(2);
+    await expect(page).toHaveURL(/category=Logistics/);
+  });
+
+  test("a healthcare vendor gets its category's required documents", async ({ page }) => {
+    await page.goto("/app/vendors");
+    await page.getByRole("button", { name: "Add vendor" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Vendor name").fill("Cityview Clinic");
+    await dialog.getByLabel("Contact email").fill("office@cityview.example");
+    await dialog.getByRole("combobox", { name: "Category" }).click();
+    await page.getByRole("option", { name: "Healthcare & medical" }).click();
+    await dialog.getByRole("button", { name: "Add vendor" }).click();
+    const clinic = card(page, "Cityview Clinic");
+    await expect(clinic).toContainText("0 of 4 required documents in");
+    await expect(clinic.getByLabel("Business associate agreement received on")).toBeVisible();
+  });
+
+  test("filters are kept in the address bar", async ({ page }) => {
+    await page.goto("/app/vendors?status=pending_approval&sort=newest");
+    await expect(page.getByTestId("vendor-card")).toHaveCount(1);
+    await page.getByRole("button", { name: /^Document issues/ }).click();
+    await expect(page).toHaveURL(/issues=1/);
+    await page.getByRole("button", { name: /^Vendors/ }).first().click();
+    await expect(page).not.toHaveURL(/status=|issues=/);
+  });
+
   test("rejecting then reopening a vendor", async ({ page }) => {
     await page.goto("/app/vendors");
     const hooli = card(page, "Hooli Logistics");
     await hooli.getByRole("button", { name: "Reject Hooli Logistics" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Reject", exact: true }).click();
     await expect(hooli.getByText("Rejected", { exact: true }).first()).toBeVisible();
     await hooli.getByRole("button", { name: "Reopen" }).click();
     await expect(hooli.getByText("Onboarding", { exact: true })).toBeVisible();
@@ -140,7 +229,8 @@ test.describe("vendors module", () => {
     expect(file.suggestedFilename()).toMatch(/^vendors-\d{4}-\d{2}-\d{2}\.csv$/);
     let text = "";
     for await (const chunk of await file.createReadStream()) text += chunk;
-    expect(text.split("\r\n")[0]).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues");
+    expect(text.split("\r\n")[0]).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes");
+    expect(text).toContain("Awaiting approval");
     expect(text).toContain("Certificate of insurance (expired)");
   });
 

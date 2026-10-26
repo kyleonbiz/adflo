@@ -19,11 +19,18 @@ export const licenseFormSchema = z
       .transform((s) => s.split(",").map((p) => p.trim()).filter(Boolean).map(Number))
       .pipe(
         z
-          .array(z.number().int().min(1, "Reminders must be 1 day or more").max(730, "Reminders must be within 2 years"))
+          .array(z.number({ error: "Reminders are whole numbers of days, like 60, 30, 7" }).int("Reminders are whole numbers of days, like 60, 30, 7").min(1, "Reminders must be 1 day or more").max(730, "Reminders must be within 2 years"))
           .min(1, "Add at least one reminder, e.g. 60, 30, 7")
           .max(8, "Use at most 8 reminders"),
       ),
     notes: z.string().trim().max(1000, "Keep notes under 1000 characters"),
+    /** Every license is checked against the real document before it is saved. */
+    reviewed: z.boolean().refine((v) => v, "Confirm you have checked these details against the license"),
+    /** One required document per line. Only used when adding; existing licenses manage theirs on the card. */
+    documents: z
+      .string()
+      .transform((s) => s.split("\n").map((l) => l.trim()).filter(Boolean))
+      .pipe(z.array(z.string().max(120, "Keep each document under 120 characters")).max(20, "List at most 20 documents")),
   })
   .refine((v) => v.expiresOn > v.issuedOn, { path: ["expiresOn"], message: "Expiry must be after the issue date" });
 

@@ -1,6 +1,6 @@
-import type { Category, DocumentRecord, Folder, FolderColor, Workspace } from "../types";
-import { MB } from "../config";
-import { MemoryRepository, MemoryStorage, MemoryStore } from "./store";
+import type { Category, DocumentRecord, Folder, FolderColor, Workspace } from "@/lib/dms/types";
+import { MB } from "@/lib/dms/config";
+import { MemoryRepository, MemoryStorage, MemoryStore } from "@/lib/dms/memory/store";
 import { makeCsv, makeImage, makePdf } from "./sample-files";
 
 export const SAMPLE_WORKSPACE_ID = "00000000-0000-4000-8000-000000000001";

@@ -8,6 +8,8 @@ export interface ContactInput {
   company: string;
   category: ContactCategory;
   notes: string;
+  /** `YYYY-MM-DD`, or "" when never logged. */
+  lastContacted: string;
 }
 
 export interface Contact extends ContactInput {

@@ -12,7 +12,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { completeTask, overdueTasks, projectsReport, reopenTask, sortProjects, summarize, taskAlerts, type ProjectSort } from "@/lib/projects/logic";
-import { sampleProjects } from "@/lib/projects/sample-data";
+import { e2eSeed } from "@/lib/e2e-seed";
 import { buildTasks, type TemplateTask } from "@/lib/projects/templates";
 import { PROJECT_STATUSES, type Project, type ProjectStatus, type Task } from "@/lib/projects/types";
 import type { ProjectFormValues, TaskFormValues } from "@/lib/projects/validation";
@@ -47,7 +47,7 @@ interface Notice { n: number; text: string; undo?: () => void }
 const isLive = (p: Project) => p.status !== "completed" && p.status !== "on_hold";
 
 /**
- * Project administration. Projects and tasks live in this component's state (seeded with sample data)
+ * Project administration. Projects and tasks live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
 export function ProjectsPage({ preview }: { preview?: string }) {
@@ -65,10 +65,10 @@ export function ProjectsPage({ preview }: { preview?: string }) {
 }
 
 function ProjectsView({ today, preview }: { today: string; preview?: string }) {
-  const [projects, setProjects] = useState<Project[]>(() => sampleProjects(today));
+  const [projects, setProjects] = useState<Project[]>(() => e2eSeed<Project>("projects") ?? []);
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
-      sampleProjects(today).filter((p) => isLive(p) && overdueTasks(p, today).length > 0).slice(0, AUTO_OPEN).map((p) => [p.id, true]),
+      (e2eSeed<Project>("projects") ?? []).filter((p) => isLive(p) && overdueTasks(p, today).length > 0).slice(0, AUTO_OPEN).map((p) => [p.id, true]),
     ),
   );
   const [query, setQuery] = useState("");

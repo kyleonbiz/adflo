@@ -3,14 +3,14 @@ import { notifications, summarize as adminSummary } from "@/lib/admin/logic";
 import type { AdminRequest, Routine } from "@/lib/admin/types";
 import { formatMoney, invoiceState, summarize as invoiceSummary } from "@/lib/invoices/logic";
 import type { Invoice } from "@/lib/invoices/types";
-import { licenseStatus, summarize as licenseSummary } from "@/lib/licenses/logic";
+import { licenseStatus, needsReview, summarize as licenseSummary } from "@/lib/licenses/logic";
 import type { License } from "@/lib/licenses/types";
 import { summarize as projectSummary, taskAlerts } from "@/lib/projects/logic";
 import type { Project } from "@/lib/projects/types";
 import { summarize as vendorSummary } from "@/lib/vendors/logic";
 import type { Vendor } from "@/lib/vendors/types";
 
-/** Everything the dashboard reads. Today it comes from sample data; swap `loadDashboardSources` for the database. */
+/** Everything the dashboard reads. It is empty until the services are stored in the database; fill `loadDashboardSources` for the database. */
 export interface DashboardSources {
   invoices: Invoice[];
   licenses: License[];
@@ -52,12 +52,19 @@ function licenseItems(licenses: License[], today: string, base: string): Attenti
   const out: AttentionItem[] = [];
   for (const l of licenses) {
     const status = licenseStatus(l, today);
-    if (status === "active") continue;
+    if (status === "active") {
+      if (needsReview(l)) {
+        out.push({ id: `lic-review-${l.id}`, area: "Licenses", href: `${base}/licenses`, severity: "info", label: "Review", text: `${l.name} needs its details checked` });
+      }
+      continue;
+    }
     const expired = status === "expired";
+    const submitted = l.stage === "submitted";
+    const open = status === "renewal_window";
     out.push({
       id: `lic-${l.id}`, area: "Licenses", href: `${base}/licenses`,
-      severity: expired ? "critical" : "warning",
-      label: expired ? "Expired" : "Expiring",
+      severity: submitted ? "info" : open ? "info" : expired ? "critical" : "warning",
+      label: submitted ? "Submitted" : expired ? "Expired" : open ? "Renewal open" : "Expiring",
       text: `${l.name} ${expired ? "expired" : "expires"} ${formatDayLong(l.expiresOn)}`,
     });
   }
@@ -79,7 +86,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
       { id: "overdue-invoices", label: "Overdue invoices", value: String(inv.overdueCount), href: `${base}/invoices`, tone: tone(inv.overdueCount, "danger") },
     ] },
     { title: "Compliance", tiles: [
-      { id: "licenses", label: "Licenses expiring or expired", value: String(lic.expiring + lic.expired), href: `${base}/licenses`, tone: tone(lic.expiring + lic.expired, "warning") },
+      { id: "licenses", label: "Licenses to renew", value: String(lic.renewalWindow + lic.expiring + lic.expired), href: `${base}/licenses`, tone: tone(lic.expiring + lic.expired, "warning") },
       { id: "vendors", label: "Vendors awaiting approval", value: String(ven.pendingApproval), href: `${base}/vendors`, tone: tone(ven.pendingApproval, "warning") },
     ] },
     { title: "Work", tiles: [

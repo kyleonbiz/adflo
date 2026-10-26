@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("today's to-do list", () => {
   test("+ adds a task, which can be completed, survives a reload and can be deleted", async ({ page }) => {
