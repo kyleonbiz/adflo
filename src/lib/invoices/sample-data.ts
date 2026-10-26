@@ -3,7 +3,7 @@ import type { Invoice } from "./types";
 
 /** Sample invoices with dates relative to `today`, so every state is represented. */
 export function sampleInvoices(today: string): Invoice[] {
-  const base = { reminderDays: [7, 1], notes: "" };
+  const base = { reminderDays: [7, 1], notes: "", clientEmail: "" };
   return [
     { ...base, id: "inv-1", number: "INV-0041", client: "Northwind Traders", description: "October bookkeeping",
       amountCents: 185_000, issuedOn: addDays(today, -40), dueOn: addDays(today, -10), status: "sent", paidOn: null, recurrence: "monthly" },

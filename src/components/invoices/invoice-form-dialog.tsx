@@ -16,7 +16,7 @@ import { invoiceFormSchema, type InvoiceFormInput, type InvoiceFormValues } from
 function defaults(invoice: Invoice | undefined, today: string, existing: Invoice[]): InvoiceFormInput {
   if (invoice) {
     return {
-      number: invoice.number, client: invoice.client, description: invoice.description,
+      number: invoice.number, client: invoice.client, clientEmail: invoice.clientEmail, description: invoice.description,
       amount: (invoice.amountCents / 100).toFixed(2), issuedOn: invoice.issuedOn, dueOn: invoice.dueOn,
       recurrence: invoice.recurrence, reminderDays: invoice.reminderDays.join(", "), notes: invoice.notes,
     };
@@ -24,7 +24,7 @@ function defaults(invoice: Invoice | undefined, today: string, existing: Invoice
   const last = [...existing].sort((a, b) => (a.issuedOn < b.issuedOn ? 1 : -1))[0];
   return {
     number: last ? nextInvoiceNumber(last.number, existing.map((i) => i.number)) : "INV-0001",
-    client: "", description: "", amount: "", issuedOn: today, dueOn: addDays(today, 30),
+    client: "", clientEmail: "", description: "", amount: "", issuedOn: today, dueOn: addDays(today, 30),
     recurrence: "none", reminderDays: "7, 1", notes: "",
   };
 }
@@ -91,6 +91,11 @@ export function InvoiceFormDialog({
             <Field id="inv-client" label="Client" error={errors.client?.message}>
               <Input id="inv-client" autoComplete="off" {...invalid("client")} {...register("client")} />
             </Field>
+            <div className="sm:col-span-2">
+              <Field id="inv-clientEmail" label="Client email (optional, used when sending)" error={errors.clientEmail?.message}>
+                <Input id="inv-clientEmail" type="email" autoComplete="off" placeholder="billing@client.com" {...invalid("clientEmail")} {...register("clientEmail")} />
+              </Field>
+            </div>
             <div className="sm:col-span-2">
               <Field id="inv-description" label="Description" error={errors.description?.message}>
                 <Input id="inv-description" autoComplete="off" {...invalid("description")} {...register("description")} />

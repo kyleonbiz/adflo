@@ -39,6 +39,21 @@ export function decodeInvoice(token: string): SharedInvoice | null {
   }
 }
 
+/** A `mailto:` link that opens the user's email app with the invoice message and link filled in. */
+export function invoiceMailto(inv: Invoice, origin: string): string {
+  const subject = `Invoice ${inv.number} from AdFlo`;
+  const body = [
+    `Hi ${inv.client},`,
+    "",
+    `Here is invoice ${inv.number}${inv.description ? ` for ${inv.description}` : ""}: ${formatMoney(inv.amountCents)}, due ${formatDayLong(inv.dueOn)}.`,
+    "",
+    `View or save it here: ${origin}${invoicePath(inv)}`,
+    "",
+    "Thank you!",
+  ].join("\r\n");
+  return `mailto:${encodeURIComponent(inv.clientEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 export const invoicePath = (inv: Invoice) => `/invoice/${encodeInvoice(inv)}`;
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

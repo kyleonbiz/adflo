@@ -11,7 +11,7 @@ import { invoiceFormSchema, parseDollars } from "@/lib/invoices/validation";
 const TODAY = "2026-10-25";
 
 const inv = (over: Partial<Invoice> = {}): Invoice => ({
-  id: "x", number: "INV-0001", client: "Acme", description: "", amountCents: 10_000,
+  id: "x", number: "INV-0001", client: "Acme", clientEmail: "", description: "", amountCents: 10_000,
   issuedOn: "2026-10-01", dueOn: "2026-10-31", status: "sent", paidOn: null,
   recurrence: "none", reminderDays: [7, 1], notes: "", ...over,
 });
@@ -133,7 +133,7 @@ describe("money and form validation", () => {
   it.each(["", "abc", "1.234", "-5", "1,25", "1e3", "12 50"])("rejects %j", (text) => expect(parseDollars(text)).toBeNull());
 
   const valid = {
-    number: "INV-9", client: "Acme Corp", description: "", amount: "100", issuedOn: "2026-10-01", dueOn: "2026-10-31",
+    number: "INV-9", client: "Acme Corp", clientEmail: "", description: "", amount: "100", issuedOn: "2026-10-01", dueOn: "2026-10-31",
     recurrence: "none", reminderDays: "7, 1", notes: "",
   };
   it("accepts a valid form and allows no reminders", () => {
@@ -191,5 +191,24 @@ describe("void, reopen and payment date", () => {
     expect(paymentDateError(i, "2026-09-30", TODAY)).toMatch(/before/);
     expect(paymentDateError(i, "2026-10-26", TODAY)).toMatch(/future/);
     expect(paymentDateError(i, "nope", TODAY)).toMatch(/valid/);
+  });
+});
+
+describe("invoice email", () => {
+  it("builds a mailto with the recipient, subject and a link, encoded", async () => {
+    const { invoiceMailto } = await import("@/lib/invoices/share");
+    const url = invoiceMailto(inv({ clientEmail: "a@b.co", client: "Zoë & Co" }), "https://app.test");
+    expect(url.startsWith("mailto:a%40b.co?subject=")).toBe(true);
+    const body = decodeURIComponent(url.split("body=")[1]);
+    expect(body).toContain("Hi Zoë & Co,");
+    expect(body).toContain("https://app.test/invoice/");
+  });
+  it("accepts an empty or single valid client email only", () => {
+    const base = { number: "INV-1", client: "Acme", description: "", amount: "10", issuedOn: "2026-10-01", dueOn: "2026-10-31", recurrence: "none", reminderDays: "7", notes: "" };
+    const ok = (clientEmail: string) => invoiceFormSchema.safeParse({ ...base, clientEmail }).success;
+    expect(ok("")).toBe(true);
+    expect(ok("a@b.co")).toBe(true);
+    expect(ok("a@b.co, c@d.co")).toBe(false);
+    expect(ok("nope")).toBe(false);
   });
 });

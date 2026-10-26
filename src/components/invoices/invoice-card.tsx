@@ -1,6 +1,6 @@
 "use client";
 
-import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Link2, Undo2 } from "lucide-react";
+import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Link2, Mail, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDayLong } from "@/lib/dates";
@@ -15,6 +15,7 @@ export interface InvoiceActions {
   onPay: (invoice: Invoice) => void;
   onVoid: (invoice: Invoice) => void;
   onNext: (invoice: Invoice) => void;
+  onEmail: (invoice: Invoice) => void;
   onReopen: (invoice: Invoice) => void;
   onCopyLink: (invoice: Invoice) => void;
 }
@@ -65,6 +66,9 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             {invoice.status === "draft" && (
               <Button size="sm" variant="outline" onClick={() => actions.onSend(invoice)}><Send /> Mark sent</Button>
+            )}
+            {(invoice.status === "draft" || invoice.status === "sent") && (
+              <Button size="sm" onClick={() => actions.onEmail(invoice)}><Mail /> {invoice.status === "draft" ? "Send" : "Resend"}</Button>
             )}
             {invoice.status === "sent" && (
               <Button size="sm" variant="outline" onClick={() => actions.onPay(invoice)}><CheckCircle2 /> Mark paid</Button>

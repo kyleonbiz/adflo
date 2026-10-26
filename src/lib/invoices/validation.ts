@@ -16,6 +16,8 @@ export const invoiceFormSchema = z
   .object({
     number: z.string().trim().min(1, "Enter an invoice number").max(40, "Keep it under 40 characters"),
     client: z.string().trim().min(2, "Enter the client name").max(120, "Keep it under 120 characters"),
+    clientEmail: z.string().trim().max(254, "Keep it under 254 characters")
+      .refine((v) => v === "" || /^[^@\s,;]+@[^@\s,;]+\.[^@\s,;]+$/.test(v), "Enter one valid email address"),
     description: z.string().trim().max(200, "Keep it under 200 characters"),
     amount: z.string().transform((v, ctx) => {
       const cents = parseDollars(v);

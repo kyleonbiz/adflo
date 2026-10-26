@@ -17,6 +17,8 @@ export interface Invoice {
   id: string;
   number: string;
   client: string;
+  /** Where "Send" addresses the email. Empty until set. */
+  clientEmail: string;
   description: string;
   amountCents: number;
   issuedOn: string;

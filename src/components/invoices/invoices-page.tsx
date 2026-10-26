@@ -16,7 +16,7 @@ import {
   formatMoney, hasNextInvoice, invoiceAlerts, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
-import { invoicePath } from "@/lib/invoices/share";
+import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
 import { sampleInvoices } from "@/lib/invoices/sample-data";
 import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
@@ -82,6 +82,11 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
     onReopen: (i) => {
       patch(i.id, reopen);
       setNotice(i.status === "void" ? `${i.number} reopened as a draft.` : `${i.number} payment undone.`);
+    },
+    onEmail: (i) => {
+      window.location.href = invoiceMailto(i, window.location.origin);
+      if (i.status === "draft") patch(i.id, markSent);
+      setNotice(`Opened your email app for ${i.number}${i.clientEmail ? ` to ${i.clientEmail}` : ""}${i.status === "draft" ? "; marked as sent." : "."}`);
     },
     onCopyLink: async (i) => {
       const link = `${window.location.origin}${invoicePath(i)}`;
