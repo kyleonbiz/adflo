@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Brand } from "@/components/brand";
+import { GlobalSearch } from "./global-search";
 import { SidebarNav } from "./sidebar-nav";
 
 /**
@@ -44,6 +45,7 @@ export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?
               </DialogPrimitive.Root>
               <Brand href={`${base}/overview`} className="min-w-0" compact />
             </div>
+            <div className="hidden min-w-0 flex-1 sm:block"><GlobalSearch /></div>
             <div className="ml-auto flex min-w-0 items-center gap-3">{topRight}</div>
           </div>
         </header>
