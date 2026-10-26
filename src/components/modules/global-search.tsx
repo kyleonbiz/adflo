@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Search, SlidersHorizontal } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -54,6 +54,22 @@ export function GlobalSearch() {
   const results = useMemo(() => searchResults(query, scope), [query, scope]);
   const scopeName = scope === "all" ? "" : MODULES.find((m) => m.id === scope)?.name ?? "";
   const showList = open && query.trim().length > 0;
+
+  // Pressing "/" anywhere outside a text field jumps to the box. Both copies (top bar and phone row) are
+  // mounted, so only the visible one takes focus.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const el = inputRef.current;
+      if (!el || el.offsetParent === null) return;
+      e.preventDefault();
+      el.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   function go(href: string) {
     setQuery("");
