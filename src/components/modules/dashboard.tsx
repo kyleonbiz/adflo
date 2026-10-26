@@ -6,6 +6,7 @@ import { AlertTriangle, CalendarClock, FolderKanban, Inbox, Receipt, ShieldCheck
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
+import { TodayTodos } from "@/components/modules/today-todos";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { formatMoney, invoiceState, needsAttention as invoicesNeedingAction, summarize as invoiceSummary } from "@/lib/invoices/logic";
@@ -83,6 +84,7 @@ export function Dashboard({ base }: { base: "/app" }) {
 
   return (
     <div className="space-y-5" data-testid="dashboard">
+      {today && <TodayTodos today={today} />}
       <section aria-label="At a glance" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryTile icon={Receipt} label="Outstanding invoices" value={formatMoney(inv.outstandingCents)} tone="text-primary" />
         <SummaryTile icon={AlertTriangle} label="Overdue invoices" value={inv.overdueCount} tone="text-red-600" />
