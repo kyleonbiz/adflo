@@ -6,7 +6,7 @@ test.describe("AdFlo opens as software, not a website", () => {
     await expect(page).toHaveURL(/\/app\/overview$/);
     await expect(page).toHaveTitle("Home · AdFlo");
     await expect(page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("heading", { level: 1, name: "Your back office" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
     await expect(page.getByTestId("dashboard")).toBeVisible();
   });
 
