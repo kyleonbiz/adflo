@@ -1,5 +1,5 @@
 import { addDays, addMonths } from "@/lib/dates";
-import type { License, RequiredDocument } from "./types";
+import type { License, RequiredDocument } from "@/lib/licenses/types";
 
 const docs = (id: string, items: [string, boolean][]): RequiredDocument[] =>
   items.map(([label, received], i) => ({ id: `${id}-d${i}`, label, received }));

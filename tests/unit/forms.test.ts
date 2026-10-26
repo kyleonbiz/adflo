@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   cleanValues, createSubmission, decide, generateDocument, submissionsToCsv, summarize, validateSubmission,
 } from "@/lib/forms/logic";
-import { sampleForms, sampleSubmissions } from "@/lib/forms/sample-data";
+import { sampleForms, sampleSubmissions } from "../support/forms-sample-data";
 import type { FormTemplate } from "@/lib/forms/types";
 import { formBuilderSchema } from "@/lib/forms/validation";
 

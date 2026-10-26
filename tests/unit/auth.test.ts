@@ -119,11 +119,11 @@ describe("getDms (request authentication)", () => {
     vi.stubEnv("NODE_ENV", "production");
     await expect(getDms()).rejects.toMatchObject({ code: "unavailable" });
   });
-  it("serves sample data in development mode", async () => {
+  it("serves an empty workspace in development mode", async () => {
     vi.stubEnv("NODE_ENV", "development");
     const { mode, service } = await getDms();
     expect(mode).toBe("dev");
-    expect((await service.bootstrap()).workspace.name).toContain("Demo");
+    expect((await service.bootstrap()).workspace.name).toBe("My workspace");
   });
 });
 

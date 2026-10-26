@@ -1,14 +1,31 @@
 import { describe, expect, it } from "vitest";
 import { loadDashboardSources } from "@/lib/dashboard/data";
+import type { DashboardSources } from "@/lib/dashboard/logic";
+import { sampleRequests, sampleRoutines } from "../support/admin-sample-data";
+import { sampleInvoices } from "../support/invoices-sample-data";
+import { sampleLicenses } from "../support/licenses-sample-data";
+import { sampleProjects } from "../support/projects-sample-data";
+import { sampleVendors } from "../support/vendors-sample-data";
 import { buildDashboard, dayInZone } from "@/lib/dashboard/logic";
 import { isSnoozed, parseSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { addTodo, hasOpenTodo, laterCount, parseTodos } from "@/lib/todos/logic";
 
 const T = "2026-10-26";
 
+const sources = (): DashboardSources => ({
+  invoices: sampleInvoices(T), licenses: sampleLicenses(T), projects: sampleProjects(T),
+  vendors: sampleVendors(T), requests: sampleRequests(T), routines: sampleRoutines(T),
+});
+
 describe("buildDashboard", () => {
-  it("groups the tiles, links each to its service and orders the action list by severity", async () => {
-    const d = buildDashboard(await loadDashboardSources(T), T);
+  it("starts empty: no records means zeros and nothing needing attention", async () => {
+    const d = buildDashboard(await loadDashboardSources(), T);
+    expect(d.items).toEqual([]);
+    expect(d.groups.flatMap((g) => g.tiles).every((t) => t.tone === "neutral")).toBe(true);
+    expect(d.groups[0].tiles[0].value).toBe("$0.00");
+  });
+  it("groups the tiles, links each to its service and orders the action list by severity", () => {
+    const d = buildDashboard(sources(), T);
     expect(d.groups.map((g) => g.title)).toEqual(["Money", "Compliance", "Work"]);
     const tiles = d.groups.flatMap((g) => g.tiles);
     expect(tiles).toHaveLength(8);
@@ -20,8 +37,8 @@ describe("buildDashboard", () => {
     expect(new Set(d.items.map((i) => i.id)).size).toBe(d.items.length);
     expect(d.items.some((i) => i.area === "Invoices" && i.label === "Overdue")).toBe(true);
   });
-  it("is plain JSON, so it can cross from server to client", async () => {
-    const d = buildDashboard(await loadDashboardSources(T), T);
+  it("is plain JSON, so it can cross from server to client", () => {
+    const d = buildDashboard(sources(), T);
     expect(JSON.parse(JSON.stringify(d))).toEqual(d);
   });
 });

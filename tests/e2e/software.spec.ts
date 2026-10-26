@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("AdFlo opens as software, not a website", () => {
   test("the site address goes straight into the app, on the Home screen with the sidebar", async ({ page }) => {
@@ -20,17 +20,17 @@ test.describe("AdFlo opens as software, not a website", () => {
 
   test("without a database it says so plainly and still works", async ({ page }) => {
     await page.goto("/app/overview");
-    await expect(page.getByText("Preview · sample data")).toBeVisible();
+    await expect(page.getByText("Preview", { exact: true })).toBeVisible();
     await expect(page.getByText("Not configured")).toHaveCount(0);
     await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Invoices", exact: true }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Invoices" })).toBeVisible();
     await expect(page.getByRole("note")).toContainText("Nothing is saved");
   });
 
-  test("Documents is the app's front page and runs on sample data in the browser", async ({ page }) => {
+  test("Documents is the app's front page and starts empty, in the browser", async ({ page }) => {
     await page.goto("/app");
     await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
-    await expect(page.getByTestId("document-card").first()).toBeVisible();
+    await expect(page.getByText("No documents yet")).toBeVisible();
     await expect(page.getByRole("note").filter({ hasText: "not saved or uploaded anywhere" })).toBeVisible();
   });
 

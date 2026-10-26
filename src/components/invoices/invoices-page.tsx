@@ -11,11 +11,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
+import { e2eSeed } from "@/lib/e2e-seed";
 import {
   formatMoney, describeItems, groupInvoices, hasNextInvoice, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent,   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
 import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
-import { sampleInvoices } from "@/lib/invoices/sample-data";
 import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
@@ -41,7 +41,7 @@ function downloadCsv(text: string, name: string) {
 }
 
 /**
- * Invoice administration. Records live in this component's state (seeded with sample data) until the
+ * Invoice administration. Records live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits and no reminder emails are sent.
  */
 export function InvoicesPage({ preview, startNew }: { preview?: string; startNew?: boolean }) {
@@ -57,7 +57,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   const [payDate, setPayDate] = useState("");
   const [notice, setNotice] = useState("");
 
-  const invoices = useMemo(() => edited ?? (today ? sampleInvoices(today) : []), [edited, today]);
+  const invoices = useMemo(() => edited ?? e2eSeed<Invoice>("invoices") ?? [], [edited]);
 
   if (!today) {
     return (

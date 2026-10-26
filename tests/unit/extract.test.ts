@@ -6,7 +6,7 @@ import { DEFAULT_EXTRACT_LIMITS } from "@/lib/dms/extract/limits";
 import { listZip } from "@/lib/dms/extract/zip";
 import { collectText, decodeEntities } from "@/lib/dms/extract/xml";
 import { normalizeText } from "@/lib/dms/extract/text";
-import { makePdf } from "@/lib/dms/memory/sample-files";
+import { makePdf } from "../support/sample-files";
 
 const enc = (s: string) => new TextEncoder().encode(s);
 const run = (name: string, bytes: Uint8Array, limits = DEFAULT_EXTRACT_LIMITS) =>

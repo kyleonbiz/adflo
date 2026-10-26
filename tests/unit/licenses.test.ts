@@ -3,7 +3,7 @@ import { addDays, addMonths, daysBetween, isDay } from "@/lib/dates";
 import {
   expiryText, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder, renewLicense, renewalTasks, suggestedExpiry, summarize,
 } from "@/lib/licenses/logic";
-import { sampleLicenses } from "@/lib/licenses/sample-data";
+import { sampleLicenses } from "../support/licenses-sample-data";
 import type { License } from "@/lib/licenses/types";
 import { licenseFormSchema } from "@/lib/licenses/validation";
 

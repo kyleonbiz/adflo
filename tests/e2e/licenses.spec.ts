@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("platform modules", () => {
   test("the dashboard links through to the licenses module", async ({ page }) => {
@@ -158,6 +158,6 @@ test.describe("platform modules", () => {
     await expect(page.getByRole("navigation", { name: "Services" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name: "Licenses & Renewals" })).toBeVisible();
     await page.getByRole("link", { name: "Documents", exact: true }).click();
-    await expect(page.getByTestId("document-card").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
   });
 });
