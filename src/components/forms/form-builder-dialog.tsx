@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formNameTaken } from "@/lib/forms/logic";
 import { FIELD_TYPES, type FieldType, type FormField, type FormTemplate } from "@/lib/forms/types";
 import { formBuilderSchema, type FormBuilderValues } from "@/lib/forms/validation";
 
@@ -30,12 +31,12 @@ function toDraft(form?: FormTemplate): Draft {
   return {
     name: form.name, description: form.description, requiresApproval: form.requiresApproval,
     approver: form.approver, documentTemplate: form.documentTemplate,
-    fields: form.fields.map((f) => ({ id: f.id, label: f.label, type: f.type, required: f.required, optionsText: f.options.join(", ") })),
+    fields: form.fields.map((f) => ({ id: f.id, label: f.label, type: f.type, required: f.required, optionsText: f.options.join(", "), notBefore: f.notBefore })),
   };
 }
 
 /** Build or edit a form template. The dialog is keyed by the caller so each open starts from fresh state. */
-function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: () => void; onSave: (values: FormBuilderValues) => void }) {
+function BuilderBody({ form, existing, onClose, onSave }: { form?: FormTemplate; existing: FormTemplate[]; onClose: () => void; onSave: (values: FormBuilderValues) => void }) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(form));
   const [problems, setProblems] = useState<string[]>([]);
 
@@ -50,16 +51,22 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
       return { ...d, fields };
     });
 
+  const labels = draft.fields.map((f) => f.label.trim()).filter(Boolean);
+
   const save = () => {
     const parsed = formBuilderSchema.safeParse({
       ...draft,
-      fields: draft.fields.map(({ optionsText, ...f }) => ({
+      fields: draft.fields.map(({ optionsText, ...f }, i) => ({
         ...f,
+        // Only a date field can follow an earlier date field; anything else is dropped (e.g. after a type change or move).
+        notBefore: f.type === "date" && draft.fields.slice(0, i).some((x) => x.id === f.notBefore && x.type === "date") ? f.notBefore : undefined,
         options: f.type === "select" ? optionsText.split(",").map((o) => o.trim()).filter(Boolean) : [],
       })),
     });
-    if (!parsed.success) {
-      setProblems([...new Set(parsed.error.issues.map((i) => i.message))]);
+    const found = parsed.success ? [] : [...new Set(parsed.error.issues.map((i) => i.message))];
+    if (formNameTaken(existing, draft.name, form?.id)) found.unshift(`A form called "${draft.name.trim()}" already exists. Pick a different name.`);
+    if (!parsed.success || found.length > 0) {
+      setProblems(found);
       return;
     }
     onSave(parsed.data);
@@ -105,6 +112,17 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
                     <Button type="button" size="icon-sm" variant="ghost" aria-label={`Remove field ${i + 1}`} disabled={draft.fields.length === 1} onClick={() => setDraft((d) => ({ ...d, fields: d.fields.filter((x) => x.id !== f.id) }))}><Trash2 /></Button>
                   </div>
                 </div>
+                {f.type === "date" && draft.fields.slice(0, i).some((x) => x.type === "date") && (
+                  <Select value={f.notBefore ?? "none"} onValueChange={(v) => setField(f.id, { notBefore: v === "none" ? undefined : v })}>
+                    <SelectTrigger aria-label={`Earliest date for field ${i + 1}`} className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Any date</SelectItem>
+                      {draft.fields.slice(0, i).filter((x) => x.type === "date").map((x) => (
+                        <SelectItem key={x.id} value={x.id}>On or after: {x.label.trim() || `field ${draft.fields.indexOf(x) + 1}`}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {f.type === "select" && (
                   <Input value={f.optionsText} onChange={(e) => setField(f.id, { optionsText: e.target.value })} placeholder="Options, separated by commas" aria-label={`Options of field ${i + 1}`} className="h-9" />
                 )}
@@ -132,7 +150,12 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
         <div className="space-y-1.5">
           <Label htmlFor="fb-template">Document template (optional)</Label>
           <textarea id="fb-template" rows={5} value={draft.documentTemplate} onChange={(e) => setDraft({ ...draft, documentTemplate: e.target.value })} className={textareaClass}
-            placeholder={"Write the document and drop in fields like {{Field label}}.\nLeave empty for a simple list of answers."} />
+            placeholder={"Write the document and drop in fields like {{Field label}}.\nLeave empty for a simple list of answers."} aria-describedby="fb-template-hint" />
+          {labels.length > 0 && (
+            <p id="fb-template-hint" className="text-xs text-muted-foreground">
+              Fields you can use: {labels.map((l, i) => <span key={`${i}-${l}`}>{i > 0 && ", "}<code className="rounded bg-muted px-1">{`{{${l}}}`}</code></span>)}
+            </p>
+          )}
         </div>
 
         {problems.length > 0 && (
@@ -150,17 +173,18 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
 }
 
 export function FormBuilderDialog({
-  open, form, onOpenChange, onSave,
+  open, form, existing, onOpenChange, onSave,
 }: {
   open: boolean;
   form?: FormTemplate;
+  existing: FormTemplate[];
   onOpenChange: (open: boolean) => void;
   onSave: (values: FormBuilderValues) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
-        {open && <BuilderBody form={form} onClose={() => onOpenChange(false)} onSave={onSave} />}
+        {open && <BuilderBody form={form} existing={existing} onClose={() => onOpenChange(false)} onSave={onSave} />}
       </DialogContent>
     </Dialog>
   );

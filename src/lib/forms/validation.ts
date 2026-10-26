@@ -7,11 +7,22 @@ const fieldSchema = z
     label: z.string().trim().min(1, "Every field needs a label").max(80, "Keep labels under 80 characters"),
     type: z.enum(FIELD_TYPES.map((t) => t.value) as [string, ...string[]]),
     required: z.boolean(),
+    notBefore: z.string().optional(),
     options: z.array(z.string().trim().min(1, "Options cannot be empty").max(60, "Keep options under 60 characters")).max(20, "At most 20 options"),
   })
   .refine((f) => f.type !== "select" || f.options.length >= 2, {
     path: ["options"], message: "A dropdown needs at least two options",
   });
+
+/** Placeholder names in `{{...}}` form that are not in `labels` (lower-case). Each is listed once. */
+export function unknownPlaceholders(template: string, labels: Set<string>): string[] {
+  const out = new Map<string, string>();
+  for (const m of template.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)) {
+    const name = m[1];
+    if (!labels.has(name.toLowerCase()) && !out.has(name.toLowerCase())) out.set(name.toLowerCase(), name);
+  }
+  return [...out.values()];
+}
 
 export const formBuilderSchema = z
   .object({
@@ -28,6 +39,19 @@ export const formBuilderSchema = z
       const key = f.label.trim().toLowerCase();
       if (seen.has(key)) ctx.addIssue({ code: "custom", path: ["fields"], message: `Two fields are called "${f.label.trim()}". Labels must be unique.` });
       seen.add(key);
+    }
+    v.fields.forEach((f, i) => {
+      if (!f.notBefore) return;
+      const target = v.fields.slice(0, i).find((x) => x.id === f.notBefore);
+      if (f.type !== "date" || !target || target.type !== "date") {
+        ctx.addIssue({ code: "custom", path: ["fields", i, "notBefore"], message: `"${f.label.trim()}" can only follow an earlier date field.` });
+      }
+    });
+    // A placeholder that matches no field label would silently print as blank in the document.
+    const labels = new Set(v.fields.map((f) => f.label.trim().toLowerCase()));
+    const unknown = unknownPlaceholders(v.documentTemplate, labels);
+    if (unknown.length > 0) {
+      ctx.addIssue({ code: "custom", path: ["documentTemplate"], message: `The document template uses ${unknown.map((u) => `{{${u}}}`).join(", ")}, but no field has ${unknown.length === 1 ? "that label" : "those labels"}.` });
     }
     if (v.requiresApproval && v.approver.trim() === "") ctx.addIssue({ code: "custom", path: ["approver"], message: "Enter who approves submissions" });
   });

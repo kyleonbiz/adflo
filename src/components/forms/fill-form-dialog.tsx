@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -59,9 +59,11 @@ export function FillFormDialog({
   const [values, setValues] = useState<Record<string, string>>({});
   const [by, setBy] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
+  const [nameError, setNameError] = useState("");
+  const body = useRef<HTMLDivElement>(null);
 
   const close = (o: boolean) => {
-    if (!o) { setValues({}); setBy(""); setErrors({}); }
+    if (!o) { setValues({}); setBy(""); setErrors({}); setNameError(""); }
     onOpenChange(o);
   };
 
@@ -83,16 +85,24 @@ export function FillFormDialog({
               onSubmit={(e) => {
                 e.preventDefault();
                 const found = validateSubmission(form, values);
+                // An approver needs to know who is asking; for other forms the name is optional.
+                const missingName = form.requiresApproval && by.trim() === "" ? "Enter your name so the approver knows who this is from" : "";
                 setErrors(found);
-                if (Object.keys(found).length > 0) return;
+                setNameError(missingName);
+                if (missingName || Object.keys(found).length > 0) {
+                  // Errors render on the next paint; move focus to the first invalid control once they exist.
+                  requestAnimationFrame(() => body.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
+                  return;
+                }
                 onSubmit(values, by);
                 close(false);
               }}
             >
-              <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+              <div ref={body} className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="fill-by">Your name</Label>
-                  <Input id="fill-by" autoComplete="off" value={by} onChange={(e) => setBy(e.target.value)} maxLength={80} />
+                  <Label htmlFor="fill-by">Your name{form.requiresApproval ? <span className="text-destructive"> *</span> : <span className="font-normal text-muted-foreground"> (optional)</span>}</Label>
+                  <Input id="fill-by" autoComplete="name" value={by} onChange={(e) => setBy(e.target.value)} maxLength={80} aria-invalid={!!nameError} aria-describedby={nameError ? "fill-by-error" : undefined} />
+                  {nameError && <p id="fill-by-error" role="alert" className="text-xs text-destructive">{nameError}</p>}
                 </div>
                 {form.fields.map((f) => (
                   <div key={f.id} className="space-y-1.5">
@@ -104,7 +114,7 @@ export function FillFormDialog({
               </div>
               <div className="flex justify-end gap-2 border-t px-5 py-3">
                 <Button type="button" variant="outline" onClick={() => close(false)}>Cancel</Button>
-                <Button type="submit">Submit</Button>
+                <Button type="submit">{form.requiresApproval ? "Submit for approval" : "Submit"}</Button>
               </div>
             </form>
           </>

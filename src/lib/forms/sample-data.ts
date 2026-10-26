@@ -22,7 +22,7 @@ export function sampleForms(): FormTemplate[] {
       id: "form-leave", name: "Time-off request", description: "Request leave for approval.",
       requiresApproval: true, approver: "Priya Shah",
       fields: [
-        f("l-name", "Employee name", "text"), f("l-from", "First day off", "date"), f("l-to", "Last day off", "date"),
+        f("l-name", "Employee name", "text"), f("l-from", "First day off", "date"), { ...f("l-to", "Last day off", "date"), notBefore: "l-from" },
         f("l-type", "Type", "select", true, ["Vacation", "Sick", "Personal"]), f("l-reason", "Reason", "longtext", false),
       ],
       documentTemplate: "",

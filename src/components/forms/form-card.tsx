@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, ChevronDown, Download, FileText, Pencil, Play, Trash2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDayLong } from "@/lib/dates";
-import { displayValue } from "@/lib/forms/logic";
+import { displayValue, sortSubmissions } from "@/lib/forms/logic";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
 import { cn } from "@/lib/utils";
 import { SUBMISSION_BADGE, SUBMISSION_LABEL } from "./status";
@@ -23,6 +23,7 @@ export interface FormActions {
 
 function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission; actions: FormActions }) {
   const [comment, setComment] = useState("");
+  const [reasonNeeded, setReasonNeeded] = useState(false);
   const summary = form.fields.slice(0, 3).map((f) => displayValue(f, s.values[f.id])).filter(Boolean).join(" · ");
   return (
     <li className="space-y-2 rounded-xl border p-3 text-sm" data-testid="submission-row">
@@ -38,12 +39,13 @@ function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission
           {s.status === "approved" ? "Approved" : "Rejected"} by {s.decidedBy} on {formatDayLong(s.decidedOn)}{s.comment && `: ${s.comment}`}
         </p>
       )}
+      {reasonNeeded && <p id={`reason-${s.id}`} role="alert" className="text-xs text-destructive">Add a short reason so the submitter knows why it was rejected.</p>}
       <div className="flex flex-wrap items-center gap-2">
         {s.status === "pending" && (
           <>
-            <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (optional)" aria-label={`Comment on submission by ${s.submittedBy}`} className="h-8 max-w-56 text-xs" maxLength={200} />
+            <Input value={comment} onChange={(e) => { setComment(e.target.value); setReasonNeeded(false); }} placeholder="Comment (required to reject)" aria-label={`Comment on submission by ${s.submittedBy}`} aria-invalid={reasonNeeded} aria-describedby={reasonNeeded ? `reason-${s.id}` : undefined} className="h-8 max-w-56 text-xs" maxLength={200} />
             <Button size="sm" variant="outline" aria-label={`Approve submission by ${s.submittedBy}`} onClick={() => actions.onDecide(form, s, "approved", comment)}><CheckCircle2 /> Approve</Button>
-            <Button size="sm" variant="outline" aria-label={`Reject submission by ${s.submittedBy}`} onClick={() => actions.onDecide(form, s, "rejected", comment)}><XCircle /> Reject</Button>
+            <Button size="sm" variant="outline" aria-label={`Reject submission by ${s.submittedBy}`} onClick={() => (comment.trim() ? actions.onDecide(form, s, "rejected", comment) : setReasonNeeded(true))}><XCircle /> Reject</Button>
           </>
         )}
         <Button size="sm" variant="ghost" aria-label={`Document for submission by ${s.submittedBy}`} onClick={() => actions.onDocument(form, s)}><FileText /> Document</Button>
@@ -53,13 +55,23 @@ function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission
   );
 }
 
-export function FormCard({ form, submissions, actions }: { form: FormTemplate; submissions: Submission[]; actions: FormActions }) {
+/** `focusKey` changes whenever the page wants this card shown: it opens the submissions and scrolls to the card. */
+export function FormCard({ form, submissions, actions, focusKey }: { form: FormTemplate; submissions: Submission[]; actions: FormActions; focusKey?: number }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLLIElement>(null);
+  const [seenFocus, setSeenFocus] = useState(focusKey);
+  if (focusKey !== seenFocus) {
+    setSeenFocus(focusKey);
+    if (focusKey !== undefined) setOpen(true);
+  }
+  useEffect(() => {
+    if (focusKey !== undefined) ref.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focusKey]);
   const pending = submissions.filter((s) => s.status === "pending").length;
   const panelId = `form-subs-${form.id}`;
 
   return (
-    <li className="rounded-2xl border bg-card shadow-panel" data-testid="form-card">
+    <li ref={ref} className="scroll-mt-4 rounded-2xl border bg-card shadow-panel" data-testid="form-card">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -97,7 +109,7 @@ export function FormCard({ form, submissions, actions }: { form: FormTemplate; s
                   <Button size="sm" variant="outline" onClick={() => actions.onExport(form, submissions)}><Download /> Export CSV</Button>
                 </div>
                 <ul className="space-y-2">
-                  {[...submissions].sort((a, b) => (a.submittedOn < b.submittedOn ? 1 : -1)).map((s) => (
+                  {sortSubmissions(submissions).map((s) => (
                     <SubmissionRow key={s.id} form={form} s={s} actions={actions} />
                   ))}
                 </ul>
