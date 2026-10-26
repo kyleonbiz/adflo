@@ -46,7 +46,7 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
   const [notice, setNotice] = useState("");
 
   const setup = useSetupConfig();
-  // Forms installed by Back Office Setup (only once setup is finished) sit alongside your own records.
+  // Forms installed by Settings (only once setup is finished) sit alongside your own records.
   const forms = useMemo(() => editedForms ?? [...starterForms(), ...installedForms(setup?.completedOn ? setup.templates : [])], [editedForms, setup]);
   const subs = useMemo(() => editedSubs ?? e2eSeed<Submission>("submissions") ?? [], [editedSubs]);
 

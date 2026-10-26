@@ -32,7 +32,7 @@ function NavLink({ item, active, onNavigate }: { item: Item; active: boolean; on
   );
 }
 
-/** The vertical module menu: the overview and the working modules, then Back Office Setup apart at the bottom. */
+/** The vertical module menu: Home, the AI assistant and the working modules, then Settings apart at the bottom. */
 export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: () => void }) {
   const pathname = usePathname();
   const modules: Item[] = MODULES.flatMap((m) => {
@@ -42,13 +42,14 @@ export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: ()
   const setup = MODULES.find((m) => m.id === "setup");
   const setupHref = setup ? moduleHref(setup, base) : null;
   const overview: Item = { id: "overview", label: "Home", href: `${base}/overview` };
+  const assistant: Item = { id: "assistant", label: "AI Assistant", href: `${base}/assistant` };
 
   return (
     <div className="flex h-full flex-col gap-4 bg-brand-navy p-4">
       <Brand wordmark light href={`${base}/overview`} className="w-44 px-1" />
       <nav aria-label="Services" className="flex flex-1 flex-col">
         <ul className="space-y-1">
-          {[overview, ...modules].map((item) => (
+          {[overview, assistant, ...modules].map((item) => (
             <li key={item.id}><NavLink item={item} active={isActive(pathname, item.href, base)} onNavigate={onNavigate} /></li>
           ))}
         </ul>

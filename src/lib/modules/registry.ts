@@ -32,7 +32,7 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Requests, recurring tasks and reminders in one place." },
   { id: "file-reset", number: "10", name: "Business File Reset", slug: "file-reset", status: "available",
     summary: "Guided cleanup: duplicates, folder structure and filenames, with preview and approval." },
-  { id: "setup", number: "11", name: "Back Office Setup", slug: "setup", status: "available",
+  { id: "setup", number: "11", name: "Settings", slug: "setup", status: "available",
     summary: "Guided onboarding: pick services, import data and configure recurring workflows." },
 ];
 

@@ -50,7 +50,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
   const [notice, setNotice] = useState<{ id: number; text: string; undo?: () => void } | null>(null);
 
   const setup = useSetupConfig();
-  // Starter records installed by Back Office Setup (only once setup is finished) sit alongside your own records.
+  // Starter records installed by Settings (only once setup is finished) sit alongside your own records.
   const licenses = useMemo(
     () => edited ?? (today ? [...(e2eSeed<License>("licenses") ?? []), ...installedLicenses(setup?.completedOn ? setup.templates : [], today)] : []),
     [edited, today, setup],

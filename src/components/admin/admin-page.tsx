@@ -102,7 +102,7 @@ export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: 
 
   const requests = useMemo(() => editedRequests ?? e2eSeed<AdminRequest>("requests") ?? [], [editedRequests]);
   const setup = useSetupConfig();
-  // Recurring tasks installed by Back Office Setup (only once setup is finished) sit alongside your own records.
+  // Recurring tasks installed by Settings (only once setup is finished) sit alongside your own records.
   const routines = useMemo(
     () => editedRoutines ?? (today ? [...(e2eSeed<Routine>("routines") ?? []), ...installedRoutines(setup?.completedOn ? setup.templates : [], today)] : []),
     [editedRoutines, today, setup],
