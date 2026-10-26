@@ -11,7 +11,7 @@ async function readDownload(download: import("@playwright/test").Download): Prom
 
 /** Imports a deliberately messy expense export through the import wizard, with Vendor required. */
 async function importExpenses(page: Page) {
-  await page.goto("/app/reporting");
+  await page.goto("/app/reporting?view=custom");
   await page.getByRole("button", { name: "Import CSV" }).first().click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Choose a CSV file").setInputFiles({ name: `${SAMPLE_NAME}.csv`, mimeType: "text/csv", buffer: Buffer.from(SAMPLE_CSV) });
@@ -22,8 +22,79 @@ async function importExpenses(page: Page) {
 }
 
 test.describe("reporting module", () => {
-  test("starts empty and imports an export, setting aside bad and repeated rows", async ({ page }) => {
+  test("overview: shows what needs attention and a card for every service", async ({ page }) => {
     await page.goto("/app/reporting");
+    await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByTestId("attention-count")).toContainText("item");
+    expect(await page.getByTestId("attention-item").count()).toBeGreaterThan(0);
+    const cards = page.getByTestId("module-card");
+    const card = (name: string) => cards.filter({ has: page.getByRole("heading", { name, exact: true }) });
+    await expect(cards).toHaveCount(8);
+    await expect(card("Invoices")).toContainText("Outstanding");
+    await expect(card("CRM & Data")).toContainText("Contacts");
+    await expect(card("Documents")).toContainText("No records yet"); // documents are not seeded
+  });
+
+  test("every service has a report, opened from the card or the tab, with a shareable address", async ({ page }) => {
+    await page.goto("/app/reporting");
+    await page.getByRole("button", { name: "View Invoices report" }).click();
+    await expect(page.getByRole("tab", { name: "Invoices" })).toHaveAttribute("aria-selected", "true");
+    await expect(page).toHaveURL(/\?view=invoices$/);
+    const report = page.getByTestId("module-report");
+    await expect(report).toContainText("Outstanding");
+    await expect(report).toContainText("Invoices by status");
+    await expect(report).toContainText("Billed by client");
+    expect(await page.getByTestId("report-record").count()).toBeGreaterThan(0);
+
+    for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork", "Admin Support"]) {
+      await page.getByRole("tab", { name }).click();
+      await expect(page.getByTestId("module-report")).toContainText(name);
+      expect(await page.getByTestId("report-metric").count()).toBe(4);
+    }
+    await page.goto("/app/reporting?view=projects");
+    await expect(page.getByRole("tab", { name: "Projects" })).toHaveAttribute("aria-selected", "true");
+    await page.getByRole("tab", { name: "Overview" }).click();
+    await expect(page).not.toHaveURL(/view=/);
+  });
+
+  test("a service report exports its records as CSV and Excel, and a service with no records says so", async ({ page }) => {
+    await page.goto("/app/reporting?view=vendors");
+    let download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export CSV" }).click();
+    let file = await download;
+    expect(file.suggestedFilename()).toMatch(/^vendors-report-\d{4}-\d{2}-\d{2}\.csv$/);
+    const lines = (await readDownload(file)).toString("utf8").trimEnd().split("\r\n");
+    expect(lines[0]).toBe("Name,Category,Status,Contact,Email,Required documents received,Required documents");
+    expect(lines.length).toBeGreaterThan(1);
+    download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export Excel" }).click();
+    file = await download;
+    expect(file.suggestedFilename()).toMatch(/\.xlsx$/);
+    expect((await readDownload(file)).subarray(0, 2).toString()).toBe("PK");
+
+    await page.getByRole("tab", { name: "Documents" }).click();
+    const empty = page.getByTestId("report-empty");
+    await expect(empty).toContainText("No documents to report on yet");
+    await expect(empty.getByRole("link", { name: "Open Documents" })).toHaveAttribute("href", "/app");
+  });
+
+  test("an unknown view falls back to the overview", async ({ page }) => {
+    await page.goto("/app/reporting?view=nonsense");
+    await expect(page.getByTestId("overview")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("tabs and cards fit a phone screen", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 800 });
+    for (const view of ["", "?view=invoices", "?view=custom"]) {
+      await page.goto(`/app/reporting${view}`);
+      await expect(page.getByRole("tab", { name: "Overview" })).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), view).toBeLessThanOrEqual(0);
+    }
+  });
+
+  test("starts empty and imports an export, setting aside bad and repeated rows", async ({ page }) => {
+    await page.goto("/app/reporting?view=custom");
     await expect(page.getByRole("note")).toContainText("never uploaded");
     await expect(page.getByRole("heading", { name: "No data loaded" })).toBeVisible();
     await importExpenses(page);
@@ -157,7 +228,7 @@ test.describe("reporting module", () => {
   });
 
   test("import wizard: guessed types can be changed and required columns reject blanks", async ({ page }) => {
-    await page.goto("/app/reporting");
+    await page.goto("/app/reporting?view=custom");
     await page.getByRole("button", { name: "Import CSV" }).first().click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Or paste CSV text").fill("When,Who,Score\n3/4/2026,Ann,10\n3/5/2026,,20\n3/6/2026,Bo,oops\n3/7/2026,Cy,30");
@@ -185,7 +256,7 @@ test.describe("reporting module", () => {
   });
 
   test("import wizard: the repeated-row option and an unreadable file", async ({ page }) => {
-    await page.goto("/app/reporting");
+    await page.goto("/app/reporting?view=custom");
     await page.getByRole("button", { name: "Import CSV" }).first().click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Choose a CSV file").setInputFiles({ name: "sales data.csv", mimeType: "text/csv", buffer: Buffer.from("Item,Qty\nPen,3\nPen,3\nCap,1\n") });
@@ -206,7 +277,7 @@ test.describe("reporting module", () => {
   test("long values are cut short instead of stretching the table, and paging returns to the top", async ({ page }) => {
     const lines = ["Id,Notes"];
     for (let i = 0; i < 250; i++) lines.push(`${1000 + i},${"word ".repeat(40).trim()} ${i}`);
-    await page.goto("/app/reporting");
+    await page.goto("/app/reporting?view=custom");
     await page.getByRole("button", { name: "Import CSV" }).first().click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Or paste CSV text").fill(lines.join("\n"));
@@ -227,7 +298,7 @@ test.describe("reporting module", () => {
   });
 
   test("has a skip link that moves focus to the page", async ({ page }) => {
-    await page.goto("/app/reporting");
+    await page.goto("/app/reporting?view=custom");
     await page.keyboard.press("Tab");
     const skip = page.getByRole("link", { name: "Skip to content" });
     await expect(skip).toBeFocused();
