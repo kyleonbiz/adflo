@@ -66,6 +66,7 @@ test.describe("platform modules", () => {
     await dialog.getByRole("button", { name: "90 days" }).click();
     await expect(dialog.getByLabel("Remind me (days before expiry)")).toHaveValue("90, 60, 30, 7");
     await dialog.getByLabel("License name").fill("Test permit");
+    await dialog.getByLabel("I have checked these details against the license document.").check();
     await dialog.getByRole("button", { name: "Add license" }).click();
     const card = page.getByTestId("license-card").filter({ hasText: "Test permit" });
     await card.getByRole("button", { name: /Required documents/ }).click();
@@ -85,8 +86,29 @@ test.describe("platform modules", () => {
     await expect(dialog.getByLabel("License number")).toHaveValue("FH-4471");
     await expect(dialog.getByLabel("Issuing authority")).toHaveValue("County Health Department");
     await expect(dialog.getByLabel("Expires on")).toHaveValue("2027-06-01");
+    // The form refuses to save until the details are confirmed as checked.
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    await expect(dialog.getByRole("alert").filter({ hasText: "checked these details" })).toBeVisible();
+    await dialog.getByLabel("I have checked these details against the license document.").check();
     await dialog.getByRole("button", { name: "Add license" }).click();
     await expect(page.getByTestId("license-card").filter({ hasText: "FOOD HANDLER PERMIT" })).toBeVisible();
+  });
+
+  test("licenses: every license starts as needing review until it is checked", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await expect(page.getByTestId("review-banner")).toContainText("5 licenses still need review");
+    const card = page.getByTestId("license-card").filter({ hasText: "Sales Tax Registration" });
+    await expect(card.getByText("Needs review", { exact: true })).toBeVisible();
+    await card.getByRole("button", { name: "Review Sales Tax Registration" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("heading", { name: "Review license" })).toBeVisible();
+    await dialog.getByRole("button", { name: "Save changes" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("checked these details");
+    await dialog.getByLabel("I have checked these details against the license document.").check();
+    await dialog.getByRole("button", { name: "Save changes" }).click();
+    await expect(card.getByText("Needs review", { exact: true })).toHaveCount(0);
+    await expect(card.getByText(/Details reviewed/)).toBeVisible();
+    await expect(page.getByTestId("review-banner")).toContainText("4 licenses still need review");
   });
 
   test("licenses: a photo can't be read and says so", async ({ page }) => {
@@ -105,6 +127,7 @@ test.describe("platform modules", () => {
 
     await dialog.getByLabel("License name").fill("Food Handler Permit");
     await dialog.getByLabel("Issuing authority").fill("Health Department");
+    await dialog.getByLabel("I have checked these details against the license document.").check();
     await dialog.getByRole("button", { name: "Add license" }).click();
     await expect(dialog).toBeHidden();
     const card = page.getByTestId("license-card").filter({ hasText: "Food Handler Permit" });
@@ -113,6 +136,7 @@ test.describe("platform modules", () => {
 
     await card.getByRole("button", { name: "Edit Food Handler Permit" }).click();
     await page.getByRole("dialog").getByLabel("License name").fill("Food Handler Card");
+    await page.getByRole("dialog").getByLabel("I have checked these details against the license document.").check();
     await page.getByRole("dialog").getByRole("button", { name: "Save changes" }).click();
     await expect(page.getByTestId("license-card").filter({ hasText: "Food Handler Card" })).toBeVisible();
 

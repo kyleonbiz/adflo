@@ -23,6 +23,11 @@ export function licenseStatus(license: License, today: string): LicenseStatus {
   return "active";
 }
 
+/** Every license must be checked against the real document before it can be trusted. */
+export function needsReview(license: License): boolean {
+  return !license.verifiedOn;
+}
+
 export function missingDocuments(license: License): number {
   return license.requiredDocuments.filter((d) => !d.received).length;
 }
@@ -73,8 +78,8 @@ export function licenseAlerts(license: License, today: string): LicenseAlert[] {
       message: `${plural(missing, "required document")} still missing.`,
     });
   }
-  if (license.datesConfirmed === false) {
-    alerts.push({ severity: "warning", message: "Placeholder dates. Enter the real number and expiry." });
+  if (needsReview(license)) {
+    alerts.push({ severity: "warning", kind: "review", message: "Needs review. Check these details against the license." });
   }
   const order = { critical: 0, warning: 1, info: 2 } as const;
   return alerts.sort((a, b) => order[a.severity] - order[b.severity]);
@@ -90,7 +95,7 @@ export function renewalTasks(licenses: License[], today: string): RenewalTask[] 
       title: `Renew ${l.name}`,
       dueOn: l.expiresOn,
       daysLeft: daysLeft(l, today),
-      severity: licenseAlerts(l, today)[0]?.severity ?? "info",
+      severity: licenseAlerts(l, today).find((a) => a.kind !== "review")?.severity ?? "info",
       stage: l.stage,
     }))
     .sort((a, b) => order[a.severity] - order[b.severity] || a.daysLeft - b.daysLeft);
@@ -120,7 +125,7 @@ export function renewLicense(license: License, today: string, input: RenewalInpu
     issuedOn: today,
     expiresOn,
     stage: "not_started",
-    datesConfirmed: true,
+    verifiedOn: today, // the issuer's new expiry and number were entered and confirmed in the renewal dialog
     requiredDocuments: license.requiredDocuments.map((d) => ({ ...d, received: false })),
     renewals: [...(license.renewals ?? []), { on: today, previousExpiresOn: license.expiresOn, newExpiresOn: expiresOn }],
   };
@@ -134,10 +139,11 @@ export interface LicenseSummary {
   expiring: number;
   expired: number;
   missingDocuments: number;
+  needsReview: number;
 }
 
 export function summarize(licenses: License[], today: string): LicenseSummary {
-  const s: LicenseSummary = { total: licenses.length, active: 0, renewalWindow: 0, expiring: 0, expired: 0, missingDocuments: 0 };
+  const s: LicenseSummary = { total: licenses.length, active: 0, renewalWindow: 0, expiring: 0, expired: 0, missingDocuments: 0, needsReview: 0 };
   for (const l of licenses) {
     const status = licenseStatus(l, today);
     if (status === "expired") s.expired++;
@@ -145,6 +151,7 @@ export function summarize(licenses: License[], today: string): LicenseSummary {
     else if (status === "renewal_window") s.renewalWindow++;
     else s.active++;
     s.missingDocuments += missingDocuments(l);
+    if (needsReview(l)) s.needsReview++;
   }
   return s;
 }

@@ -45,8 +45,8 @@ export interface License {
   stage: RenewalStage;
   requiredDocuments: RequiredDocument[];
   notes: string;
-  /** False on starter records whose number and dates are placeholders. Absent means confirmed. */
-  datesConfirmed?: boolean;
+  /** The day someone confirmed the details match the license itself. Absent means it still needs review. */
+  verifiedOn?: string;
   renewals?: RenewalRecord[];
 }
 
@@ -66,6 +66,8 @@ export type AlertSeverity = "info" | "warning" | "critical";
 export interface LicenseAlert {
   severity: AlertSeverity;
   message: string;
+  /** Review reminders are about data quality, not the renewal itself. */
+  kind?: "review";
 }
 
 export interface RenewalTask {

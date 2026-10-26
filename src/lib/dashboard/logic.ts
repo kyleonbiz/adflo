@@ -3,7 +3,7 @@ import { notifications, summarize as adminSummary } from "@/lib/admin/logic";
 import type { AdminRequest, Routine } from "@/lib/admin/types";
 import { formatMoney, invoiceState, summarize as invoiceSummary } from "@/lib/invoices/logic";
 import type { Invoice } from "@/lib/invoices/types";
-import { licenseStatus, summarize as licenseSummary } from "@/lib/licenses/logic";
+import { licenseStatus, needsReview, summarize as licenseSummary } from "@/lib/licenses/logic";
 import type { License } from "@/lib/licenses/types";
 import { summarize as projectSummary, taskAlerts } from "@/lib/projects/logic";
 import type { Project } from "@/lib/projects/types";
@@ -52,7 +52,12 @@ function licenseItems(licenses: License[], today: string, base: string): Attenti
   const out: AttentionItem[] = [];
   for (const l of licenses) {
     const status = licenseStatus(l, today);
-    if (status === "active") continue;
+    if (status === "active") {
+      if (needsReview(l)) {
+        out.push({ id: `lic-review-${l.id}`, area: "Licenses", href: `${base}/licenses`, severity: "info", label: "Review", text: `${l.name} needs its details checked` });
+      }
+      continue;
+    }
     const expired = status === "expired";
     const submitted = l.stage === "submitted";
     const open = status === "renewal_window";
