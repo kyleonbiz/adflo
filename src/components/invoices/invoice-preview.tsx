@@ -4,8 +4,8 @@ import { Building2, CreditCard, Download, Mail, MapPin, Pencil, Phone } from "lu
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { formatMoney, invoiceTotals, lineCents } from "@/lib/invoices/logic";
-import { invoiceHtml } from "@/lib/invoices/share";
 import type { Invoice } from "@/lib/invoices/types";
+import { downloadInvoice } from "./download";
 
 function Contact({ icon: Icon, children }: { icon: typeof Mail; children?: string }) {
   if (!children) return null;
@@ -20,19 +20,10 @@ export function InvoicePreview({
   onOpenChange: (open: boolean) => void;
   onEdit: (invoice: Invoice) => void;
 }) {
-  const download = (inv: Invoice) => {
-    const url = URL.createObjectURL(new Blob([invoiceHtml(inv)], { type: "text/html;charset=utf-8" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `invoice-${inv.number.replace(/[^\w.-]+/g, "_")}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <Dialog open={!!invoice} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
-        {invoice && <Body invoice={invoice} onDownload={() => download(invoice)} onEdit={() => { onOpenChange(false); onEdit(invoice); }} />}
+        {invoice && <Body invoice={invoice} onDownload={() => downloadInvoice(invoice)} onEdit={() => { onOpenChange(false); onEdit(invoice); }} />}
       </DialogContent>
     </Dialog>
   );

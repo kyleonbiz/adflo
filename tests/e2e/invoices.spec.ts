@@ -95,6 +95,13 @@ test.describe("invoices module", () => {
     await expect(page.getByTestId("invoice-card")).toHaveCount(7);
   });
 
+  test("downloads a single invoice from its card", async ({ page }) => {
+    await page.goto("/app/invoices");
+    const download = page.waitForEvent("download");
+    await page.getByTestId("invoice-card").filter({ hasText: "INV-0041" }).getByRole("button", { name: "Download" }).click();
+    expect((await download).suggestedFilename()).toBe("invoice-INV-0041.html");
+  });
+
   test("exports the filtered list as CSV", async ({ page }) => {
     await page.goto("/app/invoices");
     const download = page.waitForEvent("download");

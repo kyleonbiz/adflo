@@ -1,11 +1,12 @@
 "use client";
 
-import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Eye, Link2, Mail, Undo2 } from "lucide-react";
+import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Download, Eye, Link2, Mail, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDayLong } from "@/lib/dates";
 import { formatMoney, invoiceAlerts, invoiceState, nextOverdueNotice, nextReminder } from "@/lib/invoices/logic";
 import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
+import { downloadInvoice } from "./download";
 import { SEVERITY_BADGE, STATE_BADGE, STATE_LABEL } from "./status";
 
 export interface InvoiceActions {
@@ -77,6 +78,7 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
             {invoice.recurrence !== "none" && invoice.status !== "void" && (
               <Button size="sm" variant="outline" onClick={() => actions.onNext(invoice)}><Copy /> Create next</Button>
             )}
+            <Button size="sm" variant="outline" onClick={() => downloadInvoice(invoice)}><Download /> Download</Button>
             <Button size="sm" variant="outline" onClick={() => actions.onCopyLink(invoice)}><Link2 /> Copy link</Button>
             {!open && (
               <Button size="sm" variant="outline" onClick={() => actions.onReopen(invoice)}>
