@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, CircleX, ExternalLink, Rocket, Sparkles } from "lucide-react";
+import { Appearance } from "@/components/settings/appearance";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { Badge } from "@/components/ui/badge";
@@ -268,6 +269,11 @@ export function SetupPage({ base, preview }: { base: "/app"; preview?: string })
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+        <p className="text-sm text-muted-foreground">Your view, plus guided setup for your services, templates and checks.</p>
+      </div>
+      <Appearance />
+      <div>
+        <h2 className="text-lg font-semibold">Guided setup</h2>
         <p className="text-sm text-muted-foreground">Five short steps to get your services, templates and checks in place.</p>
       </div>
       {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
