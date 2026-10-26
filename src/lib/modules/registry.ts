@@ -28,7 +28,7 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Reusable forms, submission tracking, document generation and approvals." },
   { id: "reporting", number: "08", name: "Data Entry & Reporting", slug: "reporting", status: "available",
     summary: "Turn raw files into organized records and scheduled reports." },
-  { id: "admin", number: "09", name: "Admin Support", status: "planned",
+  { id: "admin", number: "09", name: "Admin Support", slug: "admin", status: "available",
     summary: "Requests, recurring tasks and reminders in one place." },
   { id: "file-reset", number: "10", name: "Business File Reset", status: "planned",
     summary: "Guided cleanup: duplicates, folder structure and filenames, with preview and approval." },
