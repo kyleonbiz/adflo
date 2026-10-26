@@ -1,20 +1,23 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Dashboard } from "@/components/modules/dashboard";
 import { SetupStatus } from "@/components/setup/setup-status";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 
-/** Catalogue of the eleven modules; the ones that exist link through, the rest are marked as planned. */
+/** The signed-in home: a dashboard of what needs attention, then the catalogue of services. */
 export function ModuleOverview({ base }: { base: "/app" }) {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Your back office</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Your back office dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          One portal for the administrative work you would otherwise hand off. Each service switches on as it is released.
+          Where things stand today, and what needs you next.
         </p>
       </div>
       <SetupStatus base={base} />
+      <Dashboard base={base} />
+      <h2 className="pt-2 text-lg font-semibold tracking-tight">All services</h2>
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {MODULES.map((m) => {
           const href = moduleHref(m, base);
@@ -24,7 +27,7 @@ export function ModuleOverview({ base }: { base: "/app" }) {
                 <span className="text-xs font-medium text-muted-foreground">{m.number}</span>
                 {href ? <Badge variant="success">Available</Badge> : <Badge variant="muted">Planned</Badge>}
               </div>
-              <h2 className="mt-2 text-base font-semibold">{m.name}</h2>
+              <h3 className="mt-2 text-base font-semibold">{m.name}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{m.summary}</p>
               {href && (
                 <p className="mt-3 flex items-center gap-1 text-sm font-medium text-primary">

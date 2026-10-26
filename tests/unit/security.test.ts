@@ -16,7 +16,7 @@ describe("safeNext (open redirect)", () => {
     "/\u0000/evil.com", "/ /evil.com", "\t/app", "app",
   ];
   it.each(hostile)("rejects %j", (v) => {
-    expect(safeNext(v)).toBe("/app");
+    expect(safeNext(v)).toBe("/app/overview");
     expect(new URL(safeNext(v), "https://app.example").origin).toBe("https://app.example");
   });
   it("keeps ordinary in-app paths, queries and fragments", () => {

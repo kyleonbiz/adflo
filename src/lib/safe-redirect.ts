@@ -7,7 +7,7 @@
  */
 const PLACEHOLDER = "http://redirect-check.invalid";
 
-export function safeNext(value: string | null | undefined, fallback = "/app"): string {
+export function safeNext(value: string | null | undefined, fallback = "/app/overview"): string {
   if (!value || !value.startsWith("/") || value.startsWith("//")) return fallback;
   // Only visible ASCII (our own paths are all percent-encoded); no backslashes.
   if (/[^\x21-\x7e]|\\/.test(value)) return fallback;

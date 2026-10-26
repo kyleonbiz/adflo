@@ -64,7 +64,7 @@ describe("proxy / route gating", () => {
     currentUser = { id: "u1" };
     expect((await updateSession(req("/app"))).status).toBe(200);
     const res = await updateSession(req("/login"));
-    expect(new URL(res.headers.get("location")!).pathname).toBe("/app");
+    expect(new URL(res.headers.get("location")!).pathname).toBe("/app/overview");
   });
   it("is a pass-through when Supabase is not configured (dev mode)", async () => {
     expect((await updateSession(req("/app"))).status).toBe(200);
@@ -75,7 +75,7 @@ describe("open-redirect protection", () => {
   it("only accepts same-site relative paths", () => {
     expect(safeNext("/app?x=1")).toBe("/app?x=1");
     for (const bad of ["//evil.com", "https://evil.com", "/\\evil.com", "javascript:alert(1)", "", null, undefined]) {
-      expect(safeNext(bad as string)).toBe("/app");
+      expect(safeNext(bad as string)).toBe("/app/overview");
     }
   });
 });
