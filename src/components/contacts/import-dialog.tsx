@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, FileUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CsvSource, downloadText, useCsvInput } from "@/components/import/csv-source";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,17 +12,7 @@ import { CsvError, parseCsv, type ParsedCsv } from "@/lib/import/csv";
 import { mapRows, missingRequired, suggestMapping, type Mapping } from "@/lib/import/mapping";
 import { runImport, type ImportOutcome } from "@/lib/import/run";
 
-const MAX_FILE_BYTES = 2 * 1024 * 1024;
 type Step = "input" | "map" | "review";
-
-function downloadTemplate() {
-  const url = URL.createObjectURL(new Blob([TEMPLATE_CSV], { type: "text/csv;charset=utf-8" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "contacts-template.csv";
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 function Body({
   existing, onClose, onImport,
@@ -32,9 +22,8 @@ function Body({
   onImport: (outcome: ImportOutcome<ContactInput>, mode: "skip" | "update") => void;
 }) {
   const [step, setStep] = useState<Step>("input");
-  const [text, setText] = useState("");
-  const [fileName, setFileName] = useState("");
-  const [error, setError] = useState("");
+  const input = useCsvInput();
+  const { error, setError } = input;
   const [parsed, setParsed] = useState<ParsedCsv | null>(null);
   const [mapping, setMapping] = useState<Mapping>({});
   const [mode, setMode] = useState<"skip" | "update">("skip");
@@ -47,17 +36,9 @@ function Body({
     );
   }, [parsed, mapping, step, existing]);
 
-  const readFile = async (file: File | undefined) => {
-    if (!file) return;
-    if (file.size > MAX_FILE_BYTES) { setError("That file is larger than 2 MB. Split it into smaller files."); return; }
-    setText(await file.text());
-    setFileName(file.name);
-    setError("");
-  };
-
   const next = () => {
     try {
-      const p = parseCsv(text);
+      const p = parseCsv(input.text);
       setParsed(p);
       setMapping(suggestMapping(p.headers, IMPORT_FIELDS));
       setError("");
@@ -84,28 +65,11 @@ function Body({
 
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
         {step === "input" && (
-          <>
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-input bg-card px-4 text-sm font-medium hover:bg-muted">
-                <FileUp className="size-4" aria-hidden /> Choose file
-                <input type="file" accept=".csv,.txt,text/csv,text/plain" className="sr-only" aria-label="Choose a CSV file" onChange={(e) => void readFile(e.target.files?.[0])} />
-              </label>
-              <Button type="button" variant="ghost" onClick={downloadTemplate}><Download /> Download template</Button>
-              {fileName && <span className="text-sm text-muted-foreground">{fileName}</span>}
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="import-text">Or paste CSV text</Label>
-              <textarea
-                id="import-text"
-                rows={8}
-                value={text}
-                onChange={(e) => { setText(e.target.value); setFileName(""); }}
-                placeholder={"Name,Email,Phone,Company\nAnn Lee,ann@example.com,555-010-1111,Acme"}
-                className="flex w-full rounded-lg border border-input bg-card px-3 py-2 font-mono text-xs shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">Up to 5,000 rows. Commas, semicolons and tabs are detected automatically. Nothing is uploaded: the file is read in your browser.</p>
-          </>
+          <CsvSource
+            input={input}
+            placeholder={"Name,Email,Phone,Company\nAnn Lee,ann@example.com,555-010-1111,Acme"}
+            onTemplate={() => downloadText(TEMPLATE_CSV, "contacts-template.csv")}
+          />
         )}
 
         {step === "map" && parsed && (
@@ -174,7 +138,7 @@ function Body({
         <div>{step !== "input" && <Button type="button" variant="ghost" onClick={() => setStep(step === "review" ? "map" : "input")}>Back</Button>}</div>
         <div className="flex gap-2">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          {step === "input" && <Button type="button" onClick={next} disabled={text.trim() === ""}>Next</Button>}
+          {step === "input" && <Button type="button" onClick={next} disabled={input.text.trim() === ""}>Next</Button>}
           {step === "map" && <Button type="button" onClick={() => setStep("review")} disabled={missing.length > 0}>Review</Button>}
           {step === "review" && outcome && (
             <Button type="button" disabled={toApply === 0} onClick={() => { onImport(outcome, mode); onClose(); }}>

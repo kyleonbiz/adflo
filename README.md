@@ -15,12 +15,13 @@ Tailwind and shadcn/ui-style components.
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
-(`src/lib/modules/registry.ts`). Today seven exist: **01 Documents**, **02 Invoices**
+(`src/lib/modules/registry.ts`). Today eight exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
 **05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Projects**
-(`src/lib/projects/`, `src/components/projects/`) and **07 Forms & Paperwork**
-(`src/lib/forms/`, `src/components/forms/`). The other four are listed on the overview page as "Planned".
+(`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
+(`src/lib/forms/`, `src/components/forms/`) and **08 Data Entry & Reporting**
+(`src/lib/datasets/`, `src/components/reporting/`). The other three are listed on the overview page as "Planned".
 
 **Shared import engine** (`src/lib/import/`): `parseCsv` (RFC 4180 quoting, BOM, CRLF, comma/semicolon/tab,
 limits of 5,000 rows, 50 columns and 2,000 characters per cell, control characters stripped, line numbers
@@ -29,9 +30,9 @@ alias), and `runImport` (validate each row, then sort into accepted, rejected an
 its first user; modules 08 (Data Entry) and 10 (File Reset) are meant to reuse it. Files are read in the
 browser and never uploaded.
 
-* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, behind the same gate as before.
-* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,vendors,contacts,projects,forms}`, sample data in the browser tab, nothing saved.
-* **Invoices, licenses, vendors, contacts, projects and forms are not persisted yet.** They are seeded sample data held in component state; there is no
+* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, behind the same gate as before.
+* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,vendors,contacts,projects,forms,reporting}`, sample data in the browser tab, nothing saved.
+* **Invoices, licenses, vendors, contacts, projects, forms and report data are not persisted yet.** They are seeded sample data held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
   renewal tasks, overdue notices) but no email is sent yet. Vendors get required documents by category, can only be
   submitted for approval once every required document is in and unexpired, and are checked for
@@ -39,7 +40,12 @@ browser and never uploaded.
   added and across the list. CRM & Data imports in three steps (choose or paste a
   file, map columns, review) and shows every rejected row by file line before anything changes; matching
   contacts are skipped or updated, and the contact list can be de-duplicated and exported. Scheduled
-  synchronization with other systems needs the backend and is not built. Forms are built in the app, validated on submit,
+  synchronization with other systems needs the backend and is not built. Data Entry & Reporting
+  guesses column types (dates as `3/14/2026` or ISO, money as `$1,200.50` or `(150.25)`), rejects rows that
+  break the rules with the file line and reason, drops exact repeats, then builds grouped reports (dates by
+  month) and exports CSV or a real `.xlsx` workbook (written with `fflate`; text is stored as plain text, so
+  `=CMD()` can never run as a formula). Scheduled summaries show the next send date and a preview but nothing
+  is emailed until there is a backend. Forms are built in the app, validated on submit,
   routed to a named approver when required, and turned into a text document by filling `{{Field label}}`
   placeholders in a single pass (submitted text is never re-expanded); submissions export to CSV.
   Projects flag overdue tasks and repeating tasks
