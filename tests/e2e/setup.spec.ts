@@ -13,7 +13,7 @@ const moduleBox = (page: Page, name: string) => page.getByTestId("module-choices
 
 /** Walks the wizard to the end with a few changes from the defaults. */
 async function completeSetup(page: Page) {
-  await page.goto("/app/setup");
+  await page.goto("/app/setup?tab=setup");
   await fillProfile(page);
   await next(page).click();
   await moduleBox(page, "Projects").uncheck();
@@ -28,7 +28,7 @@ async function completeSetup(page: Page) {
 
 test.describe("back office setup module", () => {
   test("step 1 needs the whole profile before going on", async ({ page }) => {
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await expect(next(page)).toBeDisabled();
     await page.getByLabel("Business name").fill("A");
     await expect(next(page)).toBeDisabled();
@@ -37,7 +37,7 @@ test.describe("back office setup module", () => {
   });
 
   test("modules start from the recommendations for the industry and team size", async ({ page }) => {
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await fillProfile(page);
     await next(page).click();
     const list = page.getByTestId("module-choices");
@@ -57,7 +57,7 @@ test.describe("back office setup module", () => {
   });
 
   test("templates are grouped by module and all start selected", async ({ page }) => {
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await fillProfile(page);
     await next(page).click();
     await next(page).click();
@@ -71,7 +71,7 @@ test.describe("back office setup module", () => {
   });
 
   test("the review shows live checks, links each problem to its step, and blocks an unusable setup", async ({ page }) => {
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await page.getByRole("button", { name: /Review/ }).click(); // jump straight to the end with nothing filled in
     await expect(page.getByTestId("check").filter({ hasText: "Business profile" })).toHaveAttribute("data-status", "fail");
     await expect(page.getByTestId("check").filter({ hasText: "Services chosen" })).toHaveAttribute("data-status", "fail");
@@ -130,7 +130,7 @@ test.describe("back office setup module", () => {
   });
 
   test("a setup that is not finished installs nothing", async ({ page }) => {
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await fillProfile(page);
     await next(page).click();
     await next(page).click(); // templates chosen, but never finished
@@ -139,7 +139,7 @@ test.describe("back office setup module", () => {
   });
 
   test("progress is saved, so leaving and coming back picks up where you were", async ({ page }) => {
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await fillProfile(page, "Saved & Sound");
     await next(page).click();
     await moduleBox(page, "Vendors").check();
@@ -152,7 +152,7 @@ test.describe("back office setup module", () => {
 
   test("a finished setup can be viewed, and Start over clears everything", async ({ page }) => {
     await completeSetup(page);
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await page.getByRole("button", { name: "Start over" }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("");
     await page.goto("/app/forms");
@@ -163,12 +163,12 @@ test.describe("back office setup module", () => {
     await completeSetup(page);
     await page.goto("/app/forms");
     await expect(page.getByTestId("form-card")).toHaveCount(6);
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await page.getByRole("button", { name: "Edit setup" }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("Acme Studio"); // the answers are kept
     await page.goto("/app/forms");
     await expect(page.getByTestId("form-card")).toHaveCount(3);
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await page.getByRole("button", { name: /Review/ }).click();
     await page.getByRole("button", { name: "Finish setup" }).click();
     await page.goto("/app/forms");
@@ -176,7 +176,7 @@ test.describe("back office setup module", () => {
   });
 
   test("damaged or hostile saved data is ignored", async ({ page }) => {
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     for (const bad of ["{not json", "null", JSON.stringify({ version: 1, modules: ["<img src=x onerror=alert(1)>"], templates: ["nope"], business: { name: { x: 1 } }, completedOn: "x" })]) {
       await page.evaluate((v) => localStorage.setItem("aurum.setup.v1", v), bad);
       await page.reload();
@@ -189,7 +189,7 @@ test.describe("back office setup module", () => {
 
   test("fits a phone screen without horizontal scroll at every step", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     const noScroll = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await noScroll();
     await fillProfile(page);
@@ -198,7 +198,7 @@ test.describe("back office setup module", () => {
   });
 
   test("is available in the signed-in app too", async ({ page }) => {
-    await page.goto("/app/setup");
+    await page.goto("/app/setup?tab=setup");
     await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Settings", exact: true })).toHaveAttribute("aria-current", "page");
   });

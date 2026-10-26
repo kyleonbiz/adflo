@@ -14,11 +14,7 @@ const OPTIONS: { id: Theme; label: string; icon: typeof Sun }[] = [
 export function Appearance() {
   const theme = useTheme();
   return (
-    <section aria-labelledby="appearance-h" className="space-y-3 rounded-2xl border bg-card p-5 shadow-panel">
-      <div>
-        <h2 id="appearance-h" className="text-lg font-semibold">Appearance</h2>
-        <p className="text-sm text-muted-foreground">Choose a bright Day view or a darker Night view. Saved in this browser.</p>
-      </div>
+    <section aria-label="Appearance" className="space-y-3 rounded-2xl border bg-card p-5 shadow-panel">
       <div role="radiogroup" aria-label="View" className="grid gap-2 sm:grid-cols-3">
         {OPTIONS.map(({ id, label, icon: Icon }) => (
           <button
