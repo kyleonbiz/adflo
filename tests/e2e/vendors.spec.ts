@@ -33,7 +33,8 @@ test.describe("vendors module", () => {
     await expect(initech).toContainText("Before approval: W-9 is missing, Certificate of insurance is missing");
     await expect(initech).toContainText("2 of 4 required documents in");
 
-    await initech.getByRole("button", { name: /^Documents/ }).click();
+    // Onboarding vendors open with their documents showing.
+    await expect(initech.getByRole("button", { name: /^Documents/ })).toHaveAttribute("aria-expanded", "true");
     await initech.getByLabel("W-9 received on").fill("2026-10-20");
     await expect(initech).toContainText("3 of 4");
     await initech.getByLabel("Certificate of insurance received on").fill("2026-10-20");
@@ -58,6 +59,19 @@ test.describe("vendors module", () => {
     await acme.getByLabel("W-9 expires on").fill("2026-09-01");
     await expect(page.getByRole("status")).toContainText("expiry date cannot be before");
     await expect(acme.getByLabel("W-9 expires on")).toHaveValue("");
+  });
+
+  test("summary tiles and attention rows act on the list", async ({ page }) => {
+    await page.goto("/app/vendors");
+    await page.getByRole("button", { name: /Awaiting approval/ }).first().click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(1);
+    await page.getByRole("button", { name: /^Document issues/ }).click();
+    await expect(page.getByText("Showing vendors with expiring or expired documents")).toBeVisible();
+    await page.getByRole("button", { name: /^Vendors/ }).first().click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(6);
+
+    await page.getByRole("button", { name: "Open Globex Software documents" }).click();
+    await expect(card(page, "Globex Software").getByRole("button", { name: /^Documents/ })).toHaveAttribute("aria-expanded", "true");
   });
 
   test("rejecting then reopening a vendor", async ({ page }) => {
@@ -110,7 +124,7 @@ test.describe("vendors module", () => {
 
     const pp = card(page, "Pied Piper Cloud");
     await expect(pp).toContainText("0 of 4 required documents in");
-    await pp.getByRole("button", { name: /^Documents/ }).click();
+    await expect(pp.getByRole("button", { name: /^Documents/ })).toHaveAttribute("aria-expanded", "true");
     await pp.getByLabel("Add a document for Pied Piper Cloud").fill("SOC 2 report");
     await pp.getByRole("button", { name: "Add", exact: true }).click();
     await expect(pp.getByTestId("vendor-doc")).toHaveCount(5);

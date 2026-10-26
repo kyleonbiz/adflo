@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2, Download, Plus, Receipt, Search } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
@@ -13,14 +13,21 @@ import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { e2eSeed } from "@/lib/e2e-seed";
 import {
-  formatMoney, invoiceAlerts, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
-  nextRecurringInvoice, summarize,
+  formatMoney, describeItems, groupInvoices, hasNextInvoice, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent,   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
+import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
 import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
-import { SEVERITY_BADGE, STATE_LABEL } from "./status";
+import { InvoicePreview } from "./invoice-preview";
+
+/** "sent" matches every sent invoice however close to due; the rest match one state. */
+type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
+const FILTERS: StatusFilter[] = ["draft", "sent", "due_soon", "due_today", "overdue", "paid", "void"];
+const FILTER_LABEL: Record<StatusFilter, string> = { all: "All statuses", sent: "Sent (unpaid)", draft: "Draft", due_soon: "Due soon", due_today: "Due today", overdue: "Overdue", paid: "Paid", void: "Void" };
+const matchesFilter = (i: Invoice, f: StatusFilter, today: string) =>
+  f === "all" || (f === "sent" ? i.status === "sent" : invoiceState(i, today) === f);
 
 const newId = () => `inv-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -41,9 +48,13 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   const today = useToday();
   const [edited, setEdited] = useState<Invoice[] | null>(null);
   const [query, setQuery] = useState("");
-  const [stateFilter, setStateFilter] = useState<"all" | InvoiceState>("all");
+  const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
   const [formFor, setFormFor] = useState<Invoice | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Invoice | null>(null);
+  const [viewing, setViewing] = useState<Invoice | null>(null);
+  const [voiding, setVoiding] = useState<Invoice | null>(null);
+  const [paying, setPaying] = useState<Invoice | null>(null);
+  const [payDate, setPayDate] = useState("");
   const [notice, setNotice] = useState("");
 
   const invoices = useMemo(() => edited ?? e2eSeed<Invoice>("invoices") ?? [], [edited]);
@@ -62,12 +73,28 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   const patch = (id: string, change: (i: Invoice) => Invoice) => update((all) => all.map((i) => (i.id === id ? change(i) : i)));
 
   const actions: InvoiceActions = {
+    onView: (i) => setViewing(i),
     onEdit: (i) => setFormFor(i),
     onDelete: (i) => setDeleting(i),
     onSend: (i) => { patch(i.id, markSent); setNotice(`${i.number} marked as sent.`); },
-    onPay: (i) => { patch(i.id, (x) => markPaid(x, today)); setNotice(`${i.number} marked as paid.`); },
-    onVoid: (i) => { patch(i.id, (x) => ({ ...x, status: "void" })); setNotice(`${i.number} voided.`); },
+    onPay: (i) => { setPayDate(today); setPaying(i); },
+    onVoid: (i) => setVoiding(i),
+    onReopen: (i) => {
+      patch(i.id, reopen);
+      setNotice(i.status === "void" ? `${i.number} reopened as a draft.` : `${i.number} payment undone.`);
+    },
+    onEmail: (i) => {
+      window.location.href = invoiceMailto(i, window.location.origin);
+      if (i.status === "draft") patch(i.id, markSent);
+      setNotice(`Opened your email app for ${i.number}${i.clientEmail ? ` to ${i.clientEmail}` : ""}${i.status === "draft" ? "; marked as sent." : "."}`);
+    },
+    onCopyLink: async (i) => {
+      const link = `${window.location.origin}${invoicePath(i)}`;
+      try { await navigator.clipboard.writeText(link); setNotice(`Link to ${i.number} copied.`); }
+      catch { setNotice(`Copy this link to ${i.number}: ${link}`); }
+    },
     onNext: (i) => {
+      if (hasNextInvoice(i, invoices)) { setNotice(`The next invoice after ${i.number} already exists.`); return; }
       const next = nextRecurringInvoice(i, invoices, newId());
       if (!next) return;
       update((all) => [...all, next]);
@@ -76,24 +103,34 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   };
 
   const saveForm = (values: InvoiceFormValues) => {
-    const { amount, recurrence, ...rest } = values;
-    const fields = { ...rest, recurrence: recurrence as Invoice["recurrence"], amountCents: amount };
+    const items = values.items.map((i) => ({ description: i.description, qty: i.qty, rateCents: i.rate }));
+    const fields = {
+      number: values.number, client: values.client, clientEmail: values.clientEmail,
+      items, taxRate: values.taxRate, description: describeItems(items), amountCents: invoiceTotals(items, values.taxRate).totalCents,
+      sender: { name: values.fromName, address: values.fromAddress, phone: values.fromPhone, email: values.fromEmail },
+      paymentMethods: values.paymentMethods, issuedOn: values.issuedOn, dueOn: values.dueOn,
+      recurrence: values.recurrence as Invoice["recurrence"], reminderDays: values.reminderDays, notes: values.notes,
+    };
     if (formFor && formFor !== "new") {
-      patch(formFor.id, (x) => ({ ...x, ...fields }));
+      const updated = { ...formFor, ...fields };
+      patch(formFor.id, () => updated);
       setNotice(`${values.number} updated.`);
     } else {
-      update((all) => [...all, { ...fields, id: newId(), status: "draft", paidOn: null }]);
+      const created: Invoice = { ...fields, id: newId(), status: "draft", paidOn: null };
+      update((all) => [...all, created]);
+      setViewing(created);
       setNotice(`${values.number} created as a draft.`);
     }
   };
 
+  const payError = paying ? paymentDateError(paying, payDate, today) : null;
   const summary = summarize(invoices, today);
-  const attention = needsAttention(invoices, today);
   const q = query.trim().toLowerCase();
   const visible = invoices
-    .filter((i) => stateFilter === "all" || invoiceState(i, today) === stateFilter)
+    .filter((i) => matchesFilter(i, stateFilter, today))
     .filter((i) => !q || [i.number, i.client, i.description].some((f) => f.toLowerCase().includes(q)))
-    .sort((a, b) => (a.dueOn < b.dueOn ? 1 : a.dueOn > b.dueOn ? -1 : 0));
+;
+  const groups = groupInvoices(visible, today);
 
   return (
     <div className="space-y-5">
@@ -105,7 +142,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => downloadCsv(invoicesToCsv(visible, today), `invoice-report-${today}.csv`)}
+            onClick={() => downloadCsv(invoicesToCsv(groups.flatMap((g) => g.invoices), today), `invoice-report-${today}.csv`)}
             disabled={visible.length === 0}
           >
             <Download /> Export CSV
@@ -126,28 +163,6 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
         <SummaryTile icon={CheckCircle2} label="Paid this month" value={formatMoney(summary.paidThisMonthCents)} tone="text-emerald-600" />
       </section>
 
-      <section aria-labelledby="attention-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
-        <h2 id="attention-heading" className="text-base font-semibold">Needs attention</h2>
-        {attention.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">Nothing overdue or due this week.</p>
-        ) : (
-          <ul className="mt-2 divide-y">
-            {attention.map((i) => {
-              const alert = invoiceAlerts(i, today)[0];
-              return (
-                <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-                  <span><span className="font-medium">{i.number}</span> · {i.client}</span>
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="tabular-nums">{formatMoney(i.amountCents)}</span>
-                    {alert && <Badge variant={SEVERITY_BADGE[alert.severity]}>{alert.message}</Badge>}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
       <section aria-label="Invoices" className="space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative flex-1">
@@ -161,11 +176,11 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
             />
           </div>
           <div className="sm:w-52">
-            <Select value={stateFilter} onValueChange={(v) => setStateFilter(v as typeof stateFilter)}>
+            <Select value={stateFilter} onValueChange={(v) => setStateFilter(v as StatusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
-                {(Object.keys(STATE_LABEL) as InvoiceState[]).map((s) => <SelectItem key={s} value={s}>{STATE_LABEL[s]}</SelectItem>)}
+                {FILTERS.map((s) => <SelectItem key={s} value={s}>{FILTER_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -176,9 +191,18 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
             {invoices.length === 0 ? "No invoices yet. Create your first one." : "No invoices match these filters."}
           </div>
         ) : (
-          <ul className="space-y-3">
-            {visible.map((i) => <InvoiceCard key={i.id} invoice={i} today={today} actions={actions} />)}
-          </ul>
+          <div className="space-y-5">
+            {groups.map((g) => (
+              <div key={g.key} role="group" aria-labelledby={`group-${g.key}`}>
+                <h2 id={`group-${g.key}`} className="mb-2 flex items-baseline gap-2 text-sm font-semibold">
+                  {g.label} <span className="font-normal text-muted-foreground">{g.invoices.length}</span>
+                </h2>
+                <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-panel">
+                  {g.invoices.map((i) => <InvoiceCard key={i.id} invoice={i} today={today} actions={actions} />)}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </section>
 
@@ -190,6 +214,66 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
       />
+
+      <InvoicePreview invoice={viewing} today={today} onOpenChange={(o) => !o && setViewing(null)} onEdit={(i) => setFormFor(i)} />
+
+      <Dialog open={!!voiding} onOpenChange={(o) => !o && setVoiding(null)}>
+        <DialogContent variant="alert">
+          <DialogTitle>Void invoice?</DialogTitle>
+          <DialogDescription className="mt-1">
+            {voiding?.number} for {voiding?.client} will stop counting as owed. You can reopen it later.
+          </DialogDescription>
+          <div className="mt-5 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setVoiding(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (voiding) {
+                  patch(voiding.id, voidInvoice);
+                  setNotice(`${voiding.number} voided.`);
+                }
+                setVoiding(null);
+              }}
+            >
+              Void
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!paying} onOpenChange={(o) => !o && setPaying(null)}>
+        <DialogContent variant="alert">
+          <DialogTitle>Mark as paid</DialogTitle>
+          <DialogDescription className="mt-1">When did {paying?.client} pay {paying?.number}?</DialogDescription>
+          <div className="mt-3 space-y-1.5">
+            <Label htmlFor="pay-date">Payment date</Label>
+            <Input
+              id="pay-date"
+              type="date"
+              value={payDate}
+              onChange={(e) => setPayDate(e.target.value)}
+              aria-invalid={!!payError}
+              aria-describedby={payError ? "pay-date-error" : undefined}
+            />
+            {payError && <p id="pay-date-error" role="alert" className="text-xs text-destructive">{payError}</p>}
+          </div>
+          <div className="mt-5 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPaying(null)}>Cancel</Button>
+            <Button
+              disabled={!!payError}
+              onClick={() => {
+                if (paying && !payError) {
+                  patch(paying.id, (x) => markPaid(x, payDate));
+                  setNotice(`${paying.number} marked as paid.`);
+                  setPaying(null);
+                }
+              }}
+            >
+              Mark paid
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <DialogContent variant="alert">

@@ -1,5 +1,5 @@
-import { advanceDay, daysBetween, formatDayLong } from "@/lib/dates";
-import type { Project, ProjectHealth, Task, TaskState } from "./types";
+import { addDays, addMonths, advanceDay, daysBetween, formatDayLong } from "@/lib/dates";
+import type { Project, ProjectHealth, Task, TaskRepeat, TaskState } from "./types";
 
 /** An open task due within this many days is "due soon". */
 export const DUE_SOON_DAYS = 3;
@@ -25,11 +25,47 @@ export function overdueTasks(project: Project, today: string): Task[] {
   return project.tasks.filter((t) => taskState(t, today) === "overdue");
 }
 
+/** True when the project has tasks and every one is done. */
+export function allTasksDone(project: Project): boolean {
+  return project.tasks.length > 0 && project.tasks.every((t) => t.done);
+}
+
 export function projectHealth(project: Project, today: string): ProjectHealth {
   if (project.status === "completed") return "completed";
   if (project.status === "on_hold") return "on_hold";
   if (project.dueOn < today) return "late";
-  return overdueTasks(project, today).length > 0 ? "at_risk" : "on_track";
+  if (overdueTasks(project, today).length > 0) return "at_risk";
+  if (project.status === "planning") return project.startOn < today ? "at_risk" : "planning";
+  return "on_track";
+}
+
+const HEALTH_ORDER: ProjectHealth[] = ["late", "at_risk", "on_track", "planning", "on_hold", "completed"];
+
+export type ProjectSort = "due" | "health" | "name";
+
+/** A sorted copy. Completed projects always sink to the bottom; ties fall back to due date, then name. */
+export function sortProjects(projects: Project[], sort: ProjectSort, today: string): Project[] {
+  const byDue = (a: Project, b: Project) => a.dueOn.localeCompare(b.dueOn) || a.name.localeCompare(b.name);
+  const key = (a: Project, b: Project) =>
+    sort === "name" ? a.name.localeCompare(b.name)
+    : sort === "health" ? HEALTH_ORDER.indexOf(projectHealth(a, today)) - HEALTH_ORDER.indexOf(projectHealth(b, today)) || byDue(a, b)
+    : byDue(a, b);
+  return [...projects].sort((a, b) => Number(a.status === "completed") - Number(b.status === "completed") || key(a, b));
+}
+
+/** Open tasks first (soonest due, undated last), then finished ones, most recently done first. */
+export function sortTasks(tasks: Task[]): Task[] {
+  const open = tasks.filter((t) => !t.done).sort((a, b) => (a.dueOn ?? "9999").localeCompare(b.dueOn ?? "9999"));
+  const finished = tasks.filter((t) => t.done).sort((a, b) => (b.doneOn ?? "").localeCompare(a.doneOn ?? ""));
+  return [...open, ...finished];
+}
+
+/** The occurrence after `due`. Monthly tasks keep their original day of month where the month is long enough. */
+function nextDue(due: string, repeat: Exclude<TaskRepeat, "none">, anchor: number): string {
+  if (repeat !== "monthly") return advanceDay(due, repeat);
+  const first = addMonths(`${due.slice(0, 8)}01`, 1);
+  const lastDay = Number(addDays(addMonths(first, 1), -1).slice(8));
+  return `${first.slice(0, 8)}${String(Math.min(anchor, lastDay)).padStart(2, "0")}`;
 }
 
 /**
@@ -42,9 +78,10 @@ export function completeTask(tasks: Task[], taskId: string, today: string, newId
   const done = tasks.map((t) => (t.id === taskId ? { ...t, done: true, doneOn: today } : t));
   if (task.repeat === "none" || !task.dueOn || task.followUpId) return done;
 
-  let next = advanceDay(task.dueOn, task.repeat);
-  for (let i = 0; i < 400 && next < today; i++) next = advanceDay(next, task.repeat);
-  const followUp: Task = { ...task, id: newId, dueOn: next, done: false, doneOn: null, followUpId: null };
+  const anchor = task.anchorDay ?? Number(task.dueOn.slice(8));
+  let next = nextDue(task.dueOn, task.repeat, anchor);
+  for (let i = 0; i < 400 && next < today; i++) next = nextDue(next, task.repeat, anchor);
+  const followUp: Task = { ...task, id: newId, dueOn: next, done: false, doneOn: null, followUpId: null, anchorDay: anchor };
   return [...done.map((t) => (t.id === taskId ? { ...t, followUpId: newId } : t)), followUp];
 }
 
@@ -90,15 +127,16 @@ export function summarize(projects: Project[], today: string): PortfolioSummary 
     if (p.status === "active") s.activeProjects++;
     for (const t of p.tasks) {
       if (t.done && t.doneOn?.startsWith(month)) s.completedThisMonth++;
-      if (!t.done && p.status !== "completed") s.openTasks++;
-      if (taskState(t, today) === "overdue" && p.status !== "completed" && p.status !== "on_hold") s.overdueTasks++;
+      if (p.status === "completed" || p.status === "on_hold") continue;
+      if (!t.done) s.openTasks++;
+      if (taskState(t, today) === "overdue") s.overdueTasks++;
     }
   }
   return s;
 }
 
 const HEALTH_TEXT: Record<ProjectHealth, string> = {
-  completed: "Completed", on_hold: "On hold", late: "Late", at_risk: "At risk", on_track: "On track",
+  completed: "Completed", on_hold: "On hold", planning: "Planning", late: "Late", at_risk: "At risk", on_track: "On track",
 };
 
 function taskLine(t: Task, today: string): string {

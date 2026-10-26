@@ -1,6 +1,6 @@
-import { addDays, advanceDay, daysBetween } from "@/lib/dates";
+import { addDays, advanceDay, daysBetween, isDay } from "@/lib/dates";
 import { csvCell } from "@/lib/csv";
-import type { Invoice, InvoiceAlert, InvoiceState, Recurrence } from "./types";
+import type { Invoice, InvoiceAlert, InvoiceItem, InvoiceState, Recurrence } from "./types";
 
 /** Within this many days of the due date an unpaid invoice is "due soon". */
 export const DUE_SOON_DAYS = 7;
@@ -11,6 +11,32 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 export function formatMoney(cents: number): string {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
+export const lineCents = (item: InvoiceItem) => Math.round(item.qty * item.rateCents);
+
+/** Subtotal, tax and total in cents. Tax is rounded to the nearest cent on the whole subtotal. */
+export function invoiceTotals(items: InvoiceItem[], taxRate: number) {
+  const subtotalCents = items.reduce((sum, i) => sum + lineCents(i), 0);
+  const taxCents = Math.round((subtotalCents * taxRate) / 100);
+  return { subtotalCents, taxCents, totalCents: subtotalCents + taxCents };
+}
+
+/** "File reorg" or "File reorg +2 more". */
+export function describeItems(items: InvoiceItem[]): string {
+  if (items.length === 0) return "";
+  return items.length === 1 ? items[0].description : `${items[0].description} +${items.length - 1} more`;
+}
+
+/** `INV-260914-7415`: the issue date (YY MM DD) plus four digits, avoiding numbers already in use. */
+export function generateInvoiceNumber(issuedOn: string, taken: Iterable<string>, random: () => number = Math.random): string {
+  const used = new Set([...taken].map((n) => n.toLowerCase()));
+  const stamp = issuedOn.slice(2).replace(/-/g, "");
+  for (let tries = 0; tries < 50; tries++) {
+    const candidate = `INV-${stamp}-${String(Math.floor(random() * 9000) + 1000)}`;
+    if (!used.has(candidate.toLowerCase())) return candidate;
+  }
+  return nextInvoiceNumber(`INV-${stamp}-1000`, used);
 }
 
 export function invoiceState(inv: Invoice, today: string): InvoiceState {
@@ -56,8 +82,8 @@ export function nextReminder(inv: Invoice, today: string): { on: string; daysBef
 }
 
 /**
- * Overdue notices repeat weekly after the due date. Returns the next one on or after `today`
- * for an overdue invoice.
+ * Overdue notices repeat weekly after the due date. Returns the next one strictly after `today`
+ * for an overdue invoice (a notice falling on `today` is treated as already sent).
  */
 export function nextOverdueNotice(inv: Invoice, today: string): string | null {
   if (invoiceState(inv, today) !== "overdue") return null;
@@ -101,8 +127,28 @@ export function nextRecurringInvoice(inv: Invoice, all: Invoice[], id: string): 
   };
 }
 
+/** True when the next invoice in `inv`'s recurring series already exists, so it is not created twice. */
+export function hasNextInvoice(inv: Invoice, all: Invoice[]): boolean {
+  if (inv.recurrence === "none") return false;
+  const issuedOn = advance(inv.issuedOn, inv.recurrence);
+  return all.some((o) => o.id !== inv.id && o.client === inv.client && o.recurrence === inv.recurrence
+    && o.description === inv.description && o.issuedOn === issuedOn);
+}
+
 export const markSent = (inv: Invoice): Invoice => ({ ...inv, status: "sent", paidOn: null });
-export const markPaid = (inv: Invoice, today: string): Invoice => ({ ...inv, status: "paid", paidOn: today });
+export const markPaid = (inv: Invoice, paidOn: string): Invoice => ({ ...inv, status: "paid", paidOn });
+export const voidInvoice = (inv: Invoice): Invoice => ({ ...inv, status: "void", paidOn: null });
+/** Undo a void (back to draft) or a payment (back to sent, outstanding again). */
+export const reopen = (inv: Invoice): Invoice =>
+  inv.status === "void" ? { ...inv, status: "draft" } : inv.status === "paid" ? { ...inv, status: "sent", paidOn: null } : inv;
+
+/** Why `day` can't be the payment date for `inv`, or null when it can. */
+export function paymentDateError(inv: Invoice, day: string, today: string): string | null {
+  if (!isDay(day)) return "Enter a valid date";
+  if (day < inv.issuedOn) return "Payment can't be before the invoice was issued";
+  if (day > today) return "Payment date can't be in the future";
+  return null;
+}
 
 export interface InvoiceSummary {
   outstandingCents: number;
@@ -137,7 +183,35 @@ export function invoicesToCsv(invoices: Invoice[], today: string): string {
   const header = ["Number", "Client", "Description", "Amount", "Issued", "Due", "Status", "Days overdue", "Paid on", "Recurrence"];
   const rows = invoices.map((i) => [
     i.number, i.client, i.description, (i.amountCents / 100).toFixed(2), i.issuedOn, i.dueOn,
-    invoiceState(i, today), daysOverdue(i, today), i.paidOn ?? "", i.recurrence,
+    i.status, daysOverdue(i, today), i.paidOn ?? "", i.recurrence,
   ]);
   return [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
+}
+
+export interface InvoiceGroup {
+  key: "overdue" | "due_soon" | "draft" | "sent" | "closed";
+  label: string;
+  invoices: Invoice[];
+}
+
+const GROUPS: { key: InvoiceGroup["key"]; label: string; states: InvoiceState[] }[] = [
+  { key: "overdue", label: "Overdue", states: ["overdue"] },
+  { key: "due_soon", label: "Due soon", states: ["due_today", "due_soon"] },
+  { key: "draft", label: "Drafts", states: ["draft"] },
+  { key: "sent", label: "Sent", states: ["upcoming"] },
+  { key: "closed", label: "Paid and void", states: ["paid", "void"] },
+];
+
+/**
+ * Invoices grouped by urgency, empty groups left out. Open groups list the earliest due date first;
+ * paid and void list the most recent first.
+ */
+export function groupInvoices(invoices: Invoice[], today: string): InvoiceGroup[] {
+  return GROUPS.map(({ key, label, states }) => ({
+    key,
+    label,
+    invoices: invoices
+      .filter((i) => states.includes(invoiceState(i, today)))
+      .sort((a, b) => (key === "closed" ? (a.dueOn < b.dueOn ? 1 : a.dueOn > b.dueOn ? -1 : 0) : a.dueOn < b.dueOn ? -1 : a.dueOn > b.dueOn ? 1 : 0)),
+  })).filter((g) => g.invoices.length > 0);
 }

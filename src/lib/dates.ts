@@ -49,6 +49,12 @@ export function formatDayLong(day: string): string {
   });
 }
 
+/** "Nov 25", or "Nov 25, 2027" when the year isn't `year` (default: the current one). */
+export function formatDayShort(day: string, year = new Date().getFullYear()): string {
+  const d = new Date(parse(day));
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(d.getUTCFullYear() === year ? {} : { year: "numeric" }), timeZone: "UTC" });
+}
+
 export type Every = "daily" | "weekly" | "monthly" | "quarterly" | "yearly";
 
 /** The next occurrence of a repeating schedule after `day`. */
