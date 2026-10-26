@@ -15,16 +15,20 @@ Tailwind and shadcn/ui-style components.
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
-(`src/lib/modules/registry.ts`). Today four exist: **01 Documents**, **02 Invoices**
+(`src/lib/modules/registry.ts`). Today five exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
-`src/components/licenses/`) and **06 Projects** (`src/lib/projects/`, `src/components/projects/`).
-The other seven are listed on the overview page as "Planned".
+`src/components/licenses/`), **06 Projects** (`src/lib/projects/`, `src/components/projects/`) and
+**07 Forms & Paperwork** (`src/lib/forms/`, `src/components/forms/`). The other six are listed on the
+overview page as "Planned".
 
-* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/projects`, behind the same gate as before.
-* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,projects}`, sample data in the browser tab, nothing saved.
-* **Invoices, licenses and projects are not persisted yet.** They are seeded sample data held in component state; there is no
+* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/projects`, `/app/forms`, behind the same gate as before.
+* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,projects,forms}`, sample data in the browser tab, nothing saved.
+* **Invoices, licenses, projects and forms are not persisted yet.** They are seeded sample data held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
-  renewal tasks, overdue notices) but no email is sent yet. Projects flag overdue tasks and repeating tasks
+  renewal tasks, overdue notices) but no email is sent yet. Forms are built in the app, validated on submit,
+  routed to a named approver when required, and turned into a text document by filling `{{Field label}}`
+  placeholders in a single pass (submitted text is never re-expanded); submissions export to CSV.
+  Projects flag overdue tasks and repeating tasks
   schedule their next occurrence when completed, with a plain-text status report. Invoices support recurring series ("Create
   next" drafts the following invoice) and a CSV report whose cells are neutralised against spreadsheet formulas.
 

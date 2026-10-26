@@ -24,7 +24,7 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Import contacts, detect duplicates, validate fields and export clean data." },
   { id: "projects", number: "06", name: "Projects", slug: "projects", status: "available",
     summary: "Projects, tasks, recurring work, deadlines and status reports." },
-  { id: "forms", number: "07", name: "Forms & Paperwork", status: "planned",
+  { id: "forms", number: "07", name: "Forms & Paperwork", slug: "forms", status: "available",
     summary: "Reusable forms, submission tracking, document generation and approvals." },
   { id: "reporting", number: "08", name: "Data Entry & Reporting", status: "planned",
     summary: "Turn raw files into organized records and scheduled reports." },

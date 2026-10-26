@@ -1,4 +1,5 @@
 import { addDays, advanceDay, daysBetween } from "@/lib/dates";
+import { csvCell } from "@/lib/csv";
 import type { Invoice, InvoiceAlert, InvoiceState, Recurrence } from "./types";
 
 /** Within this many days of the due date an unpaid invoice is "due soon". */
@@ -130,13 +131,6 @@ export function needsAttention(invoices: Invoice[], today: string): Invoice[] {
   return invoices
     .filter((i) => rank(i) !== undefined)
     .sort((a, b) => rank(a) - rank(b) || (a.dueOn < b.dueOn ? -1 : 1));
-}
-
-/** Spreadsheet formulas start with = + - @ (or a tab/CR); prefix such cells so they stay text. */
-function csvCell(value: string | number): string {
-  let s = String(value);
-  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 export function invoicesToCsv(invoices: Invoice[], today: string): string {
