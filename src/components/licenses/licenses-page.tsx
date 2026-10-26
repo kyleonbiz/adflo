@@ -164,11 +164,11 @@ export function LicensesPage({ preview }: { preview?: string }) {
       </div>
 
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <SummaryTile icon={ShieldCheck} label="Active" value={summary.active} tone="text-emerald-600" selected={statusFilter === "active"} onSelect={() => toggleFilter("active")} />
-        <SummaryTile icon={Hourglass} label="Renewal window" value={summary.renewalWindow} tone="text-sky-600" selected={statusFilter === "renewal_window"} onSelect={() => toggleFilter("renewal_window")} />
-        <SummaryTile icon={CalendarClock} label="Expiring in 30 days" value={summary.expiring} tone="text-amber-600" selected={statusFilter === "expiring"} onSelect={() => toggleFilter("expiring")} />
-        <SummaryTile icon={AlertTriangle} label="Expired" value={summary.expired} tone="text-red-600" selected={statusFilter === "expired"} onSelect={() => toggleFilter("expired")} />
-        <SummaryTile icon={FileWarning} label="Documents missing" value={summary.missingDocuments} tone="text-primary" selected={statusFilter === "missing_docs"} onSelect={() => toggleFilter("missing_docs")} />
+        <SummaryTile icon={ShieldCheck} label="Active" value={summary.active} tone="text-emerald-600" pressed={statusFilter === "active"} onClick={() => toggleFilter("active")} />
+        <SummaryTile icon={Hourglass} label="Renewal window" value={summary.renewalWindow} tone="text-sky-600" pressed={statusFilter === "renewal_window"} onClick={() => toggleFilter("renewal_window")} />
+        <SummaryTile icon={CalendarClock} label="Expiring in 30 days" value={summary.expiring} tone="text-amber-600" pressed={statusFilter === "expiring"} onClick={() => toggleFilter("expiring")} />
+        <SummaryTile icon={AlertTriangle} label="Expired" value={summary.expired} tone="text-red-600" pressed={statusFilter === "expired"} onClick={() => toggleFilter("expired")} />
+        <SummaryTile icon={FileWarning} label="Documents missing" value={summary.missingDocuments} tone="text-primary" pressed={statusFilter === "missing_docs"} onClick={() => toggleFilter("missing_docs")} />
       </section>
 
       <section aria-labelledby="tasks-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
