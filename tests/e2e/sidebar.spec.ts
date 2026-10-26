@@ -54,7 +54,7 @@ test.describe("module sidebar on a wide screen", () => {
   });
 
   test("stays in view while a long page scrolls", async ({ page }) => {
-    await page.goto("/app/reporting");
+    await page.goto("/app/reporting?view=custom");
     await page.getByRole("button", { name: "Import CSV" }).first().click();
     const rows = Array.from({ length: 60 }, (_, i) => `Item ${i + 1},${i + 1}`).join("\n");
     await page.getByRole("dialog").getByLabel("Or paste CSV text").fill(`Item,Qty\n${rows}`);
