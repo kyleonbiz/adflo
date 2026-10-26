@@ -8,7 +8,7 @@ import { categoryFromFolder, categoryFromName, misplacedCategory, suggestedFolde
 import { standardizeName, stripCopyMarker } from "@/lib/files/naming";
 import { MAX_FILES, isSystemFile, normalizePath, parseFileList, shellQuote, splitName, splitPath } from "@/lib/files/paths";
 import { buildPlan, findDuplicateGroups, layoutAfter } from "@/lib/files/plan";
-import { sampleFiles } from "@/lib/files/sample-data";
+import { sampleFiles } from "../support/files-sample-data";
 import { moveScript, planToCsv, undoScript } from "@/lib/files/script";
 import type { FileEntry, PlanOptions } from "@/lib/files/types";
 

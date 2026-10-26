@@ -1,22 +1,51 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { closeSync, ftruncateSync, mkdirSync, mkdtempSync, openSync, rmSync, utimesSync, writeFileSync, writeSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, test, type Download, type Page } from "@playwright/test";
+import { todayLocal } from "../../src/lib/dates";
+import { sampleFiles } from "../support/files-sample-data";
+import { expect, test } from "./fixtures";
+import type { Download, Page } from "@playwright/test";
 
 const text = async (d: Download) => { let s = ""; for await (const c of await d.createReadStream()) s += c; return s; };
+/**
+ * A real folder on disk laid out like the messy sample: files with the same `hash` have identical
+ * contents, every other file differs, and sizes and dates match. Contents are a short key padded
+ * out (sparse) to the listed size.
+ */
+function makeMessyFolder(): { root: string; dir: string } {
+  const root = mkdtempSync(join(tmpdir(), "messy-"));
+  const dir = join(root, "Client Files");
+  for (const f of sampleFiles(todayLocal())) {
+    const full = join(dir, f.path);
+    mkdirSync(join(full, ".."), { recursive: true });
+    const fd = openSync(full, "w");
+    writeSync(fd, `${f.hash}\n`);
+    ftruncateSync(fd, Math.max(f.size, `${f.hash}\n`.length));
+    closeSync(fd);
+    const when = new Date(`${f.modified}T12:00:00`);
+    utimesSync(full, when, when);
+  }
+  return { root, dir };
+}
+
+let messy: { root: string; dir: string };
+test.beforeAll(() => { messy = makeMessyFolder(); });
+test.afterAll(() => { rmSync(messy.root, { recursive: true, force: true }); });
+
 const sample = async (page: Page) => {
   await page.goto("/app/file-reset");
-  await page.getByRole("button", { name: "Load sample folder" }).click();
+  await page.getByLabel("Choose a folder").setInputFiles(messy.dir);
+  await expect(page.getByRole("status").filter({ hasText: "Loaded 20 files from your folder." })).toBeVisible({ timeout: 30_000 });
 };
 const row = (page: Page, from: string) => page.getByTestId("change-row").filter({ hasText: from });
 
 test.describe("business file reset module", () => {
-  test("starts with a clear promise, then loads the sample", async ({ page }) => {
+  test("starts with a clear promise, then reads a folder", async ({ page }) => {
     await page.goto("/app/file-reset");
     await expect(page.getByRole("note")).toContainText("never uploaded");
     await expect(page.getByText("Nothing is uploaded, and nothing on your computer is changed or deleted.")).toBeVisible();
-    await page.getByRole("button", { name: "Load sample folder" }).click();
-    await expect(page.getByRole("status")).toContainText("Loaded 20 files from the sample folder.");
+    await page.getByLabel("Choose a folder").setInputFiles(messy.dir);
+    await expect(page.getByRole("status").filter({ hasText: "Loaded 20 files from your folder." })).toBeVisible({ timeout: 30_000 });
     const summary = page.getByRole("region", { name: "Summary", exact: true });
     await expect(summary).toContainText("Duplicates (1.3 MB)");
     await expect(summary).toContainText("Misplaced");
@@ -154,7 +183,7 @@ test.describe("business file reset module", () => {
     await page.getByLabel(/One file per line/).fill("../a\n../b");
     await page.getByRole("button", { name: "Load list" }).click();
     await expect(page.getByRole("status")).toContainText("None of those lines could be used.");
-    await expect(page.getByRole("button", { name: "Load sample folder" })).toBeVisible();
+    await expect(page.getByLabel("Choose a folder")).toBeAttached();
   });
 
   test("start over clears the plan", async ({ page }) => {

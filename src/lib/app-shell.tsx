@@ -13,7 +13,7 @@ function Frame({ topRight, children }: { topRight: React.ReactNode; children: Re
 
 /**
  * Shared gate for every signed-in page: sign-in and workspace onboarding when a database is connected,
- * otherwise a preview on sample data. `content(mode)` is only rendered once the visitor is allowed in.
+ * otherwise an empty preview. `content(mode)` is only rendered once the visitor is allowed in.
  */
 export async function renderAppShell(
   nextPath: string,
@@ -43,10 +43,10 @@ export async function renderAppShell(
     );
   }
 
-  // No database yet: the app opens anyway, as a preview. Everything runs on sample data held in this
+  // No database yet: the app opens anyway, as a preview. Everything runs on records held in this
   // browser, so nothing is shared between visitors and nothing is stored on the server.
   return (
-    <Frame topRight={<AppTopBar badge="Preview · sample data" />}>
+    <Frame topRight={<AppTopBar badge="Preview" />}>
       {content("preview")}
     </Frame>
   );

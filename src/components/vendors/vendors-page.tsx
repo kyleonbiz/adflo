@@ -14,7 +14,7 @@ import {
   VENDOR_APPROVER, decide, defaultRequirements, duplicatePairs, hasDocumentIssues, needsAttention, reopen, setActive,
   submitForApproval, summarize, vendorsToCsv,
 } from "@/lib/vendors/logic";
-import { sampleVendors } from "@/lib/vendors/sample-data";
+import { e2eSeed } from "@/lib/e2e-seed";
 import type { Vendor, VendorStatus } from "@/lib/vendors/types";
 import type { VendorFormValues } from "@/lib/vendors/validation";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
@@ -37,7 +37,7 @@ function downloadCsv(text: string, name: string) {
 }
 
 /**
- * Vendor administration. Vendors live in this component's state (seeded with sample data) until the
+ * Vendor administration. Vendors live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits and no notifications are sent.
  */
 export function VendorsPage({ preview }: { preview?: string }) {
@@ -52,7 +52,7 @@ export function VendorsPage({ preview }: { preview?: string }) {
   const [issuesOnly, setIssuesOnly] = useState(false);
   const [focus, setFocus] = useState<{ id: string; n: number } | null>(null);
 
-  const seed = useMemo(() => (today ? sampleVendors(today) : []), [today]);
+  const seed = useMemo(() => e2eSeed<Vendor>("vendors") ?? [], []);
   const vendors = edited ?? seed;
   const summary = useMemo(() => (today ? summarize(vendors, today) : null), [vendors, today]);
   const attention = useMemo(() => (today ? needsAttention(vendors, today) : []), [vendors, today]);

@@ -1,5 +1,5 @@
 import { addDays, addMonths } from "@/lib/dates";
-import type { Invoice } from "./types";
+import type { Invoice } from "@/lib/invoices/types";
 
 /** Sample invoices with dates relative to `today`, so every state is represented. */
 export function sampleInvoices(today: string): Invoice[] {

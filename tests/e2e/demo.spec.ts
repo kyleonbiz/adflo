@@ -1,23 +1,23 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
+import { addDocuments } from "./docs";
 
 test.describe("documents preview", () => {
-  test("opens straight into a working documents workspace", async ({ page }) => {
+  test("opens an empty, working documents workspace you can upload into", async ({ page }) => {
     await page.goto("/app");
     await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
-    await expect(page.getByText("Preview · sample data")).toBeVisible();
+    await expect(page.getByText("Preview", { exact: true })).toBeVisible();
     await expect(page.getByRole("note").filter({ hasText: "not saved or uploaded anywhere" })).toBeVisible();
-    await expect(page.getByTestId("document-card").first()).toBeVisible();
+    await expect(page.getByText("No documents yet")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Contracts, 0 documents" })).toBeVisible();
 
-    await page.getByRole("button", { name: "Contracts, 3 documents" }).click();
-    await expect(page.getByTestId("document-card")).toHaveCount(3);
-
-    await page.getByRole("button", { name: /All Files/ }).click();
+    await addDocuments(page);
     await page.getByRole("searchbox").fill("northwind");
     await expect(page.getByTestId("document-card")).toHaveCount(1);
   });
 
   test("opens document details with a preview, then closes with Escape and restores focus", async ({ page }) => {
     await page.goto("/app");
+    await addDocuments(page);
     const open = page.getByRole("button", { name: /Open Invoice_INV-2041_Northwind.pdf/ });
     await open.click();
     const dialog = page.getByRole("dialog");
@@ -31,6 +31,7 @@ test.describe("documents preview", () => {
 
   test("unsupported formats show a download-to-view fallback", async ({ page }) => {
     await page.goto("/app");
+    await addDocuments(page);
     await page.getByRole("button", { name: /Open AR_Aging_Report_Oct.xlsx/ }).click();
     await expect(page.getByTestId("preview-unsupported")).toContainText("Preview not available");
     await expect(page.getByRole("button", { name: /Download to view/i })).toBeVisible();
@@ -52,7 +53,7 @@ test.describe("documents preview", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
     const page = await ctx.newPage();
     await page.goto("/app");
-    await expect(page.getByTestId("document-card").first()).toBeVisible();
+    await addDocuments(page);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
     const boxes = await page.getByTestId("document-card").evaluateAll((els) => els.slice(0, 2).map((e) => e.getBoundingClientRect().left));
@@ -64,19 +65,3 @@ test.describe("documents preview", () => {
     await ctx.close();
   });
 });
-
-test.describe("demo content search", () => {
-  test("generated sample PDFs and CSVs are indexed in the browser and searchable by their text", async ({ page }) => {
-    await page.goto("/app");
-    await page.getByRole("searchbox").fill("placeholder");
-    const cards = page.getByTestId("document-card");
-    await expect(cards.first()).toBeVisible({ timeout: 20_000 });
-    await expect(cards.first().getByTestId("snippet").locator("mark").first()).toHaveText(/placeholder/i);
-    // A sample without readable content is reported honestly, not as searchable.
-    await page.getByRole("searchbox").fill("");
-    await page.getByRole("button", { name: /Open AR_Aging_Report_Oct.xlsx/ }).click();
-    await expect(page.getByRole("dialog")).toContainText("Text search");
-    await expect(page.getByRole("dialog")).toContainText("Not searchable by text");
-  });
-});
-

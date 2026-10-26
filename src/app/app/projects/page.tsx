@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function ProjectsRoute() {
   return renderAppShell("/app/projects", () => (
-    <ProjectsPage preview="Sample data that lives only in this browser tab. Nothing is saved and no notifications are sent." />
+    <ProjectsPage preview="Records live only in this browser tab. Nothing is saved and no notifications are sent." />
   ));
 }

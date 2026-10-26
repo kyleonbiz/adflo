@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BarChart3, CalendarClock, Columns3, Database, Download, FileSpreadsheet, Rows3, Sparkles, Upload } from "lucide-react";
+import { BarChart3, CalendarClock, Columns3, Database, Download, FileSpreadsheet, Rows3, Upload } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
@@ -12,13 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDayLong } from "@/lib/dates";
 import {
-  columnStats, datasetToCsv, displayCell, groupReport, money, needsDecimals, nextSummaryDate, reportToCsv, suggestColumns, summaryText,
-  validateDataset, type Aggregate, type Frequency,
+  columnStats, datasetToCsv, displayCell, groupReport, money, needsDecimals, nextSummaryDate, reportToCsv, summaryText,
+  type Aggregate, type Frequency,
 } from "@/lib/datasets/logic";
-import { SAMPLE_CSV, SAMPLE_NAME, sampleColumnRules } from "@/lib/datasets/sample-data";
 import type { Dataset } from "@/lib/datasets/types";
 import { datasetToXlsx } from "@/lib/datasets/xlsx";
-import { CsvError, parseCsv } from "@/lib/import/csv";
 import { DataImportDialog, type LoadedData } from "./data-import-dialog";
 
 const PREVIEW_ROWS = 100;
@@ -78,17 +76,6 @@ export function ReportingPage({ preview }: { preview?: string }) {
     setNotice(`Loaded ${d.rows.length} row${d.rows.length === 1 ? "" : "s"} into "${d.name}". ${outcome.rejected.length} need fixing, ${outcome.duplicates.length} repeated.`);
   };
 
-  const loadSample = () => {
-    try {
-      const parsed = parseCsv(SAMPLE_CSV);
-      const columns = sampleColumnRules(suggestColumns(parsed));
-      const outcome = validateDataset(parsed, columns, true);
-      load({ dataset: { name: SAMPLE_NAME, columns, rows: outcome.accepted.map((a) => a.value) }, outcome });
-    } catch (e) {
-      setNotice(e instanceof CsvError ? e.message : "The sample could not be loaded.");
-    }
-  };
-
   const fixedCols = dataset ? dataset.columns.map((_c, i) => needsDecimals(dataset, i)) : [];
   const numberCols = dataset ? dataset.columns.map((c, i) => ({ c, i })).filter((x) => x.c.type === "number") : [];
   const blanks = dataset ? dataset.columns.reduce((n, _c, i) => n + columnStats(dataset, i).blank, 0) : 0;
@@ -126,7 +113,6 @@ export function ReportingPage({ preview }: { preview?: string }) {
           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">Import a CSV exported from a spreadsheet or another system. We check every row, set aside the ones with problems and let you report on the rest.</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             <Button onClick={() => setImporting(true)}><Upload /> Import CSV</Button>
-            <Button variant="outline" onClick={loadSample}><Sparkles /> Load sample data</Button>
           </div>
         </section>
       ) : (

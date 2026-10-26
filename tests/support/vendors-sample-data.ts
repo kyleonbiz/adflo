@@ -1,5 +1,5 @@
 import { addDays } from "@/lib/dates";
-import type { Vendor, VendorDocument } from "./types";
+import type { Vendor, VendorDocument } from "@/lib/vendors/types";
 
 let seq = 0;
 /** Sample vendors with dates relative to `today`, so every document state and duplicate reason is represented. */
