@@ -19,3 +19,11 @@ test("the filter menu limits the search to one service", async ({ page }) => {
   await box.press("Enter");
   await expect(page).toHaveURL(/\/app\/invoices\?q=acme/);
 });
+
+test("searching documents from the top bar fills in the document search", async ({ page }) => {
+  await page.goto("/app/overview");
+  await page.getByRole("combobox", { name: "Search Adflo" }).fill("lease");
+  await page.getByRole("option", { name: /Search documents for/ }).click();
+  await expect(page).toHaveURL(/\/app\?q=lease/);
+  await expect(page.getByRole("searchbox")).toHaveValue("lease");
+});

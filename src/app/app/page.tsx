@@ -7,7 +7,8 @@ export const metadata: Metadata = { title: "Documents" };
 export const dynamic = "force-dynamic";
 
 export default async function AppPage({ searchParams }: PageProps<"/app">) {
-  const { upload } = await searchParams;
+  const { upload, q } = await searchParams;
+  const initialSearch = typeof q === "string" ? q : "";
   const startUpload = upload === "1";
-  return renderAppShell("/app", (mode) => (mode === "preview" ? <DemoWorkspace startUpload={startUpload} /> : <LiveWorkspace mode="live" startUpload={startUpload} />));
+  return renderAppShell("/app", (mode) => (mode === "preview" ? <DemoWorkspace startUpload={startUpload} initialSearch={initialSearch} /> : <LiveWorkspace mode="live" startUpload={startUpload} initialSearch={initialSearch} />));
 }
