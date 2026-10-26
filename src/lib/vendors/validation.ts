@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isPhone } from "@/lib/phone";
 import { VENDOR_CATEGORIES } from "./types";
 
 export const vendorFormSchema = z.object({
@@ -8,7 +9,7 @@ export const vendorFormSchema = z.object({
   email: z.string().trim().min(1, "Enter a contact email").max(254, "Email is too long")
     .refine((v) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v), "Enter a valid email address"),
   phone: z.string().trim().max(30, "Keep it under 30 characters")
-    .refine((v) => v === "" || /^[+\d][\d\s().-]{5,}$/.test(v), "Enter a valid phone number"),
+    .refine((v) => v === "" || isPhone(v), "Enter a valid phone number"),
   taxId: z.string().trim()
     .refine((v) => v === "" || /^\d{2}-?\d{7}$/.test(v), "Tax ID looks like 12-3456789")
     .transform((v) => v.replace("-", "")),

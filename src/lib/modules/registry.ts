@@ -20,7 +20,7 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Track licenses and expiry dates, collect required documents, get renewal reminders." },
   { id: "vendors", number: "04", name: "Vendors", slug: "vendors", status: "available",
     summary: "Supplier profiles, intake forms, document collection and approval routing." },
-  { id: "crm", number: "05", name: "CRM & Data", status: "planned",
+  { id: "crm", number: "05", name: "CRM & Data", slug: "contacts", status: "available",
     summary: "Import contacts, detect duplicates, validate fields and export clean data." },
   { id: "projects", number: "06", name: "Projects", slug: "projects", status: "available",
     summary: "Projects, tasks, recurring work, deadlines and status reports." },

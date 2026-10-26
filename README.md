@@ -15,20 +15,31 @@ Tailwind and shadcn/ui-style components.
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
-(`src/lib/modules/registry.ts`). Today six exist: **01 Documents**, **02 Invoices**
+(`src/lib/modules/registry.ts`). Today seven exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
-**06 Projects** (`src/lib/projects/`, `src/components/projects/`) and **07 Forms & Paperwork**
-(`src/lib/forms/`, `src/components/forms/`). The other five are listed on the overview page as "Planned".
+**05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Projects**
+(`src/lib/projects/`, `src/components/projects/`) and **07 Forms & Paperwork**
+(`src/lib/forms/`, `src/components/forms/`). The other four are listed on the overview page as "Planned".
 
-* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/projects`, `/app/forms`, behind the same gate as before.
-* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,vendors,projects,forms}`, sample data in the browser tab, nothing saved.
-* **Invoices, licenses, vendors, projects and forms are not persisted yet.** They are seeded sample data held in component state; there is no
+**Shared import engine** (`src/lib/import/`): `parseCsv` (RFC 4180 quoting, BOM, CRLF, comma/semicolon/tab,
+limits of 5,000 rows, 50 columns and 2,000 characters per cell, control characters stripped, line numbers
+kept for error reports), `suggestMapping` / `mapRows` (match source columns to target fields by name and
+alias), and `runImport` (validate each row, then sort into accepted, rejected and duplicate). CRM & Data is
+its first user; modules 08 (Data Entry) and 10 (File Reset) are meant to reuse it. Files are read in the
+browser and never uploaded.
+
+* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, behind the same gate as before.
+* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,vendors,contacts,projects,forms}`, sample data in the browser tab, nothing saved.
+* **Invoices, licenses, vendors, contacts, projects and forms are not persisted yet.** They are seeded sample data held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
   renewal tasks, overdue notices) but no email is sent yet. Vendors get required documents by category, can only be
   submitted for approval once every required document is in and unexpired, and are checked for
   duplicates (normalized name, similar name, tax ID, contact email, shared company email domain) when
-  added and across the list. Forms are built in the app, validated on submit,
+  added and across the list. CRM & Data imports in three steps (choose or paste a
+  file, map columns, review) and shows every rejected row by file line before anything changes; matching
+  contacts are skipped or updated, and the contact list can be de-duplicated and exported. Scheduled
+  synchronization with other systems needs the backend and is not built. Forms are built in the app, validated on submit,
   routed to a named approver when required, and turned into a text document by filling `{{Field label}}`
   placeholders in a single pass (submitted text is never re-expanded); submissions export to CSV.
   Projects flag overdue tasks and repeating tasks

@@ -146,6 +146,9 @@ describe("forms", () => {
     expect(vendorFormSchema.parse({ ...ok, taxId: "12-3456789" }).taxId).toBe("123456789");
     expect(vendorFormSchema.parse({ ...ok, phone: "+1 (555) 010-2200" }).phone).toBe("+1 (555) 010-2200");
   });
+  it("accepts every phone format used in the sample data (regression: leading bracket)", () => {
+    for (const v of all) expect(vendorFormSchema.safeParse({ ...ok, phone: v.phone }).success, v.phone).toBe(true);
+  });
   it.each([
     [{ name: "x" }, "vendor name"], [{ email: "" }, "contact email"], [{ email: "nope" }, "valid email"],
     [{ taxId: "123" }, "12-3456789"], [{ phone: "abc" }, "valid phone"], [{ category: "Food" }, ""],
