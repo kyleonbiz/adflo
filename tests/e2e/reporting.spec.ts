@@ -21,7 +21,7 @@ async function importExpenses(page: Page) {
   await dialog.getByRole("button", { name: /^Load \d+ rows?$/ }).click();
 }
 
-test.describe("data entry & reporting module", () => {
+test.describe("reporting module", () => {
   test("starts empty and imports an export, setting aside bad and repeated rows", async ({ page }) => {
     await page.goto("/app/reporting");
     await expect(page.getByRole("note")).toContainText("never uploaded");
@@ -187,7 +187,7 @@ test.describe("data entry & reporting module", () => {
 
   test("is available in the signed-in app too", async ({ page }) => {
     await page.goto("/app/reporting");
-    await expect(page.getByRole("heading", { level: 1, name: "Data Entry & Reporting" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Data Entry & Reporting", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1, name: "Reporting" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Reporting", exact: true })).toHaveAttribute("aria-current", "page");
   });
 });

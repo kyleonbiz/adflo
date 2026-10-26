@@ -36,7 +36,7 @@ function downloadXlsx(bytes: Uint8Array, name: string) {
 interface SetAside { rejected: LoadedData["outcome"]["rejected"]; repeated: number }
 
 /**
- * Data Entry & Reporting. The loaded data lives in this component's state, so nothing here is saved
+ * Reporting. The loaded data lives in this component's state, so nothing here is saved
  * between visits, and scheduled summaries are previewed but not sent.
  */
 export function ReportingPage({ preview }: { preview?: string }) {
@@ -89,7 +89,7 @@ export function ReportingPage({ preview }: { preview?: string }) {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Data Entry &amp; Reporting</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Reporting</h1>
           <p className="text-sm text-muted-foreground">Turn a raw spreadsheet into clean records, summaries and reports.</p>
         </div>
         <div className="flex flex-wrap gap-2">
