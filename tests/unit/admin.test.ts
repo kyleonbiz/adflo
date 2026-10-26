@@ -189,7 +189,7 @@ describe("parseEmailText", () => {
 
 describe("ics", () => {
   it("escapes special characters", () => {
-    expect(icsEscape("a,b;c\\d\ne\r\nf\u0000g")).toBe("a\\,b\;c\\\\d\\ne\\nfg");
+    expect(icsEscape("a,b;c\\d\ne\r\nf\u0000g")).toBe("a\\,b\\;c\\\\d\\ne\\nfg");
   });
   it("folds long lines at 75 octets without splitting characters", () => {
     expect(foldLine("short")).toBe("short");
@@ -210,7 +210,7 @@ describe("ics", () => {
     expect(lines).toContain("DTSTAMP:20261025T000000Z");
     expect(lines).toContain("DTSTART;VALUE=DATE:20261031");
     expect(lines).toContain("DTEND;VALUE=DATE:20261101");
-    expect(lines).toContain("SUMMARY:Pay\\, then file\; done");
+    expect(lines).toContain("SUMMARY:Pay\\, then file\\; done");
     expect(lines).toContain("DESCRIPTION:Line1\\nLine2");
     expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
     expect(ics.replace(/\r\n/g, "")).not.toMatch(/[\r\n]/);

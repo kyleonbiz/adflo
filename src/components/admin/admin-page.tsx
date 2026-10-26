@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDayLong } from "@/lib/dates";
 import { toIcs } from "@/lib/admin/ics";
 import {
-  EVERY_TEXT, calendarEvents, createRequest, decide, dueRoutines, dueText, isOverdue, notifications, runRoutines, setStatus, summarize,
+  EVERY_TEXT, calendarEvents, createRequest, decide, dueRoutines, dueText, isActive, isOverdue, notifications, runRoutines, setStatus, summarize,
   type NewRequest,
 } from "@/lib/admin/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
@@ -28,6 +28,8 @@ import { titleCase } from "@/lib/text";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 const APPROVER = "Operations manager";
+const PRIORITY_RANK = { high: 0, normal: 1, low: 2 } as const;
+const isClosed = (r: AdminRequest) => r.status === "done" || r.status === "declined";
 
 function RequestCard({
   r, today, onStatus, onDecide, onDelete,
@@ -52,7 +54,7 @@ function RequestCard({
           </div>
           <p className="text-sm text-muted-foreground">
             {r.requester && `${r.requester} · `}
-            {r.dueOn ? <span className={overdue ? "font-medium text-destructive" : undefined}>Due {r.status === "done" || r.status === "declined" ? formatDayLong(r.dueOn) : dueText(r.dueOn, today)}</span> : "No due date"}
+            {r.dueOn ? <span className={overdue ? "font-medium text-destructive" : undefined}>Due {isClosed(r) ? formatDayLong(r.dueOn) : dueText(r.dueOn, today)}</span> : "No due date"}
           </p>
           {r.description && <p className="whitespace-pre-wrap text-sm">{r.description}</p>}
         </div>
@@ -123,10 +125,10 @@ export function AdminPage({ preview, startNew }: { preview?: string; startNew?: 
   const digest = notifications(requests, routines, today);
   const q = query.trim().toLowerCase();
   const visible = requests
-    .filter((r) => statusFilter === "all" || (statusFilter === "active" ? r.status === "open" || r.status === "in_progress" : r.status === statusFilter))
+    .filter((r) => statusFilter === "all" || (statusFilter === "active" ? isActive(r) : r.status === statusFilter))
     .filter((r) => categoryFilter === "all" || r.category === categoryFilter)
     .filter((r) => !q || [r.title, r.description, r.requester].some((f) => f.toLowerCase().includes(q)))
-    .sort((a, b) => Number(["done", "declined"].includes(a.status)) - Number(["done", "declined"].includes(b.status)) || (a.dueOn ?? "9999") .localeCompare(b.dueOn ?? "9999"));
+    .sort((a, b) => Number(isClosed(a)) - Number(isClosed(b)) || (a.dueOn ?? "9999").localeCompare(b.dueOn ?? "9999") || PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);
 
   const create = (input: NewRequest) => {
     const r = createRequest(input, today, rid("r"));
