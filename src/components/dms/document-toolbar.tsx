@@ -56,7 +56,7 @@ export function DocumentToolbar({
                 onClick={() => onChange({ view: id })}
                 className={cn(
                   "flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-1.5 py-2 text-[13px] font-medium transition-colors min-[420px]:px-3.5 min-[420px]:text-sm lg:py-1.5",
-                  active ? "bg-card text-indigo-700 shadow-sm" : "text-muted-foreground hover:text-foreground",
+                  active ? "bg-card text-brand-purple-deep shadow-sm" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <Icon className={cn("hidden size-4 min-[420px]:block", active && id === "starred" && "fill-amber-400 text-amber-500")} aria-hidden />

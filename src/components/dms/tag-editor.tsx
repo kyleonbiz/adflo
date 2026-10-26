@@ -55,7 +55,7 @@ export function TagEditor({
                   type="button"
                   aria-label={`Remove tag ${t}`}
                   onClick={() => onChange(tags.filter((x) => x !== t))}
-                  className="flex size-4 items-center justify-center rounded-full hover:bg-violet-200/70"
+                  className="flex size-4 items-center justify-center rounded-full hover:bg-brand-violet/20"
                 >
                   <X className="size-3" />
                 </button>

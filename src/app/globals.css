@@ -3,25 +3,37 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #eef0ff;
-  --foreground: #18181f;
+  --background: #eef4ff;
+  --foreground: #0d1330;
   --card: #ffffff;
-  --card-foreground: #18181f;
+  --card-foreground: #0d1330;
   --popover: #ffffff;
-  --popover-foreground: #18181f;
-  --primary: #4f46e5;
+  --popover-foreground: #0d1330;
+  --primary: #287cff;
   --primary-foreground: #ffffff;
-  --secondary: #eef0f8;
-  --secondary-foreground: #2b2b3a;
-  --muted: #f1f3fa;
+  --secondary: #edf1fb;
+  --secondary-foreground: #1a2145;
+  --muted: #f1f4fb;
   --muted-foreground: #6b6e82;
-  --accent: #eceafd;
-  --accent-foreground: #4338ca;
+  --accent: #e8efff;
+  --accent-foreground: #3436b9;
   --destructive: #dc2626;
-  --border: #e4e6f0;
-  --input: #dcdfeb;
-  --ring: #6366f1;
+  --border: #e2e7f3;
+  --input: #d9e0f0;
+  --ring: #287cff;
   --radius: 0.75rem;
+  /* AdFlo brand palette */
+  --brand-navy: #080d20;
+  --brand-navy-deep: #05091a;
+  --brand-sky: #31a8ff;
+  --brand-blue: #287cff;
+  --brand-indigo: #5657f5;
+  --brand-purple-deep: #3436b9;
+  --brand-purple: #6555f4;
+  --brand-violet: #9654f4;
+  --brand-wordmark-blue: #20a5ff;
+  --brand-wordmark-mid: #427bff;
+  --brand-wordmark-purple: #9256f2;
 }
 
 @theme inline {
@@ -43,6 +55,14 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-deep: var(--brand-navy-deep);
+  --color-brand-sky: var(--brand-sky);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-indigo: var(--brand-indigo);
+  --color-brand-purple-deep: var(--brand-purple-deep);
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-violet: var(--brand-violet);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -50,9 +70,9 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --shadow-panel: 0 1px 2px rgb(24 24 60 / 0.04), 0 2px 6px rgb(24 24 60 / 0.03), 0 12px 32px -10px rgb(60 50 160 / 0.14);
-  --shadow-glass: 0 30px 80px -20px rgb(30 20 120 / 0.45);
-  --shadow-float: 0 24px 64px -12px rgb(40 24 120 / 0.35);
+  --shadow-panel: 0 1px 2px rgb(8 13 32 / 0.04), 0 2px 6px rgb(8 13 32 / 0.03), 0 12px 32px -10px rgb(40 124 255 / 0.16);
+  --shadow-glass: 0 30px 80px -20px rgb(5 9 26 / 0.55);
+  --shadow-float: 0 24px 64px -12px rgb(5 9 26 / 0.45);
   --animate-fade-in: fade-in 0.15s ease-out;
   --animate-pop-in: pop-in 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.1);
   --animate-sheet-in: sheet-in 0.22s ease-out;
@@ -96,9 +116,9 @@
 
 .hero-gradient {
   background:
-    radial-gradient(55% 30% at 0% 100%, rgb(251 146 100 / 0.75), transparent 72%),
-    radial-gradient(55% 30% at 100% 100%, rgb(253 186 140 / 0.7), transparent 72%),
-    linear-gradient(180deg, #4338ca 0%, #4f46e5 45%, #4a5ae8 100%);
+    radial-gradient(60% 40% at 0% 100%, rgb(150 84 244 / 0.45), transparent 72%),
+    radial-gradient(60% 40% at 100% 100%, rgb(49 168 255 / 0.35), transparent 72%),
+    linear-gradient(180deg, #05091a 0%, #080d20 55%, #0d1a46 100%);
 }
 
 /* Translucent frame that holds the dashboard card on the public page. */

@@ -31,8 +31,8 @@ export function StorageUsageIndicator({
       <Progress
         value={pct}
         aria-label={`Storage used: ${pct}%`}
-        className={cn("mt-1.5 bg-indigo-100", compact ? "h-1" : "h-1.5")}
-        indicatorClassName={cn("from-indigo-500 to-indigo-500", nearFull && "from-orange-500 to-red-500")}
+        className={cn("mt-1.5 bg-brand-blue/15", compact ? "h-1" : "h-1.5")}
+        indicatorClassName={cn("from-brand-blue to-brand-indigo", nearFull && "from-orange-500 to-red-500")}
       />
       {!compact && (
         <p className="mt-1 text-[11px] text-muted-foreground">

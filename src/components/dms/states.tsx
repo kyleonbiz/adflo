@@ -24,7 +24,7 @@ export function EmptyState({
       className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/30 px-6 py-14 text-center"
       data-testid="empty-state"
     >
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-accent text-violet-500">
+      <span className="flex size-14 items-center justify-center rounded-2xl bg-accent text-brand-purple">
         <copy.Icon className="size-7" aria-hidden />
       </span>
       <h3 className="mt-4 text-base font-semibold">{copy.title}</h3>

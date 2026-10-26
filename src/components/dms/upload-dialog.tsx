@@ -150,7 +150,7 @@ function UploadRow({ item, onCancel, onRetry }: { item: UploadItem; onCancel: ()
         </div>
         {item.status === "uploading" && (
           <>
-            <Loader2 className="size-4 animate-spin text-violet-500" aria-hidden />
+            <Loader2 className="size-4 animate-spin text-brand-purple" aria-hidden />
             <Button variant="ghost" size="icon-sm" aria-label={`Cancel upload of ${item.file.name}`} onClick={onCancel}>
               <X />
             </Button>

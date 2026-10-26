@@ -79,7 +79,7 @@ export function DocumentPreview({
   if (state.status === "loading") {
     return (
       <div className={frame} role="status" aria-label="Loading preview">
-        <Loader2 className="size-6 animate-spin text-violet-500" />
+        <Loader2 className="size-6 animate-spin text-brand-purple" />
       </div>
     );
   }

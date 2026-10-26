@@ -104,7 +104,7 @@ export function TeamDialog({
       <DialogContent className="sm:h-[min(720px,calc(100dvh-3rem))] sm:max-w-2xl" aria-describedby="team-desc" closeLabel="Close team">
         <div className="border-b px-5 py-4 pr-14 sm:px-6">
           <DialogTitle className="flex items-center gap-2">
-            <Users className="size-5 text-violet-500" aria-hidden /> Team
+            <Users className="size-5 text-brand-purple" aria-hidden /> Team
           </DialogTitle>
           <DialogDescription id="team-desc" className="mt-1">
             Invite people and manage what they can do in this workspace.

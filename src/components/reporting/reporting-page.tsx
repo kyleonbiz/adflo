@@ -217,7 +217,7 @@ export function ReportingPage({ preview }: { preview?: string }) {
                 <li key={r.group} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 text-sm" data-testid="report-row">
                   <span className="truncate font-medium">{r.group}</span>
                   <span className="h-3 rounded-full bg-secondary" aria-hidden>
-                    <span className="block h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500" style={{ width: `${maxValue > 0 ? Math.max(0, (r.value / maxValue) * 100) : 0}%` }} />
+                    <span className="block h-full rounded-full bg-gradient-to-r from-blue-500 to-brand-violet" style={{ width: `${maxValue > 0 ? Math.max(0, (r.value / maxValue) * 100) : 0}%` }} />
                   </span>
                   <span className="tabular-nums">{money(r.value)} <span className="text-xs text-muted-foreground">({r.rows} row{r.rows === 1 ? "" : "s"})</span></span>
                 </li>

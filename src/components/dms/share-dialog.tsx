@@ -69,7 +69,7 @@ export function ShareDialog({
     <Dialog open={open} onOpenChange={reset}>
       <DialogContent variant="alert">
         <DialogTitle className="flex items-center gap-2">
-          <Link2 className="size-5 text-violet-500" aria-hidden /> Share securely
+          <Link2 className="size-5 text-brand-purple" aria-hidden /> Share securely
         </DialogTitle>
         <DialogDescription className="mt-1 break-words">
           Create a link to “{fileName}” that stops working automatically.

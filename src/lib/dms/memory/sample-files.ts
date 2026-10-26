@@ -56,7 +56,7 @@ export async function makeImage(
   g.addColorStop(1, "#ddd6fe");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 640, 420);
-  ctx.fillStyle = "#4338ca";
+  ctx.fillStyle = "#3436b9";
   ctx.font = "600 28px system-ui, sans-serif";
   ctx.textAlign = "center";
   ctx.fillText(label, 320, 200);
