@@ -18,7 +18,7 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Invoice tracking, recurring schedules, due-date reminders and overdue alerts." },
   { id: "licenses", number: "03", name: "Licenses & Renewals", slug: "licenses", status: "available",
     summary: "Track licenses and expiry dates, collect required documents, get renewal reminders." },
-  { id: "vendors", number: "04", name: "Vendors", status: "planned",
+  { id: "vendors", number: "04", name: "Vendors", slug: "vendors", status: "available",
     summary: "Supplier profiles, intake forms, document collection and approval routing." },
   { id: "crm", number: "05", name: "CRM & Data", status: "planned",
     summary: "Import contacts, detect duplicates, validate fields and export clean data." },
