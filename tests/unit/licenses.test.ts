@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays, addMonths, daysBetween, isDay } from "@/lib/dates";
 import {
-  licenseAlerts, licenseStatus, missingDocuments, nextReminder, renewLicense, renewalTasks, summarize,
+  expiryText, licenseAlerts, licenseStatus, missingDocuments, nextReminder, renewLicense, renewalTasks, suggestedExpiry, summarize,
 } from "@/lib/licenses/logic";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import type { License } from "@/lib/licenses/types";
@@ -66,6 +66,36 @@ describe("licenseAlerts", () => {
   });
 });
 
+describe("submitted renewals", () => {
+  const requiredDocuments = [{ id: "a", label: "A", received: false }];
+  it("calms the alerts and stops nagging about documents", () => {
+    const a = licenseAlerts(lic({ stage: "submitted", requiredDocuments, expiresOn: addDays(TODAY, 5) }), TODAY);
+    expect(a).toHaveLength(1);
+    expect(a[0]).toMatchObject({ severity: "info" });
+    expect(a[0].message).toContain("waiting on the issuer");
+  });
+  it("downgrades an expired license to a warning while waiting", () => {
+    const a = licenseAlerts(lic({ stage: "submitted", expiresOn: addDays(TODAY, -2) }), TODAY);
+    expect(a[0].severity).toBe("warning");
+  });
+});
+
+describe("placeholder dates", () => {
+  it("warns until the dates are confirmed", () => {
+    const a = licenseAlerts(lic({ datesConfirmed: false, expiresOn: addDays(TODAY, 300) }), TODAY);
+    expect(a.map((x) => x.message)).toEqual(["Placeholder dates. Enter the real number and expiry."]);
+  });
+});
+
+describe("expiryText", () => {
+  it("pluralizes", () => {
+    expect(expiryText(-1)).toBe("1 day overdue");
+    expect(expiryText(-3)).toBe("3 days overdue");
+    expect(expiryText(0)).toBe("Expires today");
+    expect(expiryText(1)).toBe("1 day left");
+  });
+});
+
 describe("nextReminder", () => {
   it("returns the earliest reminder that has not fired yet", () => {
     const l = lic({ expiresOn: addDays(TODAY, 40), reminderDays: [60, 30, 7] });
@@ -104,10 +134,22 @@ describe("renewLicense", () => {
   });
 });
 
+describe("renewLicense with the issuer's dates", () => {
+  it("uses the granted expiry and number, and records history", () => {
+    const l = lic({ expiresOn: addDays(TODAY, 10), number: "OLD" });
+    const r = renewLicense(l, TODAY, { expiresOn: "2028-03-01", number: "NEW" });
+    expect(r.expiresOn).toBe("2028-03-01");
+    expect(r.number).toBe("NEW");
+    expect(r.datesConfirmed).toBe(true);
+    expect(r.renewals).toEqual([{ on: TODAY, previousExpiresOn: l.expiresOn, newExpiresOn: "2028-03-01" }]);
+    expect(suggestedExpiry(l, TODAY)).toBe(addMonths(l.expiresOn, 12));
+  });
+});
+
 describe("summarize", () => {
   it("counts every sample status", () => {
     expect(summarize(sampleLicenses(TODAY), TODAY)).toEqual({
-      total: 5, active: 3, expiring: 1, expired: 1, missingDocuments: 5,
+      total: 5, active: 2, renewalWindow: 1, expiring: 1, expired: 1, missingDocuments: 5,
     });
   });
 });
@@ -115,12 +157,17 @@ describe("summarize", () => {
 describe("licenseFormSchema", () => {
   const valid = {
     name: "Food Handler Permit", category: "permit", issuer: "Health Dept", number: "FH-1", holder: "",
-    issuedOn: "2026-01-01", expiresOn: "2027-01-01", renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "",
+    issuedOn: "2026-01-01", expiresOn: "2027-01-01", renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "", documents: "Annual report\n\n  Fee receipt ",
   };
   it("parses reminder days and coerces the term", () => {
     const r = licenseFormSchema.parse(valid);
     expect(r.reminderDays).toEqual([60, 30, 7]);
     expect(r.renewalTermMonths).toBe(12);
+    expect(r.documents).toEqual(["Annual report", "Fee receipt"]);
+  });
+  it("explains bad reminder input plainly", () => {
+    const r = licenseFormSchema.safeParse({ ...valid, reminderDays: "30, abc" });
+    expect(JSON.stringify(r.success ? [] : r.error.issues)).toContain("whole numbers of days");
   });
   it.each([
     [{ expiresOn: "2025-12-31" }, "after the issue date"],
