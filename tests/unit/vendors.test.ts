@@ -6,7 +6,7 @@ import {
   vendorAlerts, vendorsToCsv, mergeVendors, pairKey, fileProblem,
 } from "@/lib/vendors/logic";
 import { sampleVendors } from "@/lib/vendors/sample-data";
-import type { Vendor, VendorDocument } from "@/lib/vendors/types";
+import { VENDOR_CATEGORIES, type Vendor, type VendorDocument } from "@/lib/vendors/types";
 import { documentFormSchema, vendorFormSchema } from "@/lib/vendors/validation";
 
 const TODAY = "2026-10-25";
@@ -35,6 +35,14 @@ describe("requirements and progress", () => {
     expect(defaultRequirements("Supplies").map((r) => r.type)).toEqual(["W-9", "Certificate of insurance"]);
     expect(defaultRequirements("Software")).toHaveLength(4);
     expect(defaultRequirements("Logistics").map((r) => r.type)).toContain("Carrier permit");
+  });
+  it("gives every category a W-9 and insurance, with unique, non-empty names", () => {
+    expect(new Set(VENDOR_CATEGORIES).size).toBe(VENDOR_CATEGORIES.length);
+    expect(VENDOR_CATEGORIES[VENDOR_CATEGORIES.length - 1]).toBe("Other");
+    for (const c of VENDOR_CATEGORIES) expect(defaultRequirements(c).slice(0, 2).map((r) => r.type), c).toEqual(["W-9", "Certificate of insurance"]);
+    expect(defaultRequirements("Healthcare & medical").map((r) => r.type)).toContain("Business associate agreement");
+    expect(defaultRequirements("Catering & food service").map((r) => r.type)).toContain("Health permit");
+    expect(defaultRequirements("Construction & trades").map((r) => r.type)).toContain("Business license");
   });
   it("counts only received, unexpired required documents", () => {
     expect(onboardingProgress(byId("v-2"), TODAY)).toEqual({ done: 2, total: 3 }); // insurance expired

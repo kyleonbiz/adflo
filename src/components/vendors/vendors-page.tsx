@@ -15,7 +15,7 @@ import {
   reopen, setActive, submitForApproval, summarize, vendorsToCsv,
 } from "@/lib/vendors/logic";
 import { sampleVendors } from "@/lib/vendors/sample-data";
-import type { Vendor, VendorStatus } from "@/lib/vendors/types";
+import { VENDOR_CATEGORIES, type Vendor, type VendorCategory, type VendorStatus } from "@/lib/vendors/types";
 import type { VendorFormValues } from "@/lib/vendors/validation";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
@@ -28,13 +28,15 @@ const SORT_LABEL: Record<SortKey, string> = { name: "Name", status: "Status", ne
 const SORTS: SortKey[] = ["name", "status", "newest"];
 
 /** Filters live in the address bar so a filtered list can be bookmarked or shared. */
-function readFilters(): { q: string; status: "all" | VendorStatus; sort: SortKey; issues: boolean } {
-  const empty = { q: "", status: "all" as const, sort: "name" as SortKey, issues: false };
+function readFilters(): { q: string; status: "all" | VendorStatus; category: "all" | VendorCategory; sort: SortKey; issues: boolean } {
+  const empty = { q: "", status: "all" as const, category: "all" as const, sort: "name" as SortKey, issues: false };
   if (typeof window === "undefined") return empty;
   const p = new URLSearchParams(window.location.search);
   const status = p.get("status");
   const sort = p.get("sort");
+  const category = p.get("category");
   return {
+    category: category && (VENDOR_CATEGORIES as readonly string[]).includes(category) ? (category as VendorCategory) : "all",
     q: p.get("q") ?? "",
     status: status && STATUS_ORDER.includes(status as VendorStatus) ? (status as VendorStatus) : "all",
     sort: sort && SORTS.includes(sort as SortKey) ? (sort as SortKey) : "name",
@@ -66,6 +68,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   const [formFor, setFormFor] = useState<Vendor | "new" | null>(null);
   const [deleting, setDeleting] = useState<Vendor | null>(null);
   const [notice, setNotice] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | VendorCategory>(initial.category);
   const [sort, setSort] = useState<SortKey>(initial.sort);
   const [issuesOnly, setIssuesOnly] = useState(initial.issues);
   const [undo, setUndo] = useState<Vendor[] | null>(null);
@@ -92,11 +95,12 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
     const p = new URLSearchParams();
     if (query.trim()) p.set("q", query.trim());
     if (statusFilter !== "all") p.set("status", statusFilter);
+    if (categoryFilter !== "all") p.set("category", categoryFilter);
     if (sort !== "name") p.set("sort", sort);
     if (issuesOnly) p.set("issues", "1");
     const qs = p.toString();
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`);
-  }, [query, statusFilter, sort, issuesOnly]);
+  }, [query, statusFilter, categoryFilter, sort, issuesOnly]);
 
   if (!today || !summary) {
     return (
@@ -178,8 +182,8 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   };
 
   const q = query.trim().toLowerCase();
-  const filtered = statusFilter !== "all" || issuesOnly || q !== "";
-  const clearFilters = () => { setQuery(""); setStatusFilter("all"); setIssuesOnly(false); };
+  const filtered = statusFilter !== "all" || categoryFilter !== "all" || issuesOnly || q !== "";
+  const clearFilters = () => { setQuery(""); setStatusFilter("all"); setCategoryFilter("all"); setIssuesOnly(false); };
   const showVendor = (id: string) => {
     // The card might be filtered out; clear filters so it can be found, then open its documents.
     clearFilters();
@@ -187,6 +191,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   };
   const visible = vendors
     .filter((v) => statusFilter === "all" || v.status === statusFilter)
+    .filter((v) => categoryFilter === "all" || v.category === categoryFilter)
     .filter((v) => !issuesOnly || hasDocumentIssues(v, today))
     .filter((v) => !q || [v.name, v.contactName, v.email, v.category].some((f) => f.toLowerCase().includes(q)))
     .sort((a, b) =>
@@ -304,6 +309,15 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
               <SelectTrigger aria-label="Sort vendors"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="sm:w-56">
+            <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as typeof categoryFilter)}>
+              <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {VENDOR_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

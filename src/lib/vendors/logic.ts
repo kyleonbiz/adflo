@@ -22,13 +22,34 @@ export function fileProblem(file: { name: string; size: number }): string | null
   return null;
 }
 
+type RequirementProfile = "basic" | "software" | "professional" | "logistics" | "food" | "healthcare";
+
+const PROFILE: Record<VendorCategory, RequirementProfile> = {
+  "Accounting & tax": "professional", "Advertising & marketing": "professional", "Agriculture & food supply": "food",
+  "Architecture & design": "professional", "Banking & financial services": "professional", "Catering & food service": "food",
+  "Cleaning & janitorial": "professional", "Construction & trades": "professional", Consulting: "professional",
+  "Creative & media": "professional", "Education & training": "professional", "Energy & utilities": "basic",
+  Engineering: "professional", "Environmental services": "professional", "Equipment rental & leasing": "basic",
+  "Events & venues": "professional", "Facilities & maintenance": "professional", "Freight & shipping": "logistics",
+  "Furniture & fixtures": "basic", "Healthcare & medical": "healthcare", "Hospitality & travel": "basic",
+  "Human resources & staffing": "professional", Insurance: "professional", "IT hardware & equipment": "basic",
+  "IT services & support": "software", "Legal services": "professional", Logistics: "logistics",
+  "Manufacturing & raw materials": "basic", Packaging: "basic", "Payroll & benefits": "software",
+  "Printing & promotional products": "basic", "Professional services": "professional", "Real estate & leasing": "basic",
+  "Research & laboratory": "professional", "Security services": "professional", Software: "software", Supplies: "basic",
+  Telecommunications: "basic", "Translation & language services": "professional", "Uniforms & apparel": "basic",
+  "Vehicles & fleet": "logistics", "Waste & recycling": "professional", Other: "basic",
+};
+
 /** What a new vendor must provide, by category. Every vendor needs a W-9 and insurance. */
 export function defaultRequirements(category: VendorCategory): { type: string; expires: boolean }[] {
   const base = [{ type: "W-9", expires: false }, { type: "Certificate of insurance", expires: true }];
-  switch (category) {
-    case "Software": return [...base, { type: "Master services agreement", expires: false }, { type: "Security questionnaire", expires: true }];
-    case "Professional services": return [...base, { type: "Signed contract", expires: false }, { type: "Business license", expires: true }];
-    case "Logistics": return [...base, { type: "Signed contract", expires: false }, { type: "Carrier permit", expires: true }];
+  switch (PROFILE[category]) {
+    case "software": return [...base, { type: "Master services agreement", expires: false }, { type: "Security questionnaire", expires: true }];
+    case "professional": return [...base, { type: "Signed contract", expires: false }, { type: "Business license", expires: true }];
+    case "logistics": return [...base, { type: "Signed contract", expires: false }, { type: "Carrier permit", expires: true }];
+    case "food": return [...base, { type: "Signed contract", expires: false }, { type: "Health permit", expires: true }];
+    case "healthcare": return [...base, { type: "Business license", expires: true }, { type: "Business associate agreement", expires: false }];
     default: return base;
   }
 }

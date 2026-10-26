@@ -130,6 +130,29 @@ test.describe("vendors module", () => {
     await expect(page.getByRole("status")).toContainText("not a PDF, image or Word file");
   });
 
+  test("vendors can be filtered by category, and many categories are offered", async ({ page }) => {
+    await page.goto("/app/vendors");
+    await page.getByRole("combobox", { name: "Filter by category" }).click();
+    await expect(page.getByRole("option")).toHaveCount(44); // "All categories" plus 43
+    await page.getByRole("option", { name: "Logistics", exact: true }).click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(2);
+    await expect(page).toHaveURL(/category=Logistics/);
+  });
+
+  test("a healthcare vendor gets its category's required documents", async ({ page }) => {
+    await page.goto("/app/vendors");
+    await page.getByRole("button", { name: "Add vendor" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Vendor name").fill("Cityview Clinic");
+    await dialog.getByLabel("Contact email").fill("office@cityview.example");
+    await dialog.getByRole("combobox", { name: "Category" }).click();
+    await page.getByRole("option", { name: "Healthcare & medical" }).click();
+    await dialog.getByRole("button", { name: "Add vendor" }).click();
+    const clinic = card(page, "Cityview Clinic");
+    await expect(clinic).toContainText("0 of 4 required documents in");
+    await expect(clinic.getByLabel("Business associate agreement received on")).toBeVisible();
+  });
+
   test("filters are kept in the address bar", async ({ page }) => {
     await page.goto("/app/vendors?status=pending_approval&sort=newest");
     await expect(page.getByTestId("vendor-card")).toHaveCount(1);
