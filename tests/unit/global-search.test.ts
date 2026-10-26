@@ -13,6 +13,10 @@ describe("searchResults", () => {
     expect(r.find((x) => x.key === "in-crm")?.href).toBe("/app/contacts?q=vendor");
   });
 
+  it("searches documents on the app home page", () => {
+    expect(searchResults("lease", "documents").map((x) => x.href)).toEqual(["/app?q=lease"]);
+  });
+
   it("encodes the query in the link", () => {
     expect(searchResults("acme & co", "invoices").map((x) => x.href)).toEqual(["/app/invoices?q=acme%20%26%20co"]);
   });

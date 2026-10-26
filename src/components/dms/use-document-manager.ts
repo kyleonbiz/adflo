@@ -21,12 +21,15 @@ export interface Notice {
 
 type LoadState = "loading" | "ready" | "error";
 
-export function useDocumentManager(api: DmsApi) {
+export function useDocumentManager(api: DmsApi, initialSearch = "") {
   const [boot, setBoot] = useState<Bootstrap | null>(null);
   const [bootState, setBootState] = useState<LoadState>("loading");
   const [bootError, setBootError] = useState("");
 
-  const [query, setQuery] = useState<DocumentQuery>(() => ({ ...defaultQuery(), pageSize: 12 }));
+  const [query, setQuery] = useState<DocumentQuery>(() => {
+    const search = initialSearch.trim();
+    return { ...defaultQuery(), pageSize: 12, ...(search ? { search, sort: "relevance" as const } : {}) };
+  });
   const [items, setItems] = useState<DocumentRecord[]>([]);
   const [total, setTotal] = useState(0);
   const [listState, setListState] = useState<LoadState>("loading");
