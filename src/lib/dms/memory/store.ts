@@ -395,6 +395,11 @@ export class MemoryRepository implements DocumentRepository, TeamRepository {
     return { usedBytes: used, quotaBytes: w?.storageQuotaBytes ?? 0, documentCount: count };
   }
 
+  async getUsageSummary(ws: string) {
+    const [usage, trashCount] = await Promise.all([this.getUsage(ws), this.countTrash(ws)]);
+    return { usage, trashCount };
+  }
+
   async countTrash(ws: string) {
     let n = 0;
     for (const d of this.store.documents.values()) {

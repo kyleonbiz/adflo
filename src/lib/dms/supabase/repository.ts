@@ -296,6 +296,17 @@ export class SupabaseRepository implements DocumentRepository, TeamRepository {
     return this.rpc<string[]>("dms_purge_document", { p_workspace: ws, p_document: id });
   }
 
+  async getUsageSummary(ws: string) {
+    const u = await this.rpc<{ usedBytes: number; quotaBytes: number; documentCount: number; trashCount: number }>(
+      "dms_usage",
+      { p_workspace: ws },
+    );
+    return {
+      usage: { usedBytes: Number(u.usedBytes), quotaBytes: Number(u.quotaBytes), documentCount: Number(u.documentCount) },
+      trashCount: Number(u.trashCount),
+    };
+  }
+
   async getUsage(ws: string): Promise<StorageUsage> {
     const u = await this.rpc<{ usedBytes: number; quotaBytes: number; documentCount: number }>("dms_usage", {
       p_workspace: ws,

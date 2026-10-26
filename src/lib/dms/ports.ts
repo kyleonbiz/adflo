@@ -140,6 +140,8 @@ export interface DocumentRepository {
 
   getUsage(workspaceId: string): Promise<StorageUsage>;
   countTrash(workspaceId: string): Promise<number>;
+  /** Usage and trash count together, for callers that need both (one round trip on a real database). */
+  getUsageSummary(workspaceId: string): Promise<{ usage: StorageUsage; trashCount: number }>;
 
   createShareLink(args: {
     workspaceId: string;
