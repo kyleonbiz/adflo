@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("invoices module", () => {
   test("summary, attention list and status filter", async ({ page }) => {
-    await page.goto("/demo/invoices");
+    await page.goto("/app/invoices");
     await expect(page.getByRole("note")).toContainText("Nothing is saved");
     await expect(page.getByTestId("invoice-card")).toHaveCount(7);
     const summary = page.getByRole("region", { name: "Summary" });
@@ -20,7 +20,7 @@ test.describe("invoices module", () => {
   });
 
   test("mark sent, mark paid and create the next recurring invoice", async ({ page }) => {
-    await page.goto("/demo/invoices");
+    await page.goto("/app/invoices");
     const draft = page.getByTestId("invoice-card").filter({ hasText: "INV-0045" });
     await draft.getByRole("button", { name: "Mark sent" }).click();
     await expect(page.getByRole("status")).toContainText("INV-0045 marked as sent");
@@ -36,7 +36,7 @@ test.describe("invoices module", () => {
   });
 
   test("create with validation, edit, void and delete", async ({ page }) => {
-    await page.goto("/demo/invoices");
+    await page.goto("/app/invoices");
     await page.getByRole("button", { name: "New invoice" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByLabel("Invoice number")).toHaveValue("INV-0046");
@@ -69,7 +69,7 @@ test.describe("invoices module", () => {
   });
 
   test("exports the filtered list as CSV", async ({ page }) => {
-    await page.goto("/demo/invoices");
+    await page.goto("/app/invoices");
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export CSV" }).click();
     const file = await download;
@@ -83,7 +83,7 @@ test.describe("invoices module", () => {
 
   test("fits a phone screen without horizontal scroll", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto("/demo/invoices");
+    await page.goto("/app/invoices");
     await expect(page.getByTestId("invoice-card").first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);

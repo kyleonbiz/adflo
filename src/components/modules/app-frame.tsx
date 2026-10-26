@@ -11,7 +11,7 @@ import { SidebarNav } from "./sidebar-nav";
  * button that opens the same menu as a drawer. `topRight` holds page-specific items (workspace name,
  * sign out, the demo badge).
  */
-export function AppFrame({ base, topRight, children }: { base: "/app" | "/demo"; topRight?: React.ReactNode; children: React.ReactNode }) {
+export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="min-h-dvh lg:flex">

@@ -1,9 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("public demo page", () => {
-  test("shows the hero and a working demo workspace", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place." })).toBeVisible();
+test.describe("documents preview", () => {
+  test("opens straight into a working documents workspace", async ({ page }) => {
+    await page.goto("/app");
+    await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
+    await expect(page.getByText("Preview · sample data")).toBeVisible();
     await expect(page.getByRole("note").filter({ hasText: "not saved or uploaded anywhere" })).toBeVisible();
     await expect(page.getByTestId("document-card").first()).toBeVisible();
 
@@ -16,7 +17,7 @@ test.describe("public demo page", () => {
   });
 
   test("opens document details with a preview, then closes with Escape and restores focus", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
     const open = page.getByRole("button", { name: /Open Invoice_INV-2041_Northwind.pdf/ });
     await open.click();
     const dialog = page.getByRole("dialog");
@@ -29,14 +30,14 @@ test.describe("public demo page", () => {
   });
 
   test("unsupported formats show a download-to-view fallback", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
     await page.getByRole("button", { name: /Open AR_Aging_Report_Oct.xlsx/ }).click();
     await expect(page.getByTestId("preview-unsupported")).toContainText("Preview not available");
     await expect(page.getByRole("button", { name: /Download to view/i })).toBeVisible();
   });
 
   test("upload dialog validates files and reports progress", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
     await page.getByRole("button", { name: "Upload", exact: true }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByTestId("file-input").setInputFiles({ name: "e2e-demo.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 e2e") });
@@ -50,7 +51,7 @@ test.describe("public demo page", () => {
   test("mobile layout: single column, full-height details sheet, no horizontal scroll", async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
     const page = await ctx.newPage();
-    await page.goto("/");
+    await page.goto("/app");
     await expect(page.getByTestId("document-card").first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
@@ -66,7 +67,7 @@ test.describe("public demo page", () => {
 
 test.describe("demo content search", () => {
   test("generated sample PDFs and CSVs are indexed in the browser and searchable by their text", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/app");
     await page.getByRole("searchbox").fill("placeholder");
     const cards = page.getByTestId("document-card");
     await expect(cards.first()).toBeVisible({ timeout: 20_000 });

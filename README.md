@@ -6,12 +6,15 @@ XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
 Tailwind and shadcn/ui-style components.
 
-* **Public page (`/`)** – the AdFlo landing page: what it is, all eleven modules (each linking into its
-  demo), how it works, how it stays careful, and a fully working **document demo** that runs the real
-  business logic against in-browser sample data. Nothing is uploaded or saved.
-* **App (`/app`)** – the authenticated workspace, with no hero. Requires Supabase.
-* **Development mode** – with no Supabase variables (and not in production), `/app` runs on
-  server-memory sample data with no login, clearly labelled "Development mode".
+AdFlo is software, not a website: opening the site address goes straight into the app (`/` redirects to
+`/app/overview`, the Home screen).
+
+* **With Supabase configured** – real sign-in, workspaces and (for Documents) a real database and storage.
+* **Without Supabase** – the app still opens, as a **preview** labelled "Preview · sample data" in the top
+  bar. Every module runs on sample data held in the visitor's own browser, so nothing is shared between
+  visitors and nothing is stored on the server. The server-memory API (`/api/dms/dev/*`) remains for
+  development only and is refused in production unless `DMS_ALLOW_DEV_MODE=true`.
+* **Old demo links** – `/demo/...` redirects to the same page under `/app/...`.
 
 ## Platform modules
 
@@ -36,10 +39,7 @@ browser and never uploaded.
 
 * **Navigation:** a left sidebar on wide screens (logo, one icon per module, the current module highlighted,
   Back Office Setup apart at the bottom) and a menu button that opens the same list as a drawer on a phone.
-  The demo includes the documents workspace at `/demo/documents`, so the sidebar never drops you out to the
-  marketing page.
-* **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/admin`, `/app/file-reset`, `/app/setup`, behind the same gate as before.
-* **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,vendors,contacts,projects,forms,reporting,admin,file-reset,setup}`, sample data in the browser tab, nothing saved.
+* **Pages:** `/app/overview` (Home), `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/admin`, `/app/file-reset`, `/app/setup`. With a database they sit behind sign-in; without one they open as a preview.
 * **Invoices, licenses, vendors, contacts, projects, forms and report data, requests and recurring tasks are not persisted yet.** They are seeded sample data held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
   renewal tasks, overdue notices) but no email is sent yet. Vendors get required documents by category, can only be
@@ -95,12 +95,11 @@ browser and never uploaded.
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000  (demo)   /app (dev mode)
+npm run dev          # http://localhost:3000  (opens the app in preview mode)
 ```
 
-Requires Node 20.19+ (developed on Node 22). Without Supabase variables `/app` uses
-in-memory data that resets on restart. In production this mode is refused (the app
-fails closed) unless `DMS_ALLOW_DEV_MODE=true`.
+Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app opens in preview mode on
+sample data held in the browser (it resets on refresh). Nothing is stored on the server.
 
 ## Supabase setup
 
@@ -364,10 +363,8 @@ abandoned uploads · per-user and per-address rate limiting.
   for this document" button).
 * Expiration dates are informational (badge on cards); nothing enforces or notifies.
 * Previews: PDF, images, CSV, text only. No dark mode.
-* The marketing page's "Full-Text Search" pill refers to this feature; in the public demo it covers
-  the generated sample PDFs/CSVs and anything you add in your own browser session.
-* Development mode data is in server memory (lost on restart); seeded sample images have no
-  bytes there, so their preview/download reports "not available".
+* In preview mode, document search covers the generated sample PDFs/CSVs and anything you add in your own
+  browser session. The Team screen needs a database and is not shown in the preview.
 * Styling follows the supplied reference screenshot (glass frame, centred document cards, floating upload and details panels) but is an interpretation, not a pixel match; fonts are Geist, bundled locally.
   Responsive behaviour is checked at 1440, 820, 390 and 360 px in Chromium (Playwright layout
   specs plus a manual look at the screenshots), not across other browsers or real devices;

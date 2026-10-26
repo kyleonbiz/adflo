@@ -12,14 +12,14 @@ const CSV = [
 ].join("\n");
 
 async function openImport(page: Page) {
-  await page.goto("/demo/contacts");
+  await page.goto("/app/contacts");
   await page.getByRole("button", { name: "Import CSV" }).click();
   return page.getByRole("dialog");
 }
 
 test.describe("CRM & data module", () => {
   test("summary, duplicates, search and filter", async ({ page }) => {
-    await page.goto("/demo/contacts");
+    await page.goto("/app/contacts");
     await expect(page.getByRole("note")).toContainText("never leave your browser");
     await expect(page.getByTestId("contact-row")).toHaveCount(7);
     const dupes = page.getByRole("region", { name: "Possible duplicates" });
@@ -36,7 +36,7 @@ test.describe("CRM & data module", () => {
   });
 
   test("merging duplicates keeps one contact with the combined details", async ({ page }) => {
-    await page.goto("/demo/contacts");
+    await page.goto("/app/contacts");
     await page.getByRole("button", { name: "Merge Patrick Lee into Pat Lee" }).click();
     await expect(page.getByTestId("contact-row")).toHaveCount(6);
     await expect(row(page, "Patrick Lee")).toHaveCount(0);
@@ -45,7 +45,7 @@ test.describe("CRM & data module", () => {
   });
 
   test("add with validation, edit and delete", async ({ page }) => {
-    await page.goto("/demo/contacts");
+    await page.goto("/app/contacts");
     await page.getByRole("button", { name: "Add contact" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Add contact" }).click();
@@ -166,7 +166,7 @@ test.describe("CRM & data module", () => {
   });
 
   test("exports the filtered contacts as CSV", async ({ page }) => {
-    await page.goto("/demo/contacts");
+    await page.goto("/app/contacts");
     await page.getByRole("textbox", { name: "Search contacts" }).fill("northwind");
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export CSV" }).click();
@@ -181,7 +181,7 @@ test.describe("CRM & data module", () => {
 
   test("fits a phone screen without horizontal scroll, including the import dialog", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto("/demo/contacts");
+    await page.goto("/app/contacts");
     await expect(page.getByTestId("contact-row").first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await page.getByRole("button", { name: "Import CSV" }).click();

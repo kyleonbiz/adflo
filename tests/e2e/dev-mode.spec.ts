@@ -16,27 +16,9 @@ async function uploadViaApi(request: APIRequestContext, name: string, body: stri
   return fin.data as { id: string };
 }
 
-test.describe("development-mode app (server API)", () => {
-  test("renders the authenticated workspace without the marketing hero", async ({ page }) => {
-    await page.goto("/app");
-    await expect(page.getByText("Development mode", { exact: true }).first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Your back office, in one place." })).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
-    await expect(page.getByTestId("document-card").first()).toBeVisible();
-  });
-
-  test("uploads through the UI, persists on the server, and downloads the same bytes", async ({ page, request }) => {
-    await page.goto("/app");
-    await page.getByRole("button", { name: "Upload", exact: true }).click();
-    const dialog = page.getByRole("dialog");
-    await dialog.getByTestId("file-input").setInputFiles({ name: "e2e-server.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4 server-bytes") });
-    await expect(dialog.getByTestId("upload-row").first()).toHaveAttribute("data-status", "success");
-    await dialog.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByRole("button", { name: /Open e2e-server.pdf/ })).toBeVisible();
-
-    await page.reload(); // server-side state, not component state
-    await page.getByRole("searchbox").fill("e2e-server");
-    await expect(page.getByTestId("document-card")).toHaveCount(1);
+test.describe("server API (development store)", () => {
+  test("uploads through the API, persists on the server, and downloads the same bytes", async ({ request }) => {
+    await uploadViaApi(request, "e2e-server.pdf", "%PDF-1.4 server-bytes");
 
     const list = await json(await request.get("/api/dms/documents?search=e2e-server"));
     const id = list.data.items[0].id;
@@ -112,24 +94,20 @@ test.describe("development-mode app (server API)", () => {
   });
 });
 
-test.describe("team management (dev mode API + UI)", () => {
-  test("invites, changes a role, and removes a member end to end", async ({ page, request }) => {
+test.describe("team management (server API)", () => {
+  test("invites and revokes through the API, and enforces the role rules", async ({ request }) => {
     const email = `e2e-${Date.now()}@example.test`;
-    await page.goto("/app");
-    await page.getByRole("button", { name: "Team", exact: true }).click();
-    const dialog = page.getByRole("dialog", { name: "Team" });
-    await expect(dialog.getByTestId("member-row").first()).toBeVisible();
-
-    await dialog.getByLabel("Email").fill(email);
-    await dialog.getByRole("button", { name: "Invite" }).click();
-    await expect(dialog.getByTestId("invite-row").filter({ hasText: email })).toBeVisible();
+    const invite = await json(await request.post("/api/dms/team/invites", { data: { email, role: "viewer" } }));
+    expect(invite.ok).toBe(true);
 
     // Server state, not just component state.
     const team = await json(await request.get("/api/dms/team"));
     expect(team.data.invites.map((i: { email: string }) => i.email)).toContain(email);
 
-    await dialog.getByRole("button", { name: `Revoke invite for ${email}` }).click();
-    await expect(dialog.getByTestId("invite-row").filter({ hasText: email })).toHaveCount(0);
+    const inviteId = team.data.invites.find((i: { email: string }) => i.email === email).id;
+    expect((await json(await request.delete(`/api/dms/team/invites/${inviteId}`))).ok).toBe(true);
+    const after = await json(await request.get("/api/dms/team"));
+    expect(after.data.invites.map((i: { email: string }) => i.email)).not.toContain(email);
 
     // Invariants enforced server-side regardless of the UI: no self role change, bad input rejected.
     const me = team.data.members.find((m: { role: string }) => m.role === "owner");
@@ -151,7 +129,7 @@ test.describe("team management (dev mode API + UI)", () => {
 });
 
 test.describe("content search (dev mode)", () => {
-  test("uploaded text becomes searchable after indexing, with a highlighted snippet", async ({ page, request }) => {
+  test("uploaded text becomes searchable after indexing, with a highlighted snippet", async ({ request }) => {
     const body = Buffer.from("Minutes of the annual meeting. The quarterly zeppelin audit was approved unanimously.");
     const init = await json(await request.post("/api/dms/uploads", {
       data: { fileName: "e2e-minutes.txt", size: body.length, mimeType: "text/plain", folderId: null },
@@ -174,13 +152,6 @@ test.describe("content search (dev mode)", () => {
     expect(hit.contentStatus).toBe("indexed");
     expect(hit.snippet).toContain("\uE000zeppelin\uE001");
     expect(JSON.stringify(hit)).not.toContain("contentText");
-
-    await page.goto("/app");
-    await page.getByRole("searchbox").fill("zeppelin");
-    const card = page.getByTestId("document-card");
-    await expect(card).toHaveCount(1);
-    await expect(card.getByTestId("snippet").locator("mark")).toHaveText("zeppelin");
-    await expect(card.getByRole("button", { name: /Open e2e-minutes.txt/ })).toBeVisible();
   });
 
   test("a word that is only in an unindexable file type finds nothing", async ({ request }) => {

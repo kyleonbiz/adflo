@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function VendorsRoute() {
   return renderAppShell("/app/vendors", () => (
-    <VendorsPage preview="Preview data: vendors you add or change here are not saved yet, and no notifications are sent. Saving arrives when the database is connected." />
+    <VendorsPage preview="Sample data that lives only in this browser tab. Nothing is saved and no notifications are sent." />
   ));
 }

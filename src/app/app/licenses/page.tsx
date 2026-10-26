@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function LicensesRoute() {
   return renderAppShell("/app/licenses", () => (
-    <LicensesPage preview="Preview data: licenses you add or change here are not saved yet. Saving arrives when the database is connected." />
+    <LicensesPage preview="Sample data that lives only in this browser tab. Nothing is saved." />
   ));
 }

@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("platform modules", () => {
   test("the overview lists all eleven modules and links the two that exist", async ({ page }) => {
-    await page.goto("/demo/overview");
+    await page.goto("/app/overview");
     await expect(page.getByTestId("module-tile")).toHaveCount(11);
     await expect(page.getByRole("link", { name: /Licenses & Renewals/ }).first()).toBeVisible();
     await page.getByRole("link", { name: /03.*Licenses & Renewals/ }).click();
@@ -10,7 +10,7 @@ test.describe("platform modules", () => {
   });
 
   test("licenses: summary, tasks, filtering, documents checklist and renewal", async ({ page }) => {
-    await page.goto("/demo/licenses");
+    await page.goto("/app/licenses");
     await expect(page.getByRole("note")).toContainText("Nothing is saved");
     await expect(page.getByTestId("license-card")).toHaveCount(5);
 
@@ -36,7 +36,7 @@ test.describe("platform modules", () => {
   });
 
   test("licenses: add, validate, edit and delete", async ({ page }) => {
-    await page.goto("/demo/licenses");
+    await page.goto("/app/licenses");
     await page.getByRole("button", { name: "Add license" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Add license" }).click();
@@ -62,7 +62,7 @@ test.describe("platform modules", () => {
 
   test("licenses fit a phone screen without horizontal scroll", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/demo/licenses");
+    await page.goto("/app/licenses");
     await expect(page.getByTestId("license-card").first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);

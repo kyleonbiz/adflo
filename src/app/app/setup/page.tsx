@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function SetupRoute() {
   return renderAppShell("/app/setup", () => (
-    <SetupPage base="/app" preview="Your choices are saved in this browser only, until the database is connected." />
+    <SetupPage base="/app" preview="Your choices are saved in this browser only and never leave it." />
   ));
 }

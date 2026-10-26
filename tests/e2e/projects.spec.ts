@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("projects module", () => {
   test("summary, attention list, health and status filter", async ({ page }) => {
-    await page.goto("/demo/projects");
+    await page.goto("/app/projects");
     await expect(page.getByRole("note")).toContainText("Nothing is saved");
     await expect(page.getByTestId("project-card")).toHaveCount(4);
 
@@ -25,7 +25,7 @@ test.describe("projects module", () => {
   });
 
   test("completing tasks updates progress and repeating tasks schedule the next one", async ({ page }) => {
-    await page.goto("/demo/projects");
+    await page.goto("/app/projects");
     const card = page.getByTestId("project-card").filter({ hasText: "Client onboarding" });
     await card.getByRole("button", { name: /^Tasks/ }).click();
 
@@ -47,7 +47,7 @@ test.describe("projects module", () => {
   });
 
   test("add task with validation, create project, edit and delete", async ({ page }) => {
-    await page.goto("/demo/projects");
+    await page.goto("/app/projects");
     const card = page.getByTestId("project-card").filter({ hasText: "Data cleanup" });
     await card.getByRole("button", { name: /^Tasks/ }).click();
     await card.getByRole("button", { name: "Add", exact: true }).click();
@@ -80,7 +80,7 @@ test.describe("projects module", () => {
   });
 
   test("downloads a status report", async ({ page }) => {
-    await page.goto("/demo/projects");
+    await page.goto("/app/projects");
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Status report" }).click();
     const file = await download;
@@ -94,7 +94,7 @@ test.describe("projects module", () => {
 
   test("fits a phone screen without horizontal scroll, tasks expanded", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto("/demo/projects");
+    await page.goto("/app/projects");
     await page.getByTestId("project-card").first().getByRole("button", { name: /^Tasks/ }).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);

@@ -8,13 +8,13 @@ async function readDownload(download: import("@playwright/test").Download): Prom
 }
 
 async function loadSample(page: Page) {
-  await page.goto("/demo/reporting");
+  await page.goto("/app/reporting");
   await page.getByRole("button", { name: "Load sample data" }).click();
 }
 
 test.describe("data entry & reporting module", () => {
   test("starts empty and loads the sample, setting aside bad and repeated rows", async ({ page }) => {
-    await page.goto("/demo/reporting");
+    await page.goto("/app/reporting");
     await expect(page.getByRole("note")).toContainText("never uploaded");
     await expect(page.getByRole("heading", { name: "No data loaded" })).toBeVisible();
     await page.getByRole("button", { name: "Load sample data" }).click();
@@ -123,7 +123,7 @@ test.describe("data entry & reporting module", () => {
   });
 
   test("import wizard: guessed types can be changed and required columns reject blanks", async ({ page }) => {
-    await page.goto("/demo/reporting");
+    await page.goto("/app/reporting");
     await page.getByRole("button", { name: "Import CSV" }).first().click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Or paste CSV text").fill("When,Who,Score\n3/4/2026,Ann,10\n3/5/2026,,20\n3/6/2026,Bo,oops\n3/7/2026,Cy,30");
@@ -151,7 +151,7 @@ test.describe("data entry & reporting module", () => {
   });
 
   test("import wizard: the repeated-row option and an unreadable file", async ({ page }) => {
-    await page.goto("/demo/reporting");
+    await page.goto("/app/reporting");
     await page.getByRole("button", { name: "Import CSV" }).first().click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Choose a CSV file").setInputFiles({ name: "sales data.csv", mimeType: "text/csv", buffer: Buffer.from("Item,Qty\nPen,3\nPen,3\nCap,1\n") });

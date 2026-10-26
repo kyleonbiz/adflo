@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function AdminRoute() {
   return renderAppShell("/app/admin", () => (
-    <AdminPage preview="Preview data: requests and recurring tasks you add or change here are not saved yet, and nothing is emailed. Saving arrives when the database is connected." />
+    <AdminPage preview="Sample data that lives only in this browser tab. Nothing is saved and nothing is emailed." />
   ));
 }

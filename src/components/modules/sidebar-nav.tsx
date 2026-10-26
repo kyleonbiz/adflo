@@ -33,7 +33,7 @@ function NavLink({ item, active, onNavigate }: { item: Item; active: boolean; on
 }
 
 /** The vertical module menu: the overview and the working modules, then Back Office Setup apart at the bottom. */
-export function SidebarNav({ base, onNavigate }: { base: "/app" | "/demo"; onNavigate?: () => void }) {
+export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: () => void }) {
   const pathname = usePathname();
   const modules: Item[] = MODULES.flatMap((m) => {
     const href = moduleHref(m, base);

@@ -5,7 +5,7 @@ const card = (page: import("@playwright/test").Page, name: string) =>
 
 test.describe("vendors module", () => {
   test("summary, attention list, duplicates and filters", async ({ page }) => {
-    await page.goto("/demo/vendors");
+    await page.goto("/app/vendors");
     await expect(page.getByRole("note")).toContainText("Nothing is saved");
     await expect(page.getByTestId("vendor-card")).toHaveCount(6);
 
@@ -26,7 +26,7 @@ test.describe("vendors module", () => {
   });
 
   test("onboarding: collect documents, submit for approval, approve", async ({ page }) => {
-    await page.goto("/demo/vendors");
+    await page.goto("/app/vendors");
     const initech = card(page, "Initech Staffing LLC");
     const submit = initech.getByRole("button", { name: "Submit for approval" });
     await expect(submit).toBeDisabled();
@@ -51,7 +51,7 @@ test.describe("vendors module", () => {
   });
 
   test("an expiry before the received date is refused", async ({ page }) => {
-    await page.goto("/demo/vendors");
+    await page.goto("/app/vendors");
     const acme = card(page, "Acme Office Supply");
     await acme.getByRole("button", { name: /^Documents/ }).click();
     await acme.getByLabel("W-9 received on").fill("2026-10-01");
@@ -61,7 +61,7 @@ test.describe("vendors module", () => {
   });
 
   test("rejecting then reopening a vendor", async ({ page }) => {
-    await page.goto("/demo/vendors");
+    await page.goto("/app/vendors");
     const hooli = card(page, "Hooli Logistics");
     await hooli.getByRole("button", { name: "Reject Hooli Logistics" }).click();
     await expect(hooli.getByText("Rejected", { exact: true }).first()).toBeVisible();
@@ -70,7 +70,7 @@ test.describe("vendors module", () => {
   });
 
   test("adding a vendor validates, warns about duplicates and creates required documents", async ({ page }) => {
-    await page.goto("/demo/vendors");
+    await page.goto("/app/vendors");
     await page.getByRole("button", { name: "Add vendor" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Add vendor" }).click();
@@ -99,7 +99,7 @@ test.describe("vendors module", () => {
   });
 
   test("a software vendor gets its four required documents, and documents can be added and removed", async ({ page }) => {
-    await page.goto("/demo/vendors");
+    await page.goto("/app/vendors");
     await page.getByRole("button", { name: "Add vendor" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Vendor name").fill("Pied Piper Cloud");
@@ -119,7 +119,7 @@ test.describe("vendors module", () => {
   });
 
   test("exports the vendor list as CSV", async ({ page }) => {
-    await page.goto("/demo/vendors");
+    await page.goto("/app/vendors");
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export CSV" }).click();
     const file = await download;
@@ -132,7 +132,7 @@ test.describe("vendors module", () => {
 
   test("fits a phone screen without horizontal scroll, documents expanded", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto("/demo/vendors");
+    await page.goto("/app/vendors");
     await card(page, "Globex Software").getByRole("button", { name: /^Documents/ }).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);

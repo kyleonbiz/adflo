@@ -57,21 +57,16 @@ for (const vp of VIEWPORTS) {
     const shot = (page: Page, name: string, fullPage = false) =>
       page.screenshot({ path: `test-results/layout/${vp.name}-${name}.png`, fullPage });
 
-    test("public demo page", async ({ page }) => {
-      await gotoReady(page, "/");
-      await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place." })).toBeVisible();
-      await noHorizontalScroll(page, "demo page");
-      await nothingClippedHorizontally(page, page.locator("main"), "demo page");
+    test("documents page", async ({ page }) => {
+      await gotoReady(page, "/app");
+      await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
+      await noHorizontalScroll(page, "documents page");
+      await nothingClippedHorizontally(page, page.locator("main"), "documents page");
       await shot(page, "demo", true);
-
-      // The hero buttons and the module cards wrap instead of overflowing.
-      for (const name of ["Try the demo", "Explore the modules"]) {
-        await fitsViewport(page, page.getByRole("link", { name: new RegExp(name) }).first(), `hero button "${name}"`);
-      }
     });
 
     test("touch targets on cards are comfortable", async ({ page }) => {
-      await gotoReady(page, "/");
+      await gotoReady(page, "/app");
       const star = page.getByRole("button", { name: /^(Star|Unstar) / }).first();
       const box = (await star.boundingBox())!;
       expect(Math.min(box.width, box.height)).toBeGreaterThanOrEqual(36);
@@ -80,7 +75,7 @@ for (const vp of VIEWPORTS) {
     });
 
     test("upload dialog fits and is operable", async ({ page }) => {
-      await gotoReady(page, "/");
+      await gotoReady(page, "/app");
       await page.getByRole("button", { name: "Upload", exact: true }).click();
       const dialog = page.getByRole("dialog");
       await expect(dialog).toBeVisible();
@@ -96,7 +91,7 @@ for (const vp of VIEWPORTS) {
     });
 
     test("details panel fits, scrolls internally and closes", async ({ page }) => {
-      await gotoReady(page, "/");
+      await gotoReady(page, "/app");
       await page.getByRole("button", { name: /Open Master_Services_Agreement_Harbor/ }).click();
       const dialog = page.getByRole("dialog");
       await expect(dialog.getByRole("button", { name: "Download", exact: true })).toBeVisible();
@@ -114,7 +109,7 @@ for (const vp of VIEWPORTS) {
     });
 
     test("image and unsupported previews fit", async ({ page }) => {
-      await gotoReady(page, "/");
+      await gotoReady(page, "/app");
       await page.getByRole("button", { name: /Open NDA_Summit_Property_Group.docx/ }).click();
       const dialog = page.getByRole("dialog");
       await expect(dialog.getByTestId("preview-unsupported")).toBeVisible();
@@ -124,7 +119,7 @@ for (const vp of VIEWPORTS) {
     });
 
     test("filters and folders do not overflow", async ({ page }) => {
-      await gotoReady(page, "/");
+      await gotoReady(page, "/app");
       await page.getByRole("button", { name: /^Contracts, / }).click();
       await expect(page.getByTestId("document-card")).toHaveCount(3);
       await nothingClippedHorizontally(page, page.getByTestId("workspace"), "workspace");
@@ -134,20 +129,6 @@ for (const vp of VIEWPORTS) {
       await expect(page.getByTestId("empty-state")).toBeVisible();
       await shot(page, "empty", true);
       await noHorizontalScroll(page, "empty state");
-    });
-
-    test("dev-mode workspace and team dialog fit", async ({ page }) => {
-      await gotoReady(page, "/app");
-      await noHorizontalScroll(page, "app page");
-      await shot(page, "app", true);
-      await page.getByRole("button", { name: "Team", exact: true }).click();
-      const dialog = page.getByRole("dialog", { name: "Team" });
-      await expect(dialog.getByTestId("member-row").first()).toBeVisible();
-      await page.waitForTimeout(350);
-      await fitsViewport(page, dialog, "team dialog");
-      await nothingClippedHorizontally(page, dialog, "team dialog");
-      await shot(page, "team");
-      await noHorizontalScroll(page, "team dialog open");
     });
   });
 }

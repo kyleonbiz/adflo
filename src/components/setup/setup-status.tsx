@@ -9,7 +9,7 @@ import { useSetupConfig } from "@/lib/setup/storage";
 import { STEPS } from "@/lib/setup/types";
 
 /** The call to action (or progress) for Back Office Setup, shown above the module list. */
-export function SetupStatus({ base }: { base: "/app" | "/demo" }) {
+export function SetupStatus({ base }: { base: "/app" }) {
   const ready = useToday() !== null; // the saved setup is only known in the browser
   const config = useSetupConfig();
   if (!ready) return null;

@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function ProjectsRoute() {
   return renderAppShell("/app/projects", () => (
-    <ProjectsPage preview="Preview data: projects and tasks you add or change here are not saved yet, and no notifications are sent. Saving arrives when the database is connected." />
+    <ProjectsPage preview="Sample data that lives only in this browser tab. Nothing is saved and no notifications are sent." />
   ));
 }

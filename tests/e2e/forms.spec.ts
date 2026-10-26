@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 test.describe("forms module", () => {
   test("summary, approval badges and search", async ({ page }) => {
-    await page.goto("/demo/forms");
+    await page.goto("/app/forms");
     await expect(page.getByRole("note")).toContainText("Nothing is saved");
     await expect(page.getByTestId("form-card")).toHaveCount(3);
     const summary = page.getByRole("region", { name: "Summary" });
@@ -16,7 +16,7 @@ test.describe("forms module", () => {
   });
 
   test("filling a form validates, then routes to approval", async ({ page }) => {
-    await page.goto("/demo/forms");
+    await page.goto("/app/forms");
     const leave = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
     await leave.getByRole("button", { name: "Fill out" }).click();
     const dialog = page.getByRole("dialog");
@@ -38,7 +38,7 @@ test.describe("forms module", () => {
   });
 
   test("approve and reject with a comment, then download the document", async ({ page }) => {
-    await page.goto("/demo/forms");
+    await page.goto("/app/forms");
     const leave = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
     await leave.getByRole("button", { name: /^Submissions/ }).click();
     await leave.getByLabel("Comment on submission by Marta Gill").fill("Enjoy the trip");
@@ -67,7 +67,7 @@ test.describe("forms module", () => {
   });
 
   test("builds a form, uses it, edits it and deletes it", async ({ page }) => {
-    await page.goto("/demo/forms");
+    await page.goto("/app/forms");
     await page.getByRole("button", { name: "New form" }).click();
     const dialog = page.getByRole("dialog");
     const create = dialog.getByRole("button", { name: "Create form" });
@@ -128,7 +128,7 @@ test.describe("forms module", () => {
   });
 
   test("exports submissions as CSV", async ({ page }) => {
-    await page.goto("/demo/forms");
+    await page.goto("/app/forms");
     const vendor = page.getByTestId("form-card").filter({ hasText: "New vendor intake" });
     await vendor.getByRole("button", { name: /^Submissions/ }).click();
     const download = page.waitForEvent("download");
@@ -143,7 +143,7 @@ test.describe("forms module", () => {
 
   test("fits a phone screen without horizontal scroll", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto("/demo/forms");
+    await page.goto("/app/forms");
     await page.getByTestId("form-card").first().getByRole("button", { name: /^Submissions/ }).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);

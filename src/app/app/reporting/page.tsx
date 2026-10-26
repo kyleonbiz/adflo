@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function ReportingRoute() {
   return renderAppShell("/app/reporting", () => (
-    <ReportingPage preview="Preview: imported data is held in this page only and is not saved. Summaries are previewed, not emailed." />
+    <ReportingPage preview="Files are read in your browser and never uploaded. Nothing is saved and no summaries are emailed." />
   ));
 }

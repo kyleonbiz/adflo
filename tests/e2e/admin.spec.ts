@@ -10,7 +10,7 @@ async function readDownload(download: import("@playwright/test").Download): Prom
 
 test.describe("admin support module", () => {
   test("summary, digest, filters and search", async ({ page }) => {
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     await expect(page.getByRole("note")).toContainText("Nothing is saved");
     await expect(page.getByTestId("request-card")).toHaveCount(7);
 
@@ -32,7 +32,7 @@ test.describe("admin support module", () => {
   });
 
   test("risky requests wait for approval; approving makes them open", async ({ page }) => {
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     const wire = card(page, "Wire $4,800 to Globex for the annual license");
     await expect(wire).toContainText("Awaiting approval");
     await expect(wire).toContainText("Needs approval: mentions a wire transfer");
@@ -52,7 +52,7 @@ test.describe("admin support module", () => {
   });
 
   test("a finished request shows its due date, not how late it was", async ({ page }) => {
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     const lease = card(page, "Send the signed lease to the landlord");
     await expect(lease.getByText("Done", { exact: true })).toBeVisible();
     await expect(lease).not.toContainText("overdue");
@@ -60,7 +60,7 @@ test.describe("admin support module", () => {
   });
 
   test("working a request: start, done, reopen and delete", async ({ page }) => {
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     const toner = card(page, "Order new toner for the front office printer");
     await toner.getByRole("button", { name: /^Start/ }).click();
     await expect(toner.getByText("In progress", { exact: true })).toBeVisible();
@@ -74,7 +74,7 @@ test.describe("admin support module", () => {
   });
 
   test("new request: live suggestions, approval warning, validation", async ({ page }) => {
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     await page.getByRole("button", { name: "New request" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Create request" }).click();
@@ -101,7 +101,7 @@ test.describe("admin support module", () => {
   });
 
   test("a category you pick overrides the suggestion", async ({ page }) => {
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     await page.getByRole("button", { name: "New request" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Title").fill("Reschedule the vendor call");
@@ -112,7 +112,7 @@ test.describe("admin support module", () => {
   });
 
   test("fill a request from a pasted email", async ({ page }) => {
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     await page.getByRole("button", { name: "New request" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Fill from a pasted email" }).click();
@@ -130,7 +130,7 @@ test.describe("admin support module", () => {
   });
 
   test("recurring tasks: create the due ones, add and delete", async ({ page }) => {
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     await expect(page.getByTestId("routine-row")).toHaveCount(3);
     await expect(page.getByTestId("routine-row").first()).toContainText("Due");
     await page.getByRole("button", { name: "Create due requests" }).click();
@@ -153,7 +153,7 @@ test.describe("admin support module", () => {
   });
 
   test("downloads a calendar file with the due dates", async ({ page }) => {
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Add to calendar" }).click();
     const file = await download;
@@ -169,7 +169,7 @@ test.describe("admin support module", () => {
 
   test("fits a phone screen without horizontal scroll, including the request dialog", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await page.goto("/demo/admin");
+    await page.goto("/app/admin");
     await expect(page.getByTestId("request-card").first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await page.getByRole("button", { name: "New request" }).click();

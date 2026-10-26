@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function InvoicesRoute() {
   return renderAppShell("/app/invoices", () => (
-    <InvoicesPage preview="Preview data: invoices you add or change here are not saved yet, and no reminders are sent. Saving arrives when the database is connected." />
+    <InvoicesPage preview="Sample data that lives only in this browser tab. Nothing is saved and no emails are sent." />
   ));
 }

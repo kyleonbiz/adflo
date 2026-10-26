@@ -5,7 +5,7 @@ import { SetupStatus } from "@/components/setup/setup-status";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 
 /** Catalogue of the eleven modules; the ones that exist link through, the rest are marked as planned. */
-export function ModuleOverview({ base }: { base: "/app" | "/demo" }) {
+export function ModuleOverview({ base }: { base: "/app" }) {
   return (
     <div className="space-y-5">
       <div>

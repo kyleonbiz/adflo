@@ -25,7 +25,7 @@ const KIND_LABEL = { form: "Form", routine: "Recurring task", license: "License 
 const moduleName = (id: string) => MODULES.find((m) => m.id === id)?.name ?? id;
 const moduleSummary = (id: string) => MODULES.find((m) => m.id === id)?.summary ?? "";
 
-function Wizard({ initial, today, base }: { initial: SetupConfig; today: string; base: "/app" | "/demo" }) {
+function Wizard({ initial, today, base }: { initial: SetupConfig; today: string; base: "/app" }) {
   const [config, setConfig] = useState<SetupConfig>(initial);
 
   /** Every change is saved straight away, so leaving to import data and coming back loses nothing. */
@@ -259,7 +259,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
  * Back Office Setup. The choices are saved in this browser (not a database), so nothing leaves the
  * device. Templates installed here appear inside Forms, Admin Support and Licenses once setup is finished.
  */
-export function SetupPage({ base, preview }: { base: "/app" | "/demo"; preview?: string }) {
+export function SetupPage({ base, preview }: { base: "/app"; preview?: string }) {
   const today = useToday();
   const stored = useSetupConfig();
 

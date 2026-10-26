@@ -5,14 +5,14 @@ import { expect, test, type Download, type Page } from "@playwright/test";
 
 const text = async (d: Download) => { let s = ""; for await (const c of await d.createReadStream()) s += c; return s; };
 const sample = async (page: Page) => {
-  await page.goto("/demo/file-reset");
+  await page.goto("/app/file-reset");
   await page.getByRole("button", { name: "Load sample folder" }).click();
 };
 const row = (page: Page, from: string) => page.getByTestId("change-row").filter({ hasText: from });
 
 test.describe("business file reset module", () => {
   test("starts with a clear promise, then loads the sample", async ({ page }) => {
-    await page.goto("/demo/file-reset");
+    await page.goto("/app/file-reset");
     await expect(page.getByRole("note")).toContainText("never uploaded");
     await expect(page.getByText("Nothing is uploaded, and nothing on your computer is changed or deleted.")).toBeVisible();
     await page.getByRole("button", { name: "Load sample folder" }).click();
@@ -116,7 +116,7 @@ test.describe("business file reset module", () => {
         mkdirSync(join(dir, p, ".."), { recursive: true });
         writeFileSync(join(dir, p), content);
       }
-      await page.goto("/demo/file-reset");
+      await page.goto("/app/file-reset");
       await page.getByLabel("Choose a folder").setInputFiles(dir);
       await expect(page.getByRole("status").filter({ hasText: "Loaded 6 files from your folder." })).toBeVisible();
       await expect(page.getByRole("region", { name: "Notes" })).toContainText("Skipped Desktop/.DS_Store: System file.");
@@ -133,7 +133,7 @@ test.describe("business file reset module", () => {
   });
 
   test("a pasted list: bad lines are reported and likely duplicates are labelled as likely", async ({ page }) => {
-    await page.goto("/demo/file-reset");
+    await page.goto("/app/file-reset");
     await page.getByRole("button", { name: "Paste a list of files" }).click();
     await page.getByLabel(/One file per line/).fill([
       "Docs/Report.pdf | 5000", "Docs/Report (1).pdf | 5000", "Docs/Notes_final.txt", "../outside.txt", "C:\\Windows\\x.txt", "Docs/Report.pdf", "Docs/Budget_03-14-2026.xlsx | many",
@@ -149,7 +149,7 @@ test.describe("business file reset module", () => {
   });
 
   test("a list with nothing usable shows a message", async ({ page }) => {
-    await page.goto("/demo/file-reset");
+    await page.goto("/app/file-reset");
     await page.getByRole("button", { name: "Paste a list of files" }).click();
     await page.getByLabel(/One file per line/).fill("../a\n../b");
     await page.getByRole("button", { name: "Load list" }).click();

@@ -36,10 +36,10 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Guided onboarding: pick modules, import data and configure recurring workflows." },
 ];
 
-/** Where a module lives. `base` is "/app" for the signed-in workspace, "/demo" for the public demo. */
-export function moduleHref(m: PlatformModule, base: "/app" | "/demo"): string | null {
+/** Where a module lives, under `base` (the app). The documents module is the app's own front page. */
+export function moduleHref(m: PlatformModule, base: "/app"): string | null {
   if (m.status !== "available" || !m.slug) return null;
-  // The signed-in documents module is /app itself; every other page, and the demo, lives under its own name.
-  if (m.id === "documents" && base === "/app") return "/app";
+  // The documents module is /app itself; every other module lives under its own name.
+  if (m.id === "documents") return base;
   return `${base}/${m.slug}`;
 }
