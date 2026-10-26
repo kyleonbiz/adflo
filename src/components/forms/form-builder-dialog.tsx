@@ -31,7 +31,7 @@ function toDraft(form?: FormTemplate): Draft {
   return {
     name: form.name, description: form.description, requiresApproval: form.requiresApproval,
     approver: form.approver, documentTemplate: form.documentTemplate,
-    fields: form.fields.map((f) => ({ id: f.id, label: f.label, type: f.type, required: f.required, optionsText: f.options.join(", ") })),
+    fields: form.fields.map((f) => ({ id: f.id, label: f.label, type: f.type, required: f.required, optionsText: f.options.join(", "), notBefore: f.notBefore })),
   };
 }
 
@@ -56,8 +56,10 @@ function BuilderBody({ form, existing, onClose, onSave }: { form?: FormTemplate;
   const save = () => {
     const parsed = formBuilderSchema.safeParse({
       ...draft,
-      fields: draft.fields.map(({ optionsText, ...f }) => ({
+      fields: draft.fields.map(({ optionsText, ...f }, i) => ({
         ...f,
+        // Only a date field can follow an earlier date field; anything else is dropped (e.g. after a type change or move).
+        notBefore: f.type === "date" && draft.fields.slice(0, i).some((x) => x.id === f.notBefore && x.type === "date") ? f.notBefore : undefined,
         options: f.type === "select" ? optionsText.split(",").map((o) => o.trim()).filter(Boolean) : [],
       })),
     });
@@ -110,6 +112,17 @@ function BuilderBody({ form, existing, onClose, onSave }: { form?: FormTemplate;
                     <Button type="button" size="icon-sm" variant="ghost" aria-label={`Remove field ${i + 1}`} disabled={draft.fields.length === 1} onClick={() => setDraft((d) => ({ ...d, fields: d.fields.filter((x) => x.id !== f.id) }))}><Trash2 /></Button>
                   </div>
                 </div>
+                {f.type === "date" && draft.fields.slice(0, i).some((x) => x.type === "date") && (
+                  <Select value={f.notBefore ?? "none"} onValueChange={(v) => setField(f.id, { notBefore: v === "none" ? undefined : v })}>
+                    <SelectTrigger aria-label={`Earliest date for field ${i + 1}`} className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Any date</SelectItem>
+                      {draft.fields.slice(0, i).filter((x) => x.type === "date").map((x) => (
+                        <SelectItem key={x.id} value={x.id}>On or after: {x.label.trim() || `field ${draft.fields.indexOf(x) + 1}`}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 {f.type === "select" && (
                   <Input value={f.optionsText} onChange={(e) => setField(f.id, { optionsText: e.target.value })} placeholder="Options, separated by commas" aria-label={`Options of field ${i + 1}`} className="h-9" />
                 )}

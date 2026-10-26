@@ -17,6 +17,8 @@ export interface FormField {
   required: boolean;
   /** Choices for a dropdown; empty for other types. */
   options: string[];
+  /** Date fields only: id of an earlier date field this one cannot come before (e.g. "last day" after "first day"). */
+  notBefore?: string;
 }
 
 export interface FormTemplate {

@@ -7,6 +7,7 @@ const fieldSchema = z
     label: z.string().trim().min(1, "Every field needs a label").max(80, "Keep labels under 80 characters"),
     type: z.enum(FIELD_TYPES.map((t) => t.value) as [string, ...string[]]),
     required: z.boolean(),
+    notBefore: z.string().optional(),
     options: z.array(z.string().trim().min(1, "Options cannot be empty").max(60, "Keep options under 60 characters")).max(20, "At most 20 options"),
   })
   .refine((f) => f.type !== "select" || f.options.length >= 2, {
@@ -39,6 +40,13 @@ export const formBuilderSchema = z
       if (seen.has(key)) ctx.addIssue({ code: "custom", path: ["fields"], message: `Two fields are called "${f.label.trim()}". Labels must be unique.` });
       seen.add(key);
     }
+    v.fields.forEach((f, i) => {
+      if (!f.notBefore) return;
+      const target = v.fields.slice(0, i).find((x) => x.id === f.notBefore);
+      if (f.type !== "date" || !target || target.type !== "date") {
+        ctx.addIssue({ code: "custom", path: ["fields", i, "notBefore"], message: `"${f.label.trim()}" can only follow an earlier date field.` });
+      }
+    });
     // A placeholder that matches no field label would silently print as blank in the document.
     const labels = new Set(v.fields.map((f) => f.label.trim().toLowerCase()));
     const unknown = unknownPlaceholders(v.documentTemplate, labels);

@@ -29,6 +29,9 @@ test.describe("forms module", () => {
     await dialog.getByLabel("Your name").fill("Sam");
     await dialog.getByLabel(/Employee name/).fill("Sam Rivera");
     await dialog.getByLabel(/First day off/).fill("2026-12-01");
+    await dialog.getByLabel(/Last day off/).fill("2026-11-30");
+    await dialog.getByRole("button", { name: "Submit" }).click();
+    await expect(dialog.locator("#fill-l-to-error")).toContainText("Must be on or after First day off");
     await dialog.getByLabel(/Last day off/).fill("2026-12-03");
     await dialog.getByRole("combobox", { name: /Type/ }).click();
     await page.getByRole("option", { name: "Sick" }).click();
@@ -123,6 +126,11 @@ test.describe("forms module", () => {
 
     const vendor = page.getByTestId("form-card").filter({ hasText: "New vendor intake" });
     await vendor.getByRole("button", { name: /^Submissions/ }).click();
+    await vendor.getByRole("button", { name: "Reject submission by Dana Whitfield" }).first().click();
+    await expect(vendor.getByRole("alert")).toContainText("Add a short reason");
+    await expect(vendor.getByText("Rejected", { exact: true })).toHaveCount(0);
+    await vendor.getByLabel("Comment on submission by Dana Whitfield").fill("Missing W-9");
+    await expect(vendor.getByRole("alert")).toHaveCount(0);
     await vendor.getByRole("button", { name: "Reject submission by Dana Whitfield" }).first().click();
     await expect(vendor.getByText("Rejected", { exact: true })).toBeVisible();
   });

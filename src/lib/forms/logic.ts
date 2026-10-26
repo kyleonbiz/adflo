@@ -21,10 +21,19 @@ export function validateSubmission(form: FormTemplate, values: Record<string, st
       if (f.required) errors[f.id] = "This field is required";
       continue;
     }
-    const error = checkValue(f, v);
+    const error = checkValue(f, v) ?? checkOrder(form, f, v, values);
     if (error) errors[f.id] = error;
   }
   return errors;
+}
+
+/** A date that must not come before another date field. Skipped while the other date is blank or invalid. */
+function checkOrder(form: FormTemplate, f: FormField, v: string, values: Record<string, string>): string | null {
+  if (f.type !== "date" || !f.notBefore) return null;
+  const other = form.fields.find((x) => x.id === f.notBefore);
+  const from = (values[f.notBefore] ?? "").trim();
+  if (!other || !isDay(from) || v >= from) return null;
+  return `Must be on or after ${other.label}`;
 }
 
 function checkValue(f: FormField, v: string): string | null {

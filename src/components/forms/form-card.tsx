@@ -23,6 +23,7 @@ export interface FormActions {
 
 function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission; actions: FormActions }) {
   const [comment, setComment] = useState("");
+  const [reasonNeeded, setReasonNeeded] = useState(false);
   const summary = form.fields.slice(0, 3).map((f) => displayValue(f, s.values[f.id])).filter(Boolean).join(" · ");
   return (
     <li className="space-y-2 rounded-xl border p-3 text-sm" data-testid="submission-row">
@@ -38,12 +39,13 @@ function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission
           {s.status === "approved" ? "Approved" : "Rejected"} by {s.decidedBy} on {formatDayLong(s.decidedOn)}{s.comment && `: ${s.comment}`}
         </p>
       )}
+      {reasonNeeded && <p id={`reason-${s.id}`} role="alert" className="text-xs text-destructive">Add a short reason so the submitter knows why it was rejected.</p>}
       <div className="flex flex-wrap items-center gap-2">
         {s.status === "pending" && (
           <>
-            <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (optional)" aria-label={`Comment on submission by ${s.submittedBy}`} className="h-8 max-w-56 text-xs" maxLength={200} />
+            <Input value={comment} onChange={(e) => { setComment(e.target.value); setReasonNeeded(false); }} placeholder="Comment (required to reject)" aria-label={`Comment on submission by ${s.submittedBy}`} aria-invalid={reasonNeeded} aria-describedby={reasonNeeded ? `reason-${s.id}` : undefined} className="h-8 max-w-56 text-xs" maxLength={200} />
             <Button size="sm" variant="outline" aria-label={`Approve submission by ${s.submittedBy}`} onClick={() => actions.onDecide(form, s, "approved", comment)}><CheckCircle2 /> Approve</Button>
-            <Button size="sm" variant="outline" aria-label={`Reject submission by ${s.submittedBy}`} onClick={() => actions.onDecide(form, s, "rejected", comment)}><XCircle /> Reject</Button>
+            <Button size="sm" variant="outline" aria-label={`Reject submission by ${s.submittedBy}`} onClick={() => (comment.trim() ? actions.onDecide(form, s, "rejected", comment) : setReasonNeeded(true))}><XCircle /> Reject</Button>
           </>
         )}
         <Button size="sm" variant="ghost" aria-label={`Document for submission by ${s.submittedBy}`} onClick={() => actions.onDocument(form, s)}><FileText /> Document</Button>

@@ -164,3 +164,22 @@ describe("document template placeholders", () => {
     }
   });
 });
+
+describe("date order", () => {
+  const leave = forms.find((x) => x.id === "form-leave")!;
+  const ok = { "l-name": "A", "l-from": "2026-12-02", "l-to": "2026-12-02", "l-type": "Sick" };
+  it("rejects a date before the one it must follow, allows the same day", () => {
+    expect(validateSubmission(leave, ok)).toEqual({});
+    expect(validateSubmission(leave, { ...ok, "l-to": "2026-12-01" })).toEqual({ "l-to": "Must be on or after First day off" });
+  });
+  it("waits until the other date is filled in", () => {
+    expect(validateSubmission(leave, { ...ok, "l-from": "", "l-to": "2026-12-01" })["l-to"]).toBeUndefined();
+  });
+  it("only lets a date follow an earlier date field", () => {
+    const f = (id: string, type: string, notBefore?: string) => ({ id, label: id.toUpperCase(), type, required: false, options: [], notBefore });
+    const make = (fields: ReturnType<typeof f>[]) => formBuilderSchema.safeParse({ name: "Trip", description: "", requiresApproval: false, approver: "", documentTemplate: "", fields });
+    expect(make([f("a", "date"), f("b", "date", "a")]).success).toBe(true);
+    expect(make([f("b", "date", "a"), f("a", "date")]).success).toBe(false);
+    expect(make([f("a", "text"), f("b", "date", "a")]).success).toBe(false);
+  });
+});
