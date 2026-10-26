@@ -25,6 +25,8 @@ export interface Task {
   doneOn: string | null;
   /** Set once a repeating task has spawned its next occurrence, so reopening and re-completing never duplicates it. */
   followUpId: string | null;
+  /** Day of month a monthly task is anchored to, so a Jan 31 task returns to the 31st after February's 28th. */
+  anchorDay?: number;
 }
 
 export interface Project {
@@ -39,4 +41,4 @@ export interface Project {
 }
 
 export type TaskState = "done" | "overdue" | "due_today" | "due_soon" | "open" | "unscheduled";
-export type ProjectHealth = "completed" | "on_hold" | "late" | "at_risk" | "on_track";
+export type ProjectHealth = "completed" | "on_hold" | "planning" | "late" | "at_risk" | "on_track";
