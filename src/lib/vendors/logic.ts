@@ -172,14 +172,19 @@ export function summarize(vendors: Vendor[], today: string): VendorSummary {
 
 const SEVERITY_RANK = { critical: 0, warning: 1, info: 2 } as const;
 
-/** Vendors with a critical or warning alert, most severe first. */
-export function needsAttention(vendors: Vendor[], today: string): { vendor: Vendor; alert: VendorAlert }[] {
+/** Vendors with a critical or warning alert, most severe first. `more` counts their other such alerts. */
+export function needsAttention(vendors: Vendor[], today: string): { vendor: Vendor; alert: VendorAlert; more: number }[] {
   return vendors
     .flatMap((vendor) => {
-      const alert = vendorAlerts(vendor, today).find((a) => a.severity !== "info");
-      return alert ? [{ vendor, alert }] : [];
+      const urgent = vendorAlerts(vendor, today).filter((a) => a.severity !== "info");
+      return urgent.length > 0 ? [{ vendor, alert: urgent[0], more: urgent.length - 1 }] : [];
     })
     .sort((x, y) => SEVERITY_RANK[x.alert.severity] - SEVERITY_RANK[y.alert.severity] || x.vendor.name.localeCompare(y.vendor.name));
+}
+
+/** Vendors with at least one expiring or expired document. */
+export function hasDocumentIssues(v: Vendor, today: string): boolean {
+  return v.status !== "inactive" && v.status !== "rejected" && v.documents.some((d) => ["expiring", "expired"].includes(docState(d, today)));
 }
 
 export function vendorsToCsv(vendors: Vendor[], today: string): string {
