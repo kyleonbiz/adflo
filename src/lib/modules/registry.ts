@@ -39,7 +39,7 @@ export const MODULES: readonly PlatformModule[] = [
 /** Where a module lives. `base` is "/app" for the signed-in workspace, "/demo" for the public demo. */
 export function moduleHref(m: PlatformModule, base: "/app" | "/demo"): string | null {
   if (m.status !== "available" || !m.slug) return null;
-  // The documents module is /app itself; its public demo is the workspace on the home page.
-  if (m.id === "documents") return base === "/app" ? "/app" : "/";
+  // The signed-in documents module is /app itself; every other page, and the demo, lives under its own name.
+  if (m.id === "documents" && base === "/app") return "/app";
   return `${base}/${m.slug}`;
 }

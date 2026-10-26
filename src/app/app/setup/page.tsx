@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Back Office Setup" };
 export const dynamic = "force-dynamic";
 
 export default function SetupRoute() {
-  return renderAppShell("setup", "/app/setup", () => (
+  return renderAppShell("/app/setup", () => (
     <SetupPage base="/app" preview="Your choices are saved in this browser only, until the database is connected." />
   ));
 }

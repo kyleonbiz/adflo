@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Business File Reset" };
 export const dynamic = "force-dynamic";
 
 export default function FileResetRoute() {
-  return renderAppShell("file-reset", "/app/file-reset", () => (
+  return renderAppShell("/app/file-reset", () => (
     <FilesPage preview="Files are read in your browser and never uploaded. Nothing on your computer is changed: you download a plan and scripts to run yourself." />
   ));
 }

@@ -1,20 +1,14 @@
 import { redirect } from "next/navigation";
-import { AppHeader } from "@/components/app-header";
+import { AppTopBar } from "@/components/app-header";
 import { AuthCard } from "@/components/auth/auth-card";
 import { OnboardingForm } from "@/components/auth/onboarding-form";
-import { ModuleNav } from "@/components/modules/module-nav";
+import { AppFrame } from "@/components/modules/app-frame";
 import { acceptPendingInvites, findMembership } from "@/lib/dms/server/context";
 import { devModeAllowed, getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-function Frame({ active, header, children }: { active: string; header: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="min-h-dvh">
-      {header}
-      <ModuleNav base="/app" active={active} />
-      <main className="mx-auto max-w-7xl px-3 py-6 sm:px-6">{children}</main>
-    </div>
-  );
+function Frame({ topRight, children }: { topRight: React.ReactNode; children: React.ReactNode }) {
+  return <AppFrame base="/app" topRight={topRight}>{children}</AppFrame>;
 }
 
 /**
@@ -22,7 +16,6 @@ function Frame({ active, header, children }: { active: string; header: React.Rea
  * production, and development mode. `content(mode)` is only rendered once the visitor is allowed in.
  */
 export async function renderAppShell(
-  active: string,
   nextPath: string,
   content: (mode: "live" | "dev") => React.ReactNode,
 ): Promise<React.ReactNode> {
@@ -44,7 +37,7 @@ export async function renderAppShell(
     }
     const { data: ws } = await supabase.from("workspaces").select("name").eq("id", membership.workspaceId).maybeSingle();
     return (
-      <Frame active={active} header={<AppHeader workspaceName={ws?.name} userLabel={email} />}>
+      <Frame topRight={<AppTopBar workspaceName={ws?.name} userLabel={email} />}>
         {content("live")}
       </Frame>
     );
@@ -60,7 +53,7 @@ export async function renderAppShell(
     );
   }
   return (
-    <Frame active={active} header={<AppHeader badge="Development mode" />}>
+    <Frame topRight={<AppTopBar badge="Development mode" />}>
       {content("dev")}
     </Frame>
   );

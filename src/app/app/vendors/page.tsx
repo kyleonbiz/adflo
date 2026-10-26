@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Vendors" };
 export const dynamic = "force-dynamic";
 
 export default function VendorsRoute() {
-  return renderAppShell("vendors", "/app/vendors", () => (
+  return renderAppShell("/app/vendors", () => (
     <VendorsPage preview="Preview data: vendors you add or change here are not saved yet, and no notifications are sent. Saving arrives when the database is connected." />
   ));
 }

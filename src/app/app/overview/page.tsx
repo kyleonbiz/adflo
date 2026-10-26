@@ -6,5 +6,5 @@ export const metadata: Metadata = { title: "Overview" };
 export const dynamic = "force-dynamic";
 
 export default function OverviewPage() {
-  return renderAppShell("overview", "/app/overview", () => <ModuleOverview base="/app" />);
+  return renderAppShell("/app/overview", () => <ModuleOverview base="/app" />);
 }

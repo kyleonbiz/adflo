@@ -33,6 +33,10 @@ alias), and `runImport` (validate each row, then sort into accepted, rejected an
 its first user; modules 08 (Data Entry) and 10 (File Reset) are meant to reuse it. Files are read in the
 browser and never uploaded.
 
+* **Navigation:** a left sidebar on wide screens (logo, one icon per module, the current module highlighted,
+  Back Office Setup apart at the bottom) and a menu button that opens the same list as a drawer on a phone.
+  The demo includes the documents workspace at `/demo/documents`, so the sidebar never drops you out to the
+  marketing page.
 * **Signed-in app:** `/app/overview`, `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/admin`, `/app/file-reset`, `/app/setup`, behind the same gate as before.
 * **Public demo:** `/demo/overview` and `/demo/{invoices,licenses,vendors,contacts,projects,forms,reporting,admin,file-reset,setup}`, sample data in the browser tab, nothing saved.
 * **Invoices, licenses, vendors, contacts, projects, forms and report data, requests and recurring tasks are not persisted yet.** They are seeded sample data held in component state; there is no

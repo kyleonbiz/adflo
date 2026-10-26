@@ -6,5 +6,5 @@ export const metadata: Metadata = { title: "Documents" };
 export const dynamic = "force-dynamic";
 
 export default function AppPage() {
-  return renderAppShell("documents", "/app", (mode) => <LiveWorkspace mode={mode} />);
+  return renderAppShell("/app", (mode) => <LiveWorkspace mode={mode} />);
 }

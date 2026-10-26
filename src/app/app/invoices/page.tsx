@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Invoices" };
 export const dynamic = "force-dynamic";
 
 export default function InvoicesRoute() {
-  return renderAppShell("invoices", "/app/invoices", () => (
+  return renderAppShell("/app/invoices", () => (
     <InvoicesPage preview="Preview data: invoices you add or change here are not saved yet, and no reminders are sent. Saving arrives when the database is connected." />
   ));
 }
