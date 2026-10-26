@@ -38,7 +38,7 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
         aria-label={`View ${invoice.number}`}
       >
         <span className="block min-w-0">
-          <span className="flex flex-wrap items-center gap-2">
+          <span className="flex items-center gap-2">
             <span className="font-semibold">{invoice.number}</span>
             <Badge variant={STATE_BADGE[state]}>{STATE_LABEL[state]}</Badge>
             {invoice.recurrence !== "none" && <Repeat className="size-3.5 text-muted-foreground" aria-label="Repeats" />}
@@ -60,7 +60,7 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
         <span className="block text-lg font-semibold tabular-nums sm:text-right">{formatMoney(invoice.amountCents)}</span>
       </button>
 
-      <div className="flex items-center gap-2 sm:justify-end">
+      <div className="flex items-center gap-2 sm:w-72 sm:shrink-0 sm:justify-end">
         {invoice.status === "draft" && (
           <Button size="sm" onClick={() => actions.onEmail(invoice)}><Mail /> Send</Button>
         )}
