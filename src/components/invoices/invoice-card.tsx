@@ -1,8 +1,9 @@
 "use client";
 
-import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Download, Eye, Link2, Mail, Undo2 } from "lucide-react";
+import { BellRing, CheckCircle2, Copy, Pencil, Repeat, Send, Trash2, Ban, Download, Eye, Link2, Mail, MoreHorizontal, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDayLong } from "@/lib/dates";
 import { formatMoney, invoiceAlerts, invoiceState, nextOverdueNotice, nextReminder } from "@/lib/invoices/logic";
 import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
@@ -65,32 +66,41 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
         </div>
         <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
           <p className="text-xl font-semibold tabular-nums">{formatMoney(invoice.amountCents)}</p>
-          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <div className="flex items-center gap-2 sm:justify-end">
             {invoice.status === "draft" && (
-              <Button size="sm" variant="outline" onClick={() => actions.onSend(invoice)}><Send /> Mark sent</Button>
-            )}
-            {(invoice.status === "draft" || invoice.status === "sent") && (
-              <Button size="sm" onClick={() => actions.onEmail(invoice)}><Mail /> {invoice.status === "draft" ? "Send" : "Resend"}</Button>
+              <Button size="sm" onClick={() => actions.onEmail(invoice)}><Mail /> Send</Button>
             )}
             {invoice.status === "sent" && (
-              <Button size="sm" variant="outline" onClick={() => actions.onPay(invoice)}><CheckCircle2 /> Mark paid</Button>
-            )}
-            {invoice.recurrence !== "none" && invoice.status !== "void" && (
-              <Button size="sm" variant="outline" onClick={() => actions.onNext(invoice)}><Copy /> Create next</Button>
+              <Button size="sm" onClick={() => actions.onPay(invoice)}><CheckCircle2 /> Mark paid</Button>
             )}
             <Button size="sm" variant="outline" onClick={() => downloadInvoice(invoice)}><Download /> Download</Button>
-            <Button size="sm" variant="outline" onClick={() => actions.onCopyLink(invoice)}><Link2 /> Copy link</Button>
-            {!open && (
-              <Button size="sm" variant="outline" onClick={() => actions.onReopen(invoice)}>
-                <Undo2 /> {invoice.status === "void" ? "Reopen" : "Undo payment"}
-              </Button>
-            )}
-            {open && (
-              <Button size="icon-sm" variant="ghost" aria-label={`Void ${invoice.number}`} onClick={() => actions.onVoid(invoice)}><Ban /></Button>
-            )}
-            <Button size="icon-sm" variant="ghost" aria-label={`View ${invoice.number}`} onClick={() => actions.onView(invoice)}><Eye /></Button>
-            <Button size="icon-sm" variant="ghost" aria-label={`Edit ${invoice.number}`} onClick={() => actions.onEdit(invoice)}><Pencil /></Button>
-            <Button size="icon-sm" variant="ghost" aria-label={`Delete ${invoice.number}`} onClick={() => actions.onDelete(invoice)}><Trash2 /></Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon-sm" variant="ghost" aria-label={`More actions for ${invoice.number}`}><MoreHorizontal /></Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => actions.onView(invoice)}><Eye /> View</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => actions.onEdit(invoice)}><Pencil /> Edit</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => actions.onCopyLink(invoice)}><Link2 /> Copy link</DropdownMenuItem>
+                {invoice.status === "draft" && (
+                  <DropdownMenuItem onSelect={() => actions.onSend(invoice)}><Send /> Mark sent</DropdownMenuItem>
+                )}
+                {invoice.status === "sent" && (
+                  <DropdownMenuItem onSelect={() => actions.onEmail(invoice)}><Mail /> Resend</DropdownMenuItem>
+                )}
+                {invoice.recurrence !== "none" && invoice.status !== "void" && (
+                  <DropdownMenuItem onSelect={() => actions.onNext(invoice)}><Copy /> Create next</DropdownMenuItem>
+                )}
+                {!open && (
+                  <DropdownMenuItem onSelect={() => actions.onReopen(invoice)}>
+                    <Undo2 /> {invoice.status === "void" ? "Reopen" : "Undo payment"}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                {open && <DropdownMenuItem onSelect={() => actions.onVoid(invoice)}><Ban /> Void</DropdownMenuItem>}
+                <DropdownMenuItem destructive onSelect={() => actions.onDelete(invoice)}><Trash2 /> Delete</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

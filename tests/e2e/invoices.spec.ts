@@ -1,5 +1,13 @@
 import { expect, test } from "@playwright/test";
 
+import type { Locator, Page } from "@playwright/test";
+
+/** Opens an invoice card's "more actions" menu and clicks one item. */
+async function menu(page: Page, card: Locator, number: string, item: string) {
+  await card.getByRole("button", { name: `More actions for ${number}` }).click();
+  await page.getByRole("menuitem", { name: item }).click();
+}
+
 test.describe("invoices module", () => {
   test("summary, attention list and status filter", async ({ page }) => {
     await page.goto("/app/invoices");
@@ -26,7 +34,7 @@ test.describe("invoices module", () => {
   test("mark sent, mark paid and create the next recurring invoice", async ({ page }) => {
     await page.goto("/app/invoices");
     const draft = page.getByTestId("invoice-card").filter({ hasText: "INV-0045" });
-    await draft.getByRole("button", { name: "Mark sent" }).click();
+    await menu(page, draft, "INV-0045", "Mark sent");
     await expect(page.getByRole("status")).toContainText("INV-0045 marked as sent");
 
     const overdue = page.getByTestId("invoice-card").filter({ hasText: "INV-0041" });
@@ -35,7 +43,7 @@ test.describe("invoices module", () => {
     await expect(overdue.getByText("Paid", { exact: true })).toBeVisible();
     await expect(page.getByRole("region", { name: "Needs attention" })).not.toContainText("INV-0041");
 
-    await overdue.getByRole("button", { name: "Create next" }).click();
+    await menu(page, overdue, "INV-0041", "Create next");
     await expect(page.getByRole("status")).toContainText("Draft INV-0046");
     await expect(page.getByTestId("invoice-card")).toHaveCount(8);
   });
@@ -75,22 +83,22 @@ test.describe("invoices module", () => {
     await expect(card).toContainText("$1,375.55");
     await expect(card.getByText("Draft", { exact: true })).toBeVisible();
 
-    await card.getByRole("button", { name: `Edit ${number}` }).click();
+    await menu(page, card, number, "Edit");
     await page.getByRole("dialog").getByLabel("Client", { exact: true }).fill("Globex Inc");
     await page.getByRole("dialog").getByRole("button", { name: "Save changes" }).click();
     await expect(page.getByTestId("invoice-card").filter({ hasText: "Globex Inc" })).toBeVisible();
 
-    await page.getByRole("button", { name: `Void ${number}` }).click();
+    await menu(page, page.getByTestId("invoice-card").filter({ hasText: number }), number, "Void");
     await page.getByRole("dialog").getByRole("button", { name: "Void" }).click();
     const voided = page.getByTestId("invoice-card").filter({ hasText: "Globex Inc" });
     await expect(voided.getByText("Void", { exact: true })).toBeVisible();
 
-    await voided.getByRole("button", { name: "Reopen" }).click();
+    await menu(page, voided, number, "Reopen");
     await expect(voided.getByText("Draft", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: `Void ${number}` }).click();
+    await menu(page, page.getByTestId("invoice-card").filter({ hasText: number }), number, "Void");
     await page.getByRole("dialog").getByRole("button", { name: "Void" }).click();
 
-    await page.getByRole("button", { name: `Delete ${number}` }).click();
+    await menu(page, page.getByTestId("invoice-card").filter({ hasText: number }), number, "Delete");
     await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
     await expect(page.getByTestId("invoice-card")).toHaveCount(7);
   });
