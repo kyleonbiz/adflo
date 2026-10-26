@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Vendors" };
 export const dynamic = "force-dynamic";
 
 export default function VendorsRoute() {
-  return renderAppShell("/app/vendors", () => (
-    <VendorsPage preview="Sample data that lives only in this browser tab. Nothing is saved and no notifications are sent." />
+  return renderAppShell("/app/vendors", (_mode, user) => (
+    <VendorsPage approver={user?.name} preview="Sample data that lives only in this browser tab. Nothing is saved and no notifications are sent." />
   ));
 }

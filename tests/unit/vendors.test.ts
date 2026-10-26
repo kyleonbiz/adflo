@@ -3,7 +3,7 @@ import { addDays } from "@/lib/dates";
 import {
   approvalBlockers, decide, defaultRequirements, docState, duplicatePairs, editDistance, findDuplicates,
   needsAttention, normalizeName, onboardingProgress, reopen, setActive, submitForApproval, summarize,
-  vendorAlerts, vendorsToCsv,
+  vendorAlerts, vendorsToCsv, mergeVendors, pairKey, fileProblem,
 } from "@/lib/vendors/logic";
 import { sampleVendors } from "@/lib/vendors/sample-data";
 import type { Vendor, VendorDocument } from "@/lib/vendors/types";
@@ -133,8 +133,9 @@ describe("summary, attention and csv", () => {
   it("exports one row per vendor with document issues and neutralised formulas", () => {
     const csv = vendorsToCsv([{ ...byId("v-2"), name: "=EVIL()" }], TODAY);
     const [header, row] = csv.trimEnd().split("\r\n");
-    expect(header).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues");
+    expect(header).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes");
     expect(row).toContain("'=EVIL()");
+    expect(row).toContain("Approved");
     expect(row).toContain("Certificate of insurance (expired)");
   });
 });
@@ -160,5 +161,32 @@ describe("forms", () => {
   it("validates a document name", () => {
     expect(documentFormSchema.safeParse({ type: "Permit", required: true }).success).toBe(true);
     expect(documentFormSchema.safeParse({ type: " ", required: true }).success).toBe(false);
+  });
+});
+
+describe("merging and attachments", () => {
+  const doc = (id: string, type: string, receivedOn: string | null, required = true) => ({ id, type, required, receivedOn, expiresOn: null });
+  const base = { ...byId("v-1"), notes: "", contactName: "", phone: "", documents: [doc("a1", "W-9", null), doc("a2", "Insurance", "2026-01-01")] };
+  const other = { ...byId("v-5"), notes: "Prefers email", contactName: "Dana W.", phone: "555", documents: [doc("b1", "w-9", "2026-02-02", false), doc("b2", "Insurance", "2025-06-01"), doc("b3", "Contract", null)] };
+
+  it("keeps the survivor's details and fills blanks from the other record", () => {
+    const m = mergeVendors(base, other);
+    expect(m.id).toBe(base.id);
+    expect(m.email).toBe(base.email);
+    expect([m.contactName, m.phone, m.notes]).toEqual(["Dana W.", "555", "Prefers email"]);
+  });
+  it("merges documents by type, preferring the received or later copy", () => {
+    const m = mergeVendors(base, other);
+    expect(m.documents.map((d) => [d.id, d.type, d.receivedOn, d.required])).toEqual([
+      ["a1", "w-9", "2026-02-02", true], ["a2", "Insurance", "2026-01-01", true], ["b3", "Contract", null, true],
+    ]);
+  });
+  it("orders a pair key the same either way round", () => {
+    expect(pairKey({ id: "x" }, { id: "a" })).toBe(pairKey({ id: "a" }, { id: "x" }));
+  });
+  it("accepts PDFs, images and Word files up to 10 MB", () => {
+    expect(fileProblem({ name: "W9.PDF", size: 1000 })).toBeNull();
+    expect(fileProblem({ name: "w9.exe", size: 1000 })).toContain("not a PDF");
+    expect(fileProblem({ name: "w9.pdf", size: 11 * 1024 * 1024 })).toContain("larger than 10 MB");
   });
 });

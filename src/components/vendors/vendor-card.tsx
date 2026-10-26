@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, Pencil, Plus, Power, RotateCcw, Send, Trash2, X, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, Paperclip, Pencil, Plus, Power, RotateCcw, Send, Trash2, X, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDayLong } from "@/lib/dates";
-import { approvalBlockers, docState, onboardingProgress, vendorAlerts } from "@/lib/vendors/logic";
+import { FILE_EXTENSIONS, approvalBlockers, docState, onboardingProgress, vendorAlerts } from "@/lib/vendors/logic";
 import type { Vendor, VendorDocument } from "@/lib/vendors/types";
 import { cn } from "@/lib/utils";
 import { DOC_BADGE, DOC_LABEL, SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
@@ -21,10 +21,15 @@ export interface VendorActions {
   onSetDocument: (v: Vendor, d: VendorDocument, dates: { receivedOn: string | null; expiresOn: string | null }) => void;
   onAddDocument: (v: Vendor, type: string, required: boolean) => void;
   onRemoveDocument: (v: Vendor, d: VendorDocument) => void;
+  onAttachFile: (v: Vendor, d: VendorDocument, file: File) => void;
+  onClearFile: (v: Vendor, d: VendorDocument) => void;
 }
+
+const fileSize = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`);
 
 function DocumentRow({ vendor, d, today, actions }: { vendor: Vendor; d: VendorDocument; today: string; actions: VendorActions }) {
   const state = docState(d, today);
+  const fileInput = useRef<HTMLInputElement>(null);
   const set = (change: Partial<{ receivedOn: string | null; expiresOn: string | null }>) =>
     actions.onSetDocument(vendor, d, { receivedOn: d.receivedOn, expiresOn: d.expiresOn, ...change });
   return (
@@ -32,6 +37,14 @@ function DocumentRow({ vendor, d, today, actions }: { vendor: Vendor; d: VendorD
       <span className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
         <span className="truncate font-medium">{d.type}</span>
         {!d.required && <Badge variant="outline">Optional</Badge>}
+        {d.file && (
+          <span className="flex min-w-0 max-w-full items-center gap-1 text-xs text-muted-foreground">
+            <Paperclip className="size-3 shrink-0" aria-hidden />
+            <a href={d.file.url} target="_blank" rel="noreferrer" className="truncate text-primary underline-offset-2 hover:underline">{d.file.name}</a>
+            <span className="shrink-0">({fileSize(d.file.size)})</span>
+            <button type="button" aria-label={`Remove file from ${d.type}`} onClick={() => actions.onClearFile(vendor, d)} className="shrink-0 rounded p-1 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><X className="size-3" aria-hidden /></button>
+          </span>
+        )}
       </span>
       <span className="flex flex-col items-start gap-0.5">
         <Badge variant={DOC_BADGE[state]}>{DOC_LABEL[state]}</Badge>
@@ -45,7 +58,22 @@ function DocumentRow({ vendor, d, today, actions }: { vendor: Vendor; d: VendorD
         <span className="shrink-0">Expires</span>
         <Input type="date" value={d.expiresOn ?? ""} onChange={(e) => set({ expiresOn: e.target.value || null })} aria-label={`${d.type} expires on`} className="h-8 text-xs" />
       </label>
-      <Button size="icon-sm" variant="ghost" aria-label={`Remove ${d.type}`} onClick={() => actions.onRemoveDocument(vendor, d)}><X /></Button>
+      <span className="flex items-center gap-1">
+        <input
+          ref={fileInput}
+          type="file"
+          hidden
+          accept={FILE_EXTENSIONS.map((e) => `.${e}`).join(",")}
+          aria-label={`${d.type} file`}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) actions.onAttachFile(vendor, d, file);
+            e.target.value = "";
+          }}
+        />
+        <Button size="icon-sm" variant="ghost" className="size-10 sm:size-8" aria-label={`${d.file ? "Replace" : "Attach"} file for ${d.type}`} onClick={() => fileInput.current?.click()}><Paperclip /></Button>
+        <Button size="icon-sm" variant="ghost" className="size-10 sm:size-8" aria-label={`Remove ${d.type}`} onClick={() => actions.onRemoveDocument(vendor, d)}><X /></Button>
+      </span>
     </li>
   );
 }
@@ -110,8 +138,8 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
             {vendor.status === "rejected" && <Button size="sm" variant="outline" onClick={() => actions.onReopen(vendor)}><RotateCcw /> Reopen</Button>}
             {vendor.status === "approved" && <Button size="sm" variant="outline" onClick={() => actions.onActive(vendor, false)}><Power /> Deactivate</Button>}
             {vendor.status === "inactive" && <Button size="sm" variant="outline" onClick={() => actions.onActive(vendor, true)}><Power /> Reactivate</Button>}
-            <Button size="icon-sm" variant="ghost" aria-label={`Edit ${vendor.name}`} onClick={() => actions.onEdit(vendor)}><Pencil /></Button>
-            <Button size="icon-sm" variant="ghost" aria-label={`Delete ${vendor.name}`} onClick={() => actions.onDelete(vendor)}><Trash2 /></Button>
+            <Button size="icon-sm" variant="ghost" className="size-10 sm:size-8" aria-label={`Edit ${vendor.name}`} onClick={() => actions.onEdit(vendor)}><Pencil /></Button>
+            <Button size="icon-sm" variant="ghost" className="size-10 sm:size-8" aria-label={`Delete ${vendor.name}`} onClick={() => actions.onDelete(vendor)}><Trash2 /></Button>
           </div>
           {vendor.status === "onboarding" && blockers.length > 0 && (
             <p className="max-w-sm text-xs text-muted-foreground lg:text-right">Before approval: {blockers.join(", ")}.</p>

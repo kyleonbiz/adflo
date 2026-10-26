@@ -10,6 +10,8 @@ export interface VendorDocument {
   required: boolean;
   receivedOn: string | null;
   expiresOn: string | null;
+  /** A scanned copy attached to the record. `url` is only valid in the browser that attached it. */
+  file?: { name: string; size: number; url: string } | null;
 }
 
 export interface Vendor {

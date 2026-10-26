@@ -1,10 +1,26 @@
 import { toCsv } from "@/lib/csv";
 import { daysBetween, formatDayLong } from "@/lib/dates";
-import type { DocState, Vendor, VendorAlert, VendorCategory, VendorDocument } from "./types";
+import type { DocState, Vendor, VendorAlert, VendorCategory, VendorDocument, VendorStatus } from "./types";
 
 /** A document within this many days of expiry is "expiring". */
 export const EXPIRING_DAYS = 30;
 export const VENDOR_APPROVER = "Operations manager";
+
+export const STATUS_LABEL: Record<VendorStatus, string> = {
+  onboarding: "Onboarding", pending_approval: "Awaiting approval", approved: "Approved", rejected: "Rejected", inactive: "Inactive",
+};
+
+/** Attached files: types and size the document upload accepts. */
+export const FILE_EXTENSIONS = ["pdf", "png", "jpg", "jpeg", "doc", "docx"] as const;
+export const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
+/** Why a file can't be attached, or null when it can. */
+export function fileProblem(file: { name: string; size: number }): string | null {
+  const ext = file.name.toLowerCase().split(".").pop() ?? "";
+  if (!(FILE_EXTENSIONS as readonly string[]).includes(ext)) return `${file.name} is not a PDF, image or Word file.`;
+  if (file.size > MAX_FILE_BYTES) return `${file.name} is larger than 10 MB.`;
+  return null;
+}
 
 /** What a new vendor must provide, by category. Every vendor needs a W-9 and insurance. */
 export function defaultRequirements(category: VendorCategory): { type: string; expires: boolean }[] {
@@ -138,6 +154,35 @@ export function findDuplicates(vendors: Vendor[], candidate: Candidate, ignoreId
 
 export interface DuplicatePair { a: Vendor; b: Vendor; reasons: string[] }
 
+/** Order-independent id for a pair of vendors, used to remember "not a duplicate". */
+export const pairKey = (a: { id: string }, b: { id: string }) => [a.id, b.id].sort().join("|");
+
+/**
+ * Folds `drop` into `keep`. Keep's own details win and blanks are filled from drop. Documents are matched by
+ * type: when both have one, the received (or more recently received) copy is kept; the rest are carried over.
+ */
+export function mergeVendors(keep: Vendor, drop: Vendor): Vendor {
+  const sameType = (a: VendorDocument, b: VendorDocument) => a.type.toLowerCase() === b.type.toLowerCase();
+  const documents = keep.documents.map((d) => {
+    const other = drop.documents.find((o) => sameType(d, o));
+    if (!other) return d;
+    const otherWins = other.receivedOn !== null && (d.receivedOn === null || other.receivedOn > d.receivedOn);
+    return { ...(otherWins ? other : d), id: d.id, required: d.required || other.required };
+  });
+  const carried = drop.documents.filter((o) => !keep.documents.some((d) => sameType(d, o)));
+  const notes = [...new Set([keep.notes, drop.notes].filter(Boolean))].join("\n\n");
+  return {
+    ...keep,
+    contactName: keep.contactName || drop.contactName,
+    email: keep.email || drop.email,
+    phone: keep.phone || drop.phone,
+    taxId: keep.taxId || drop.taxId,
+    notes,
+    createdOn: keep.createdOn < drop.createdOn ? keep.createdOn : drop.createdOn,
+    documents: [...documents, ...carried],
+  };
+}
+
 export function duplicatePairs(vendors: Vendor[]): DuplicatePair[] {
   const out: DuplicatePair[] = [];
   for (let i = 0; i < vendors.length; i++) {
@@ -189,11 +234,11 @@ export function hasDocumentIssues(v: Vendor, today: string): boolean {
 
 export function vendorsToCsv(vendors: Vendor[], today: string): string {
   return toCsv([
-    ["Name", "Category", "Status", "Contact", "Email", "Phone", "Tax ID", "Required docs in", "Required docs total", "Document issues"],
+    ["Name", "Category", "Status", "Contact", "Email", "Phone", "Tax ID", "Required docs in", "Required docs total", "Document issues", "Notes"],
     ...vendors.map((v) => {
       const p = onboardingProgress(v, today);
       const issues = v.documents.filter((d) => ["expiring", "expired"].includes(docState(d, today))).map((d) => `${d.type} (${docState(d, today)})`);
-      return [v.name, v.category, v.status, v.contactName, v.email, v.phone, v.taxId, p.done, p.total, issues.join("; ")];
+      return [v.name, v.category, STATUS_LABEL[v.status], v.contactName, v.email, v.phone, v.taxId, p.done, p.total, issues.join("; "), v.notes];
     }),
   ]);
 }
