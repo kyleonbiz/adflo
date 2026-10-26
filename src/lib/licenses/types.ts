@@ -21,6 +21,14 @@ export interface RequiredDocument {
   received: boolean;
 }
 
+/** One completed renewal, newest last. */
+export interface RenewalRecord {
+  /** The day the renewal was recorded. */
+  on: string;
+  previousExpiresOn: string;
+  newExpiresOn: string;
+}
+
 /** All dates are calendar days as `YYYY-MM-DD`. */
 export interface License {
   id: string;
@@ -37,7 +45,20 @@ export interface License {
   stage: RenewalStage;
   requiredDocuments: RequiredDocument[];
   notes: string;
+  /** The day someone confirmed the details match the license itself. Absent means it still needs review. */
+  verifiedOn?: string;
+  renewals?: RenewalRecord[];
 }
+
+/** Documents a license of each category usually needs at renewal; they prefill the add form. */
+export const DEFAULT_DOCUMENTS: Record<LicenseCategory, string[]> = {
+  business: ["Annual report", "Renewal fee receipt"],
+  professional: ["Continuing education proof", "Renewal fee receipt"],
+  permit: ["Signed application", "Renewal fee receipt"],
+  insurance: ["Updated certificate of insurance"],
+  registration: ["Registration certificate"],
+  other: [],
+};
 
 export type LicenseStatus = "active" | "renewal_window" | "expiring" | "expired";
 export type AlertSeverity = "info" | "warning" | "critical";
@@ -45,6 +66,8 @@ export type AlertSeverity = "info" | "warning" | "critical";
 export interface LicenseAlert {
   severity: AlertSeverity;
   message: string;
+  /** Review reminders are about data quality, not the renewal itself. */
+  kind?: "review";
 }
 
 export interface RenewalTask {

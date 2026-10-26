@@ -2,42 +2,28 @@ import { DmsError, toDmsError } from "../errors";
 import { loadUploadLimitsForBrowser } from "./limits";
 import type { DmsApi, DocumentChanges, UploadArgs } from "./api";
 import { DocumentService } from "../service";
-import {
-  SAMPLE_USER_ID,
-  SAMPLE_USER_NAME,
-  SAMPLE_WORKSPACE_ID,
-  createSampleKit,
-  prepareSampleImages,
-} from "../memory/sample-data";
+import { DEV_USER_ID, DEV_USER_NAME, DEV_WORKSPACE_ID, createWorkspaceKit } from "../memory/workspace";
 import type { DocumentQuery } from "../types";
 
 /**
  * Runs the real DocumentService against in-browser memory. Used on the public
  * demo page. Nothing is sent to a server or persisted, and the UI says so.
  */
-export function createLocalApi(): DmsApi {
-  const kit = createSampleKit();
+export function createLocalApi(kit: Pick<ReturnType<typeof createWorkspaceKit>, "repo" | "storage" | "store"> = createWorkspaceKit()): DmsApi {
   const service = new DocumentService({
     repo: kit.repo,
     storage: kit.storage,
     limits: loadUploadLimitsForBrowser(),
-    userEmail: "demo@aurumventura.net",
+    userEmail: "you@example.com",
     ctx: {
-      workspaceId: SAMPLE_WORKSPACE_ID,
-      userId: SAMPLE_USER_ID,
-      userName: SAMPLE_USER_NAME,
+      workspaceId: DEV_WORKSPACE_ID,
+      userId: DEV_USER_ID,
+      userName: kit.store.members.get(`${DEV_WORKSPACE_ID}:${DEV_USER_ID}`)?.displayName ?? DEV_USER_NAME,
       role: "owner",
     },
   });
-  // Index the generated sample PDFs/CSVs in the browser; nothing leaves the page.
-  const ready = prepareSampleImages(kit.store, kit.storage)
-    .catch(() => undefined)
-    .then(() => service.indexPending({ limit: 50 }))
-    .catch(() => undefined);
-
   async function run<T>(fn: () => Promise<T>): Promise<T> {
     try {
-      await ready;
       return await fn();
     } catch (e) {
       throw toDmsError(e);
@@ -82,13 +68,13 @@ export function createLocalApi(): DmsApi {
           args.onProgress?.(0, args.file.size);
           const bytes = new Uint8Array(await args.file.arrayBuffer());
           if (args.signal?.aborted) throw new DmsError("conflict", "Upload cancelled.");
-          const version = await kit.repo.getVersion(SAMPLE_WORKSPACE_ID, init.documentId, init.versionNumber);
+          const version = await kit.repo.getVersion(DEV_WORKSPACE_ID, init.documentId, init.versionNumber);
           kit.storage.put(version!.storageKey, bytes, version!.mimeType);
           args.onProgress?.(args.file.size, args.file.size);
           const doc = await service.finalizeUpload(init.documentId, init.versionNumber);
           // Local extraction is quick; wait so the demo shows the document as searchable at once.
           await service.indexDocument(doc.id, doc.currentVersion);
-          return (await kit.repo.getDocument(SAMPLE_WORKSPACE_ID, doc.id)) ?? doc;
+          return (await kit.repo.getDocument(DEV_WORKSPACE_ID, doc.id)) ?? doc;
         } catch (e) {
           await service.abortUpload(init.documentId, init.versionNumber).catch(() => undefined);
           throw e;

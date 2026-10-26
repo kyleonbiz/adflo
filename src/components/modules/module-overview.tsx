@@ -7,7 +7,7 @@ import { buildDashboard, dayInZone } from "@/lib/dashboard/logic";
 export async function ModuleOverview({ base, name }: { base: "/app"; name?: string }) {
   // The visitor's own day where the host tells us their time zone (Vercel does); otherwise UTC.
   const today = dayInZone((await headers()).get("x-vercel-ip-timezone"));
-  const data = buildDashboard(await loadDashboardSources(today), today, base);
+  const data = buildDashboard(await loadDashboardSources(), today, base);
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>

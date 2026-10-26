@@ -1,4 +1,49 @@
-export const VENDOR_CATEGORIES = ["Supplies", "Software", "Professional services", "Logistics", "Other"] as const;
+/** Alphabetical, with "Other" last. Wide enough that most companies never need "Other". */
+export const VENDOR_CATEGORIES = [
+  "Accounting & tax",
+  "Advertising & marketing",
+  "Agriculture & food supply",
+  "Architecture & design",
+  "Banking & financial services",
+  "Catering & food service",
+  "Cleaning & janitorial",
+  "Construction & trades",
+  "Consulting",
+  "Creative & media",
+  "Education & training",
+  "Energy & utilities",
+  "Engineering",
+  "Environmental services",
+  "Equipment rental & leasing",
+  "Events & venues",
+  "Facilities & maintenance",
+  "Freight & shipping",
+  "Furniture & fixtures",
+  "Healthcare & medical",
+  "Hospitality & travel",
+  "Human resources & staffing",
+  "Insurance",
+  "IT hardware & equipment",
+  "IT services & support",
+  "Legal services",
+  "Logistics",
+  "Manufacturing & raw materials",
+  "Packaging",
+  "Payroll & benefits",
+  "Printing & promotional products",
+  "Professional services",
+  "Real estate & leasing",
+  "Research & laboratory",
+  "Security services",
+  "Software",
+  "Supplies",
+  "Telecommunications",
+  "Translation & language services",
+  "Uniforms & apparel",
+  "Vehicles & fleet",
+  "Waste & recycling",
+  "Other",
+] as const;
 export type VendorCategory = (typeof VENDOR_CATEGORIES)[number];
 
 export type VendorStatus = "onboarding" | "pending_approval" | "approved" | "rejected" | "inactive";
@@ -10,6 +55,8 @@ export interface VendorDocument {
   required: boolean;
   receivedOn: string | null;
   expiresOn: string | null;
+  /** A scanned copy attached to the record. `url` is only valid in the browser that attached it. */
+  file?: { name: string; size: number; url: string } | null;
 }
 
 export interface Vendor {

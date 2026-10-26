@@ -3,9 +3,10 @@ import { mapRows, missingRequired, suggestMapping } from "@/lib/import/mapping";
 import { parseCsv } from "@/lib/import/csv";
 import { runImport } from "@/lib/import/run";
 import {
-  IMPORT_FIELDS, TEMPLATE_CSV, applyImport, contactDuplicates, contactKey, contactsToCsv, mergeContacts, parseContact, summarize,
+  IMPORT_FIELDS, TEMPLATE_CSV, STALE_DAYS, applyCategoryMap, applyImport, contactDuplicates, contactKeys, contactsToCsv, findMatches, isStale, keyIndex,
+  mergeContacts, parseContact, summarize, tidyName, tidyPhone, unknownCategories, updateChanges,
 } from "@/lib/contacts/logic";
-import { sampleContacts } from "@/lib/contacts/sample-data";
+import { sampleContacts } from "../support/contacts-sample-data";
 import type { Contact } from "@/lib/contacts/types";
 
 const TODAY = "2026-10-25";
@@ -14,10 +15,29 @@ const sample = sampleContacts(TODAY);
 describe("parseContact", () => {
   it("normalizes case, whitespace and the category", () => {
     expect(parseContact({ name: "  Ann   Lee ", email: " ANN@X.CO ", phone: "+1 555 010 2200", company: " Acme  Inc ", category: "customer", notes: " hi " }))
-      .toEqual({ ok: true, value: { name: "Ann Lee", email: "ann@x.co", phone: "+1 555 010 2200", company: "Acme Inc", category: "Customer", notes: "hi" } });
+      .toEqual({ ok: true, value: { name: "Ann Lee", email: "ann@x.co", phone: "+1 555 010 2200", company: "Acme Inc", category: "Customer", notes: "hi", lastContacted: "" } });
   });
   it("defaults a blank category to Other and allows a name-only contact", () => {
     expect(parseContact({ name: "Bo" })).toMatchObject({ ok: true, value: { category: "Other", email: "", phone: "" } });
+  });
+  it("tidies shouted or lower-case names and plain 10-digit phones, but leaves mixed case and international numbers alone", () => {
+    expect(tidyName("ANN LEE")).toBe("Ann Lee");
+    expect(tidyName("o'neil-smith")).toBe("O'Neil-Smith");
+    expect(tidyName("Ciaran McDonald")).toBe("Ciaran McDonald");
+    expect(tidyPhone("555.010.2200")).toBe("(555) 010-2200");
+    expect(tidyPhone("1-555-010-2200")).toBe("(555) 010-2200");
+    expect(tidyPhone("+44 20 7946 0958")).toBe("+44 20 7946 0958");
+    expect(tidyPhone("5550102")).toBe("5550102");
+    expect(parseContact({ name: "zed quill", phone: "555-010-4242" })).toMatchObject({ ok: true, value: { name: "Zed Quill", phone: "(555) 010-4242" } });
+  });
+  it("reads the last contacted date as ISO or month/day/year and rejects anything else", () => {
+    expect(parseContact({ name: "Bo", lastContacted: "3/14/2026" })).toMatchObject({ ok: true, value: { lastContacted: "2026-03-14" } });
+    expect(parseContact({ name: "Bo", lastContacted: "2026-03-14" })).toMatchObject({ ok: true, value: { lastContacted: "2026-03-14" } });
+    expect(parseContact({ name: "Bo", lastContacted: "soon" })).toMatchObject({ ok: false, errors: [expect.stringContaining("not a valid date")] });
+  });
+  it("tells a missing name from a too-short one", () => {
+    expect(parseContact({ name: "" })).toMatchObject({ ok: false, errors: ["Name is required"] });
+    expect(parseContact({ name: "B" })).toMatchObject({ ok: false, errors: ["Name must be at least 2 characters"] });
   });
   it("collects every problem in a row", () => {
     const r = parseContact({ name: "", email: "nope", phone: "abc", category: "Boss" });
@@ -32,11 +52,15 @@ describe("parseContact", () => {
   });
 });
 
-describe("contactKey", () => {
-  it("uses email, else name and company, else nothing", () => {
-    expect(contactKey({ name: "A B", email: "A@x.co", company: "" })).toBe("e:a@x.co");
-    expect(contactKey({ name: "Ann Lee", email: "", company: "Acme, Inc." })).toBe("n:annlee|acmeinc");
-    expect(contactKey({ name: "Ann Lee", email: "", company: "" })).toBe("");
+describe("contactKeys", () => {
+  it("lists every way to recognise a contact: email, phone, name and company", () => {
+    expect(contactKeys({ name: "A B", email: "A@x.co", phone: "(555) 010-2200", company: "" })).toEqual(["e:a@x.co", "p:5550102200"]);
+    expect(contactKeys({ name: "Ann Lee", email: "", phone: "", company: "Acme, Inc." })).toEqual(["n:annlee|acmeinc"]);
+  });
+  it("falls back to the name alone only when there is nothing else to go on", () => {
+    expect(contactKeys({ name: "Sam Rivera", email: "", phone: "", company: "" })).toEqual(["n:samrivera|"]);
+    expect(contactKeys({ name: "Sam Rivera", email: "", phone: "12345", company: "" })).toEqual(["n:samrivera|"]);
+    expect(contactKeys({ name: "Sam Rivera", email: "s@x.co", phone: "", company: "" })).toEqual(["e:s@x.co"]);
   });
 });
 
@@ -44,7 +68,7 @@ function run(csv: string, existing: Contact[] = []) {
   const parsed = parseCsv(csv);
   const mapping = suggestMapping(parsed.headers, IMPORT_FIELDS);
   expect(missingRequired(mapping, IMPORT_FIELDS)).toEqual([]);
-  return runImport(mapRows(parsed.rows, mapping), parsed.lines, parseContact, (v) => contactKey(v), new Set(existing.map(contactKey).filter(Boolean)));
+  return runImport(mapRows(parsed.rows, mapping), parsed.lines, parseContact, contactKeys, new Set(existing.flatMap(contactKeys)));
 }
 
 describe("importing contacts end to end", () => {
@@ -85,8 +109,20 @@ describe("importing contacts end to end", () => {
     applyImport(sample, run(csv, sample), "update", TODAY, () => "n");
     expect(JSON.stringify(sample)).toBe(before);
   });
+  it("recognises a repeat by phone or by name alone, not just by email", () => {
+    const out = run("Name,Email,Phone,Company\nSomeone New,,555 010 9900,Elsewhere\nTaylor Quinn,,,\nTaylor Quinn,,,\nSam Rivera,,,\nAnn Lee,ann@x.co,,", sample);
+    expect(out.duplicates.map((d) => [d.line, d.of, d.key])).toEqual([[2, "existing", "p:5550109900"], [4, "file", "n:taylorquinn|"], [5, "existing", "n:samrivera|"]]);
+    expect(out.accepted.map((a) => a.value.name)).toEqual(["Taylor Quinn", "Ann Lee"]);
+  });
+  it("only renames a contact in update mode when the match was by email", () => {
+    const pat = sample[1];
+    const value = parseContact({ name: "Patricia Lee", email: "pat@northwind.example", notes: "New" });
+    expect(value.ok && updateChanges(pat, value.value, "e:pat@northwind.example")).toEqual({ name: "Patricia Lee", notes: "New" });
+    expect(value.ok && updateChanges(pat, value.value, "p:5550107100")).toEqual({ notes: "New" });
+    expect(keyIndex(sample).get("e:pat@northwind.example")?.id).toBe("c-2");
+  });
   it("round-trips the template and an export", () => {
-    expect(TEMPLATE_CSV).toBe("Name,Email,Phone,Company,Category,Notes\r\n");
+    expect(TEMPLATE_CSV).toBe("Name,Email,Phone,Company,Category,Notes,Last contacted\r\n");
     const exported = contactsToCsv(sample);
     const out = run(exported);
     expect(out.rejected).toEqual([]);
@@ -96,8 +132,19 @@ describe("importing contacts end to end", () => {
 
 describe("column matching for contacts", () => {
   it("recognises common header spellings", () => {
-    const m = suggestMapping(["Who", "Mail", "Cell", "Business", "Group", "Memo"], IMPORT_FIELDS);
-    expect(m).toEqual({ name: null, email: 1, phone: 2, company: 3, category: 4, notes: 5 });
+    const m = suggestMapping(["Who", "Mail", "Cell", "Business", "Group", "Memo", "Last touch"], IMPORT_FIELDS);
+    expect(m).toEqual({ name: null, email: 1, phone: 2, company: 3, category: 4, notes: 5, lastContacted: 6 });
+  });
+});
+
+describe("category values in an import", () => {
+  it("lists unrecognised values once, ignoring case and blanks", () => {
+    expect(unknownCategories(["Lead", "client", "Client", "", "  Prospect ", "customer"])).toEqual(["client", "Prospect"]);
+  });
+  it("applies the user's choice so those rows are no longer rejected", () => {
+    const rows = [{ name: "Dee", category: "Boss" }, { name: "Eve", category: "lead" }];
+    const mapped = applyCategoryMap(rows, { boss: "Partner" });
+    expect(mapped.map((r) => parseContact(r))).toMatchObject([{ ok: true, value: { category: "Partner" } }, { ok: true, value: { category: "Lead" } }]);
   });
 });
 
@@ -107,6 +154,17 @@ describe("duplicates, merge and summary", () => {
     expect(pairs).toHaveLength(1);
     expect([pairs[0].a.id, pairs[0].b.id]).toEqual(["c-2", "c-6"]);
     expect(pairs[0].reasons).toEqual(["Same email"]);
+  });
+  it("scales to thousands of contacts", () => {
+    const many: Contact[] = Array.from({ length: 5000 }, (_, i) => ({ ...sample[0], id: `m${i}`, name: `Person ${i}`, email: `p${i % 2500}@x.co`, phone: "", company: `Co ${i}` }));
+    const start = Date.now();
+    expect(contactDuplicates(many)).toHaveLength(2500);
+    expect(Date.now() - start).toBeLessThan(1000);
+  });
+  it("warns about likely matches when saving, ignoring the contact itself", () => {
+    expect(findMatches(sample, { name: "New Pat", email: "pat@northwind.example", phone: "", company: "" }).map((m) => [m.contact.id, m.reasons])).toEqual([["c-2", ["Same email"]], ["c-6", ["Same email"]]]);
+    expect(findMatches(sample, sample[1], "c-2").map((m) => m.contact.id)).toEqual(["c-6"]);
+    expect(findMatches(sample, { name: "Sam Rivera", email: "", phone: "", company: "" })).toEqual([]);
   });
   it("matches on phone digits (7+) and on name plus company", () => {
     const a: Contact = { ...sample[0], id: "a", email: "", phone: "(555) 010-2200" };
@@ -123,9 +181,16 @@ describe("duplicates, merge and summary", () => {
     expect(mergeContacts(patrick, pat)).toMatchObject({ phone: "(555) 010-7100", name: "Patrick Lee" });
     expect(mergeContacts({ ...pat, category: "Other" }, { ...patrick, category: "Lead" }).category).toBe("Lead");
     expect(mergeContacts(pat, pat).notes).toBe("Prefers email.");
+    expect(mergeContacts(patrick, pat)).toMatchObject({ lastContacted: pat.lastContacted, createdOn: pat.createdOn });
   });
   it("summarizes data quality", () => {
-    expect(summarize(sample)).toEqual({ total: 7, duplicatePairs: 1, missingEmail: 2, missingPhone: 4 });
+    expect(summarize(sample, TODAY)).toEqual({ total: 7, duplicatePairs: 1, missingEmail: 2, missingPhone: 4, stale: 4 });
+  });
+  it("calls a contact stale after 90 days or when never contacted", () => {
+    expect(STALE_DAYS).toBe(90);
+    expect(isStale({ ...sample[0], lastContacted: "" }, TODAY)).toBe(true);
+    expect(isStale({ ...sample[0], lastContacted: "2026-07-27" }, TODAY)).toBe(true);
+    expect(isStale({ ...sample[0], lastContacted: "2026-07-28" }, TODAY)).toBe(false);
   });
   it("neutralises spreadsheet formulas in the export", () => {
     expect(contactsToCsv([{ ...sample[0], name: "=HYPERLINK(1)" }])).toContain("'=HYPERLINK(1)");

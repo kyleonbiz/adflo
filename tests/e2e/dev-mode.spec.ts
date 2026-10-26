@@ -1,4 +1,5 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, test } from "./fixtures";
+import type { APIRequestContext } from "@playwright/test";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const json = async (res: { json(): Promise<any> }) => res.json();
@@ -119,8 +120,7 @@ test.describe("team management (server API)", () => {
   });
 
   test("share links are honestly unavailable in dev mode", async ({ request }) => {
-    const list = await json(await request.get("/api/dms/documents?pageSize=1"));
-    const id = list.data.items[0].id;
+    const { id } = await uploadViaApi(request, "e2e-share.pdf", "%PDF-1.4 share");
     const created = await json(await request.post(`/api/dms/documents/${id}/share`, { data: { ttlMinutes: 60 } }));
     expect(created.ok).toBe(false);
     expect(created.error.code).toBe("unavailable");
@@ -158,12 +158,4 @@ test.describe("content search (dev mode)", () => {
     const r = await json(await request.get("/api/dms/documents?search=qwertyuiopasdf"));
     expect(r.data.total).toBe(0);
   });
-
-  test("seeded sample PDFs are indexed on first load", async ({ request }) => {
-    await request.get("/api/dms/bootstrap"); // triggers the bounded background backfill
-    await expect
-      .poll(async () => (await json(await request.get("/api/dms/documents?search=%22placeholder%20content%22"))).data.total, { timeout: 20_000 })
-      .toBeGreaterThan(0);
-  });
 });
-

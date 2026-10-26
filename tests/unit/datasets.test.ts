@@ -5,7 +5,7 @@ import {
   columnStats, datasetToCsv, groupReport, nextSummaryDate, reportToCsv, suggestColumns, summaryText, validateDataset,
 } from "@/lib/datasets/logic";
 import { inferColumnType, parseCell, parseDate, parseNumber } from "@/lib/datasets/parse";
-import { SAMPLE_CSV, SAMPLE_NAME, sampleColumnRules } from "@/lib/datasets/sample-data";
+import { SAMPLE_CSV, SAMPLE_NAME, sampleColumnRules } from "../support/datasets-sample-data";
 import type { Dataset } from "@/lib/datasets/types";
 import { columnLetter, datasetToXlsx, sheetName } from "@/lib/datasets/xlsx";
 

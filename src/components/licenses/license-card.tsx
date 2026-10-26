@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { BellRing, CheckCircle2, ChevronDown, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BellRing, CheckCircle2, ClipboardCheck, ChevronDown, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { daysLeft, licenseAlerts, licenseStatus, missingDocuments, nextReminder } from "@/lib/licenses/logic";
+import { daysLeft, expiryText, plural, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder } from "@/lib/licenses/logic";
 import { formatDayLong } from "@/lib/dates";
 import { LICENSE_CATEGORIES, RENEWAL_STAGES, type License, type RenewalStage } from "@/lib/licenses/types";
 import { cn } from "@/lib/utils";
@@ -22,14 +22,13 @@ export interface LicenseActions {
   onRemoveDocument: (license: License, documentId: string) => void;
 }
 
-function expiryText(left: number): string {
-  if (left < 0) return `${-left} day${left === -1 ? "" : "s"} overdue`;
-  if (left === 0) return "Expires today";
-  return `${left} day${left === 1 ? "" : "s"} left`;
-}
-
-export function LicenseCard({ license, today, actions }: { license: License; today: string; actions: LicenseActions }) {
-  const [open, setOpen] = useState(false);
+/**
+ * `focusToken` changes when the page wants this card revealed (from the renewal task list): it
+ * opens the documents panel and scrolls the card into view.
+ */
+export function LicenseCard({ license, today, actions, focusToken = 0 }: { license: License; today: string; actions: LicenseActions; focusToken?: number }) {
+  // Documents start open when some are still missing and the renewal is close, so the alert is never a dead end.
+  const [open, setOpen] = useState(() => missingDocuments(license) > 0 && licenseStatus(license, today) !== "active" && license.stage !== "submitted");
   const [newDoc, setNewDoc] = useState("");
   const status = licenseStatus(license, today);
   const left = daysLeft(license, today);
@@ -39,15 +38,27 @@ export function LicenseCard({ license, today, actions }: { license: License; tod
   const received = license.requiredDocuments.length - missing;
   const category = LICENSE_CATEGORIES.find((c) => c.value === license.category)?.label ?? license.category;
   const panelId = `lic-docs-${license.id}`;
+  const needsStage = status !== "active" || license.stage !== "not_started";
+
+  const [seenToken, setSeenToken] = useState(focusToken);
+  if (focusToken !== seenToken) {
+    setSeenToken(focusToken);
+    if (focusToken) setOpen(true);
+  }
+  useEffect(() => {
+    if (!focusToken) return;
+    document.getElementById(`license-${license.id}`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focusToken, license.id]);
 
   return (
-    <li className="rounded-2xl border bg-card shadow-panel" data-testid="license-card">
+    <li id={`license-${license.id}`} className="scroll-mt-20 rounded-2xl border bg-card shadow-panel" data-testid="license-card">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-semibold">{license.name}</h3>
             <Badge variant={STATUS_BADGE[status]}>{STATUS_LABEL[status]}</Badge>
             <Badge variant="muted">{category}</Badge>
+            {needsReview(license) && <Badge variant="warning">Needs review</Badge>}
           </div>
           <p className="text-sm text-muted-foreground">
             {[license.issuer, license.number && `#${license.number}`, license.holder].filter(Boolean).join(" · ") || "No details added"}
@@ -61,22 +72,30 @@ export function LicenseCard({ license, today, actions }: { license: License; tod
               {alerts.map((a) => <li key={a.message}><Badge variant={SEVERITY_BADGE[a.severity]}>{a.message}</Badge></li>)}
             </ul>
           )}
+          {license.verifiedOn && <p className="text-xs text-muted-foreground">Details reviewed {formatDayLong(license.verifiedOn)}.</p>}
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <BellRing className="size-3.5" aria-hidden />
             {reminder
               ? `Next reminder ${formatDayLong(reminder.on)} (${reminder.daysBefore} day${reminder.daysBefore === 1 ? "" : "s"} before expiry)`
-              : "All reminders have been sent"}
+              : "No more reminders scheduled for this term"}
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-          <div className="w-52">
-            <Select value={license.stage} onValueChange={(v) => actions.onStage(license, v as RenewalStage)}>
-              <SelectTrigger aria-label={`Renewal stage for ${license.name}`} className="h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {RENEWAL_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>Renewal: {s.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+          {needsStage && (
+            <div className="w-52">
+              <Select value={license.stage} onValueChange={(v) => actions.onStage(license, v as RenewalStage)}>
+                <SelectTrigger aria-label={`Renewal stage for ${license.name}`} className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {RENEWAL_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>Renewal: {s.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {needsReview(license) && (
+            <Button size="sm" onClick={() => actions.onEdit(license)} aria-label={`Review ${license.name}`}>
+              <ClipboardCheck /> Review
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => actions.onRenew(license)}>
             <RefreshCw /> Mark renewed
           </Button>
@@ -144,6 +163,12 @@ export function LicenseCard({ license, today, actions }: { license: License; tod
               />
               <Button type="submit" size="sm" variant="outline" disabled={!newDoc.trim()}><Plus /> Add</Button>
             </form>
+            {(license.renewals?.length ?? 0) > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Renewed {plural(license.renewals!.length, "time")} here. Last on {formatDayLong(license.renewals![license.renewals!.length - 1].on)}
+                {" "}(was due {formatDayLong(license.renewals![license.renewals!.length - 1].previousExpiresOn)}).
+              </p>
+            )}
             {license.notes && <p className="whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">{license.notes}</p>}
           </div>
         )}

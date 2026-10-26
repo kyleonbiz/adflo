@@ -6,27 +6,34 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { validateContact, type ContactField } from "@/lib/contacts/logic";
+import { findMatches, validateContact, type ContactField } from "@/lib/contacts/logic";
 import { CONTACT_CATEGORIES, type Contact, type ContactInput } from "@/lib/contacts/types";
 
-function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) {
+const FIELD_ORDER: ContactField[] = ["name", "company", "email", "phone", "category", "lastContacted", "notes"];
+
+function Field({ id, label, error, required, children }: { id: string; label: string; error?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>{label}{required && <span aria-hidden className="text-destructive"> *</span>}</Label>
       {children}
       {error && <p id={`${id}-error`} role="alert" className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
 
-function Body({ contact, onClose, onSave }: { contact?: Contact; onClose: () => void; onSave: (value: ContactInput) => void }) {
+function Body({
+  contact, existing, today, onClose, onSave,
+}: { contact?: Contact; existing: Contact[]; today: string; onClose: () => void; onSave: (value: ContactInput) => void }) {
   const [v, setV] = useState<Record<string, string>>({
     name: contact?.name ?? "", email: contact?.email ?? "", phone: contact?.phone ?? "",
-    company: contact?.company ?? "", category: contact?.category ?? "Lead", notes: contact?.notes ?? "",
+    company: contact?.company ?? "", category: contact?.category ?? "Other", notes: contact?.notes ?? "",
+    lastContacted: contact?.lastContacted ?? "",
   });
   const [errors, setErrors] = useState<Partial<Record<ContactField, string>>>({});
+  const [warnedFor, setWarnedFor] = useState("");
+  const [matches, setMatches] = useState<ReturnType<typeof findMatches>>([]);
   const bind = (k: ContactField) => ({
-    id: `contact-${k}`, value: v[k], "aria-invalid": !!errors[k], "aria-describedby": errors[k] ? `contact-${k}-error` : undefined,
+    id: `contact-${k}`, value: v[k], "aria-invalid": !!errors[k], "aria-required": k === "name" || undefined, "aria-describedby": errors[k] ? `contact-${k}-error` : undefined,
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setV((s) => ({ ...s, [k]: e.target.value })),
   });
 
@@ -34,7 +41,7 @@ function Body({ contact, onClose, onSave }: { contact?: Contact; onClose: () => 
     <>
       <div className="border-b px-5 py-4 pr-14">
         <DialogTitle>{contact ? "Edit contact" : "Add contact"}</DialogTitle>
-        <DialogDescription className="mt-1">Names and emails are cleaned up when you save.</DialogDescription>
+        <DialogDescription className="mt-1">Names, emails and phone numbers are tidied when you save.</DialogDescription>
       </div>
       <form
         noValidate
@@ -42,13 +49,23 @@ function Body({ contact, onClose, onSave }: { contact?: Contact; onClose: () => 
         onSubmit={(e) => {
           e.preventDefault();
           const r = validateContact(v);
-          if (r.errors) { setErrors(r.errors); return; }
+          if (r.errors) {
+            setErrors(r.errors);
+            setMatches([]);
+            const first = FIELD_ORDER.find((k) => r.errors[k]);
+            if (first) requestAnimationFrame(() => document.getElementById(`contact-${first}`)?.focus());
+            return;
+          }
+          setErrors({});
+          const found = findMatches(existing, r.value, contact?.id);
+          const signature = found.map((m) => m.contact.id).join();
+          if (found.length > 0 && signature !== warnedFor) { setMatches(found); setWarnedFor(signature); return; }
           onSave(r.value);
           onClose();
         }}
       >
         <div className="grid flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">
-          <Field id="contact-name" label="Name" error={errors.name}><Input autoComplete="off" {...bind("name")} /></Field>
+          <Field id="contact-name" label="Name" required error={errors.name}><Input autoComplete="off" {...bind("name")} /></Field>
           <Field id="contact-company" label="Company" error={errors.company}><Input autoComplete="off" {...bind("company")} /></Field>
           <Field id="contact-email" label="Email" error={errors.email}><Input type="email" autoComplete="off" {...bind("email")} /></Field>
           <Field id="contact-phone" label="Phone" error={errors.phone}><Input autoComplete="off" {...bind("phone")} /></Field>
@@ -57,6 +74,9 @@ function Body({ contact, onClose, onSave }: { contact?: Contact; onClose: () => 
               <SelectTrigger id="contact-category"><SelectValue /></SelectTrigger>
               <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
             </Select>
+          </Field>
+          <Field id="contact-lastContacted" label="Last contacted" error={errors.lastContacted}>
+            <Input type="date" max={today} {...bind("lastContacted")} />
           </Field>
           <div className="sm:col-span-2">
             <Field id="contact-notes" label="Notes" error={errors.notes}>
@@ -67,10 +87,19 @@ function Body({ contact, onClose, onSave }: { contact?: Contact; onClose: () => 
               />
             </Field>
           </div>
+          {matches.length > 0 && (
+            <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 sm:col-span-2">
+              <p className="font-medium">This looks like someone already in your list:</p>
+              <ul className="mt-1 list-disc pl-5">
+                {matches.map((m) => <li key={m.contact.id}>{m.contact.name} <span className="text-xs">({m.reasons.join(", ").toLowerCase()})</span></li>)}
+              </ul>
+              <p className="mt-1 text-xs">Change the details, or save anyway to keep both. You can also merge them later.</p>
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-2 border-t px-5 py-3">
           <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit">{contact ? "Save changes" : "Add contact"}</Button>
+          <Button type="submit">{matches.length > 0 ? "Save anyway" : contact ? "Save changes" : "Add contact"}</Button>
         </div>
       </form>
     </>
@@ -78,17 +107,19 @@ function Body({ contact, onClose, onSave }: { contact?: Contact; onClose: () => 
 }
 
 export function ContactFormDialog({
-  open, contact, onOpenChange, onSave,
+  open, contact, existing, today, onOpenChange, onSave,
 }: {
   open: boolean;
   contact?: Contact;
+  existing: Contact[];
+  today: string;
   onOpenChange: (open: boolean) => void;
   onSave: (value: ContactInput) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
-        {open && <Body contact={contact} onClose={() => onOpenChange(false)} onSave={onSave} />}
+        {open && <Body contact={contact} existing={existing} today={today} onClose={() => onOpenChange(false)} onSave={onSave} />}
       </DialogContent>
     </Dialog>
   );

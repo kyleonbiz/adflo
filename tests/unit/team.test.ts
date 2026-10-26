@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { toDmsError } from "@/lib/dms/errors";
-import { SAMPLE_USER_ID } from "@/lib/dms/memory/sample-data";
+import { SAMPLE_USER_ID } from "../support/sample-documents";
 import { DocumentService } from "@/lib/dms/service";
 import type { Role } from "@/lib/dms/types";
 import { USER_B, WS_A, WS_B, makeWorld, type World } from "../support/world";

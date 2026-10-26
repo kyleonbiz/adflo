@@ -1,16 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Upload } from "lucide-react";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { addDays, addMonths } from "@/lib/dates";
-import { LICENSE_CATEGORIES, type License } from "@/lib/licenses/types";
+import { addMonths, isDay } from "@/lib/dates";
+import { needsReview } from "@/lib/licenses/logic";
+import { DEFAULT_DOCUMENTS, LICENSE_CATEGORIES, type License, type LicenseCategory } from "@/lib/licenses/types";
+import { readLicenseFile, LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
+import { cn } from "@/lib/utils";
 import { licenseFormSchema, type LicenseFormInput, type LicenseFormValues } from "@/lib/licenses/validation";
+
+const REMINDER_PRESETS = [90, 60, 30, 14, 7];
+
+const parseDays = (value: string) => value.split(",").map((p) => p.trim()).filter(Boolean).map(Number);
 
 function defaults(license: License | undefined, today: string): LicenseFormInput {
   if (license) {
@@ -18,12 +26,13 @@ function defaults(license: License | undefined, today: string): LicenseFormInput
       name: license.name, category: license.category, issuer: license.issuer, number: license.number,
       holder: license.holder, issuedOn: license.issuedOn, expiresOn: license.expiresOn,
       renewalTermMonths: String(license.renewalTermMonths), reminderDays: license.reminderDays.join(", "),
-      notes: license.notes,
+      notes: license.notes, documents: "", reviewed: false,
     };
   }
   return {
     name: "", category: "business", issuer: "", number: "", holder: "", issuedOn: today,
-    expiresOn: addDays(addMonths(today, 12), 0), renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "",
+    expiresOn: addMonths(today, 12), renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "",
+    documents: DEFAULT_DOCUMENTS.business.join("\n"), reviewed: false,
   };
 }
 
@@ -39,23 +48,80 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
 
 /** Add or edit a license. `license` present means edit. */
 export function LicenseFormDialog({
-  open, license, today, onOpenChange, onSubmit,
+  open, license, today, initialFile, onOpenChange, onSubmit,
 }: {
   open: boolean;
   license?: License;
+  /** A file chosen before the dialog opened; it is read as soon as the dialog shows. */
+  initialFile?: File | null;
   today: string;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: LicenseFormValues) => void;
 }) {
-  const { register, control, handleSubmit, reset, formState } = useForm<LicenseFormInput, unknown, LicenseFormValues>({
+  const { register, control, handleSubmit, reset, formState, setValue } = useForm<LicenseFormInput, unknown, LicenseFormValues>({
     resolver: zodResolver(licenseFormSchema),
     defaultValues: defaults(license, today),
   });
-  const { errors } = formState;
+  const { errors, dirtyFields } = formState;
+  const [issuedOn, term, category, reminderDays] = useWatch({ control, name: ["issuedOn", "renewalTermMonths", "category", "reminderDays"] });
 
   useEffect(() => {
-    if (open) reset(defaults(license, today));
+    if (open) { reset(defaults(license, today)); }
   }, [open, license, today, reset]);
+
+  // Adding: until the user types their own expiry, keep it one renewal term after the issue date.
+  useEffect(() => {
+    const months = Number(term);
+    if (!open || license || dirtyFields.expiresOn || !isDay(issuedOn) || !Number.isInteger(months) || months < 1 || months > 120) return;
+    setValue("expiresOn", addMonths(issuedOn, months));
+  }, [open, license, issuedOn, term, dirtyFields.expiresOn, setValue]);
+
+  // Adding: suggest the documents this kind of license usually needs, until the user edits the list.
+  useEffect(() => {
+    if (!open || license || dirtyFields.documents) return;
+    setValue("documents", DEFAULT_DOCUMENTS[category as LicenseCategory]?.join("\n") ?? "");
+  }, [open, license, category, dirtyFields.documents, setValue]);
+
+  const chosen = new Set(parseDays(reminderDays ?? ""));
+  const toggleReminder = (days: number) => {
+    const next = new Set(chosen);
+    if (next.has(days)) next.delete(days); else next.add(days);
+    const text = [...next].filter((n) => Number.isFinite(n)).sort((a, b) => b - a).join(", ");
+    setValue("reminderDays", text, { shouldDirty: true, shouldValidate: formState.isSubmitted });
+  };
+
+  const [reading, setReading] = useState(false);
+  const [fillNote, setFillNote] = useState("");
+  const [fillError, setFillError] = useState("");
+  const picker = useRef<HTMLInputElement>(null);
+
+  /** Reads a file and pre-fills the form with what it found; the user still checks and saves. */
+  const fillFromFile = async (file: File) => {
+    setReading(true); setFillNote(""); setFillError("");
+    try {
+      const { fields, found } = await readLicenseFile(file);
+      if (found === 0) {
+        setFillNote("We couldn't find license details in that file. Enter them below.");
+        return;
+      }
+      const labels: Record<string, string> = { name: "name", category: "category", issuer: "issuer", number: "number", holder: "holder", issuedOn: "issue date", expiresOn: "expiry date" };
+      for (const [key, value] of Object.entries(fields)) setValue(key as keyof LicenseFormInput, value as string, { shouldDirty: true, shouldValidate: true });
+      setFillNote(`Filled from ${file.name}: ${Object.keys(fields).map((k) => labels[k]).join(", ")}. Please check them before saving.`);
+    } catch (e) {
+      setFillError(e instanceof Error ? e.message : "Something went wrong reading that file.");
+    } finally {
+      setReading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!open || license || !initialFile) return;
+    // After the reset above has applied, so the found values are not wiped.
+    const t = setTimeout(() => void fillFromFile(initialFile), 0);
+    return () => clearTimeout(t);
+    // fillFromFile only uses stable setters; run once per chosen file.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialFile]);
 
   const submit = handleSubmit((values) => {
     onSubmit(values);
@@ -70,13 +136,39 @@ export function LicenseFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <div className="border-b px-5 py-4 pr-14">
-          <DialogTitle>{license ? "Edit license" : "Add license"}</DialogTitle>
+          <DialogTitle>{license ? (needsReview(license) ? "Review license" : "Edit license") : "Add license"}</DialogTitle>
           <DialogDescription className="mt-1">
-            Reminders fire the listed number of days before the expiry date.
+            {license && needsReview(license)
+              ? "Check each detail against the license itself, correct anything that is off, then confirm."
+              : "Reminders fire the listed number of days before the expiry date."}
           </DialogDescription>
         </div>
         <form onSubmit={submit} noValidate className="flex min-h-0 flex-1 flex-col">
           <div className="grid flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">
+            {!license && (
+              <div className="space-y-1.5 rounded-xl border border-dashed bg-muted/40 p-3 sm:col-span-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    ref={picker}
+                    type="file"
+                    accept={LICENSE_UPLOAD_ACCEPT}
+                    className="sr-only"
+                    aria-label="Upload a license file"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (f) void fillFromFile(f);
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="sm" disabled={reading} onClick={() => picker.current?.click()}>
+                    {reading ? <Loader2 className="animate-spin" /> : <Upload />} {reading ? "Reading file…" : "Fill from a file"}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">PDF, Word, text or CSV up to 10 MB. We read the number and dates for you; the file itself isn&apos;t saved.</span>
+                </div>
+                {fillNote && <p aria-live="polite" className="text-xs text-emerald-700">{fillNote}</p>}
+                {fillError && <p role="alert" className="text-xs text-destructive">{fillError}</p>}
+              </div>
+            )}
             <div className="sm:col-span-2">
               <Field id="lic-name" label="License name" error={errors.name?.message}>
                 <Input id="lic-name" autoComplete="off" placeholder="State business license" {...invalid("name")} {...register("name")} />
@@ -116,7 +208,34 @@ export function LicenseFormDialog({
             </Field>
             <Field id="lic-reminderDays" label="Remind me (days before expiry)" error={errors.reminderDays?.message}>
               <Input id="lic-reminderDays" placeholder="60, 30, 7" {...invalid("reminderDays")} {...register("reminderDays")} />
+              <div className="flex flex-wrap gap-1.5 pt-1" role="group" aria-label="Common reminder times">
+                {REMINDER_PRESETS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    aria-pressed={chosen.has(d)}
+                    onClick={() => toggleReminder(d)}
+                    className={cn("rounded-full border px-2.5 py-0.5 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring", chosen.has(d) ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}
+                  >
+                    {d} days
+                  </button>
+                ))}
+              </div>
             </Field>
+            {!license && (
+              <div className="sm:col-span-2">
+                <Field id="lic-documents" label="Required documents (one per line)" error={errors.documents?.message}>
+                  <textarea
+                    id="lic-documents"
+                    rows={3}
+                    placeholder="Annual report"
+                    className="flex w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground aria-invalid:border-destructive focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+                    {...invalid("documents")}
+                    {...register("documents")}
+                  />
+                </Field>
+              </div>
+            )}
             <div className="sm:col-span-2">
               <Field id="lic-notes" label="Notes" error={errors.notes?.message}>
                 <textarea
@@ -128,6 +247,18 @@ export function LicenseFormDialog({
                 />
               </Field>
             </div>
+          </div>
+          <div className="space-y-1.5 border-t px-5 py-3">
+            <label className="flex cursor-pointer items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 rounded border-input accent-primary"
+                {...invalid("reviewed")}
+                {...register("reviewed")}
+              />
+              <span>I have checked these details against the license document.</span>
+            </label>
+            {errors.reviewed && <p id="lic-reviewed-error" role="alert" className="text-xs text-destructive">{errors.reviewed.message}</p>}
           </div>
           <div className="flex justify-end gap-2 border-t px-5 py-3">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

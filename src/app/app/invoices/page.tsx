@@ -8,6 +8,6 @@ export const dynamic = "force-dynamic";
 export default async function InvoicesRoute({ searchParams }: PageProps<"/app/invoices">) {
   const { new: startNew } = await searchParams;
   return renderAppShell("/app/invoices", () => (
-    <InvoicesPage startNew={startNew === "1"} preview="Sample data that lives only in this browser tab. Nothing is saved and no emails are sent." />
+    <InvoicesPage startNew={startNew === "1"} preview="Records live only in this browser tab. Nothing is saved and no emails are sent." />
   ));
 }
