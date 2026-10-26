@@ -8,15 +8,15 @@ async function fillProfile(page: Page, name = "Acme Studio") {
   await page.getByRole("option", { name: "2-5 people" }).click();
 }
 const next = (page: Page) => page.getByRole("button", { name: /^Next/ });
-const module = (page: Page, name: string) => page.getByTestId("module-choices").getByLabel(name, { exact: true });
+const moduleBox = (page: Page, name: string) => page.getByTestId("module-choices").getByLabel(name, { exact: true });
 
 /** Walks the wizard to the end with a few changes from the defaults. */
 async function completeSetup(page: Page) {
   await page.goto("/demo/setup");
   await fillProfile(page);
   await next(page).click();
-  await module(page, "Projects").uncheck();
-  await module(page, "Vendors").check();
+  await moduleBox(page, "Projects").uncheck();
+  await moduleBox(page, "Vendors").check();
   await next(page).click();
   await page.getByLabel("Reconcile bank statements").uncheck();
   await next(page).click();
@@ -52,16 +52,16 @@ test.describe("back office setup module", () => {
     const list = page.getByTestId("module-choices");
     await expect(list.getByText("Recommended", { exact: true })).toHaveCount(7);
     for (const name of ["Documents", "Invoices", "Admin Support", "Projects", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) {
-      await expect(module(page, name)).toBeChecked();
+      await expect(moduleBox(page, name)).toBeChecked();
     }
-    for (const name of ["Vendors", "Data Entry & Reporting", "Business File Reset"]) await expect(module(page, name)).not.toBeChecked();
+    for (const name of ["Vendors", "Data Entry & Reporting", "Business File Reset"]) await expect(moduleBox(page, name)).not.toBeChecked();
     await expect(list).toContainText("Client work needs tasks, deadlines and status reports.");
 
-    await module(page, "Documents").uncheck();
+    await moduleBox(page, "Documents").uncheck();
     await page.getByRole("button", { name: "Use recommended" }).click();
-    await expect(module(page, "Documents")).toBeChecked();
+    await expect(moduleBox(page, "Documents")).toBeChecked();
 
-    for (const name of ["Documents", "Invoices", "Admin Support", "Projects", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) await module(page, name).uncheck();
+    for (const name of ["Documents", "Invoices", "Admin Support", "Projects", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) await moduleBox(page, name).uncheck();
     await expect(next(page)).toBeDisabled();
   });
 
@@ -154,10 +154,10 @@ test.describe("back office setup module", () => {
     await page.goto("/demo/setup");
     await fillProfile(page, "Saved & Sound");
     await next(page).click();
-    await module(page, "Vendors").check();
+    await moduleBox(page, "Vendors").check();
     await page.reload();
     await expect(page.getByRole("button", { name: /Modules/ })).toHaveAttribute("aria-current", "step");
-    await expect(module(page, "Vendors")).toBeChecked();
+    await expect(moduleBox(page, "Vendors")).toBeChecked();
     await page.getByRole("button", { name: /Business/ }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("Saved & Sound");
   });
