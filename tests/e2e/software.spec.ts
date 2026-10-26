@@ -7,7 +7,7 @@ test.describe("AdFlo opens as software, not a website", () => {
     await expect(page).toHaveTitle("Home · AdFlo");
     await expect(page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading", { level: 1, name: "Your back office" })).toBeVisible();
-    await expect(page.getByTestId("module-tile")).toHaveCount(11);
+    await expect(page.getByTestId("dashboard")).toBeVisible();
   });
 
   test("there is no marketing page: no pitch, no demo labels, no sign-up detour", async ({ page }) => {

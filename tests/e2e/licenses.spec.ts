@@ -1,11 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("platform modules", () => {
-  test("the overview lists all eleven modules and links the two that exist", async ({ page }) => {
+  test("the dashboard links through to the licenses module", async ({ page }) => {
     await page.goto("/app/overview");
-    await expect(page.getByTestId("module-tile")).toHaveCount(11);
-    await expect(page.getByRole("link", { name: /Licenses & Renewals/ }).first()).toBeVisible();
-    await page.getByRole("link", { name: /03.*Licenses & Renewals/ }).click();
+    await expect(page.getByTestId("dashboard")).toBeVisible();
+    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Licenses & Renewals" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Licenses & Renewals" })).toBeVisible();
   });
 
