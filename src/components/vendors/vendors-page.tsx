@@ -336,9 +336,8 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
         )}
         {visible.length === 0 ? (
           <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            <p>{vendors.length === 0 ? "No vendors yet." : "No vendors match these filters."}</p>
-            {vendors.length === 0 ? <Button onClick={() => setFormFor("new")}><Plus /> Add your first vendor</Button>
-              : filtered && <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
+            <p>{vendors.length === 0 ? "No vendors yet. Use Add vendor above to create your first one." : "No vendors match these filters."}</p>
+            {vendors.length > 0 && filtered && <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
           </div>
         ) : (
           <ul className="space-y-3">
