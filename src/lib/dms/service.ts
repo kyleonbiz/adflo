@@ -148,12 +148,11 @@ export class DocumentService {
 
   async bootstrap(): Promise<Bootstrap> {
     this.require("read");
-    const [workspace, folders, tags, usage, trashCount] = await Promise.all([
+    const [workspace, folders, tags, { usage, trashCount }] = await Promise.all([
       this.repo.getWorkspace(this.ctx.workspaceId),
       this.repo.listFolders(this.ctx.workspaceId),
       this.repo.listTags(this.ctx.workspaceId),
-      this.repo.getUsage(this.ctx.workspaceId),
-      this.repo.countTrash(this.ctx.workspaceId),
+      this.repo.getUsageSummary(this.ctx.workspaceId),
     ]);
     if (!workspace) throw new DmsError("not_found", "Workspace not found.");
     return {
@@ -181,18 +180,20 @@ export class DocumentService {
       ...input,
       pageSize: input.pageSize ?? DEFAULT_PAGE_SIZE,
     });
-    if (query.folderId) {
-      const folder = await this.repo.getFolder(this.ctx.workspaceId, query.folderId);
-      if (!folder) throw new DmsError("not_found", "Folder not found.");
-    }
-    const { items, total } = await this.repo.queryDocuments(this.ctx.workspaceId, query);
+    const [folder, { items, total }] = await Promise.all([
+      query.folderId ? this.repo.getFolder(this.ctx.workspaceId, query.folderId) : true,
+      this.repo.queryDocuments(this.ctx.workspaceId, query),
+    ]);
+    if (!folder) throw new DmsError("not_found", "Folder not found.");
     return { items, total, page: query.page, pageSize: query.pageSize };
   }
 
   async getDocument(id: string): Promise<DocumentDetail> {
     this.require("read");
-    const doc = await this.loadDocument(id, { allowDeleted: true });
-    const versions = await this.repo.listVersions(this.ctx.workspaceId, id);
+    const [doc, versions] = await Promise.all([
+      this.loadDocument(id, { allowDeleted: true }),
+      this.repo.listVersions(this.ctx.workspaceId, id),
+    ]);
     return { ...doc, versions };
   }
 
