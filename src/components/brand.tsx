@@ -14,7 +14,7 @@ export function Brand({ className, href = "/", light, compact, wordmark }: { cla
     return (
       <Link href={href} aria-label="AdFlo home" className={cn("block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={light ? "/logo-wordmark-light.png" : "/logo-wordmark.png"} alt="AdFlo" width={1015} height={325} className="h-auto w-full" />
+        <img src={light ? "/logo-wordmark-light.png" : "/logo-wordmark.png"} alt="AdFlo" width={972} height={276} className="h-auto w-full" />
       </Link>
     );
   }
