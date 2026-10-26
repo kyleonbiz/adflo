@@ -91,7 +91,7 @@ export function FillFormDialog({
             >
               <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="fill-by">Your name</Label>
+                  <Label htmlFor="fill-by">Your Name</Label>
                   <Input id="fill-by" autoComplete="off" value={by} onChange={(e) => setBy(e.target.value)} maxLength={80} />
                 </div>
                 {form.fields.map((f) => (

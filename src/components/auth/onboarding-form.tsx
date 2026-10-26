@@ -35,7 +35,7 @@ export function OnboardingForm({ displayName, email }: { displayName: string; em
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="ws-name">Workspace name</Label>
+        <Label htmlFor="ws-name">Workspace Name</Label>
         <Input id="ws-name" placeholder="e.g. Harbor Property Group" autoFocus aria-invalid={!!formState.errors.name} {...register("name")} />
         {formState.errors.name && (
           <p role="alert" className="text-xs text-destructive">

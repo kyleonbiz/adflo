@@ -54,7 +54,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
       {isSignup && (
-        <Field id="fullName" label="Full name" error={formState.errors.fullName?.message}>
+        <Field id="fullName" label="Full Name" error={formState.errors.fullName?.message}>
           <Input id="fullName" autoComplete="name" aria-invalid={!!formState.errors.fullName} {...register("fullName")} />
         </Field>
       )}

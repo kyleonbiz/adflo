@@ -15,6 +15,7 @@ import { PROJECT_STATUSES, TASK_REPEATS, type Project, type ProjectStatus, type 
 import { taskFormSchema, type TaskFormValues } from "@/lib/projects/validation";
 import { cn } from "@/lib/utils";
 import { HEALTH_BADGE, HEALTH_LABEL, STATUS_LABEL, TASK_BADGE } from "./status";
+import { titleCase } from "@/lib/text";
 
 export interface ProjectActions {
   onEdit: (project: Project) => void;
@@ -82,14 +83,14 @@ function TaskForm({ project, task, onSubmit, onCancel }: {
           <Input id={`${uid}-who`} value={assignee} onChange={(e) => setAssignee(e.target.value)} placeholder="Optional" className="h-9" maxLength={80} />
         </div>
         <div className="space-y-1">
-          <Label htmlFor={`${uid}-due`} className={label}>Due date</Label>
+          <Label htmlFor={`${uid}-due`} className={label}>Due Date</Label>
           <Input id={`${uid}-due`} type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} className="h-9" />
         </div>
         <div className="space-y-1">
           <Label htmlFor={`${uid}-repeat`} className={label}>Repeats</Label>
           <Select value={repeat} onValueChange={setRepeat}>
             <SelectTrigger id={`${uid}-repeat`} className="h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>{TASK_REPEATS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+            <SelectContent>{TASK_REPEATS.map((r) => <SelectItem key={r.value} value={r.value}>{titleCase(r.label)}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="flex gap-2">
@@ -146,7 +147,7 @@ export function ProjectCard({ project, today, actions, open, onOpenChange }: {
           <div className="w-36">
             <Select value={project.status} onValueChange={(v) => actions.onStatus(project, v as ProjectStatus)}>
               <SelectTrigger aria-label={`Status of ${project.name}`} className="h-8 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>{PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{STATUS_LABEL[s.value]}</SelectItem>)}</SelectContent>
+              <SelectContent>{PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{titleCase(STATUS_LABEL[s.value])}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <DropdownMenu>

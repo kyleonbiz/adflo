@@ -20,6 +20,7 @@ import { installedLicenses } from "@/lib/setup/templates";
 import { LicenseCard, type LicenseActions } from "./license-card";
 import { LicenseFormDialog } from "./license-form-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
+import { titleCase } from "@/lib/text";
 
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -156,8 +157,8 @@ export function LicensesPage({ preview }: { preview?: string }) {
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
+                <SelectItem value="all">All Statuses</SelectItem>
+                {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -165,8 +166,8 @@ export function LicensesPage({ preview }: { preview?: string }) {
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                <SelectItem value="all">All Categories</SelectItem>
+                {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{titleCase(c.label)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

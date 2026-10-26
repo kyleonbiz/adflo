@@ -86,7 +86,7 @@ function Body({
                       <Select value={col === null || col === undefined ? "none" : String(col)} onValueChange={(v) => setMapping((m) => ({ ...m, [f.key]: v === "none" ? null : Number(v) }))}>
                         <SelectTrigger id={`map-${f.key}`} aria-label={`Column for ${f.label}`} className="h-9"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="none">Don&apos;t import</SelectItem>
+                          <SelectItem value="none">Don&apos;t Import</SelectItem>
                           {parsed.headers.map((h, i) => <SelectItem key={i} value={String(i)}>{h}</SelectItem>)}
                         </SelectContent>
                       </Select>

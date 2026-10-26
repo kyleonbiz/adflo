@@ -10,6 +10,7 @@ import { addDays } from "@/lib/dates";
 import { suggestCategory } from "@/lib/admin/triage";
 import { CATEGORIES, EVERY, type Category, type Routine } from "@/lib/admin/types";
 import { routineFormSchema } from "@/lib/admin/validation";
+import { titleCase } from "@/lib/text";
 
 function Body({ today, onClose, onSave }: { today: string; onClose: () => void; onSave: (r: Omit<Routine, "id">) => void }) {
   const [title, setTitle] = useState("");
@@ -47,11 +48,11 @@ function Body({ today, onClose, onSave }: { today: string; onClose: () => void; 
             <Label htmlFor="routine-every">Repeats</Label>
             <Select value={every} onValueChange={setEvery}>
               <SelectTrigger id="routine-every"><SelectValue /></SelectTrigger>
-              <SelectContent>{EVERY.map((e) => <SelectItem key={e.value} value={e.value}>{e.label}</SelectItem>)}</SelectContent>
+              <SelectContent>{EVERY.map((e) => <SelectItem key={e.value} value={e.value}>{titleCase(e.label)}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="routine-next">First due</Label>
+            <Label htmlFor="routine-next">First Due</Label>
             <Input id="routine-next" type="date" value={nextDueOn} onChange={(e) => setNextDueOn(e.target.value)} aria-invalid={!!errors.nextDueOn} />
             {errors.nextDueOn && <p role="alert" className="text-xs text-destructive">{errors.nextDueOn}</p>}
           </div>
@@ -60,13 +61,13 @@ function Body({ today, onClose, onSave }: { today: string; onClose: () => void; 
             <Select value={category} onValueChange={(v) => setCategory(v as Category | "auto")}>
               <SelectTrigger id="routine-category"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="auto">Suggested: {suggested}</SelectItem>
-                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                <SelectItem value="auto">Suggested: {titleCase(suggested)}</SelectItem>
+                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="routine-description">Details (optional)</Label>
+            <Label htmlFor="routine-description">Details (Optional)</Label>
             <Input id="routine-description" autoComplete="off" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
         </div>

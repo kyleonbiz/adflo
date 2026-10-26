@@ -17,6 +17,7 @@ import { clearConfig, saveConfig, useSetupConfig } from "@/lib/setup/storage";
 import { TEMPLATES, templateById, templatesFor } from "@/lib/setup/templates";
 import { INDUSTRIES, STEPS, TEAM_SIZES, emptyConfig, type CheckStatus, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
 import { cn } from "@/lib/utils";
+import { titleCase } from "@/lib/text";
 
 const STATUS_ICON: Record<CheckStatus, typeof CheckCircle2> = { pass: CheckCircle2, warn: CircleAlert, fail: CircleX };
 const STATUS_TONE: Record<CheckStatus, string> = { pass: "text-emerald-600", warn: "text-amber-600", fail: "text-red-600" };
@@ -128,21 +129,21 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
             <div><h2 className="text-lg font-semibold">Tell us about your business</h2><p className="text-sm text-muted-foreground">We use this to recommend the right services.</p></div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-1.5">
-                <Label htmlFor="biz-name">Business name</Label>
+                <Label htmlFor="biz-name">Business Name</Label>
                 <Input id="biz-name" autoComplete="organization" maxLength={80} value={config.business.name} onChange={(e) => update((c) => ({ ...c, completedOn: null, business: { ...c.business, name: e.target.value } }))} />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="biz-industry">Industry</Label>
                 <Select value={config.business.industry || undefined} onValueChange={(v) => update((c) => ({ ...c, completedOn: null, business: { ...c.business, industry: v as Industry } }))}>
                   <SelectTrigger id="biz-industry"><SelectValue placeholder="Choose one" /></SelectTrigger>
-                  <SelectContent>{INDUSTRIES.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
+                  <SelectContent>{INDUSTRIES.map((i) => <SelectItem key={i} value={i}>{titleCase(i)}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="biz-size">Team size</Label>
+                <Label htmlFor="biz-size">Team Size</Label>
                 <Select value={config.business.teamSize || undefined} onValueChange={(v) => update((c) => ({ ...c, completedOn: null, business: { ...c.business, teamSize: v as TeamSize } }))}>
                   <SelectTrigger id="biz-size"><SelectValue placeholder="Choose one" /></SelectTrigger>
-                  <SelectContent>{TEAM_SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  <SelectContent>{TEAM_SIZES.map((s) => <SelectItem key={s} value={s}>{titleCase(s)}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>

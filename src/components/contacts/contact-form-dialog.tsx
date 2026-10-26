@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { validateContact, type ContactField } from "@/lib/contacts/logic";
 import { CONTACT_CATEGORIES, type Contact, type ContactInput } from "@/lib/contacts/types";
+import { titleCase } from "@/lib/text";
 
 function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) {
   return (
@@ -55,7 +56,7 @@ function Body({ contact, onClose, onSave }: { contact?: Contact; onClose: () => 
           <Field id="contact-category" label="Category" error={errors.category}>
             <Select value={v.category} onValueChange={(c) => setV((s) => ({ ...s, category: c }))}>
               <SelectTrigger id="contact-category"><SelectValue /></SelectTrigger>
-              <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
           <div className="sm:col-span-2">

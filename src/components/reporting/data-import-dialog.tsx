@@ -12,6 +12,7 @@ import type { Column, ColumnType, Dataset } from "@/lib/datasets/types";
 import { CsvError, parseCsv, type ParsedCsv } from "@/lib/import/csv";
 import type { ImportOutcome } from "@/lib/import/run";
 import type { Cell } from "@/lib/datasets/types";
+import { titleCase } from "@/lib/text";
 
 type Step = "input" | "columns" | "review";
 const TYPES: { value: ColumnType; label: string }[] = [
@@ -62,7 +63,7 @@ function Body({ onClose, onLoad }: { onClose: () => void; onLoad: (loaded: Loade
         {step === "columns" && parsed && (
           <>
             <div className="space-y-1.5">
-              <Label htmlFor="data-name">Name for this data</Label>
+              <Label htmlFor="data-name">Name For This Data</Label>
               <Input id="data-name" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
             </div>
             <p className="text-sm text-muted-foreground">{parsed.rows.length} row{parsed.rows.length === 1 ? "" : "s"} found. Types were guessed from the values.</p>
@@ -77,7 +78,7 @@ function Body({ onClose, onLoad }: { onClose: () => void; onLoad: (loaded: Loade
                     </div>
                     <Select value={c.type} onValueChange={(v) => setColumn(i, { type: v as ColumnType })}>
                       <SelectTrigger aria-label={`Type of ${c.name}`} className="h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>{TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                      <SelectContent>{TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{titleCase(t.label)}</SelectItem>)}</SelectContent>
                     </Select>
                     <label className="flex items-center gap-1.5 text-sm">
                       <input type="checkbox" checked={c.required} onChange={(e) => setColumn(i, { required: e.target.checked })} aria-label={`${c.name} is required`} className="size-4 rounded border-input accent-primary" />

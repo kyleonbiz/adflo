@@ -185,10 +185,10 @@ export function ReportingPage({ preview }: { preview?: string }) {
             <h2 id="report-heading" className="text-base font-semibold">Report</h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <div className="space-y-1.5">
-                <Label htmlFor="group-by">Group by</Label>
+                <Label htmlFor="group-by">Group By</Label>
                 <Select value={String(groupBy)} onValueChange={(v) => setGroupBy(Number(v))}>
                   <SelectTrigger id="group-by"><SelectValue /></SelectTrigger>
-                  <SelectContent>{dataset.columns.map((c, i) => <SelectItem key={i} value={String(i)}>{c.name}{c.type === "date" ? " (by month)" : ""}</SelectItem>)}</SelectContent>
+                  <SelectContent>{dataset.columns.map((c, i) => <SelectItem key={i} value={String(i)}>{c.name}{c.type === "date" ? " (By Month)" : ""}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
@@ -196,7 +196,7 @@ export function ReportingPage({ preview }: { preview?: string }) {
                 <Select value={measure === null ? "rows" : String(measure)} onValueChange={(v) => setMeasure(v === "rows" ? null : Number(v))}>
                   <SelectTrigger id="measure"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="rows">Count of rows</SelectItem>
+                    <SelectItem value="rows">Count Of Rows</SelectItem>
                     {numberCols.map(({ c, i }) => <SelectItem key={i} value={String(i)}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
@@ -251,14 +251,14 @@ export function ReportingPage({ preview }: { preview?: string }) {
             <h2 id="schedule-heading" className="flex items-center gap-2 text-base font-semibold"><CalendarClock className="size-4 text-primary" aria-hidden /> Scheduled summary</h2>
             <div className="mt-3 grid gap-3 sm:grid-cols-[10rem_1fr]">
               <div className="space-y-1.5">
-                <Label htmlFor="frequency">How often</Label>
+                <Label htmlFor="frequency">How Often</Label>
                 <Select value={frequency} onValueChange={(v) => setFrequency(v as Frequency)}>
                   <SelectTrigger id="frequency"><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="weekly">Every Monday</SelectItem><SelectItem value="monthly">1st of the month</SelectItem></SelectContent>
+                  <SelectContent><SelectItem value="weekly">Every Monday</SelectItem><SelectItem value="monthly">1st Of The Month</SelectItem></SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="recipient">Send to</Label>
+                <Label htmlFor="recipient">Send To</Label>
                 <Input id="recipient" type="email" autoComplete="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" aria-invalid={email !== "" && !emailOk} />
                 {email !== "" && !emailOk && <p role="alert" className="text-xs text-destructive">Enter a valid email address</p>}
               </div>

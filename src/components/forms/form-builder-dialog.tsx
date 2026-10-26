@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FIELD_TYPES, type FieldType, type FormField, type FormTemplate } from "@/lib/forms/types";
 import { formBuilderSchema, type FormBuilderValues } from "@/lib/forms/validation";
+import { titleCase } from "@/lib/text";
 
 const rid = () => `f-${Math.random().toString(36).slice(2, 8)}`;
 const textareaClass =
@@ -75,7 +76,7 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="fb-name">Form name</Label>
+            <Label htmlFor="fb-name">Form Name</Label>
             <Input id="fb-name" autoComplete="off" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           </div>
           <div className="space-y-1.5">
@@ -93,7 +94,7 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
                   <Input value={f.label} onChange={(e) => setField(f.id, { label: e.target.value })} placeholder="Field label" aria-label={`Label of field ${i + 1}`} className="h-9" />
                   <Select value={f.type} onValueChange={(v) => setField(f.id, { type: v as FieldType })}>
                     <SelectTrigger aria-label={`Type of field ${i + 1}`} className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>{FIELD_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                    <SelectContent>{FIELD_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{titleCase(t.label)}</SelectItem>)}</SelectContent>
                   </Select>
                   <label className="flex items-center gap-1.5 text-sm">
                     <input type="checkbox" checked={f.required} onChange={(e) => setField(f.id, { required: e.target.checked })} className="size-4 rounded border-input accent-primary" />
@@ -130,7 +131,7 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="fb-template">Document template (optional)</Label>
+          <Label htmlFor="fb-template">Document Template (Optional)</Label>
           <textarea id="fb-template" rows={5} value={draft.documentTemplate} onChange={(e) => setDraft({ ...draft, documentTemplate: e.target.value })} className={textareaClass}
             placeholder={"Write the document and drop in fields like {{Field label}}.\nLeave empty for a simple list of answers."} />
         </div>
