@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { DocumentRecord, FolderWithCount } from "@/lib/dms/types";
@@ -30,7 +31,7 @@ export function DocumentGrid({
   onRestore: (doc: DocumentRecord) => void;
   onLoadMore: () => void;
 }) {
-  const folderName = new Map(folders.map((f) => [f.id, f.name]));
+  const folderName = useMemo(() => new Map(folders.map((f) => [f.id, f.name])), [folders]);
   return (
     <div>
       <p className="mb-3 text-xs text-muted-foreground" aria-live="polite">
@@ -45,9 +46,9 @@ export function DocumentGrid({
                 folderName={doc.folderId ? folderName.get(doc.folderId) : undefined}
                 inTrash={inTrash}
                 canEdit={canEdit}
-                onOpen={() => onOpen(doc.id)}
-                onToggleStar={() => onToggleStar(doc)}
-                onRestore={() => onRestore(doc)}
+                onOpen={onOpen}
+                onToggleStar={onToggleStar}
+                onRestore={onRestore}
               />
             </div>
           </li>

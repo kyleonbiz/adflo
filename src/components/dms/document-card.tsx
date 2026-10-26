@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { Clock, Star, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Snippet } from "./snippet";
 
 const MAX_TAGS = 3;
 
-export function DocumentCard({
+export const DocumentCard = memo(function DocumentCard({
   doc,
   folderName,
   inTrash,
@@ -25,9 +26,9 @@ export function DocumentCard({
   folderName?: string;
   inTrash: boolean;
   canEdit: boolean;
-  onOpen: () => void;
-  onToggleStar: () => void;
-  onRestore: () => void;
+  onOpen: (id: string) => void;
+  onToggleStar: (doc: DocumentRecord) => void;
+  onRestore: (doc: DocumentRecord) => void;
 }) {
   const kind = fileKindOf(doc.mimeType, doc.originalName);
   const expiring = doc.expiresAt ? daysUntil(doc.expiresAt) : null;
@@ -42,7 +43,7 @@ export function DocumentCard({
     >
       <button
         type="button"
-        onClick={onOpen}
+        onClick={() => onOpen(doc.id)}
         aria-label={`Open ${doc.displayName}`}
         className="flex flex-1 flex-col items-center gap-3 rounded-2xl px-4 pb-4 pt-6 text-center outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
@@ -95,14 +96,14 @@ export function DocumentCard({
 
       {inTrash ? (
         canEdit && (
-          <Button variant="outline" size="sm" className="absolute right-2.5 top-2.5" onClick={onRestore}>
+          <Button variant="outline" size="sm" className="absolute right-2.5 top-2.5" onClick={() => onRestore(doc)}>
             <Undo2 /> Restore
           </Button>
         )
       ) : (
         <button
           type="button"
-          onClick={onToggleStar}
+          onClick={() => onToggleStar(doc)}
           disabled={!canEdit}
           aria-pressed={doc.starred}
           aria-label={doc.starred ? `Unstar ${doc.displayName}` : `Star ${doc.displayName}`}
@@ -113,4 +114,4 @@ export function DocumentCard({
       )}
     </article>
   );
-}
+});

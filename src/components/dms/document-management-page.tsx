@@ -56,6 +56,9 @@ export function DocumentManagementPage({ api, startUpload }: { api: DmsApi; star
     [api, m],
   );
 
+  const { openDocument } = m;
+  const onOpenDocument = useCallback((id: string) => void openDocument(id), [openDocument]);
+
   const notice = MODE_NOTICE[api.mode];
   const { boot, query } = m;
   const filtered = Boolean(query.search || query.category || query.fileType || query.tag);
@@ -132,7 +135,7 @@ export function DocumentManagementPage({ api, startUpload }: { api: DmsApi; star
                   canEdit={m.perms.write}
                   hasMore={m.hasMore}
                   loadingMore={m.loadingMore}
-                  onOpen={(id) => void m.openDocument(id)}
+                  onOpen={onOpenDocument}
                   onToggleStar={m.toggleStar}
                   onRestore={m.restore}
                   onLoadMore={m.loadMore}

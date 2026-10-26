@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { DmsApi, DocumentChanges } from "@/lib/dms/client/api";
 import { toDmsError } from "@/lib/dms/errors";
 import { can } from "@/lib/dms/service";
+import { MAX_PAGE_SIZE } from "@/lib/dms/config";
 import { defaultQuery } from "@/lib/dms/validation";
 import type {
   Bootstrap,
@@ -64,14 +65,28 @@ export function useDocumentManager(api: DmsApi) {
     }
   }, [api]);
 
-  // Folder counts, tags, usage and trash count change after mutations.
-  const refreshMeta = useCallback(async () => {
-    try {
-      setBoot(await api.bootstrap());
-    } catch {
-      /* keep the previous snapshot; the list surfaces real errors */
-    }
+  // Folder counts, tags, usage and trash count change after mutations. Calls made within a short
+  // window share one request, so a burst of mutations (or a mutation plus a reload) costs one fetch.
+  const metaPending = useRef<Promise<void> | null>(null);
+  const refreshMeta = useCallback((): Promise<void> => {
+    if (metaPending.current) return metaPending.current;
+    metaPending.current = new Promise<void>((resolve) => {
+      setTimeout(async () => {
+        metaPending.current = null;
+        try {
+          setBoot(await api.bootstrap());
+        } catch {
+          /* keep the previous snapshot; the list surfaces real errors */
+        }
+        resolve();
+      }, 120);
+    });
+    return metaPending.current;
   }, [api]);
+
+  const adjustTrashCount = useCallback((delta: number) => {
+    setBoot((b) => (b ? { ...b, trashCount: Math.max(0, b.trashCount + delta) } : b));
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -141,8 +156,17 @@ export function useDocumentManager(api: DmsApi) {
   const hasMore = items.length < total;
   const loadMore = useCallback(() => {
     if (!hasMore || loadingMore) return;
-    const next = { ...query, page: Math.floor(items.length / query.pageSize) + 1 };
-    void fetchPage(next, true);
+    const size = query.pageSize;
+    if (items.length % size === 0) {
+      void fetchPage({ ...query, page: items.length / size + 1 }, true);
+    } else if (items.length + size <= MAX_PAGE_SIZE) {
+      // Items were removed locally, so a page offset would skip rows that shifted up. Re-read
+      // everything loaded so far plus one more page in a single request instead.
+      setLoadingMore(true);
+      void fetchPage({ ...query, page: 1, pageSize: items.length + size }, false, true);
+    } else {
+      void fetchPage({ ...query, page: Math.floor(items.length / size) + 1 }, true);
+    }
   }, [hasMore, loadingMore, query, items.length, fetchPage]);
 
   const patchQuery = useCallback((patch: Partial<DocumentQuery>) => {
@@ -236,6 +260,7 @@ export function useDocumentManager(api: DmsApi) {
         else await api.deleteDocument(doc.id);
         setItems((l) => l.filter((d) => d.id !== doc.id));
         setTotal((t) => Math.max(0, t - 1));
+        adjustTrashCount(doc.deletedAt ? (permanent ? -1 : 0) : 1);
         if (selectedId === doc.id) void openDocument(null);
         notify("success", permanent ? "Deleted permanently." : "Moved to trash. You can restore it from Trash.");
         void refreshMeta();
@@ -245,7 +270,7 @@ export function useDocumentManager(api: DmsApi) {
         return false;
       }
     },
-    [api, notify, openDocument, refreshMeta, selectedId],
+    [api, adjustTrashCount, notify, openDocument, refreshMeta, selectedId],
   );
 
   const restore = useCallback(
@@ -254,6 +279,7 @@ export function useDocumentManager(api: DmsApi) {
         await api.restoreDocument(doc.id);
         setItems((l) => l.filter((d) => d.id !== doc.id));
         setTotal((t) => Math.max(0, t - 1));
+        adjustTrashCount(-1);
         if (selectedId === doc.id) void openDocument(null);
         notify("success", `Restored “${doc.displayName}”.`);
         void refreshMeta();
@@ -261,7 +287,7 @@ export function useDocumentManager(api: DmsApi) {
         notify("error", toDmsError(e).message);
       }
     },
-    [api, notify, openDocument, refreshMeta, selectedId],
+    [api, adjustTrashCount, notify, openDocument, refreshMeta, selectedId],
   );
 
   const download = useCallback(
