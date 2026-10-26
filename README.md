@@ -42,7 +42,7 @@ browser and never uploaded.
 * **Pages:** `/app/overview` (Home), `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/admin`, `/app/file-reset`, `/app/setup`. With a database they sit behind sign-in; without one they open as a preview.
 * **Invoices, licenses, vendors, contacts, projects, forms and report data, requests and recurring tasks are not persisted yet.** They are seeded sample data held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
-  renewal tasks, overdue notices) but no email is sent yet. Vendors get required documents by category, can only be
+  renewal tasks, overdue notices) but no email is sent yet. Licenses can be pre-filled from an uploaded PDF, Word, text or CSV file (`/api/licenses/parse` reads the number, issuer, holder and dates next to their labels; photos and scans are not read, and the file itself is not stored). Vendors get required documents by category, can only be
   submitted for approval once every required document is in and unexpired, and are checked for
   duplicates (normalized name, similar name, tax ID, contact email, shared company email domain) when
   added and across the list. CRM & Data imports in three steps (choose or paste a

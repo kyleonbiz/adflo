@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CalendarClock, FileWarning, Hourglass, Plus, Search, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CalendarClock, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -18,6 +18,7 @@ import type { LicenseFormValues } from "@/lib/licenses/validation";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedLicenses } from "@/lib/setup/templates";
 import { LicenseCard, type LicenseActions } from "./license-card";
+import { LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { LicenseFormDialog } from "./license-form-dialog";
 import { RenewDialog } from "./renew-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
@@ -41,6 +42,8 @@ export function LicensesPage({ preview }: { preview?: string }) {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [formFor, setFormFor] = useState<License | "new" | null>(null);
   const [deleting, setDeleting] = useState<License | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [formSession, setFormSession] = useState(0); // new key per opening, so notes from a previous upload never linger
   const [renewing, setRenewing] = useState<License | null>(null);
   const [focus, setFocus] = useState<{ id: string; token: number }>({ id: "", token: 0 });
   const [notice, setNotice] = useState<{ id: number; text: string; undo?: () => void } | null>(null);
@@ -70,6 +73,11 @@ export function LicensesPage({ preview }: { preview?: string }) {
     );
   }
 
+  const openForm = (target: License | "new", file: File | null = null) => {
+    setUploadFile(file);
+    setFormSession((n) => n + 1);
+    setFormFor(target);
+  };
   const patch = (id: string, change: (l: License) => License) => setEdited(licenses.map((l) => (l.id === id ? change(l) : l)));
   /** Applies a change that can be undone from the confirmation. */
   const commit = (next: License[], text: string) => {
@@ -85,7 +93,7 @@ export function LicensesPage({ preview }: { preview?: string }) {
   };
 
   const actions: LicenseActions = {
-    onEdit: (l) => setFormFor(l),
+    onEdit: (l) => openForm(l),
     onDelete: (l) => setDeleting(l),
     onRenew: (l) => setRenewing(l),
     onStage: (l, stage: RenewalStage) =>
@@ -141,7 +149,25 @@ export function LicensesPage({ preview }: { preview?: string }) {
           <h1 className="text-2xl font-semibold tracking-tight">Licenses &amp; Renewals</h1>
           <p className="text-sm text-muted-foreground">Track expiry dates, collect required documents and stay ahead of every renewal.</p>
         </div>
-        <Button onClick={() => setFormFor("new")}><Plus /> Add license</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" asChild>
+            <label className="cursor-pointer">
+              <Upload /> Upload license
+              <input
+                type="file"
+                accept={LICENSE_UPLOAD_ACCEPT}
+                className="sr-only"
+                aria-label="Upload a license file to add"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) openForm("new", f);
+                }}
+              />
+            </label>
+          </Button>
+          <Button onClick={() => openForm("new")}><Plus /> Add license</Button>
+        </div>
       </div>
 
       {preview && (
@@ -260,10 +286,12 @@ export function LicensesPage({ preview }: { preview?: string }) {
       </section>
 
       <LicenseFormDialog
+        key={formSession}
         open={formFor !== null}
         license={formFor && formFor !== "new" ? formFor : undefined}
         today={today}
-        onOpenChange={(o) => !o && setFormFor(null)}
+        initialFile={uploadFile}
+        onOpenChange={(o) => { if (!o) { setFormFor(null); setUploadFile(null); } }}
         onSubmit={saveForm}
       />
 

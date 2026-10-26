@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, Upload } from "lucide-react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addMonths, isDay } from "@/lib/dates";
 import { DEFAULT_DOCUMENTS, LICENSE_CATEGORIES, type License, type LicenseCategory } from "@/lib/licenses/types";
+import { readLicenseFile, LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { cn } from "@/lib/utils";
 import { licenseFormSchema, type LicenseFormInput, type LicenseFormValues } from "@/lib/licenses/validation";
 
@@ -45,10 +47,12 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
 
 /** Add or edit a license. `license` present means edit. */
 export function LicenseFormDialog({
-  open, license, today, onOpenChange, onSubmit,
+  open, license, today, initialFile, onOpenChange, onSubmit,
 }: {
   open: boolean;
   license?: License;
+  /** A file chosen before the dialog opened; it is read as soon as the dialog shows. */
+  initialFile?: File | null;
   today: string;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: LicenseFormValues) => void;
@@ -61,7 +65,7 @@ export function LicenseFormDialog({
   const [issuedOn, term, category, reminderDays] = useWatch({ control, name: ["issuedOn", "renewalTermMonths", "category", "reminderDays"] });
 
   useEffect(() => {
-    if (open) reset(defaults(license, today));
+    if (open) { reset(defaults(license, today)); }
   }, [open, license, today, reset]);
 
   // Adding: until the user types their own expiry, keep it one renewal term after the issue date.
@@ -85,6 +89,39 @@ export function LicenseFormDialog({
     setValue("reminderDays", text, { shouldDirty: true, shouldValidate: formState.isSubmitted });
   };
 
+  const [reading, setReading] = useState(false);
+  const [fillNote, setFillNote] = useState("");
+  const [fillError, setFillError] = useState("");
+  const picker = useRef<HTMLInputElement>(null);
+
+  /** Reads a file and pre-fills the form with what it found; the user still checks and saves. */
+  const fillFromFile = async (file: File) => {
+    setReading(true); setFillNote(""); setFillError("");
+    try {
+      const { fields, found } = await readLicenseFile(file);
+      if (found === 0) {
+        setFillNote("We couldn't find license details in that file. Enter them below.");
+        return;
+      }
+      const labels: Record<string, string> = { name: "name", category: "category", issuer: "issuer", number: "number", holder: "holder", issuedOn: "issue date", expiresOn: "expiry date" };
+      for (const [key, value] of Object.entries(fields)) setValue(key as keyof LicenseFormInput, value as string, { shouldDirty: true, shouldValidate: true });
+      setFillNote(`Filled from ${file.name}: ${Object.keys(fields).map((k) => labels[k]).join(", ")}. Please check them before saving.`);
+    } catch (e) {
+      setFillError(e instanceof Error ? e.message : "Something went wrong reading that file.");
+    } finally {
+      setReading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!open || license || !initialFile) return;
+    // After the reset above has applied, so the found values are not wiped.
+    const t = setTimeout(() => void fillFromFile(initialFile), 0);
+    return () => clearTimeout(t);
+    // fillFromFile only uses stable setters; run once per chosen file.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialFile]);
+
   const submit = handleSubmit((values) => {
     onSubmit(values);
     onOpenChange(false);
@@ -105,6 +142,30 @@ export function LicenseFormDialog({
         </div>
         <form onSubmit={submit} noValidate className="flex min-h-0 flex-1 flex-col">
           <div className="grid flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">
+            {!license && (
+              <div className="space-y-1.5 rounded-xl border border-dashed bg-muted/40 p-3 sm:col-span-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    ref={picker}
+                    type="file"
+                    accept={LICENSE_UPLOAD_ACCEPT}
+                    className="sr-only"
+                    aria-label="Upload a license file"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (f) void fillFromFile(f);
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="sm" disabled={reading} onClick={() => picker.current?.click()}>
+                    {reading ? <Loader2 className="animate-spin" /> : <Upload />} {reading ? "Reading file…" : "Fill from a file"}
+                  </Button>
+                  <span className="text-xs text-muted-foreground">PDF, Word, text or CSV up to 10 MB. We read the number and dates for you; the file itself isn&apos;t saved.</span>
+                </div>
+                {fillNote && <p aria-live="polite" className="text-xs text-emerald-700">{fillNote}</p>}
+                {fillError && <p role="alert" className="text-xs text-destructive">{fillError}</p>}
+              </div>
+            )}
             <div className="sm:col-span-2">
               <Field id="lic-name" label="License name" error={errors.name?.message}>
                 <Input id="lic-name" autoComplete="off" placeholder="State business license" {...invalid("name")} {...register("name")} />

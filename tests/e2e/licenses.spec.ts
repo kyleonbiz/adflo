@@ -72,6 +72,30 @@ test.describe("platform modules", () => {
     await expect(card.getByRole("checkbox", { name: "Renewal fee receipt" })).toBeVisible();
   });
 
+  test("licenses: upload a file to pre-fill a new license", async ({ page }) => {
+    await page.goto("/app/licenses");
+    const text = [
+      "FOOD HANDLER PERMIT", "Permit No: FH-4471", "Issued to: Aurum Ventura Enterprise LLC",
+      "Issued by: County Health Department", "Date Issued: 2026-06-01", "Expiration Date: 2027-06-01",
+    ].join("\n");
+    await page.getByLabel("Upload a license file to add").setInputFiles({ name: "permit.txt", mimeType: "text/plain", buffer: Buffer.from(text) });
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/Filled from permit\.txt/)).toBeVisible();
+    await expect(dialog.getByLabel("License name")).toHaveValue("FOOD HANDLER PERMIT");
+    await expect(dialog.getByLabel("License number")).toHaveValue("FH-4471");
+    await expect(dialog.getByLabel("Issuing authority")).toHaveValue("County Health Department");
+    await expect(dialog.getByLabel("Expires on")).toHaveValue("2027-06-01");
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    await expect(page.getByTestId("license-card").filter({ hasText: "FOOD HANDLER PERMIT" })).toBeVisible();
+  });
+
+  test("licenses: a photo can't be read and says so", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await page.getByRole("button", { name: "Add license" }).click();
+    await page.getByLabel("Upload a license file", { exact: true }).setInputFiles({ name: "scan.png", mimeType: "image/png", buffer: Buffer.from("not really a png") });
+    await expect(page.getByRole("dialog").getByRole("alert")).toContainText("can't be read yet");
+  });
+
   test("licenses: add, validate, edit and delete", async ({ page }) => {
     await page.goto("/app/licenses");
     await page.getByRole("button", { name: "Add license" }).click();
