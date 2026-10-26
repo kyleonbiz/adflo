@@ -257,7 +257,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
 }
 
 /**
- * Back Office Setup. The choices are saved in this browser (not a database), so nothing leaves the
+ * Settings. The choices are saved in this browser (not a database), so nothing leaves the
  * device. Templates installed here appear inside Forms, Admin Support and Licenses once setup is finished.
  */
 export function SetupPage({ base, preview }: { base: "/app"; preview?: string }) {
@@ -267,7 +267,7 @@ export function SetupPage({ base, preview }: { base: "/app"; preview?: string })
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Back Office Setup</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground">Five short steps to get your services, templates and checks in place.</p>
       </div>
       {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}

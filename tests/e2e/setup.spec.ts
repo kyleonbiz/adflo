@@ -181,7 +181,7 @@ test.describe("back office setup module", () => {
       await page.evaluate((v) => localStorage.setItem("aurum.setup.v1", v), bad);
       await page.reload();
       await expect(page.getByLabel("Business name")).toHaveValue("");
-      await expect(page.getByRole("heading", { level: 1, name: "Back Office Setup" })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
     }
     await page.goto("/app/forms");
     await expect(page.getByTestId("form-card")).toHaveCount(3);
@@ -199,7 +199,7 @@ test.describe("back office setup module", () => {
 
   test("is available in the signed-in app too", async ({ page }) => {
     await page.goto("/app/setup");
-    await expect(page.getByRole("heading", { level: 1, name: "Back Office Setup" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Back Office Setup", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Settings", exact: true })).toHaveAttribute("aria-current", "page");
   });
 });

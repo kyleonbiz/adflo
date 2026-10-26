@@ -26,7 +26,7 @@ The app is growing from a document manager into a client portal of eleven servic
 (`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
 (`src/lib/datasets/`, `src/components/reporting/`) and **09 Admin Support** (`src/lib/admin/`,
-`src/components/admin/`) **10 Business File Reset** (`src/lib/files/`, `src/components/files/`) and **11 Back Office Setup**
+`src/components/admin/`) **10 Business File Reset** (`src/lib/files/`, `src/components/files/`) and **11 Settings**
 (`src/lib/setup/`, `src/components/setup/`). Every service starts empty and keeps its records in the browser until the database is
 connected (see the limits below).
 
@@ -38,7 +38,7 @@ its first user; modules 08 (Data Entry) and 10 (File Reset) are meant to reuse i
 browser and never uploaded.
 
 * **Navigation:** a left sidebar on wide screens (logo, one icon per module, the current module highlighted,
-  Back Office Setup apart at the bottom) and a menu button that opens the same list as a drawer on a phone.
+  Settings apart at the bottom) and a menu button that opens the same list as a drawer on a phone.
 * **Pages:** `/app/overview` (Home), `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/admin`, `/app/file-reset`, `/app/setup`. With a database they sit behind sign-in; without one they open as a preview.
 * **Invoices, licenses, vendors, contacts, projects, forms and report data, requests and recurring tasks are not persisted yet.** They start empty and are held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
@@ -68,7 +68,7 @@ browser and never uploaded.
   or that would overwrite, and contain no delete command; the tests run them under a real shell against names
   with quotes, `$HOME`, backticks, a leading dash and `*`, and check that undo restores the exact original tree.
   Paths with `..`, drive letters or control characters are skipped. A pasted list can be used instead of a
-  folder (duplicates are then only "likely"). Back Office Setup is a five-step wizard (business profile,
+  folder (duplicates are then only "likely"). Settings is a five-step wizard (business profile,
   modules with industry and team-size recommendations, templates, existing data, automatic checks). Progress
   is saved in the browser after every change (`localStorage`, validated and cleaned on load, so damaged or
   hand-edited data is ignored). Finishing installs the chosen templates for real: forms appear in Forms &

@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 
 const NAMES = [
   "Home", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
-  "Reporting", "Admin Support", "Business File Reset", "Back Office Setup",
+  "Reporting", "Admin Support", "Business File Reset", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
 
@@ -66,7 +66,7 @@ test.describe("module sidebar on a wide screen", () => {
     const box = await nav(page).getByRole("link", { name: "Home", exact: true }).boundingBox();
     expect(box!.y).toBeGreaterThanOrEqual(0);
     expect(box!.y).toBeLessThan(200);
-    await expect(nav(page).getByRole("link", { name: "Back Office Setup" })).toBeInViewport();
+    await expect(nav(page).getByRole("link", { name: "Settings" })).toBeInViewport();
   });
 
   test("has no menu button on a wide screen", async ({ page }) => {
