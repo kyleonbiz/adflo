@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, CheckCircle2, Copy, Download, FileInput, FolderOpen, FolderTree, Pencil, ShieldCheck, Sparkles, Undo2, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, Copy, Download, FileInput, FolderOpen, FolderTree, Pencil, ShieldCheck, Undo2, Upload } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
@@ -12,7 +12,6 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MAX_FILES, parseFileList } from "@/lib/files/paths";
 import { buildPlan, layoutAfter } from "@/lib/files/plan";
-import { sampleFiles } from "@/lib/files/sample-data";
 import { scanBrowserFiles } from "@/lib/files/scan";
 import { moveScript, planToCsv, undoScript } from "@/lib/files/script";
 import type { ChangeKind, FileEntry, PlanOptions, SkippedFile } from "@/lib/files/types";
@@ -100,7 +99,6 @@ export function FilesPage({ preview }: { preview?: string }) {
               <input type="file" multiple className="sr-only" aria-label="Choose a folder" onChange={(e) => { void chooseFolder(e.target.files); e.target.value = ""; }} {...({ webkitdirectory: "" } as Record<string, string>)} />
             </label>
             <Button variant="outline" onClick={() => setPasting((p) => !p)} aria-expanded={pasting}><FileInput /> Paste a list of files</Button>
-            <Button variant="outline" onClick={() => start(sampleFiles(today), { skipped: [], unhashed: 0, truncated: false, source: "the sample folder" })}><Sparkles /> Load sample folder</Button>
           </div>
           {progress && (
             <div role="status" aria-label="Reading files" className="space-y-1">

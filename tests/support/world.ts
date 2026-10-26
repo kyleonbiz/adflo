@@ -1,7 +1,7 @@
 import { DocumentService } from "@/lib/dms/service";
 import { defaultUploadLimits } from "@/lib/dms/config";
 import { MemoryRepository, MemoryStorage } from "@/lib/dms/memory/store";
-import { SAMPLE_WORKSPACE_ID, createSampleSynthesizer, seedSampleStore } from "@/lib/dms/memory/sample-data";
+import { SAMPLE_WORKSPACE_ID, createSampleSynthesizer, seedSampleStore } from "./sample-documents";
 import type { Role, UploadLimits } from "@/lib/dms/types";
 
 export const WS_A = SAMPLE_WORKSPACE_ID;

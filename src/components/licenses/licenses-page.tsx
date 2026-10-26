@@ -12,7 +12,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { expiryText, licenseStatus, missingDocuments, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
-import { sampleLicenses } from "@/lib/licenses/sample-data";
+import { e2eSeed } from "@/lib/e2e-seed";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
 import type { LicenseFormValues } from "@/lib/licenses/validation";
 import { useSetupConfig } from "@/lib/setup/storage";
@@ -30,7 +30,7 @@ type Sort = "expiry" | "name";
 const NOTICE_MS = 8000;
 
 /**
- * Licenses & Renewals. Records live in this component's state (seeded with sample data) until the
+ * Licenses & Renewals. Records live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits.
  */
 export function LicensesPage({ preview }: { preview?: string }) {
@@ -49,9 +49,9 @@ export function LicensesPage({ preview }: { preview?: string }) {
   const [notice, setNotice] = useState<{ id: number; text: string; undo?: () => void } | null>(null);
 
   const setup = useSetupConfig();
-  // Starter records installed by Back Office Setup (only once setup is finished) sit after the samples.
+  // Starter records installed by Back Office Setup (only once setup is finished) sit alongside your own records.
   const licenses = useMemo(
-    () => edited ?? (today ? [...sampleLicenses(today), ...installedLicenses(setup?.completedOn ? setup.templates : [], today)] : []),
+    () => edited ?? (today ? [...(e2eSeed<License>("licenses") ?? []), ...installedLicenses(setup?.completedOn ? setup.templates : [], today)] : []),
     [edited, today, setup],
   );
 

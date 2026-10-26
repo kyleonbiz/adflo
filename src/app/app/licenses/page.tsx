@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function LicensesRoute() {
   return renderAppShell("/app/licenses", () => (
-    <LicensesPage preview="Sample data that lives only in this browser tab. Nothing is saved." />
+    <LicensesPage preview="Records live only in this browser tab. Nothing is saved." />
   ));
 }

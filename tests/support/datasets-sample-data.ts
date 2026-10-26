@@ -1,4 +1,4 @@
-import type { Column } from "./types";
+import type { Column } from "@/lib/datasets/types";
 
 /** A deliberately messy expense export: mixed money and date formats, a blank vendor, a bad amount, a repeated row. */
 export const SAMPLE_NAME = "Q3 expenses";

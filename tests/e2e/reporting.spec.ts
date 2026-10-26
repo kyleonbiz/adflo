@@ -1,5 +1,7 @@
 import { strFromU8, unzipSync } from "fflate";
-import { expect, test, type Page } from "@playwright/test";
+import { SAMPLE_CSV, SAMPLE_NAME } from "../support/datasets-sample-data";
+import { expect, test } from "./fixtures";
+import type { Page } from "@playwright/test";
 
 async function readDownload(download: import("@playwright/test").Download): Promise<Buffer> {
   const chunks: Buffer[] = [];
@@ -7,17 +9,24 @@ async function readDownload(download: import("@playwright/test").Download): Prom
   return Buffer.concat(chunks);
 }
 
-async function loadSample(page: Page) {
+/** Imports a deliberately messy expense export through the import wizard, with Vendor required. */
+async function importExpenses(page: Page) {
   await page.goto("/app/reporting");
-  await page.getByRole("button", { name: "Load sample data" }).click();
+  await page.getByRole("button", { name: "Import CSV" }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Choose a CSV file").setInputFiles({ name: `${SAMPLE_NAME}.csv`, mimeType: "text/csv", buffer: Buffer.from(SAMPLE_CSV) });
+  await dialog.getByRole("button", { name: "Next" }).click();
+  await dialog.getByLabel("Vendor is required").check();
+  await dialog.getByRole("button", { name: "Review" }).click();
+  await dialog.getByRole("button", { name: /^Load \d+ rows?$/ }).click();
 }
 
 test.describe("data entry & reporting module", () => {
-  test("starts empty and loads the sample, setting aside bad and repeated rows", async ({ page }) => {
+  test("starts empty and imports an export, setting aside bad and repeated rows", async ({ page }) => {
     await page.goto("/app/reporting");
     await expect(page.getByRole("note")).toContainText("never uploaded");
     await expect(page.getByRole("heading", { name: "No data loaded" })).toBeVisible();
-    await page.getByRole("button", { name: "Load sample data" }).click();
+    await importExpenses(page);
 
     await expect(page.getByRole("status")).toContainText('Loaded 8 rows into "Q3 expenses". 2 need fixing, 1 repeated.');
     await expect(page.getByTestId("record-row")).toHaveCount(8);
@@ -30,7 +39,7 @@ test.describe("data entry & reporting module", () => {
   });
 
   test("cleans values: dates become readable and money becomes numbers", async ({ page }) => {
-    await loadSample(page);
+    await importExpenses(page);
     const first = page.getByTestId("record-row").first();
     await expect(first).toContainText("Jul 3, 2026");
     await expect(first).toContainText("1,240.50");
@@ -42,7 +51,7 @@ test.describe("data entry & reporting module", () => {
   });
 
   test("report builder: group, measure and calculate", async ({ page }) => {
-    await loadSample(page);
+    await importExpenses(page);
     // Defaults: group by the first text column (Vendor), total of Amount.
     await page.getByLabel("Group by").click();
     await page.getByRole("option", { name: "Category" }).click();
@@ -70,7 +79,7 @@ test.describe("data entry & reporting module", () => {
   });
 
   test("exports CSV, a real Excel workbook, and the report", async ({ page }) => {
-    await loadSample(page);
+    await importExpenses(page);
 
     let download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Export CSV" }).click();
@@ -100,7 +109,7 @@ test.describe("data entry & reporting module", () => {
   });
 
   test("scheduled summary: next date, recipient validation and preview", async ({ page }) => {
-    await loadSample(page);
+    await importExpenses(page);
     const next = page.getByTestId("next-summary");
     await expect(next).toContainText("Next summary:");
     const weekly = await next.textContent();
@@ -171,7 +180,7 @@ test.describe("data entry & reporting module", () => {
 
   test("fits a phone screen without horizontal scroll", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await loadSample(page);
+    await importExpenses(page);
     await expect(page.getByTestId("record-row").first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });

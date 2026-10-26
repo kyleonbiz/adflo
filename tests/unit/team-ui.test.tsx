@@ -8,7 +8,7 @@ import { DocumentManagementPage } from "@/components/dms/document-management-pag
 import type { DmsApi } from "@/lib/dms/client/api";
 import { createLocalApi } from "@/lib/dms/client/local-api";
 import { toDmsError } from "@/lib/dms/errors";
-import { SAMPLE_USER_ID } from "@/lib/dms/memory/sample-data";
+import { SAMPLE_USER_ID } from "../support/sample-documents";
 import type { Role, ShareLinkInfo } from "@/lib/dms/types";
 import { WS_A, makeWorld } from "../support/world";
 
@@ -162,7 +162,7 @@ describe("TeamDialog", () => {
 describe("page wiring", () => {
   it("does not offer the Team button in the public demo", async () => {
     render(<DocumentManagementPage api={createLocalApi()} />);
-    await waitFor(() => expect(screen.queryAllByTestId("document-card").length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getByText(/Preview workspace/)).toBeTruthy());
     expect(screen.queryByRole("button", { name: "Team" })).toBeNull();
   });
 });

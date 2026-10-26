@@ -5,7 +5,7 @@ import {
   needsAttention, normalizeName, onboardingProgress, reopen, setActive, submitForApproval, summarize,
   vendorAlerts, vendorsToCsv,
 } from "@/lib/vendors/logic";
-import { sampleVendors } from "@/lib/vendors/sample-data";
+import { sampleVendors } from "../support/vendors-sample-data";
 import type { Vendor, VendorDocument } from "@/lib/vendors/types";
 import { documentFormSchema, vendorFormSchema } from "@/lib/vendors/validation";
 

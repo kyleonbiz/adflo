@@ -5,7 +5,7 @@ import { foldLine, icsEscape, toIcs } from "@/lib/admin/ics";
 import {
   calendarEvents, createRequest, decide, dueRoutines, isOverdue, notifications, runRoutines, setStatus, summarize,
 } from "@/lib/admin/logic";
-import { sampleRequests, sampleRoutines } from "@/lib/admin/sample-data";
+import { sampleRequests, sampleRoutines } from "../support/admin-sample-data";
 import { approvalReasons, suggestCategory, suggestPriority } from "@/lib/admin/triage";
 import { requestFormSchema, routineFormSchema } from "@/lib/admin/validation";
 
