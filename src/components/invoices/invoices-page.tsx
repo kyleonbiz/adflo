@@ -12,7 +12,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import {
-  formatMoney, invoiceAlerts, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
+  formatMoney, hasNextInvoice, invoiceAlerts, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
 import { sampleInvoices } from "@/lib/invoices/sample-data";
@@ -20,7 +20,14 @@ import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
-import { SEVERITY_BADGE, STATE_LABEL } from "./status";
+import { SEVERITY_BADGE } from "./status";
+
+/** "sent" matches every sent invoice however close to due; the rest match one state. */
+type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
+const FILTERS: StatusFilter[] = ["draft", "sent", "due_soon", "due_today", "overdue", "paid", "void"];
+const FILTER_LABEL: Record<StatusFilter, string> = { all: "All statuses", sent: "Sent (unpaid)", draft: "Draft", due_soon: "Due soon", due_today: "Due today", overdue: "Overdue", paid: "Paid", void: "Void" };
+const matchesFilter = (i: Invoice, f: StatusFilter, today: string) =>
+  f === "all" || (f === "sent" ? i.status === "sent" : invoiceState(i, today) === f);
 
 const newId = () => `inv-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -41,7 +48,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   const today = useToday();
   const [edited, setEdited] = useState<Invoice[] | null>(null);
   const [query, setQuery] = useState("");
-  const [stateFilter, setStateFilter] = useState<"all" | InvoiceState>("all");
+  const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
   const [formFor, setFormFor] = useState<Invoice | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Invoice | null>(null);
   const [notice, setNotice] = useState("");
@@ -68,6 +75,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
     onPay: (i) => { patch(i.id, (x) => markPaid(x, today)); setNotice(`${i.number} marked as paid.`); },
     onVoid: (i) => { patch(i.id, (x) => ({ ...x, status: "void" })); setNotice(`${i.number} voided.`); },
     onNext: (i) => {
+      if (hasNextInvoice(i, invoices)) { setNotice(`The next invoice after ${i.number} already exists.`); return; }
       const next = nextRecurringInvoice(i, invoices, newId());
       if (!next) return;
       update((all) => [...all, next]);
@@ -91,7 +99,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
   const attention = needsAttention(invoices, today);
   const q = query.trim().toLowerCase();
   const visible = invoices
-    .filter((i) => stateFilter === "all" || invoiceState(i, today) === stateFilter)
+    .filter((i) => matchesFilter(i, stateFilter, today))
     .filter((i) => !q || [i.number, i.client, i.description].some((f) => f.toLowerCase().includes(q)))
     .sort((a, b) => (a.dueOn < b.dueOn ? 1 : a.dueOn > b.dueOn ? -1 : 0));
 
@@ -161,11 +169,11 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
             />
           </div>
           <div className="sm:w-52">
-            <Select value={stateFilter} onValueChange={(v) => setStateFilter(v as typeof stateFilter)}>
+            <Select value={stateFilter} onValueChange={(v) => setStateFilter(v as StatusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
-                {(Object.keys(STATE_LABEL) as InvoiceState[]).map((s) => <SelectItem key={s} value={s}>{STATE_LABEL[s]}</SelectItem>)}
+                {FILTERS.map((s) => <SelectItem key={s} value={s}>{FILTER_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

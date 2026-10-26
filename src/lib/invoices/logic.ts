@@ -56,8 +56,8 @@ export function nextReminder(inv: Invoice, today: string): { on: string; daysBef
 }
 
 /**
- * Overdue notices repeat weekly after the due date. Returns the next one on or after `today`
- * for an overdue invoice.
+ * Overdue notices repeat weekly after the due date. Returns the next one strictly after `today`
+ * for an overdue invoice (a notice falling on `today` is treated as already sent).
  */
 export function nextOverdueNotice(inv: Invoice, today: string): string | null {
   if (invoiceState(inv, today) !== "overdue") return null;
@@ -101,6 +101,14 @@ export function nextRecurringInvoice(inv: Invoice, all: Invoice[], id: string): 
   };
 }
 
+/** True when the next invoice in `inv`'s recurring series already exists, so it is not created twice. */
+export function hasNextInvoice(inv: Invoice, all: Invoice[]): boolean {
+  if (inv.recurrence === "none") return false;
+  const issuedOn = advance(inv.issuedOn, inv.recurrence);
+  return all.some((o) => o.id !== inv.id && o.client === inv.client && o.recurrence === inv.recurrence
+    && o.description === inv.description && o.issuedOn === issuedOn);
+}
+
 export const markSent = (inv: Invoice): Invoice => ({ ...inv, status: "sent", paidOn: null });
 export const markPaid = (inv: Invoice, today: string): Invoice => ({ ...inv, status: "paid", paidOn: today });
 
@@ -137,7 +145,7 @@ export function invoicesToCsv(invoices: Invoice[], today: string): string {
   const header = ["Number", "Client", "Description", "Amount", "Issued", "Due", "Status", "Days overdue", "Paid on", "Recurrence"];
   const rows = invoices.map((i) => [
     i.number, i.client, i.description, (i.amountCents / 100).toFixed(2), i.issuedOn, i.dueOn,
-    invoiceState(i, today), daysOverdue(i, today), i.paidOn ?? "", i.recurrence,
+    i.status, daysOverdue(i, today), i.paidOn ?? "", i.recurrence,
   ]);
   return [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }

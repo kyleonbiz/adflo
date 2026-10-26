@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
   invoiceAlerts, invoiceState, invoicesToCsv, markPaid, markSent, needsAttention, nextInvoiceNumber,
-  nextOverdueNotice, nextRecurringInvoice, nextReminder, summarize, formatMoney, daysOverdue,
+  nextOverdueNotice, nextRecurringInvoice, nextReminder, hasNextInvoice, summarize, formatMoney, daysOverdue,
 } from "@/lib/invoices/logic";
 import { sampleInvoices } from "@/lib/invoices/sample-data";
 import type { Invoice } from "@/lib/invoices/types";
@@ -119,6 +119,7 @@ describe("csv export", () => {
     expect(row).toContain('"Smith, ""Bob"""');
     expect(row).toContain(`"'=HYPERLINK(""http://evil"")"`);
     expect(row).toContain(",100.00,");
+    expect(row).toContain(",sent,"); // stored status, matching the UI, not the computed state
   });
 });
 
@@ -149,5 +150,15 @@ describe("money and form validation", () => {
     const r = invoiceFormSchema.safeParse({ ...valid, ...patch });
     expect(r.success).toBe(false);
     if (!r.success) expect(JSON.stringify(r.error.issues)).toContain(text);
+  });
+});
+
+describe("hasNextInvoice", () => {
+  const base = inv({ id: "a", recurrence: "monthly", issuedOn: "2026-10-01", dueOn: "2026-10-31" });
+  it("detects an already-created next invoice and ignores one-time invoices", () => {
+    expect(hasNextInvoice(base, [base])).toBe(false);
+    const next = nextRecurringInvoice(base, [base], "b")!;
+    expect(hasNextInvoice(base, [base, next])).toBe(true);
+    expect(hasNextInvoice(inv(), [inv()])).toBe(false);
   });
 });

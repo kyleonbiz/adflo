@@ -17,6 +17,10 @@ test.describe("invoices module", () => {
     await page.getByRole("combobox", { name: "Filter by status" }).click();
     await page.getByRole("option", { name: "Overdue" }).click();
     await expect(page.getByTestId("invoice-card")).toHaveCount(2);
+
+    await page.getByRole("combobox", { name: "Filter by status" }).click();
+    await page.getByRole("option", { name: "Sent (unpaid)" }).click();
+    await expect(page.getByTestId("invoice-card")).toHaveCount(4); // includes overdue and due-soon
   });
 
   test("mark sent, mark paid and create the next recurring invoice", async ({ page }) => {

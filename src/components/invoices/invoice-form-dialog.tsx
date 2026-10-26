@@ -50,7 +50,7 @@ export function InvoiceFormDialog({
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: InvoiceFormValues) => void;
 }) {
-  const { register, control, handleSubmit, reset, formState } = useForm<InvoiceFormInput, unknown, InvoiceFormValues>({
+  const { register, control, handleSubmit, reset, setError, formState } = useForm<InvoiceFormInput, unknown, InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: defaults(invoice, today, existing),
   });
@@ -63,6 +63,11 @@ export function InvoiceFormDialog({
   }, [open, invoice, today, reset]);
 
   const submit = handleSubmit((values) => {
+    const number = values.number.toLowerCase();
+    if (existing.some((i) => i.id !== invoice?.id && i.number.toLowerCase() === number)) {
+      setError("number", { message: "That invoice number is already in use" });
+      return;
+    }
     onSubmit(values);
     onOpenChange(false);
   });
