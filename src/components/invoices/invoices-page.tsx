@@ -15,6 +15,7 @@ import {
   formatMoney, hasNextInvoice, invoiceAlerts, invoicesToCsv, invoiceState, markPaid, markSent, needsAttention,
   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
+import { invoicePath } from "@/lib/invoices/share";
 import { sampleInvoices } from "@/lib/invoices/sample-data";
 import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
@@ -74,6 +75,11 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
     onSend: (i) => { patch(i.id, markSent); setNotice(`${i.number} marked as sent.`); },
     onPay: (i) => { patch(i.id, (x) => markPaid(x, today)); setNotice(`${i.number} marked as paid.`); },
     onVoid: (i) => { patch(i.id, (x) => ({ ...x, status: "void" })); setNotice(`${i.number} voided.`); },
+    onCopyLink: async (i) => {
+      const link = `${window.location.origin}${invoicePath(i)}`;
+      try { await navigator.clipboard.writeText(link); setNotice(`Link to ${i.number} copied.`); }
+      catch { setNotice(`Copy this link to ${i.number}: ${link}`); }
+    },
     onNext: (i) => {
       if (hasNextInvoice(i, invoices)) { setNotice(`The next invoice after ${i.number} already exists.`); return; }
       const next = nextRecurringInvoice(i, invoices, newId());

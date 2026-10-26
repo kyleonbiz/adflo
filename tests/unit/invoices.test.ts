@@ -162,3 +162,18 @@ describe("hasNextInvoice", () => {
     expect(hasNextInvoice(inv(), [inv()])).toBe(false);
   });
 });
+
+describe("shared invoice link", () => {
+  it("round-trips only the client-facing fields", async () => {
+    const { encodeInvoice, decodeInvoice, invoiceHtml } = await import("@/lib/invoices/share");
+    const shared = decodeInvoice(encodeInvoice(inv({ client: "Zoë <b>", notes: "Thanks" })))!;
+    expect(shared.client).toBe("Zoë <b>");
+    expect(shared).not.toHaveProperty("reminderDays");
+    expect(invoiceHtml(shared)).toContain("Zoë &lt;b&gt;");
+  });
+  it("rejects tampered or malformed tokens", async () => {
+    const { decodeInvoice } = await import("@/lib/invoices/share");
+    expect(decodeInvoice("not*valid")).toBeNull();
+    expect(decodeInvoice("e30")).toBeNull(); // {}
+  });
+});
