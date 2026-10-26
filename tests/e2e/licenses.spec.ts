@@ -25,13 +25,51 @@ test.describe("platform modules", () => {
 
     const permit = page.getByTestId("license-card").filter({ hasText: "City Operating Permit" });
     await expect(permit.getByText("Expired", { exact: true })).toBeVisible();
-    await permit.getByRole("button", { name: /Required documents/ }).click();
+    // Documents open by themselves when some are missing and the renewal is close.
     await permit.getByRole("checkbox", { name: "Signed application" }).check();
 
     await permit.getByRole("button", { name: "Mark renewed" }).click();
+    const renew = page.getByRole("dialog");
+    await expect(renew.getByLabel("New expiry date")).not.toHaveValue("");
+    await renew.getByRole("button", { name: "Confirm renewal" }).click();
     await expect(page.getByRole("status")).toContainText("City Operating Permit renewed");
     await expect(permit.getByText("Active", { exact: true })).toBeVisible();
     await expect(page.getByText("Renew City Operating Permit")).toHaveCount(0);
+
+    // The confirmation offers Undo.
+    await page.getByRole("status").getByRole("button", { name: "Undo" }).click();
+    await expect(permit.getByText("Expired", { exact: true })).toBeVisible();
+    await expect(page.getByText("Renew City Operating Permit")).toBeVisible();
+  });
+
+  test("licenses: summary tiles filter the list and tasks start a renewal", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await page.getByRole("region", { name: "Summary" }).getByRole("button", { name: /Expired/ }).click();
+    await expect(page.getByTestId("license-card")).toHaveCount(1);
+    await page.getByRole("region", { name: "Summary" }).getByRole("button", { name: /Expired/ }).click();
+    await expect(page.getByTestId("license-card")).toHaveCount(5);
+
+    await page.getByRole("button", { name: "Start renewal: Renew City Operating Permit" }).click();
+    const card = page.getByTestId("license-card").filter({ hasText: "City Operating Permit" });
+    await expect(page.getByRole("status")).toContainText("renewal in progress");
+    await expect(card.getByRole("combobox", { name: /Renewal stage/ })).toContainText("In progress");
+    await expect(card.getByRole("checkbox", { name: "Signed application" })).toBeVisible();
+  });
+
+  test("licenses: the add form suggests documents and the expiry date", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await page.getByRole("button", { name: "Add license" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByLabel("Required documents (one per line)")).toHaveValue(/Annual report/);
+    await dialog.getByLabel("Renewal term (months)").fill("6");
+    await expect(dialog.getByLabel("Expires on")).not.toHaveValue("");
+    await dialog.getByRole("button", { name: "90 days" }).click();
+    await expect(dialog.getByLabel("Remind me (days before expiry)")).toHaveValue("90, 60, 30, 7");
+    await dialog.getByLabel("License name").fill("Test permit");
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    const card = page.getByTestId("license-card").filter({ hasText: "Test permit" });
+    await card.getByRole("button", { name: /Required documents/ }).click();
+    await expect(card.getByRole("checkbox", { name: "Renewal fee receipt" })).toBeVisible();
   });
 
   test("licenses: add, validate, edit and delete", async ({ page }) => {

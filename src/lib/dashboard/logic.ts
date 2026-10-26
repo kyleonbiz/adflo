@@ -54,10 +54,12 @@ function licenseItems(licenses: License[], today: string, base: string): Attenti
     const status = licenseStatus(l, today);
     if (status === "active") continue;
     const expired = status === "expired";
+    const submitted = l.stage === "submitted";
+    const open = status === "renewal_window";
     out.push({
       id: `lic-${l.id}`, area: "Licenses", href: `${base}/licenses`,
-      severity: expired ? "critical" : "warning",
-      label: expired ? "Expired" : "Expiring",
+      severity: submitted ? "info" : open ? "info" : expired ? "critical" : "warning",
+      label: submitted ? "Submitted" : expired ? "Expired" : open ? "Renewal open" : "Expiring",
       text: `${l.name} ${expired ? "expired" : "expires"} ${formatDayLong(l.expiresOn)}`,
     });
   }
@@ -79,7 +81,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
       { id: "overdue-invoices", label: "Overdue invoices", value: String(inv.overdueCount), href: `${base}/invoices`, tone: tone(inv.overdueCount, "danger") },
     ] },
     { title: "Compliance", tiles: [
-      { id: "licenses", label: "Licenses expiring or expired", value: String(lic.expiring + lic.expired), href: `${base}/licenses`, tone: tone(lic.expiring + lic.expired, "warning") },
+      { id: "licenses", label: "Licenses to renew", value: String(lic.renewalWindow + lic.expiring + lic.expired), href: `${base}/licenses`, tone: tone(lic.expiring + lic.expired, "warning") },
       { id: "vendors", label: "Vendors awaiting approval", value: String(ven.pendingApproval), href: `${base}/vendors`, tone: tone(ven.pendingApproval, "warning") },
     ] },
     { title: "Work", tiles: [

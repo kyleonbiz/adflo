@@ -107,7 +107,7 @@ export function installedLicenses(ids: readonly string[], today: string): Licens
       ? t.items.map((it, i): License => ({
           id: `tpl-${t.id}-${i + 1}`, name: it.name, category: it.category, issuer: it.issuer, number: "", holder: "",
           issuedOn: today, expiresOn: addMonths(today, it.termMonths), renewalTermMonths: it.termMonths, reminderDays: it.reminderDays,
-          stage: "not_started", notes: "Starter record: enter the real license number and dates.",
+          stage: "not_started", datesConfirmed: false, notes: "Starter record: enter the real license number and dates.",
           requiredDocuments: it.documents.map((label, j) => ({ id: `tpl-${t.id}-${i + 1}-d${j + 1}`, label, received: false })),
         }))
       : [],
