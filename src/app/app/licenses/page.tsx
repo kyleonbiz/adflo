@@ -5,8 +5,9 @@ import { renderAppShell } from "@/lib/app-shell";
 export const metadata: Metadata = { title: "Licenses & Renewals" };
 export const dynamic = "force-dynamic";
 
-export default function LicensesRoute() {
+export default async function LicensesRoute({ searchParams }: PageProps<"/app/licenses">) {
+  const { q } = await searchParams;
   return renderAppShell("/app/licenses", () => (
-    <LicensesPage preview="Records live only in this browser tab. Nothing is saved." />
+    <LicensesPage initialQuery={typeof q === "string" ? q : ""} preview="Records live only in this browser tab. Nothing is saved." />
   ));
 }

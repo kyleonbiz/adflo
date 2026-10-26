@@ -35,11 +35,11 @@ function download(text: string, name: string, type: string) {
  * Forms & Paperwork. Forms and submissions live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
-export function FormsPage({ preview }: { preview?: string }) {
+export function FormsPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
   const today = useToday();
   const [editedForms, setEditedForms] = useState<FormTemplate[] | null>(null);
   const [editedSubs, setEditedSubs] = useState<Submission[] | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [builderFor, setBuilderFor] = useState<FormTemplate | "new" | null>(null);
   const [filling, setFilling] = useState<FormTemplate | null>(null);
   const [deleting, setDeleting] = useState<FormTemplate | null>(null);

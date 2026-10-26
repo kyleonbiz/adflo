@@ -5,8 +5,9 @@ import { renderAppShell } from "@/lib/app-shell";
 export const metadata: Metadata = { title: "CRM & Data" };
 export const dynamic = "force-dynamic";
 
-export default function ContactsRoute() {
+export default async function ContactsRoute({ searchParams }: PageProps<"/app/contacts">) {
+  const { q } = await searchParams;
   return renderAppShell("/app/contacts", () => (
-    <ContactsPage preview="Records live only in this browser tab. Nothing is saved, and imported files never leave your browser." />
+    <ContactsPage initialQuery={typeof q === "string" ? q : ""} preview="Records live only in this browser tab. Nothing is saved, and imported files never leave your browser." />
   ));
 }

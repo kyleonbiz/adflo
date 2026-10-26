@@ -50,7 +50,7 @@ const isLive = (p: Project) => p.status !== "completed" && p.status !== "on_hold
  * Project administration. Projects and tasks live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
-export function ProjectsPage({ preview }: { preview?: string }) {
+export function ProjectsPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
   const today = useToday();
   if (!today) {
     return (
@@ -61,17 +61,17 @@ export function ProjectsPage({ preview }: { preview?: string }) {
       </div>
     );
   }
-  return <ProjectsView today={today} preview={preview} />;
+  return <ProjectsView today={today} preview={preview} initialQuery={initialQuery} />;
 }
 
-function ProjectsView({ today, preview }: { today: string; preview?: string }) {
+function ProjectsView({ today, preview, initialQuery }: { today: string; preview?: string; initialQuery: string }) {
   const [projects, setProjects] = useState<Project[]>(() => e2eSeed<Project>("projects") ?? []);
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       (e2eSeed<Project>("projects") ?? []).filter((p) => isLive(p) && overdueTasks(p, today).length > 0).slice(0, AUTO_OPEN).map((p) => [p.id, true]),
     ),
   );
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<"all" | ProjectStatus>("all");
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [sort, setSort] = useState<ProjectSort>("due");

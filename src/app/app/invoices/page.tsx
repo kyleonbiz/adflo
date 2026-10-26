@@ -6,8 +6,8 @@ export const metadata: Metadata = { title: "Invoices" };
 export const dynamic = "force-dynamic";
 
 export default async function InvoicesRoute({ searchParams }: PageProps<"/app/invoices">) {
-  const { new: startNew } = await searchParams;
+  const { new: startNew, q } = await searchParams;
   return renderAppShell("/app/invoices", () => (
-    <InvoicesPage startNew={startNew === "1"} preview="Records live only in this browser tab. Nothing is saved and no emails are sent." />
+    <InvoicesPage initialQuery={typeof q === "string" ? q : ""} startNew={startNew === "1"} preview="Records live only in this browser tab. Nothing is saved and no emails are sent." />
   ));
 }
