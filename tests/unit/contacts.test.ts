@@ -5,7 +5,7 @@ import { runImport } from "@/lib/import/run";
 import {
   IMPORT_FIELDS, TEMPLATE_CSV, applyImport, contactDuplicates, contactKey, contactsToCsv, mergeContacts, parseContact, summarize,
 } from "@/lib/contacts/logic";
-import { sampleContacts } from "@/lib/contacts/sample-data";
+import { sampleContacts } from "../support/contacts-sample-data";
 import type { Contact } from "@/lib/contacts/types";
 
 const TODAY = "2026-10-25";

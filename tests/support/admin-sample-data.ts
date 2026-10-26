@@ -1,6 +1,6 @@
 import { addDays } from "@/lib/dates";
-import { createRequest, decide, setStatus } from "./logic";
-import type { AdminRequest, Routine } from "./types";
+import { createRequest, decide, setStatus } from "@/lib/admin/logic";
+import type { AdminRequest, Routine } from "@/lib/admin/types";
 
 export function sampleRequests(today: string): AdminRequest[] {
   const make = (id: string, title: string, description: string, requester: string, category: AdminRequest["category"], priority: AdminRequest["priority"], dueOn: string | null, source: AdminRequest["source"] = "manual") =>

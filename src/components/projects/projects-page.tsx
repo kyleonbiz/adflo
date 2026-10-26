@@ -12,7 +12,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { completeTask, projectsReport, reopenTask, summarize, taskAlerts } from "@/lib/projects/logic";
-import { sampleProjects } from "@/lib/projects/sample-data";
+import { e2eSeed } from "@/lib/e2e-seed";
 import { PROJECT_STATUSES, type Project, type ProjectStatus, type Task } from "@/lib/projects/types";
 import type { ProjectFormValues, TaskFormValues } from "@/lib/projects/validation";
 import { ProjectCard, type ProjectActions } from "./project-card";
@@ -33,7 +33,7 @@ function downloadText(text: string, name: string) {
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "project";
 
 /**
- * Project administration. Projects and tasks live in this component's state (seeded with sample data)
+ * Project administration. Projects and tasks live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
 export function ProjectsPage({ preview }: { preview?: string }) {
@@ -45,7 +45,7 @@ export function ProjectsPage({ preview }: { preview?: string }) {
   const [deleting, setDeleting] = useState<Project | null>(null);
   const [notice, setNotice] = useState("");
 
-  const projects = useMemo(() => edited ?? (today ? sampleProjects(today) : []), [edited, today]);
+  const projects = useMemo(() => edited ?? e2eSeed<Project>("projects") ?? [], [edited]);
 
   if (!today) {
     return (

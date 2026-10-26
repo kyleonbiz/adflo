@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { DocumentManagementPage } from "@/components/dms/document-management-page";
 import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/dms/states";
 import { StorageUsageIndicator } from "@/components/dms/storage-usage-indicator";
-import { createLocalApi } from "@/lib/dms/client/local-api";
+import { createDemoApi as createLocalApi } from "../support/demo-api";
 import { DmsError } from "@/lib/dms/errors";
 
 const cards = () => screen.queryAllByTestId("document-card");

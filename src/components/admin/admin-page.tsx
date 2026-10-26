@@ -17,7 +17,7 @@ import {
   EVERY_TEXT, calendarEvents, createRequest, decide, dueRoutines, dueText, isOverdue, notifications, runRoutines, setStatus, summarize,
   type NewRequest,
 } from "@/lib/admin/logic";
-import { sampleRequests, sampleRoutines } from "@/lib/admin/sample-data";
+import { e2eSeed } from "@/lib/e2e-seed";
 import { CATEGORIES, type AdminRequest, type Category, type RequestStatus, type Routine } from "@/lib/admin/types";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedRoutines } from "@/lib/setup/templates";
@@ -83,7 +83,7 @@ function RequestCard({
 }
 
 /**
- * Admin Support. Requests and recurring tasks live in this component's state (seeded with sample
+ * Admin Support. Requests and recurring tasks live in this component's state (starting empty
  * data) until the database is connected. Categories and approval flags come from fixed keyword rules,
  * not an AI service, and the digest is shown on screen rather than emailed.
  */
@@ -99,11 +99,11 @@ export function AdminPage({ preview, startNew }: { preview?: string; startNew?: 
   const [deleting, setDeleting] = useState<AdminRequest | null>(null);
   const [notice, setNotice] = useState("");
 
-  const requests = useMemo(() => editedRequests ?? (today ? sampleRequests(today) : []), [editedRequests, today]);
+  const requests = useMemo(() => editedRequests ?? e2eSeed<AdminRequest>("requests") ?? [], [editedRequests]);
   const setup = useSetupConfig();
-  // Recurring tasks installed by Back Office Setup (only once setup is finished) sit after the samples.
+  // Recurring tasks installed by Back Office Setup (only once setup is finished) sit alongside your own records.
   const routines = useMemo(
-    () => editedRoutines ?? (today ? [...sampleRoutines(today), ...installedRoutines(setup?.completedOn ? setup.templates : [], today)] : []),
+    () => editedRoutines ?? (today ? [...(e2eSeed<Routine>("routines") ?? []), ...installedRoutines(setup?.completedOn ? setup.templates : [], today)] : []),
     [editedRoutines, today, setup],
   );
 

@@ -10,7 +10,7 @@ import type { Project } from "@/lib/projects/types";
 import { summarize as vendorSummary } from "@/lib/vendors/logic";
 import type { Vendor } from "@/lib/vendors/types";
 
-/** Everything the dashboard reads. Today it comes from sample data; swap `loadDashboardSources` for the database. */
+/** Everything the dashboard reads. It is empty until the services are stored in the database; fill `loadDashboardSources` for the database. */
 export interface DashboardSources {
   invoices: Invoice[];
   licenses: License[];

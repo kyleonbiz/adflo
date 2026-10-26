@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test.describe("projects module", () => {
   test("summary, attention list, health and status filter", async ({ page }) => {

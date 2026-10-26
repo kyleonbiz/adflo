@@ -7,6 +7,6 @@ export const dynamic = "force-dynamic";
 
 export default function ContactsRoute() {
   return renderAppShell("/app/contacts", () => (
-    <ContactsPage preview="Sample data that lives only in this browser tab. Nothing is saved, and imported files never leave your browser." />
+    <ContactsPage preview="Records live only in this browser tab. Nothing is saved, and imported files never leave your browser." />
   ));
 }

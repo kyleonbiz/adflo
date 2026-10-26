@@ -1,4 +1,6 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { addDocuments } from "./docs";
+import { expect, test } from "./fixtures";
+import type { Locator, Page } from "@playwright/test";
 
 /**
  * Responsive checks at tablet (820 px) and small-phone (360 px) widths:
@@ -14,7 +16,8 @@ const VIEWPORTS = [
 /** First visits compile pages in the dev server, so allow for a slow first render. */
 async function gotoReady(page: Page, url: string) {
   await page.goto(url);
-  await expect(page.getByTestId("document-card").first()).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible({ timeout: 45_000 });
+  await addDocuments(page);
 }
 
 async function noHorizontalScroll(page: Page, where: string) {
@@ -121,7 +124,7 @@ for (const vp of VIEWPORTS) {
     test("filters and folders do not overflow", async ({ page }) => {
       await gotoReady(page, "/app");
       await page.getByRole("button", { name: /^Contracts, / }).click();
-      await expect(page.getByTestId("document-card")).toHaveCount(3);
+      await expect(page.getByTestId("empty-state")).toBeVisible();
       await nothingClippedHorizontally(page, page.getByTestId("workspace"), "workspace");
       await page.getByRole("button", { name: "Starred" }).click();
       await noHorizontalScroll(page, "starred view");

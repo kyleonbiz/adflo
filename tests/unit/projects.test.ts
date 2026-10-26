@@ -3,7 +3,7 @@ import { addDays } from "@/lib/dates";
 import {
   completeTask, overdueTasks, progress, projectHealth, projectsReport, reopenTask, summarize, taskAlerts, taskState,
 } from "@/lib/projects/logic";
-import { sampleProjects } from "@/lib/projects/sample-data";
+import { sampleProjects } from "../support/projects-sample-data";
 import type { Project, Task } from "@/lib/projects/types";
 import { projectFormSchema, taskFormSchema } from "@/lib/projects/validation";
 

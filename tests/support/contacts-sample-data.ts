@@ -1,5 +1,5 @@
 import { addDays } from "@/lib/dates";
-import type { Contact } from "./types";
+import type { Contact } from "@/lib/contacts/types";
 
 export function sampleContacts(today: string): Contact[] {
   const c = (id: string, name: string, email: string, phone: string, company: string, category: Contact["category"], ago: number, notes = ""): Contact =>

@@ -1,4 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "./fixtures";
+import type { Page } from "@playwright/test";
 
 const NAMES = [
   "Home", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
@@ -47,14 +48,19 @@ test.describe("module sidebar on a wide screen", () => {
     await page.goto("/app/overview");
     await nav(page).getByRole("link", { name: "Documents", exact: true }).click();
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByTestId("document-card").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
     await expect(nav(page).getByRole("link", { name: "Documents", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(nav(page)).toBeVisible();
   });
 
   test("stays in view while a long page scrolls", async ({ page }) => {
     await page.goto("/app/reporting");
-    await page.getByRole("button", { name: "Load sample data" }).click();
+    await page.getByRole("button", { name: "Import CSV" }).first().click();
+    const rows = Array.from({ length: 60 }, (_, i) => `Item ${i + 1},${i + 1}`).join("\n");
+    await page.getByRole("dialog").getByLabel("Or paste CSV text").fill(`Item,Qty\n${rows}`);
+    await page.getByRole("dialog").getByRole("button", { name: "Next" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Review" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: /^Load \d+ rows?$/ }).click();
     await expect(page.getByTestId("record-row").first()).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     const box = await nav(page).getByRole("link", { name: "Home", exact: true }).boundingBox();
@@ -70,7 +76,7 @@ test.describe("module sidebar on a wide screen", () => {
 
   test("Documents is only highlighted on its own page", async ({ page }) => {
     await page.goto("/app");
-    await expect(page.getByText("Preview · sample data")).toBeVisible();
+    await expect(page.getByText("Preview", { exact: true })).toBeVisible();
     await expect(nav(page).getByRole("link", { name: "Documents", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(nav(page).getByRole("link", { name: "Home", exact: true })).toHaveAttribute("href", "/app/overview");
     await nav(page).getByRole("link", { name: "Licenses & Renewals", exact: true }).click();

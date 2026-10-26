@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { applyImport, contactDuplicates, contactsToCsv, mergeContacts, summarize } from "@/lib/contacts/logic";
-import { sampleContacts } from "@/lib/contacts/sample-data";
+import { e2eSeed } from "@/lib/e2e-seed";
 import { CONTACT_CATEGORIES, type Contact, type ContactCategory, type ContactInput } from "@/lib/contacts/types";
 import type { ImportOutcome } from "@/lib/import/run";
 import { ContactFormDialog } from "./contact-form-dialog";
@@ -32,7 +32,7 @@ function downloadCsv(text: string, name: string) {
 }
 
 /**
- * CRM & Data. Contacts live in this component's state (seeded with sample data) until the database is
+ * CRM & Data. Contacts live in this component's state (starting empty) until the database is
  * connected, so nothing here is saved between visits. Imports are read in the browser and never uploaded.
  */
 export function ContactsPage({ preview }: { preview?: string }) {
@@ -45,7 +45,7 @@ export function ContactsPage({ preview }: { preview?: string }) {
   const [deleting, setDeleting] = useState<Contact | null>(null);
   const [notice, setNotice] = useState("");
 
-  const contacts = useMemo(() => edited ?? (today ? sampleContacts(today) : []), [edited, today]);
+  const contacts = useMemo(() => edited ?? e2eSeed<Contact>("contacts") ?? [], [edited]);
 
   if (!today) {
     return (

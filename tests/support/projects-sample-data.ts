@@ -1,5 +1,5 @@
 import { addDays } from "@/lib/dates";
-import type { Project, Task } from "./types";
+import type { Project, Task } from "@/lib/projects/types";
 
 let seq = 0;
 function task(title: string, assignee: string, dueOn: string | null, over: Partial<Task> = {}): Task {
