@@ -12,6 +12,7 @@ import { addDays, isDay } from "@/lib/dates";
 import { PROJECT_TEMPLATES, templateById, templateDueOn, type TemplateTask } from "@/lib/projects/templates";
 import { PROJECT_STATUSES, type Project } from "@/lib/projects/types";
 import { projectFormSchema, type ProjectFormInput, type ProjectFormValues } from "@/lib/projects/validation";
+import { titleCase } from "@/lib/text";
 
 function defaults(project: Project | undefined, today: string): ProjectFormInput {
   if (project) {
@@ -100,12 +101,12 @@ export function ProjectFormDialog({
           <div className="grid flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">
             {!project && (
               <div className="sm:col-span-2">
-                <Field id="proj-template" label="Start from a template">
+                <Field id="proj-template" label="Start From A Template">
                   <Select value={templateId} onValueChange={pickTemplate}>
                     <SelectTrigger id="proj-template"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="blank">Blank Project</SelectItem>
-                      {PROJECT_TEMPLATES.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                      {PROJECT_TEMPLATES.map((t) => <SelectItem key={t.id} value={t.id}>{titleCase(t.name)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                   {template && <p className="text-xs text-muted-foreground">{template.summary}</p>}
@@ -113,7 +114,7 @@ export function ProjectFormDialog({
               </div>
             )}
             <div className="sm:col-span-2">
-              <Field id="proj-name" label="Project name" error={errors.name?.message}>
+              <Field id="proj-name" label="Project Name" error={errors.name?.message}>
                 <Input id="proj-name" autoComplete="off" {...invalid("name")} {...register("name")} />
               </Field>
             </div>
@@ -128,16 +129,16 @@ export function ProjectFormDialog({
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="proj-status"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                      {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{titleCase(s.label)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 )}
               />
             </Field>
-            <Field id="proj-startOn" label="Starts on" error={errors.startOn?.message}>
+            <Field id="proj-startOn" label="Starts On" error={errors.startOn?.message}>
               <Input id="proj-startOn" type="date" {...invalid("startOn")} {...register("startOn")} />
             </Field>
-            <Field id="proj-dueOn" label="Due on" error={errors.dueOn?.message}>
+            <Field id="proj-dueOn" label="Due On" error={errors.dueOn?.message}>
               <Input id="proj-dueOn" type="date" {...invalid("dueOn")} {...register("dueOn")} />
             </Field>
             <div className="sm:col-span-2">

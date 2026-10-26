@@ -71,7 +71,7 @@ export function FolderCard({ name, count, color, active, isAll, onSelect, onRena
             )}
             {onDelete && (
               <DropdownMenuItem destructive onSelect={onDelete}>
-                <Trash2 /> Delete folder
+                <Trash2 /> Delete Folder
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>

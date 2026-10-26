@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { findMatches, validateContact, type ContactField } from "@/lib/contacts/logic";
 import { CONTACT_CATEGORIES, type Contact, type ContactInput } from "@/lib/contacts/types";
+import { titleCase } from "@/lib/text";
 
 const FIELD_ORDER: ContactField[] = ["name", "company", "email", "phone", "category", "lastContacted", "notes"];
 
@@ -72,10 +73,10 @@ function Body({
           <Field id="contact-category" label="Category" error={errors.category}>
             <Select value={v.category} onValueChange={(c) => setV((s) => ({ ...s, category: c }))}>
               <SelectTrigger id="contact-category"><SelectValue /></SelectTrigger>
-              <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
-          <Field id="contact-lastContacted" label="Last contacted" error={errors.lastContacted}>
+          <Field id="contact-lastContacted" label="Last Contacted" error={errors.lastContacted}>
             <Input type="date" max={today} {...bind("lastContacted")} />
           </Field>
           <div className="sm:col-span-2">

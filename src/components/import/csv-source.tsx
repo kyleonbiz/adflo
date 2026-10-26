@@ -53,7 +53,7 @@ export function CsvSource({
         {input.fileName && <span className="text-sm text-muted-foreground">{input.fileName}</span>}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="import-text">Or paste CSV text</Label>
+        <Label htmlFor="import-text">Or Paste CSV Text</Label>
         <textarea
           id="import-text"
           rows={8}

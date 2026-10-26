@@ -20,6 +20,7 @@ import type { VendorFormValues } from "@/lib/vendors/validation";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
 import { VendorFormDialog } from "./vendor-form-dialog";
+import { titleCase } from "@/lib/text";
 
 type SortKey = "name" | "status" | "newest";
 const STATUS_ORDER: VendorStatus[] = ["pending_approval", "onboarding", "approved", "inactive", "rejected"];
@@ -308,7 +309,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
               <SelectTrigger aria-label="Sort vendors"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
+                {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -316,7 +317,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
             <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as typeof categoryFilter)}>
               <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {VENDOR_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -325,8 +326,8 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {(Object.keys(STATUS_LABEL) as VendorStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
+                <SelectItem value="all">All Statuses</SelectItem>
+                {(Object.keys(STATUS_LABEL) as VendorStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

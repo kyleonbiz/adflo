@@ -56,13 +56,13 @@ function RenewForm({ license, today, onCancel, onConfirm }: Props & { license: L
         </p>
       )}
       <div className="space-y-1.5">
-        <Label htmlFor="renew-expiry">New expiry date</Label>
+        <Label htmlFor="renew-expiry">New Expiry Date</Label>
         <Input id="renew-expiry" type="date" value={expiresOn} onChange={(e) => setExpiresOn(e.target.value)} aria-invalid={!!error} aria-describedby={error ? "renew-error" : undefined} />
         {error ? <p id="renew-error" role="alert" className="text-xs text-destructive">{error}</p>
           : <p className="text-xs text-muted-foreground">Currently expires {formatDayLong(license.expiresOn)}.</p>}
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="renew-number">License number (change it if the issuer gave a new one)</Label>
+        <Label htmlFor="renew-number">License Number (Change It If The Issuer Gave A New One)</Label>
         <Input id="renew-number" autoComplete="off" maxLength={60} value={number} onChange={(e) => setNumber(e.target.value)} />
       </div>
       <div className="flex justify-end gap-2">

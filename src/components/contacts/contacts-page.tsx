@@ -19,6 +19,7 @@ import type { ImportOutcome } from "@/lib/import/run";
 import { ContactFormDialog } from "./contact-form-dialog";
 import { ImportDialog } from "./import-dialog";
 import { MergeDialog } from "./merge-dialog";
+import { titleCase } from "@/lib/text";
 
 const rid = () => `c-${Math.random().toString(36).slice(2, 10)}`;
 const CATEGORY_BADGE: Record<ContactCategory, "success" | "default" | "warning" | "muted" | "outline"> = {
@@ -226,8 +227,8 @@ export function ContactsPage({ preview }: { preview?: string }) {
               <Select value={category} onValueChange={(v) => { setCategory(v as typeof category); setShown(PAGE); }}>
                 <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -235,7 +236,7 @@ export function ContactsPage({ preview }: { preview?: string }) {
               <Select value={quick} onValueChange={(v) => { setQuick(v as Quick); setShown(PAGE); }}>
                 <SelectTrigger aria-label="Filter by data quality"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(QUICK_LABEL) as Quick[]).map((k) => <SelectItem key={k} value={k}>{QUICK_LABEL[k]}</SelectItem>)}
+                  {(Object.keys(QUICK_LABEL) as Quick[]).map((k) => <SelectItem key={k} value={k}>{titleCase(QUICK_LABEL[k])}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -243,7 +244,7 @@ export function ContactsPage({ preview }: { preview?: string }) {
               <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
                 <SelectTrigger aria-label="Sort contacts"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
+                  {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -259,7 +260,7 @@ export function ContactsPage({ preview }: { preview?: string }) {
                 setSelected(new Set());
               }}>
                 <SelectTrigger aria-label="Set category for selected" className="h-8"><SelectValue placeholder="Set category…" /></SelectTrigger>
-                <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             {selectedContacts.length === 2 && (

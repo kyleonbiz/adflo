@@ -74,7 +74,7 @@ export function UploadDialog({
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
             <div className="space-y-1.5">
-              <Label htmlFor="upload-folder">Destination folder</Label>
+              <Label htmlFor="upload-folder">Destination Folder</Label>
               <FolderPicker id="upload-folder" folders={folders} value={folderId} onChange={onFolderChange} />
             </div>
 

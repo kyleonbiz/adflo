@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toDmsError } from "@/lib/dms/errors";
 import type { ShareLinkInfo } from "@/lib/dms/types";
 import { formatDateTime } from "./format";
+import { titleCase } from "@/lib/text";
 
 const OPTIONS = [
   { minutes: 60, label: "1 hour" },
@@ -88,7 +89,7 @@ export function ShareDialog({
                 <SelectContent>
                   {OPTIONS.map((o) => (
                     <SelectItem key={o.minutes} value={String(o.minutes)}>
-                      {o.label}
+                      {titleCase(o.label)}
                     </SelectItem>
                   ))}
                 </SelectContent>

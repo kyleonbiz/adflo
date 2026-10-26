@@ -22,6 +22,7 @@ import { LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { LicenseFormDialog } from "./license-form-dialog";
 import { RenewDialog } from "./renew-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
+import { titleCase } from "@/lib/text";
 
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -253,11 +254,11 @@ export function LicensesPage({ preview }: { preview?: string }) {
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as Filter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="attention">Needs attention</SelectItem>
-                <SelectItem value="missing_docs">Documents missing</SelectItem>
-                <SelectItem value="needs_review">Needs review</SelectItem>
-                {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="attention">Needs Attention</SelectItem>
+                <SelectItem value="missing_docs">Documents Missing</SelectItem>
+                <SelectItem value="needs_review">Needs Review</SelectItem>
+                {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -265,8 +266,8 @@ export function LicensesPage({ preview }: { preview?: string }) {
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                <SelectItem value="all">All Categories</SelectItem>
+                {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{titleCase(c.label)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -274,7 +275,7 @@ export function LicensesPage({ preview }: { preview?: string }) {
             <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
               <SelectTrigger aria-label="Sort licenses"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="expiry">Soonest expiry</SelectItem>
+                <SelectItem value="expiry">Soonest Expiry</SelectItem>
                 <SelectItem value="name">Name A–Z</SelectItem>
               </SelectContent>
             </Select>

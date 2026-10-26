@@ -88,7 +88,7 @@ test.describe("admin support module", () => {
     await dialog.getByLabel("Details").fill("Please wire the deposit, urgent");
     await expect(dialog.getByTestId("approval-note")).toContainText("mentions a wire transfer");
     await expect(dialog.getByRole("button", { name: "Submit for approval" })).toBeVisible();
-    await expect(dialog.getByRole("combobox", { name: "Priority" })).toContainText("Suggested: high");
+    await expect(dialog.getByRole("combobox", { name: "Priority" })).toContainText("Suggested: High");
 
     await dialog.getByLabel("Details").fill("Move it to Friday");
     await dialog.getByLabel("From").fill("Dana");

@@ -24,6 +24,7 @@ import { installedRoutines } from "@/lib/setup/templates";
 import { PRIORITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
 import { RequestDialog } from "./request-dialog";
 import { RoutineDialog } from "./routine-dialog";
+import { titleCase } from "@/lib/text";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 const APPROVER = "Operations manager";
@@ -226,9 +227,9 @@ export function AdminPage({ preview, startNew }: { preview?: string; startNew?: 
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="active">Open or in progress</SelectItem>
-                {(Object.keys(STATUS_LABEL) as RequestStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Open Or In Progress</SelectItem>
+                {(Object.keys(STATUS_LABEL) as RequestStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -236,8 +237,8 @@ export function AdminPage({ preview, startNew }: { preview?: string; startNew?: 
             <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as typeof categoryFilter)}>
               <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All categories</SelectItem>
-                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                <SelectItem value="all">All Categories</SelectItem>
+                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

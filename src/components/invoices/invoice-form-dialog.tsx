@@ -13,6 +13,7 @@ import { addDays } from "@/lib/dates";
 import { formatMoney, generateInvoiceNumber, invoiceTotals } from "@/lib/invoices/logic";
 import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
 import { invoiceFormSchema, parseDollars, type InvoiceFormInput, type InvoiceFormValues } from "@/lib/invoices/validation";
+import { titleCase } from "@/lib/text";
 
 const SENDER_KEY = "adflo.invoice.sender";
 const emptyItem = { description: "", qty: "1", rate: "" };
@@ -139,19 +140,19 @@ export function InvoiceFormDialog({
         </div>
         <form onSubmit={submit} noValidate className="flex min-h-0 flex-1 flex-col">
           <div className="grid flex-1 gap-5 overflow-y-auto px-5 py-4 sm:grid-cols-2">
-            <Field id="inv-number" label="Invoice number" error={errors.number?.message}>
+            <Field id="inv-number" label="Invoice Number" error={errors.number?.message}>
               <Input id="inv-number" autoComplete="off" {...invalid("inv-number", errors.number?.message)} {...register("number")} />
             </Field>
             <div className="hidden sm:block" />
-            <Field id="inv-issuedOn" label="Issued on" error={errors.issuedOn?.message}>
+            <Field id="inv-issuedOn" label="Issued On" error={errors.issuedOn?.message}>
               <Input id="inv-issuedOn" type="date" {...invalid("inv-issuedOn", errors.issuedOn?.message)} {...register("issuedOn")} />
             </Field>
-            <Field id="inv-dueOn" label="Due on" error={errors.dueOn?.message}>
+            <Field id="inv-dueOn" label="Due On" error={errors.dueOn?.message}>
               <Input id="inv-dueOn" type="date" {...invalid("inv-dueOn", errors.dueOn?.message)} {...register("dueOn")} />
             </Field>
 
             <Section title="From">
-              <Field id="inv-fromName" label="Business name" error={errors.fromName?.message}>
+              <Field id="inv-fromName" label="Business Name" error={errors.fromName?.message}>
                 <Input id="inv-fromName" autoComplete="organization" {...invalid("inv-fromName", errors.fromName?.message)} {...register("fromName")} />
               </Field>
               <Field id="inv-fromAddress" label="Address" error={errors.fromAddress?.message}>
@@ -160,7 +161,7 @@ export function InvoiceFormDialog({
               <Field id="inv-fromPhone" label="Phone" error={errors.fromPhone?.message}>
                 <Input id="inv-fromPhone" type="tel" autoComplete="off" {...invalid("inv-fromPhone", errors.fromPhone?.message)} {...register("fromPhone")} />
               </Field>
-              <Field id="inv-fromEmail" label="Business email" error={errors.fromEmail?.message}>
+              <Field id="inv-fromEmail" label="Business Email" error={errors.fromEmail?.message}>
                 <Input id="inv-fromEmail" type="email" autoComplete="off" {...invalid("inv-fromEmail", errors.fromEmail?.message)} {...register("fromEmail")} />
               </Field>
             </Section>
@@ -169,7 +170,7 @@ export function InvoiceFormDialog({
               <Field id="inv-client" label="Client" error={errors.client?.message}>
                 <Input id="inv-client" autoComplete="off" {...invalid("inv-client", errors.client?.message)} {...register("client")} />
               </Field>
-              <Field id="inv-clientEmail" label="Client email (used when sending)" error={errors.clientEmail?.message}>
+              <Field id="inv-clientEmail" label="Client Email (Used When Sending)" error={errors.clientEmail?.message}>
                 <Input id="inv-clientEmail" type="email" autoComplete="off" placeholder="billing@client.com" {...invalid("inv-clientEmail", errors.clientEmail?.message)} {...register("clientEmail")} />
               </Field>
             </Section>
@@ -195,7 +196,7 @@ export function InvoiceFormDialog({
               {itemsError && <p id="inv-items-error" role="alert" className="text-xs text-destructive">{itemsError}</p>}
               <Button type="button" size="sm" variant="outline" onClick={() => append({ ...emptyItem })}><Plus /> Add line</Button>
               <div className="grid gap-4 sm:grid-cols-[1fr_16rem] sm:items-start">
-                <Field id="inv-taxRate" label="Tax rate (%)" error={errors.taxRate?.message}>
+                <Field id="inv-taxRate" label="Tax Rate (%)" error={errors.taxRate?.message}>
                   <Input id="inv-taxRate" inputMode="decimal" placeholder="0.925" className="sm:max-w-40" {...invalid("inv-taxRate", errors.taxRate?.message)} {...register("taxRate")} />
                 </Field>
                 <dl className="space-y-1 text-sm tabular-nums" aria-label="Totals">
@@ -208,7 +209,7 @@ export function InvoiceFormDialog({
 
             <Section title="Payment and reminders">
               <div className="sm:col-span-2">
-                <Field id="inv-paymentMethods" label="Payment methods (one per line)" error={errors.paymentMethods?.message}>
+                <Field id="inv-paymentMethods" label="Payment Methods (One Per Line)" error={errors.paymentMethods?.message}>
                   <textarea id="inv-paymentMethods" rows={3} placeholder={"Cash\nCheck payable to Your Business LLC"} className={TEXTAREA} {...invalid("inv-paymentMethods", errors.paymentMethods?.message)} {...register("paymentMethods")} />
                 </Field>
               </div>
@@ -220,13 +221,13 @@ export function InvoiceFormDialog({
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger id="inv-recurrence"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {RECURRENCES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                        {RECURRENCES.map((r) => <SelectItem key={r.value} value={r.value}>{titleCase(r.label)}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   )}
                 />
               </Field>
-              <Field id="inv-reminderDays" label="Remind client (days before due, optional)" error={errors.reminderDays?.message}>
+              <Field id="inv-reminderDays" label="Remind Client (Days Before Due, Optional)" error={errors.reminderDays?.message}>
                 <Input id="inv-reminderDays" placeholder="7, 1" {...invalid("inv-reminderDays", errors.reminderDays?.message)} {...register("reminderDays")} />
               </Field>
               <div className="sm:col-span-2">

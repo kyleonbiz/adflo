@@ -52,7 +52,7 @@ test.describe("platform modules", () => {
     await page.getByRole("button", { name: "Start renewal: Renew City Operating Permit" }).click();
     const card = page.getByTestId("license-card").filter({ hasText: "City Operating Permit" });
     await expect(page.getByRole("status")).toContainText("renewal in progress");
-    await expect(card.getByRole("combobox", { name: /Renewal stage/ })).toContainText("In progress");
+    await expect(card.getByRole("combobox", { name: /Renewal stage/ })).toContainText("In Progress");
     await expect(card.getByRole("checkbox", { name: "Signed application" })).toBeVisible();
   });
 

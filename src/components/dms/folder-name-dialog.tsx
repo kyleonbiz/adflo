@@ -51,7 +51,7 @@ export function FolderNameDialog({
         </DialogDescription>
         <form onSubmit={submit} className="mt-4 space-y-4" noValidate>
           <div className="space-y-1.5">
-            <Label htmlFor="folder-name">Folder name</Label>
+            <Label htmlFor="folder-name">Folder Name</Label>
             <Input
               id="folder-name"
               autoFocus

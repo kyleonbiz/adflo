@@ -19,6 +19,7 @@ import type { ProjectFormValues, TaskFormValues } from "@/lib/projects/validatio
 import { ProjectCard, type ProjectActions } from "./project-card";
 import { ProjectFormDialog } from "./project-form-dialog";
 import { STATUS_LABEL, TASK_BADGE } from "./status";
+import { titleCase } from "@/lib/text";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -307,7 +308,7 @@ function ProjectsView({ today, preview }: { today: string; preview?: string }) {
             <Select value={sort} onValueChange={(v) => setSort(v as ProjectSort)}>
               <SelectTrigger aria-label="Sort projects"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(Object.keys(SORT_LABEL) as ProjectSort[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
+                {(Object.keys(SORT_LABEL) as ProjectSort[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -315,8 +316,8 @@ function ProjectsView({ today, preview }: { today: string; preview?: string }) {
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                <SelectItem value="all">All Statuses</SelectItem>
+                {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{titleCase(s.label)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

@@ -6,6 +6,7 @@ import { CATEGORIES, CATEGORY_LABELS, type DocumentQuery, type DocumentSort, typ
 import { FILE_TYPE_GROUPS } from "@/lib/dms/validation";
 import { cn } from "@/lib/utils";
 import { DocumentSearch } from "./document-search";
+import { titleCase } from "@/lib/text";
 
 const VIEWS: { id: DocumentView; label: string; Icon: LucideIcon }[] = [
   { id: "all", label: "All", Icon: FileStack },
@@ -79,10 +80,10 @@ export function DocumentToolbar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>All categories</SelectItem>
+            <SelectItem value={ANY}>All Categories</SelectItem>
             {CATEGORIES.map((c) => (
               <SelectItem key={c} value={c}>
-                {CATEGORY_LABELS[c]}
+                {titleCase(CATEGORY_LABELS[c])}
               </SelectItem>
             ))}
           </SelectContent>
@@ -92,10 +93,10 @@ export function DocumentToolbar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>All file types</SelectItem>
+            <SelectItem value={ANY}>All File Types</SelectItem>
             {FILE_TYPE_GROUPS.map((g) => (
               <SelectItem key={g.id} value={g.id}>
-                {g.label}
+                {titleCase(g.label)}
               </SelectItem>
             ))}
             <SelectItem value="other">Other</SelectItem>
@@ -106,7 +107,7 @@ export function DocumentToolbar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>All tags</SelectItem>
+            <SelectItem value={ANY}>All Tags</SelectItem>
             {tags.map((t) => (
               <SelectItem key={t} value={t}>
                 {t}
@@ -121,7 +122,7 @@ export function DocumentToolbar({
           <SelectContent>
             {(query.search.trim() ? [RELEVANCE, ...SORTS] : SORTS).map((s) => (
               <SelectItem key={s.id} value={s.id}>
-                {s.label}
+                {titleCase(s.label)}
               </SelectItem>
             ))}
           </SelectContent>

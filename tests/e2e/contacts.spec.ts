@@ -228,7 +228,7 @@ test.describe("CRM & data module", () => {
     await dialog.getByRole("combobox", { name: "Column for Name" }).click();
     await page.getByRole("option", { name: "Person" }).click();
     await expect(review).toBeEnabled();
-    await expect(dialog.getByRole("combobox", { name: "Column for Email" })).toContainText("Don't import");
+    await expect(dialog.getByRole("combobox", { name: "Column for Email" })).toContainText("Don't Import");
     await dialog.getByRole("combobox", { name: "Column for Email" }).click();
     await page.getByRole("option", { name: "Where to write" }).click();
     await review.click();

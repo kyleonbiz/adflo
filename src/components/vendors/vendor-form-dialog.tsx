@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { findDuplicates } from "@/lib/vendors/logic";
 import { VENDOR_CATEGORIES, type Vendor } from "@/lib/vendors/types";
 import { vendorFormSchema, type VendorFormInput, type VendorFormValues } from "@/lib/vendors/validation";
+import { titleCase } from "@/lib/text";
 
 function defaults(vendor?: Vendor): VendorFormInput {
   if (!vendor) return { name: "", category: "Supplies", contactName: "", email: "", phone: "", taxId: "", notes: "" };
@@ -75,7 +76,7 @@ function VendorFormBody({
         <form onSubmit={submit} noValidate className="flex min-h-0 flex-1 flex-col">
           <div className="grid flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Field id="vendor-name" label="Vendor name" error={errors.name?.message}>
+              <Field id="vendor-name" label="Vendor Name" error={errors.name?.message}>
                 <Input id="vendor-name" autoComplete="off" {...invalid("name")} {...register("name", { onChange: () => setMatches([]) })} />
               </Field>
             </div>
@@ -86,21 +87,21 @@ function VendorFormBody({
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="vendor-category"><SelectValue /></SelectTrigger>
-                    <SelectContent>{VENDOR_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                    <SelectContent>{VENDOR_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}</SelectContent>
                   </Select>
                 )}
               />
             </Field>
-            <Field id="vendor-contactName" label="Contact name" error={errors.contactName?.message}>
+            <Field id="vendor-contactName" label="Contact Name" error={errors.contactName?.message}>
               <Input id="vendor-contactName" autoComplete="off" {...invalid("contactName")} {...register("contactName")} />
             </Field>
-            <Field id="vendor-email" label="Contact email" error={errors.email?.message}>
+            <Field id="vendor-email" label="Contact Email" error={errors.email?.message}>
               <Input id="vendor-email" type="email" autoComplete="off" {...invalid("email")} {...register("email", { onChange: () => setMatches([]) })} />
             </Field>
             <Field id="vendor-phone" label="Phone" error={errors.phone?.message}>
               <Input id="vendor-phone" autoComplete="off" {...invalid("phone")} {...register("phone")} />
             </Field>
-            <Field id="vendor-taxId" label="Tax ID (EIN, optional)" error={errors.taxId?.message}>
+            <Field id="vendor-taxId" label="Tax ID (EIN, Optional)" error={errors.taxId?.message}>
               <Input id="vendor-taxId" autoComplete="off" placeholder="12-3456789" {...invalid("taxId")} {...register("taxId", { onChange: () => setMatches([]) })} />
             </Field>
             <div className="sm:col-span-2">

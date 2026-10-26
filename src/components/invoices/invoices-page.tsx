@@ -21,6 +21,7 @@ import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
+import { titleCase } from "@/lib/text";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
 type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
@@ -179,8 +180,8 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
             <Select value={stateFilter} onValueChange={(v) => setStateFilter(v as StatusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                {FILTERS.map((s) => <SelectItem key={s} value={s}>{FILTER_LABEL[s]}</SelectItem>)}
+                <SelectItem value="all">All Statuses</SelectItem>
+                {FILTERS.map((s) => <SelectItem key={s} value={s}>{titleCase(FILTER_LABEL[s])}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -246,7 +247,7 @@ export function InvoicesPage({ preview, startNew }: { preview?: string; startNew
           <DialogTitle>Mark as paid</DialogTitle>
           <DialogDescription className="mt-1">When did {paying?.client} pay {paying?.number}?</DialogDescription>
           <div className="mt-3 space-y-1.5">
-            <Label htmlFor="pay-date">Payment date</Label>
+            <Label htmlFor="pay-date">Payment Date</Label>
             <Input
               id="pay-date"
               type="date"
