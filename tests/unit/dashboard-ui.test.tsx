@@ -23,14 +23,15 @@ const rows = () => screen.getAllByTestId("attention-item");
 beforeEach(() => window.localStorage.clear());
 
 describe("Dashboard", () => {
-  it("greets by name, shows grouped tiles that link to their service, and the quick actions", () => {
+  it("shows four cards that link to their service, the charts and today's progress", () => {
     show();
-    expect(screen.getByTestId("greeting").textContent).toMatch(/Kyle$/);
-    for (const g of ["Money", "Compliance", "Work"]) expect(screen.getByRole("heading", { name: g })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Overdue invoices/ }).getAttribute("href")).toBe("/app/invoices");
-    expect(screen.getByRole("link", { name: "New invoice" }).getAttribute("href")).toBe("/app/invoices?new=1");
-    expect(screen.getByRole("link", { name: "Upload document" }).getAttribute("href")).toBe("/app?upload=1");
-    expect(screen.getByRole("link", { name: "New request" }).getAttribute("href")).toBe("/app/admin?new=1");
+    expect(screen.getByRole("link", { name: /Outstanding invoices/ }).getAttribute("href")).toBe("/app/invoices");
+    expect(screen.getByRole("link", { name: /Open project tasks/ }).getAttribute("href")).toBe("/app/projects");
+    expect(screen.getByRole("link", { name: /Open requests/ }).getAttribute("href")).toBe("/app/admin");
+    expect(screen.getByRole("img", { name: /^Open work by service/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /^Due in the next 7 days/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /Today's tasks done: 0%/ })).toBeTruthy();
+    expect(screen.getByText("NEEDS ATTENTION")).toBeTruthy();
   });
 
   it("shows five attention items, expands to all, and filters by service", async () => {
@@ -64,6 +65,5 @@ describe("Dashboard", () => {
   it("says so when nothing needs attention", () => {
     render(<Dashboard base="/app" data={{ ...data, items: [] }} serverToday={today} />);
     expect(screen.getByText("You are all caught up.")).toBeTruthy();
-    expect(screen.getByTestId("greeting").textContent).not.toContain(",");
   });
 });

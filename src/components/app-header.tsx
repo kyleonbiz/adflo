@@ -14,7 +14,8 @@ export function AppTopBar({ workspaceName, userLabel, badge, notifications }: { 
       {badge && <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900">{badge}</span>}
       {userLabel && (
         <form action="/auth/signout" method="post" className="flex items-center gap-2">
-          <span className="hidden max-w-48 truncate text-sm text-muted-foreground md:inline">{userLabel}</span>
+          <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-blue/15 text-sm font-semibold uppercase text-brand-blue">{userLabel.trim().charAt(0)}</span>
+          <span className="hidden max-w-48 truncate text-sm font-medium md:inline">{userLabel}</span>
           <Button type="submit" variant="outline" size="sm">
             <LogOut /> <span className="sr-only sm:not-sr-only">Sign out</span>
           </Button>

@@ -1,9 +1,9 @@
-import { formatDayLong } from "@/lib/dates";
-import { notifications, summarize as adminSummary } from "@/lib/admin/logic";
+import { addDays, formatDayLong } from "@/lib/dates";
+import { isActive as requestActive, notifications, summarize as adminSummary } from "@/lib/admin/logic";
 import type { AdminRequest, Routine } from "@/lib/admin/types";
 import { formatMoney, invoiceState, summarize as invoiceSummary } from "@/lib/invoices/logic";
 import type { Invoice } from "@/lib/invoices/types";
-import { licenseStatus, needsReview, summarize as licenseSummary } from "@/lib/licenses/logic";
+import { licenseStatus, needsReview } from "@/lib/licenses/logic";
 import type { License } from "@/lib/licenses/types";
 import { summarize as projectSummary, taskAlerts } from "@/lib/projects/logic";
 import type { Project } from "@/lib/projects/types";
@@ -22,13 +22,30 @@ export interface DashboardSources {
 
 export type Severity = "critical" | "warning" | "info";
 export type Area = "Invoices" | "Licenses" | "Projects" | "Admin";
-export type Tone = "neutral" | "warning" | "danger";
 
-export interface Tile { id: string; label: string; value: string; href: string; tone: Tone }
-export interface TileGroup { title: string; tiles: Tile[] }
+/** One headline card: a number, where it links, and a one-line status under it. */
+export interface Kpi {
+  id: "money" | "tasks" | "requests" | "attention";
+  label: string;
+  value: string;
+  href: string;
+  /** The line under the number: what is wrong (`bad`), worth a look (`warn`) or fine (`good`). */
+  note: { tone: "good" | "warn" | "bad"; text: string };
+}
+/** Open work in a service, and how much of it needs attention: one pair of bars in the overview chart. */
+export interface WorkloadRow { label: string; open: number; attention: number }
+/** How much falls due on one of the next seven days (anything already late counts on today). */
+export interface UpcomingDay { day: string; label: string; count: number }
 export interface AttentionItem { id: string; area: Area; severity: Severity; label: string; text: string; href: string }
 /** Plain data (no functions or dates), so a server component can hand it to the client dashboard. */
-export interface DashboardData { groups: TileGroup[]; items: AttentionItem[] }
+export interface DashboardData {
+  kpis: Kpi[];
+  workload: WorkloadRow[];
+  upcoming: UpcomingDay[];
+  /** Overall state for the status line: something critical, something to look at, or nothing. */
+  status: "attention" | "watch" | "clear";
+  items: AttentionItem[];
+}
 
 const RANK: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
 
@@ -74,29 +91,9 @@ function licenseItems(licenses: License[], today: string, base: string): Attenti
 /** The numbers and the action list for the dashboard, computed once for a given day. */
 export function buildDashboard(src: DashboardSources, today: string, base = "/app"): DashboardData {
   const inv = invoiceSummary(src.invoices, today);
-  const lic = licenseSummary(src.licenses, today);
   const proj = projectSummary(src.projects, today);
   const ven = vendorSummary(src.vendors, today);
   const adm = adminSummary(src.requests, src.routines, today);
-  const tone = (n: number, t: Tone): Tone => (n > 0 ? t : "neutral");
-
-  const groups: TileGroup[] = [
-    { title: "Money", tiles: [
-      { id: "outstanding", label: "Outstanding invoices", value: formatMoney(inv.outstandingCents), href: `${base}/invoices`, tone: "neutral" },
-      { id: "overdue-invoices", label: "Overdue invoices", value: String(inv.overdueCount), href: `${base}/invoices`, tone: tone(inv.overdueCount, "danger") },
-    ] },
-    { title: "Compliance", tiles: [
-      { id: "licenses", label: "Licenses to renew", value: String(lic.renewalWindow + lic.expiring + lic.expired), href: `${base}/licenses`, tone: tone(lic.expiring + lic.expired, "warning") },
-      { id: "vendors", label: "Vendors awaiting approval", value: String(ven.pendingApproval), href: `${base}/vendors`, tone: tone(ven.pendingApproval, "warning") },
-    ] },
-    { title: "Work", tiles: [
-      { id: "tasks", label: "Open project tasks", value: String(proj.openTasks), href: `${base}/projects`, tone: "neutral" },
-      { id: "overdue-tasks", label: "Overdue tasks", value: String(proj.overdueTasks), href: `${base}/projects`, tone: tone(proj.overdueTasks, "danger") },
-      { id: "requests", label: "Open requests", value: String(adm.open), href: `${base}/admin`, tone: "neutral" },
-      { id: "approvals", label: "Waiting for approval", value: String(adm.pendingApproval), href: `${base}/admin`, tone: tone(adm.pendingApproval, "warning") },
-    ] },
-  ];
-
   const items: AttentionItem[] = [
     ...invoiceItems(src.invoices, today, base),
     ...licenseItems(src.licenses, today, base),
@@ -113,7 +110,55 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
     })),
   ].sort((a, b) => RANK[a.severity] - RANK[b.severity]); // stable: ties keep the order above
 
-  return { groups, items };
+  const count = (area: Area) => items.filter((i) => i.area === area).length;
+  const workload: WorkloadRow[] = [
+    { label: "Invoices", open: src.invoices.filter((i) => i.status === "sent").length, attention: count("Invoices") },
+    { label: "Licenses", open: src.licenses.length, attention: count("Licenses") },
+    { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive" && v.status !== "rejected").length, attention: ven.pendingApproval },
+    { label: "Projects", open: proj.openTasks, attention: count("Projects") },
+    { label: "Requests", open: adm.open, attention: count("Admin") },
+  ];
+
+  const plural = (n: number, w: string) => `${n} ${w}`;
+  const kpis: Kpi[] = [
+    { id: "money", label: "Outstanding invoices", value: formatMoney(inv.outstandingCents), href: `${base}/invoices`,
+      note: inv.overdueCount > 0 ? { tone: "bad", text: plural(inv.overdueCount, "overdue") } : { tone: "good", text: "None overdue" } },
+    { id: "tasks", label: "Open project tasks", value: String(proj.openTasks), href: `${base}/projects`,
+      note: proj.overdueTasks > 0 ? { tone: "bad", text: plural(proj.overdueTasks, "overdue") } : { tone: "good", text: "None overdue" } },
+    { id: "requests", label: "Open requests", value: String(adm.open), href: `${base}/admin`,
+      note: adm.pendingApproval > 0 ? { tone: "warn", text: plural(adm.pendingApproval, "awaiting approval") } : { tone: "good", text: "Nothing waiting" } },
+    { id: "attention", label: "Needs attention", value: String(items.length), href: `${base}/overview`,
+      note: items.some((i) => i.severity === "critical") ? { tone: "bad", text: "Something is late" } : items.length > 0 ? { tone: "warn", text: "Worth a look" } : { tone: "good", text: "All clear" } },
+  ];
+
+  return {
+    kpis, workload, items,
+    upcoming: upcomingLoad(src, today),
+    status: items.some((i) => i.severity === "critical") ? "attention" : items.length > 0 ? "watch" : "clear",
+  };
+}
+
+const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
+
+/** Counts what falls due on each of the next seven days: unpaid invoices, open tasks, license expiries and requests. */
+export function upcomingLoad(src: DashboardSources, today: string): UpcomingDay[] {
+  const days: UpcomingDay[] = Array.from({ length: 7 }, (_, i) => {
+    const day = addDays(today, i);
+    return { day, label: WEEKDAY[new Date(`${day}T12:00:00Z`).getUTCDay()], count: 0 };
+  });
+  const last = days[6].day;
+  const add = (due: string | null | undefined) => {
+    if (!due || due > last) return;
+    days[due < today ? 0 : days.findIndex((d) => d.day === due)].count++;
+  };
+  for (const i of src.invoices) if (i.status === "sent") add(i.dueOn);
+  for (const p of src.projects) {
+    if (p.status === "completed" || p.status === "on_hold") continue;
+    for (const t of p.tasks) if (!t.done) add(t.dueOn);
+  }
+  for (const l of src.licenses) if (l.expiresOn >= today) add(l.expiresOn);
+  for (const r of src.requests) if (requestActive(r)) add(r.dueOn);
+  return days;
 }
 
 /** The calendar day in `timeZone` (an IANA name such as the one Vercel sends), or in UTC when it is missing or invalid. */

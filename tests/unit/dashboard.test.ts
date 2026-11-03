@@ -6,7 +6,7 @@ import { sampleInvoices } from "../support/invoices-sample-data";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import { sampleProjects } from "../support/projects-sample-data";
 import { sampleVendors } from "../support/vendors-sample-data";
-import { buildDashboard, dayInZone } from "@/lib/dashboard/logic";
+import { buildDashboard, dayInZone, upcomingLoad } from "@/lib/dashboard/logic";
 import { isSnoozed, parseSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { addTodo, hasOpenTodo, laterCount, parseTodos } from "@/lib/todos/logic";
 
@@ -18,24 +18,37 @@ const sources = (): DashboardSources => ({
 });
 
 describe("buildDashboard", () => {
-  it("starts empty: no records means zeros and nothing needing attention", async () => {
+  it("starts empty: zeros, nothing needing attention, a quiet week and an all-clear status", async () => {
     const d = buildDashboard(await loadDashboardSources(), T);
     expect(d.items).toEqual([]);
-    expect(d.groups.flatMap((g) => g.tiles).every((t) => t.tone === "neutral")).toBe(true);
-    expect(d.groups[0].tiles[0].value).toBe("$0.00");
+    expect(d.status).toBe("clear");
+    expect(d.kpis[0].value).toBe("$0.00");
+    expect(d.kpis.every((k) => k.note.tone === "good")).toBe(true);
+    expect(d.workload.every((w) => w.open === 0 && w.attention === 0)).toBe(true);
+    expect(d.upcoming.map((u) => u.count)).toEqual([0, 0, 0, 0, 0, 0, 0]);
   });
-  it("groups the tiles, links each to its service and orders the action list by severity", () => {
+  it("has four cards that link to their service, a workload row per service, and orders the action list by severity", () => {
     const d = buildDashboard(sources(), T);
-    expect(d.groups.map((g) => g.title)).toEqual(["Money", "Compliance", "Work"]);
-    const tiles = d.groups.flatMap((g) => g.tiles);
-    expect(tiles).toHaveLength(8);
-    expect(tiles.every((t) => t.href.startsWith("/app/"))).toBe(true);
-    expect(tiles.find((t) => t.id === "overdue-invoices")?.tone).toBe("danger");
+    expect(d.kpis.map((k) => k.id)).toEqual(["money", "tasks", "requests", "attention"]);
+    expect(d.kpis.every((k) => k.href.startsWith("/app"))).toBe(true);
+    expect(d.kpis[0].note).toEqual({ tone: "bad", text: "2 overdue" });
+    expect(d.workload.map((w) => w.label)).toEqual(["Invoices", "Licenses", "Vendors", "Projects", "Requests"]);
+    expect(d.workload[0]).toEqual({ label: "Invoices", open: 4, attention: 3 });
+    expect(d.status).toBe("attention");
+    expect(d.kpis[3].value).toBe(String(d.items.length));
     const rank = { critical: 0, warning: 1, info: 2 };
     const ranks = d.items.map((i) => rank[i.severity]);
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
     expect(new Set(d.items.map((i) => i.id)).size).toBe(d.items.length);
     expect(d.items.some((i) => i.area === "Invoices" && i.label === "Overdue")).toBe(true);
+  });
+  it("counts what falls due over the next seven days, with anything late on today", () => {
+    const up = upcomingLoad(sources(), T);
+    expect(up).toHaveLength(7);
+    expect(up[0].day).toBe(T);
+    expect(up.map((u) => u.label).join("")).toBe("MTWTFSS"); // 2026-10-26 is a Monday
+    expect(up[0].count).toBeGreaterThanOrEqual(2); // the two overdue invoices land on today
+    expect(up.reduce((n, u) => n + u.count, 0)).toBeGreaterThan(up[0].count);
   });
   it("is plain JSON, so it can cross from server to client", () => {
     const d = buildDashboard(sources(), T);

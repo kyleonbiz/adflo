@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { FileText } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
+import { AddEntryMenu } from "./add-entry-menu";
 import { MODULE_ICONS } from "./module-icons";
 import { cn } from "@/lib/utils";
 
@@ -53,11 +54,14 @@ export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: ()
             <li key={item.id}><NavLink item={item} active={isActive(pathname, item.href, base)} onNavigate={onNavigate} /></li>
           ))}
         </ul>
-        {setup && setupHref && (
-          <ul className="mt-auto space-y-1 border-t border-white/10 pt-3">
-            <li><NavLink item={{ id: "setup", label: setup.name, href: setupHref }} active={isActive(pathname, setupHref, base)} onNavigate={onNavigate} /></li>
-          </ul>
-        )}
+        <div className="mt-auto space-y-3 border-t border-white/10 pt-3">
+          <AddEntryMenu base={base} onNavigate={onNavigate} />
+          {setup && setupHref && (
+            <ul className="space-y-1">
+              <li><NavLink item={{ id: "setup", label: setup.name, href: setupHref }} active={isActive(pathname, setupHref, base)} onNavigate={onNavigate} /></li>
+            </ul>
+          )}
+        </div>
       </nav>
     </div>
   );
