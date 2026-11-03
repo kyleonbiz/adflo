@@ -13,7 +13,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
 /** The same attention list as the dashboard, for the bell in the top bar. */
 async function loadNotifications() {
   const today = dayInZone((await headers()).get("x-vercel-ip-timezone"));
-  return { items: buildDashboard(await loadDashboardSources(), today).items, today };
+  const data = buildDashboard(await loadDashboardSources(), today);
+  return { items: data.items, queue: data.queue, today };
 }
 
 function Frame({ topRight, children }: { topRight: React.ReactNode; children: React.ReactNode }) {

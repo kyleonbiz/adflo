@@ -29,7 +29,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] OCR (photos and scans of licenses and certificates are read: license upload fills the form, and attaching a certificate to a vendor document reads its expiry date; scanned PDFs and the document index are not OCR'd yet)
 - [ ] Bridge gaps between Contacts and Forms
 - [x] CRM renamed to Contacts
-- [ ] Notifications made very useful
+- [x] Notifications made very useful (bell respects the Settings choices, marks what is new, snoozes per item, lists what is waiting on you and for how long)
 - [~] Certifications and compliance tracking for licenses and policies (Certification and Policy types, compliance score; per-policy review cycles still to do)
 - [x] Onboarding packets (in Forms: new employee, vendor and client packets of forms, documents and signatures; progress bar, stale flag after 7 days, print or PDF checklist)
 - [~] Ghosting fix: automated vendor compliance reminders + comments/notes log for updates and CYA (due-reminder rules, escalating wording, ghosted flag after 3 and a dated notes log done; sending opens your email app until a mail service exists)
