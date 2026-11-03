@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
-import { AlertTriangle, BellOff, CalendarClock, FolderKanban, Inbox, ListPlus, Plus, Receipt, ShieldCheck, Store, Upload } from "lucide-react";
+import { AlertTriangle, BellOff, Hourglass, CalendarClock, FolderKanban, Inbox, ListPlus, Plus, Receipt, ShieldCheck, Store, Upload } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { TodayTodos } from "@/components/modules/today-todos";
 import { useToday } from "@/components/modules/use-today";
-import type { Area, AttentionItem, DashboardData, Severity, Tone } from "@/lib/dashboard/logic";
+import type { Area, AttentionItem, DashboardData, QueueItem, Severity, Tone } from "@/lib/dashboard/logic";
+import { formatDayLong } from "@/lib/dates";
 import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
 import { addTodo, newTodoId, hasOpenTodo, pruneTodos } from "@/lib/todos/logic";
 import { saveTodos, useTodos } from "@/lib/todos/storage";
+import { STALE_QUEUE_DAYS } from "@/lib/dashboard/logic";
 import { cn } from "@/lib/utils";
 
 const BADGE = { critical: "danger", warning: "warning", info: "default" } as const satisfies Record<Severity, string>;
@@ -24,6 +26,15 @@ const TILE_ICON: Record<string, LucideIcon> = {
 const TONE: Record<Tone, string> = { neutral: "text-primary", warning: "text-amber-600", danger: "text-red-600" };
 const AREAS: Area[] = ["Invoices", "Licenses", "Projects", "Admin"];
 const SHOWN = 5;
+
+/** One plain sentence on how the day looks. */
+function summary(data: DashboardData): string {
+  const urgent = data.items.filter((i) => i.severity === "critical").length;
+  if (urgent > 0) return `${urgent} ${urgent === 1 ? "thing is" : "things are"} overdue`;
+  if (data.queue.length > 0) return `${data.queue.length} waiting on your decision`;
+  if (data.items.length > 0) return `${data.items.length} to keep an eye on`;
+  return "nothing needs you right now";
+}
 
 const subscribe = () => () => {};
 /** Morning, afternoon or evening by the visitor's clock; null on the server so the first paint matches. */
@@ -41,6 +52,33 @@ function QuickActions({ base }: { base: string }) {
       <Button asChild size="sm" variant="outline"><Link href={`${base}?upload=1`}><Upload /> Upload document</Link></Button>
       <Button asChild size="sm" variant="outline"><Link href={`${base}/admin?new=1`}><Plus /> New request</Link></Button>
     </div>
+  );
+}
+
+/** What is waiting on a decision from you, oldest first, so nothing sits unseen. */
+function Queue({ queue }: { queue: QueueItem[] }) {
+  const stale = queue.filter((q) => q.stale).length;
+  return (
+    <section aria-labelledby="queue-heading" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="queue">
+      <h2 id="queue-heading" className="flex items-center gap-2 text-base font-semibold"><Hourglass className="size-4 text-muted-foreground" aria-hidden /> Waiting on you</h2>
+      {queue.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">Nothing is waiting on a decision.</p>
+      ) : (
+        <>
+          <p className="mt-1 text-sm text-muted-foreground">{queue.length} waiting{stale > 0 ? `, ${stale} for ${STALE_QUEUE_DAYS}+ days` : ""}</p>
+          <ul className="mt-3 divide-y">
+            {queue.map((q) => (
+              <li key={q.id} data-testid="queue-item">
+                <Link href={q.href} className="flex items-center gap-3 rounded-md py-2 text-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+                  <span className="min-w-0 flex-1 truncate"><span className="text-muted-foreground">{q.kind} · </span>{q.title}</span>
+                  <Badge variant={q.stale ? "warning" : "muted"} className="shrink-0">{q.waitingDays === 0 ? "Today" : `${q.waitingDays}d`}</Badge>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
   );
 }
 
@@ -125,7 +163,10 @@ export function Dashboard({ base, data, serverToday, name }: { base: "/app"; dat
   return (
     <div className="space-y-5" data-testid="dashboard">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <p className="text-lg font-medium" data-testid="greeting">{greeting}{name ? `, ${name.split(/\s+/)[0]}` : ""}</p>
+        <div>
+          <p className="text-xl font-semibold tracking-tight" data-testid="greeting">{greeting}{name ? `, ${name.split(/\s+/)[0]}` : ""}</p>
+          <p className="text-sm text-muted-foreground" data-testid="day-summary">{formatDayLong(today)} · {summary(data)}</p>
+        </div>
         <QuickActions base={base} />
       </div>
 
@@ -142,7 +183,10 @@ export function Dashboard({ base, data, serverToday, name }: { base: "/app"; dat
         ))}
       </div>
 
-      <Attention items={data.items} today={today} />
+      <div className="grid gap-5 lg:grid-cols-5">
+        <div className="lg:col-span-3"><Attention items={data.items} today={today} /></div>
+        <div className="lg:col-span-2"><Queue queue={data.queue} /></div>
+      </div>
     </div>
   );
 }

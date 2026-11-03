@@ -66,4 +66,13 @@ describe("Dashboard", () => {
     expect(screen.getByText("You are all caught up.")).toBeTruthy();
     expect(screen.getByTestId("greeting").textContent).not.toContain(",");
   });
+
+  it("shows what is waiting on a decision, and says so when nothing is", () => {
+    const { unmount } = render(<Dashboard base="/app" data={data} serverToday={today} />);
+    expect(screen.getAllByTestId("queue-item").length).toBe(data.queue.length);
+    expect(data.queue.length).toBeGreaterThan(0);
+    unmount();
+    render(<Dashboard base="/app" data={{ ...data, queue: [] }} serverToday={today} />);
+    expect(screen.getByText("Nothing is waiting on a decision.")).toBeTruthy();
+  });
 });

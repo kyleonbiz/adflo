@@ -6,7 +6,7 @@ import { sampleInvoices } from "../support/invoices-sample-data";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import { sampleProjects } from "../support/projects-sample-data";
 import { sampleVendors } from "../support/vendors-sample-data";
-import { buildDashboard, dayInZone } from "@/lib/dashboard/logic";
+import { buildDashboard, buildQueue, dayInZone } from "@/lib/dashboard/logic";
 import { isSnoozed, parseSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { addTodo, hasOpenTodo, laterCount, parseTodos } from "@/lib/todos/logic";
 
@@ -80,5 +80,20 @@ describe("todos from the dashboard", () => {
   it("counts tasks planned for later", () => {
     const l = [...addTodo([], "a", "2026-10-30", "1"), ...addTodo([], "b", T, "2")];
     expect(laterCount(l, T)).toBe(1);
+  });
+});
+
+describe("buildQueue", () => {
+  it("lists requests and vendors waiting on approval, longest wait first, flagging the stale ones", () => {
+    const src = sources();
+    const q = buildQueue(src, T);
+    const pending = src.requests.filter((r) => r.status === "pending_approval").length + src.vendors.filter((v) => v.status === "pending_approval").length;
+    expect(q).toHaveLength(pending);
+    expect(q.map((i) => i.waitingDays)).toEqual([...q.map((i) => i.waitingDays)].sort((a, b) => b - a));
+    for (const i of q) expect(i.stale).toBe(i.waitingDays >= 3);
+  });
+
+  it("is empty with no records", async () => {
+    expect(buildQueue(await loadDashboardSources(), T)).toEqual([]);
   });
 });

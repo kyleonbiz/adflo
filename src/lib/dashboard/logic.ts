@@ -1,4 +1,4 @@
-import { formatDayLong } from "@/lib/dates";
+import { daysBetween, formatDayLong } from "@/lib/dates";
 import { notifications, summarize as adminSummary } from "@/lib/admin/logic";
 import type { AdminRequest, Routine } from "@/lib/admin/types";
 import { formatMoney, invoiceState, summarize as invoiceSummary } from "@/lib/invoices/logic";
@@ -27,8 +27,29 @@ export type Tone = "neutral" | "warning" | "danger";
 export interface Tile { id: string; label: string; value: string; href: string; tone: Tone }
 export interface TileGroup { title: string; tiles: Tile[] }
 export interface AttentionItem { id: string; area: Area; severity: Severity; label: string; text: string; href: string }
+/** Something that cannot move until you decide. `waitingDays` is how long it has sat; `stale` marks the ones quietly going cold. */
+export interface QueueItem { id: string; kind: "Request" | "Vendor"; title: string; href: string; waitingDays: number; stale: boolean }
 /** Plain data (no functions or dates), so a server component can hand it to the client dashboard. */
-export interface DashboardData { groups: TileGroup[]; items: AttentionItem[] }
+export interface DashboardData { groups: TileGroup[]; items: AttentionItem[]; queue: QueueItem[] }
+
+/** A decision waiting this many days or more is flagged, because that is how admin work gets lost. */
+export const STALE_QUEUE_DAYS = 3;
+
+/** Everything waiting on a decision from you, longest wait first. */
+export function buildQueue(src: DashboardSources, today: string, base = "/app"): QueueItem[] {
+  const wait = (from: string) => Math.max(0, daysBetween(from, today));
+  const out: QueueItem[] = [
+    ...src.requests.filter((r) => r.status === "pending_approval").map((r): QueueItem => {
+      const waitingDays = wait(r.createdOn);
+      return { id: `req-${r.id}`, kind: "Request", title: r.title, href: `${base}/admin`, waitingDays, stale: waitingDays >= STALE_QUEUE_DAYS };
+    }),
+    ...src.vendors.filter((v) => v.status === "pending_approval").map((v): QueueItem => {
+      const waitingDays = wait(v.createdOn);
+      return { id: `ven-${v.id}`, kind: "Vendor", title: v.name, href: `${base}/vendors`, waitingDays, stale: waitingDays >= STALE_QUEUE_DAYS };
+    }),
+  ];
+  return out.sort((a, b) => b.waitingDays - a.waitingDays);
+}
 
 const RANK: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
 
@@ -113,7 +134,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
     })),
   ].sort((a, b) => RANK[a.severity] - RANK[b.severity]); // stable: ties keep the order above
 
-  return { groups, items };
+  return { groups, items, queue: buildQueue(src, today, base) };
 }
 
 /** The calendar day in `timeZone` (an IANA name such as the one Vercel sends), or in UTC when it is missing or invalid. */
