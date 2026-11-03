@@ -119,6 +119,34 @@ test.describe("projects module", () => {
     await expect(page.getByRole("dialog").getByText(/^Checklist/)).toHaveCount(0);
   });
 
+  test("adds your own project type with the + option, then uses it", async ({ page }) => {
+    await page.goto("/app/projects");
+    await page.getByRole("button", { name: "New project" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("combobox", { name: "Start from a template" }).click();
+    await page.getByRole("option", { name: "+ Add your own project type" }).click();
+    await dialog.getByRole("button", { name: "Save project type" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("name");
+    await dialog.getByLabel("Type name").fill("Quarterly tax prep");
+    await dialog.getByLabel("Typical length (days)").fill("45");
+    await dialog.getByLabel("Tasks (one per line)").fill("Gather receipts\nReconcile accounts\nSend to accountant");
+    await dialog.getByRole("button", { name: "Save project type" }).click();
+    await expect(dialog.getByLabel("Project name")).toHaveValue("Quarterly tax prep");
+    await expect(dialog).toContainText("3 of 3 tasks will be added");
+    await dialog.getByRole("button", { name: "Create project" }).click();
+    const card = page.getByTestId("project-card").filter({ hasText: "Quarterly tax prep" });
+    await expect(card).toContainText("0 of 3 tasks");
+
+    // The type stays in the list for next time, and can be removed.
+    await page.reload();
+    await page.getByRole("button", { name: "New project" }).click();
+    await page.getByRole("dialog").getByRole("combobox", { name: "Start from a template" }).click();
+    await page.getByRole("option", { name: "Quarterly Tax Prep" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Remove this project type" }).click();
+    await page.getByRole("dialog").getByRole("combobox", { name: "Start from a template" }).click();
+    await expect(page.getByRole("option", { name: "Quarterly Tax Prep" })).toHaveCount(0);
+  });
+
   test("sorts, filters from the summary tiles and clears filters", async ({ page }) => {
     await page.goto("/app/projects");
     await expect(page.getByTestId("project-card")).toHaveCount(4);

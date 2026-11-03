@@ -4,7 +4,7 @@ Kyle's list, in the order it was given. `[x]` done, `[~]` partly done, `[ ]` not
 Databases go last. Update this file in the same commit as the work.
 
 - [~] Task / request reminders so admin work doesn't fall through cracks
-- [ ] "+" under Projects to add your own admin project types
+- [x] "+" under Projects to add your own project types (in the new-project template dropdown; saved in this browser)
 - [x] Sidebar minimizes to icons only
 - [~] Home screen: more innovative (queue + day summary done; livelier look to do)
 - [ ] Make the app feel alive

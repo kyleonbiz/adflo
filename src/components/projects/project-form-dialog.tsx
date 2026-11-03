@@ -9,10 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addDays, isDay } from "@/lib/dates";
-import { PROJECT_TEMPLATES, templateById, templateDueOn, type TemplateTask } from "@/lib/projects/templates";
+import { PROJECT_TEMPLATES, templateDueOn, type ProjectTemplate, type TemplateTask } from "@/lib/projects/templates";
 import { PROJECT_STATUSES, type Project } from "@/lib/projects/types";
 import { projectFormSchema, type ProjectFormInput, type ProjectFormValues } from "@/lib/projects/validation";
 import { titleCase } from "@/lib/text";
+import { NEW_TYPE, buildCustomType, isCustomType, type CustomTypeInput } from "@/lib/projects/custom-types";
+import { saveCustomTypes, useCustomTypes } from "@/lib/projects/custom-types-storage";
 
 function defaults(project: Project | undefined, today: string): ProjectFormInput {
   if (project) {
@@ -46,7 +48,12 @@ export function ProjectFormDialog({
 }) {
   const [templateId, setTemplateId] = useState("blank");
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
+  const custom = useCustomTypes();
+  const all: ProjectTemplate[] = [...PROJECT_TEMPLATES, ...custom];
+  const templateById = (id: string) => all.find((t) => t.id === id);
   const template = templateById(templateId);
+  const [adding, setAdding] = useState<CustomTypeInput | null>(null);
+  const [addError, setAddError] = useState("");
   const { register, control, handleSubmit, reset, formState, getValues, setValue } = useForm<ProjectFormInput, unknown, ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: defaults(project, today),
@@ -62,11 +69,14 @@ export function ProjectFormDialog({
     if (!next) {
       setTemplateId("blank");
       setSkipped(new Set());
+      setAdding(null);
     }
     onOpenChange(next);
   };
 
   const pickTemplate = (id: string) => {
+    if (id === NEW_TYPE) { setAdding({ name: "", summary: "", durationDays: "30", tasks: "" }); setAddError(""); return; }
+    setAdding(null);
     const previous = templateById(templateId);
     setTemplateId(id);
     setSkipped(new Set());
@@ -77,6 +87,22 @@ export function ProjectFormDialog({
     if (!name.trim() || name === previous?.name) setValue("name", next.name, { shouldDirty: true });
     if (!description.trim() || description === previous?.description) setValue("description", next.description, { shouldDirty: true });
     setValue("dueOn", templateDueOn(next, isDay(startOn) ? startOn : today), { shouldDirty: true });
+  };
+
+  const saveType = () => {
+    if (!adding) return;
+    const result = buildCustomType(adding, Math.random().toString(36).slice(2, 10), all);
+    if ("error" in result) { setAddError(result.error); return; }
+    saveCustomTypes([...custom, result.type]);
+    setAdding(null);
+    setAddError("");
+    // The new type is not in this render's list yet, so apply it directly.
+    setTemplateId(result.type.id);
+    setSkipped(new Set());
+    const { name, description, startOn } = getValues();
+    if (!name.trim()) setValue("name", result.type.name, { shouldDirty: true });
+    if (!description.trim()) setValue("description", result.type.description, { shouldDirty: true });
+    setValue("dueOn", templateDueOn(result.type, isDay(startOn) ? startOn : today), { shouldDirty: true });
   };
 
   const submit = handleSubmit((values) => {
@@ -106,12 +132,47 @@ export function ProjectFormDialog({
                     <SelectTrigger id="proj-template"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="blank">Blank Project</SelectItem>
-                      {PROJECT_TEMPLATES.map((t) => <SelectItem key={t.id} value={t.id}>{titleCase(t.name)}</SelectItem>)}
+                      {all.map((t) => <SelectItem key={t.id} value={t.id}>{titleCase(t.name)}</SelectItem>)}
+                      <SelectItem value={NEW_TYPE}>+ Add your own project type</SelectItem>
                     </SelectContent>
                   </Select>
-                  {template && <p className="text-xs text-muted-foreground">{template.summary}</p>}
+                  {template && !adding && <p className="text-xs text-muted-foreground">{template.summary}</p>}
+                  {template && isCustomType(template.id) && !adding && (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-destructive underline-offset-2 hover:underline"
+                      onClick={() => { saveCustomTypes(custom.filter((t) => t.id !== template.id)); setTemplateId("blank"); setSkipped(new Set()); }}
+                    >
+                      Remove this project type
+                    </button>
+                  )}
                 </Field>
               </div>
+            )}
+            {!project && adding && (
+              <fieldset className="space-y-3 rounded-xl border bg-muted/30 p-3 sm:col-span-2">
+                <legend className="px-1 text-sm font-medium">New project type</legend>
+                <Field id="type-name" label="Type name">
+                  <Input id="type-name" autoComplete="off" value={adding.name} onChange={(e) => setAdding({ ...adding, name: e.target.value })} />
+                </Field>
+                <Field id="type-summary" label="What it is for">
+                  <Input id="type-summary" autoComplete="off" value={adding.summary} onChange={(e) => setAdding({ ...adding, summary: e.target.value })} />
+                </Field>
+                <Field id="type-days" label="Typical length (days)">
+                  <Input id="type-days" inputMode="numeric" value={adding.durationDays} onChange={(e) => setAdding({ ...adding, durationDays: e.target.value })} />
+                </Field>
+                <Field id="type-tasks" label="Tasks (one per line)">
+                  <textarea
+                    id="type-tasks" rows={4} value={adding.tasks} onChange={(e) => setAdding({ ...adding, tasks: e.target.value })}
+                    className="flex w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+                  />
+                </Field>
+                {addError && <p role="alert" className="text-xs text-destructive">{addError}</p>}
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" onClick={saveType}>Save project type</Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => { setAdding(null); setAddError(""); }}>Cancel</Button>
+                </div>
+              </fieldset>
             )}
             <div className="sm:col-span-2">
               <Field id="proj-name" label="Project Name" error={errors.name?.message}>

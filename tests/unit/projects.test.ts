@@ -222,3 +222,33 @@ describe("project templates", () => {
     expect(completeTask(tasks, weekly.id, "2026-11-08", "next").find((x) => x.id === "next")!.dueOn).toBe("2026-11-15");
   });
 });
+
+import { buildCustomType, parseCustomTypes } from "@/lib/projects/custom-types";
+import { PROJECT_TEMPLATES } from "@/lib/projects/templates";
+
+describe("custom project types", () => {
+  const ok = { name: "Quarterly tax prep", summary: "", durationDays: "30", tasks: "A\nB\n\nC" };
+
+  it("builds a type with its tasks spread evenly across the duration", () => {
+    const r = buildCustomType(ok, "x1", PROJECT_TEMPLATES);
+    if ("error" in r) throw new Error(r.error);
+    expect(r.type.id).toBe("custom-x1");
+    expect(r.type.tasks.map((t) => [t.title, t.offsetDays])).toEqual([["A", 10], ["B", 20], ["C", 30]]);
+    expect(r.type.summary).toContain("3 tasks");
+  });
+
+  it("refuses a missing or duplicate name, a bad length and too many tasks", () => {
+    expect(buildCustomType({ ...ok, name: " " }, "x", [])).toHaveProperty("error");
+    expect(buildCustomType({ ...ok, name: "client onboarding" }, "x", PROJECT_TEMPLATES)).toHaveProperty("error");
+    expect(buildCustomType({ ...ok, durationDays: "0" }, "x", [])).toHaveProperty("error");
+    expect(buildCustomType({ ...ok, durationDays: "2.5" }, "x", [])).toHaveProperty("error");
+    expect(buildCustomType({ ...ok, tasks: Array.from({ length: 31 }, (_, i) => `t${i}`).join("\n") }, "x", [])).toHaveProperty("error");
+  });
+
+  it("allows a type with no tasks and reads saved types defensively", () => {
+    const r = buildCustomType({ ...ok, tasks: "" }, "x2", []);
+    expect("type" in r && r.type.tasks).toEqual([]);
+    expect(parseCustomTypes("nope")).toEqual([]);
+    expect(parseCustomTypes(JSON.stringify([{ id: "other" }, "type" in r ? r.type : null]))).toHaveLength(1);
+  });
+});
