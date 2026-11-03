@@ -247,4 +247,24 @@ test.describe("vendors module", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Vendors" })).toBeVisible();
     await expect(page.getByRole("navigation", { name: "Contacts" }).getByRole("link", { name: "Vendors", exact: true })).toHaveAttribute("aria-current", "page");
   });
+
+  test("follow up today: remind a vendor who owes documents, then keep notes on them", async ({ page }) => {
+    await page.goto("/app/vendors");
+    const panel = page.getByTestId("followups");
+    const row = panel.getByTestId("followup-row").filter({ hasText: "Initech Staffing LLC" });
+    await expect(row).toContainText("Not chased yet");
+    await row.getByRole("button", { name: "Send reminder to Initech Staffing LLC" }).click();
+    await expect(page.getByRole("status")).toContainText("Reminder logged for Initech Staffing LLC");
+    await expect(panel.getByTestId("followup-row").filter({ hasText: "Initech Staffing LLC" })).toHaveCount(0); // waiting a week now
+
+    const card = page.getByTestId("vendor-card").filter({ hasText: "Initech Staffing LLC" });
+    await expect(card).toContainText("Reminder sent, waiting for a reply");
+    await expect(card.getByTestId("vendor-note").first()).toContainText("Reminder 1 sent for: W-9, Certificate of insurance");
+    await card.getByLabel("Add a note for Initech Staffing LLC").fill("Peter says insurance comes Friday");
+    await card.getByRole("button", { name: "Add note" }).click();
+    await expect(card.getByTestId("vendor-note").first()).toContainText("Peter says insurance comes Friday");
+    await card.getByLabel("Add a note for Initech Staffing LLC").fill("Called back");
+    await card.getByRole("button", { name: "They replied" }).click();
+    await expect(card.getByTestId("vendor-note").first()).toContainText("Replied");
+  });
 });

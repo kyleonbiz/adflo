@@ -59,6 +59,16 @@ export interface VendorDocument {
   file?: { name: string; size: number; url: string } | null;
 }
 
+/** One line in a vendor's running log: what was said or sent, and when. `reply` marks that they answered, which restarts the reminder count. */
+export interface VendorNote {
+  id: string;
+  /** `YYYY-MM-DD`. */
+  on: string;
+  kind: "note" | "reminder" | "reply";
+  text: string;
+  by: string;
+}
+
 export interface Vendor {
   id: string;
   name: string;
@@ -75,6 +85,8 @@ export interface Vendor {
   decidedBy: string | null;
   decidedOn: string | null;
   comment: string;
+  /** Dated notes and reminders, oldest first. Absent until the first entry. */
+  activity?: VendorNote[];
 }
 
 export type DocState = "missing" | "valid" | "expiring" | "expired";

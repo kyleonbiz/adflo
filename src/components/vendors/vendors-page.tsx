@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, Store, X } from "lucide-react";
+import { AlertTriangle, BellRing, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, Store, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,7 @@ import {
 import { e2eSeed } from "@/lib/e2e-seed";
 import { VENDOR_CATEGORIES, type Vendor, type VendorCategory, type VendorStatus } from "@/lib/vendors/types";
 import type { VendorFormValues } from "@/lib/vendors/validation";
+import { addNote, dueFollowUps, logReminder, mailtoLink, reminderEmail } from "@/lib/vendors/follow-up";
 import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
@@ -83,6 +84,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   const vendors = edited ?? seed;
   const summary = useMemo(() => (today ? summarize(vendors, today) : null), [vendors, today]);
   const attention = useMemo(() => (today ? needsAttention(vendors, today) : []), [vendors, today]);
+  const followUps = useMemo(() => (today ? dueFollowUps(vendors, today) : []), [vendors, today]);
   const allPairs = useMemo(() => duplicatePairs(vendors), [vendors]);
   const pairs = useMemo(() => allPairs.filter((p) => !dismissed.includes(pairKey(p.a, p.b))), [allPairs, dismissed]);
 
@@ -136,6 +138,15 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
         return;
       }
       patch(v.id, (x) => ({ ...x, documents: x.documents.map((y) => (y.id === d.id ? { ...y, ...dates } : y)) }));
+    },
+    onNote: (v, kind, text) => { patch(v.id, (x) => addNote(x, { id: rid("vn"), on: today, kind, text, by: approver })); say(kind === "reply" ? `Logged: ${v.name} replied.` : "Note added."); },
+    onRemind: (v) => {
+      const mail = reminderEmail(v, today);
+      patch(v.id, (x) => logReminder(x, today, rid("vn"), approver));
+      say(`Reminder logged for ${v.name}. Your email app opens with the message ready to send.`);
+      const a = document.createElement("a");
+      a.href = mailtoLink(mail);
+      a.click();
     },
     onAddDocument: (v, type, required) =>
       patch(v.id, (x) => ({ ...x, documents: [...x.documents, { id: rid("vd"), type, required, receivedOn: null, expiresOn: null }] })),
@@ -242,6 +253,27 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
           onClick={() => { setStatusFilter("all"); setIssuesOnly(true); }} />
         <SummaryTile icon={Copy} label="Possible duplicates" value={pairs.length} tone="text-sky-600" href="#vendor-duplicates" />
       </section>
+
+      {followUps.length > 0 && (
+        <section aria-labelledby="vendor-followups" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="followups">
+          <h2 id="vendor-followups" className="flex items-center gap-2 text-base font-semibold"><BellRing className="size-4 text-amber-600" aria-hidden /> Follow up today</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Vendors who still owe documents. A reminder is due when none has gone out, or the last one is a week old with no reply.</p>
+          <ul className="mt-2 divide-y">
+            {followUps.map(({ vendor, state, sent, owes }) => (
+              <li key={vendor.id} data-testid="followup-row" className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                <span className="min-w-0 flex-1">
+                  <span className="font-medium">{vendor.name}</span>
+                  <span className="text-muted-foreground"> · owes {owes.map((d) => d.type).join(", ")}</span>
+                </span>
+                {state === "ghosted" ? <Badge variant="danger">No reply after {sent} reminders</Badge> : sent > 0 ? <Badge variant="muted">{sent} sent</Badge> : <Badge variant="muted">Not chased yet</Badge>}
+                {vendor.email
+                  ? <Button size="sm" variant="outline" aria-label={`Send reminder to ${vendor.name}`} onClick={() => actions.onRemind(vendor)}>Send reminder</Button>
+                  : <span className="text-xs text-muted-foreground">No email on file</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="grid gap-3 lg:grid-cols-2">
         <section aria-labelledby="vendor-attention" className="rounded-2xl border bg-card p-4 shadow-panel">

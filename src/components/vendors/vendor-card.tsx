@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, Paperclip, Pencil, Plus, Power, RotateCcw, Send, Trash2, X, XCircle } from "lucide-react";
+import { BellRing, CheckCircle2, ChevronDown, Paperclip, Pencil, Plus, Power, RotateCcw, Send, Trash2, X, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDayLong } from "@/lib/dates";
 import { FILE_EXTENSIONS, approvalBlockers, docState, onboardingProgress, vendorAlerts } from "@/lib/vendors/logic";
+import { GHOSTED_AFTER, followUpState, notesOf, owed, unansweredReminders } from "@/lib/vendors/follow-up";
 import type { Vendor, VendorDocument } from "@/lib/vendors/types";
 import { cn } from "@/lib/utils";
 import { DOC_BADGE, DOC_LABEL, SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
@@ -23,6 +24,8 @@ export interface VendorActions {
   onRemoveDocument: (v: Vendor, d: VendorDocument) => void;
   onAttachFile: (v: Vendor, d: VendorDocument, file: File) => void;
   onClearFile: (v: Vendor, d: VendorDocument) => void;
+  onNote: (v: Vendor, kind: "note" | "reply", text: string) => void;
+  onRemind: (v: Vendor) => void;
 }
 
 const fileSize = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`);
@@ -94,6 +97,10 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
   const [comment, setComment] = useState("");
   const [newDoc, setNewDoc] = useState("");
   const [newRequired, setNewRequired] = useState(true);
+  const [noteText, setNoteText] = useState("");
+  const follow = followUpState(vendor, today);
+  const sentCount = unansweredReminders(vendor).length;
+  const log = notesOf(vendor);
   const alerts = vendorAlerts(vendor, today);
   const { done, total } = onboardingProgress(vendor, today);
   const blockers = approvalBlockers(vendor, today);
@@ -117,6 +124,8 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
               {alerts.map((a) => <li key={a.message}><Badge variant={SEVERITY_BADGE[a.severity]}>{a.message}</Badge></li>)}
             </ul>
           )}
+          {follow === "ghosted" && <Badge variant="danger">No reply after {sentCount} reminders</Badge>}
+          {follow === "waiting" && <Badge variant="muted">Reminder sent, waiting for a reply</Badge>}
           {vendor.decidedBy && vendor.decidedOn && (vendor.status === "approved" || vendor.status === "rejected") && (
             <p className="text-xs text-muted-foreground">
               {vendor.status === "approved" ? "Approved" : "Rejected"} by {vendor.decidedBy} on {formatDayLong(vendor.decidedOn)}{vendor.comment && `: ${vendor.comment}`}
@@ -182,6 +191,38 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
               </label>
               <Button type="submit" size="sm" variant="outline" disabled={!newDoc.trim()}><Plus /> Add</Button>
             </form>
+            <section aria-label={`Activity for ${vendor.name}`} className="space-y-2 rounded-xl border p-3" data-testid="vendor-activity">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-sm font-medium">Activity</h4>
+                {owed(vendor, today).length > 0 && vendor.email && (
+                  <Button size="sm" variant="outline" aria-label={`Send reminder to ${vendor.name}`} onClick={() => actions.onRemind(vendor)}>
+                    <BellRing /> Send reminder{sentCount >= GHOSTED_AFTER ? " (again)" : ""}
+                  </Button>
+                )}
+              </div>
+              {log.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Nothing logged yet. Notes and reminders you add here stay with this vendor.</p>
+              ) : (
+                <ol className="space-y-1.5">
+                  {[...log].reverse().map((n) => (
+                    <li key={n.id} data-testid="vendor-note" className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                      <span className="text-xs text-muted-foreground">{formatDayLong(n.on)}</span>
+                      <Badge variant={n.kind === "reminder" ? "warning" : n.kind === "reply" ? "success" : "muted"}>{n.kind === "reminder" ? "Reminder" : n.kind === "reply" ? "Replied" : "Note"}</Badge>
+                      <span className="min-w-0 flex-1 break-words">{n.text}</span>
+                      <span className="text-xs text-muted-foreground">{n.by}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <form
+                className="flex flex-wrap items-center gap-2"
+                onSubmit={(e) => { e.preventDefault(); if (!noteText.trim()) return; actions.onNote(vendor, "note", noteText); setNoteText(""); }}
+              >
+                <Input value={noteText} onChange={(e) => setNoteText(e.target.value)} maxLength={500} placeholder="Add a note: who you spoke to, what was promised" aria-label={`Add a note for ${vendor.name}`} className="h-9 min-w-48 flex-1" />
+                <Button type="submit" size="sm" variant="outline" disabled={!noteText.trim()}>Add note</Button>
+                <Button type="button" size="sm" variant="ghost" disabled={!noteText.trim()} onClick={() => { actions.onNote(vendor, "reply", noteText); setNoteText(""); }}>They replied</Button>
+              </form>
+            </section>
             {vendor.notes && <p className="whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">{vendor.notes}</p>}
           </div>
         )}

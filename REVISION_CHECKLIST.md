@@ -32,6 +32,6 @@ Databases go last. Update this file in the same commit as the work.
 - [ ] Notifications made very useful
 - [~] Certifications and compliance tracking for licenses and policies (Certification and Policy types, compliance score; per-policy review cycles still to do)
 - [ ] Onboarding packets
-- [ ] Ghosting fix: automated vendor compliance reminders + comments/notes log for updates and CYA
+- [~] Ghosting fix: automated vendor compliance reminders + comments/notes log for updates and CYA (due-reminder rules, escalating wording, ghosted flag after 3 and a dated notes log done; sending opens your email app until a mail service exists)
 - [ ] Contact / vendor profile with all their documents and notes in one place (needs database)
 - [ ] Databases (last)
