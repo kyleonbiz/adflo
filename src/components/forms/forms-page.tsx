@@ -19,6 +19,7 @@ import { starterForms } from "@/lib/forms/starter-forms";
 import { e2eSeed } from "@/lib/e2e-seed";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
 import { useSetupConfig } from "@/lib/setup/storage";
+import { industryForms } from "@/lib/setup/industries";
 import { installedForms } from "@/lib/setup/templates";
 import type { FormBuilderValues } from "@/lib/forms/validation";
 import { addContactLink, personFromSubmission, prefillFromPerson, type Person } from "@/lib/bridge";
@@ -66,7 +67,8 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   // Forms installed by Settings (only once setup is finished) sit alongside your own records.
   const forms = useMemo(() => {
     if (editedForms) return editedForms;
-    const base = [...starterForms(), ...installedForms(setup?.completedOn ? setup.templates : [])];
+    const own = [...starterForms(), ...installedForms(setup?.completedOn ? setup.templates : [])];
+    const base = [...own, ...industryForms(setup).filter((f) => !own.some((o) => o.name.toLowerCase() === f.name.toLowerCase()))];
     return fromLink && !base.some((f) => f.id === fromLink.id) ? [...base, fromLink] : base;
   }, [editedForms, setup, fromLink]);
   const subs = useMemo(() => editedSubs ?? e2eSeed<Submission>("submissions") ?? [], [editedSubs]);

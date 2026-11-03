@@ -1,4 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
+import { industryChains } from "@/lib/setup/industries";
+import { useSetupConfig } from "@/lib/setup/storage";
 import { parseChains, type ChainConfig } from "./chain";
 
 const KEY = "adflo.approval-chains.v1";
@@ -19,8 +21,13 @@ function subscribe(onChange: () => void) {
   return () => { window.removeEventListener(EVENT, onChange); window.removeEventListener("storage", onChange); };
 }
 
-/** The approval chains set in Settings. Empty on the server. */
+/** The saved chains, with the industry's suggestion filling in any kind that was never set by hand. Empty on the server. */
 export function useChains(): ChainConfig {
   const raw = useSyncExternalStore(subscribe, read, () => "");
-  return useMemo(() => parseChains(raw), [raw]);
+  const setup = useSetupConfig();
+  return useMemo(() => {
+    const saved = parseChains(raw);
+    const suggested = industryChains(setup);
+    return { requests: saved.requests.length ? saved.requests : suggested.requests, forms: saved.forms.length ? saved.forms : suggested.forms };
+  }, [raw, setup]);
 }

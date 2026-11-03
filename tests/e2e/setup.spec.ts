@@ -93,9 +93,9 @@ test.describe("back office setup module", () => {
     await expect(done.getByRole("link", { name: "Vendors" })).toBeVisible();
     await expect(done.getByRole("link", { name: "Projects" })).toHaveCount(0);
 
-    // Forms: 3 samples + 3 installed.
+    // Forms: 3 samples + 3 installed + 3 for the industry (professional services).
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(6);
+    await expect(page.getByTestId("form-card")).toHaveCount(9);
     await expect(page.getByRole("heading", { name: "Expense reimbursement" })).toBeVisible();
     await expect(page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" })).toContainText("Approval: Finance manager");
 
@@ -105,9 +105,9 @@ test.describe("back office setup module", () => {
     await expect(page.getByTestId("routine-row").filter({ hasText: "Follow up on overdue invoices" })).toContainText("every week");
     await expect(page.getByTestId("routine-row").filter({ hasText: "Reconcile bank statements" })).toHaveCount(1); // the sample one only
 
-    // Licenses: 5 samples + 4 starter records.
+    // Licenses: 5 samples + 4 starter records + 5 for the industry (its sixth, general liability, is already a starter record).
     await page.goto("/app/licenses");
-    await expect(page.getByTestId("license-card")).toHaveCount(9);
+    await expect(page.getByTestId("license-card")).toHaveCount(14);
     await expect(page.getByTestId("license-card").filter({ hasText: "Local business permit" })).toBeVisible();
   });
 
@@ -163,7 +163,7 @@ test.describe("back office setup module", () => {
   test("editing a finished setup takes it out of 'installed' until finished again", async ({ page }) => {
     await completeSetup(page);
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(6);
+    await expect(page.getByTestId("form-card")).toHaveCount(9);
     await page.goto("/app/setup?tab=setup");
     await page.getByRole("button", { name: "Edit setup" }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("Acme Studio"); // the answers are kept
@@ -173,7 +173,7 @@ test.describe("back office setup module", () => {
     await page.getByRole("button", { name: /Review/ }).click();
     await page.getByRole("button", { name: "Finish setup" }).click();
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(6);
+    await expect(page.getByTestId("form-card")).toHaveCount(9);
   });
 
   test("damaged or hostile saved data is ignored", async ({ page }) => {

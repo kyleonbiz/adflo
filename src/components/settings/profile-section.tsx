@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { industryLeadDays } from "@/lib/setup/industries";
 import { saveConfig, useSetupConfig } from "@/lib/setup/storage";
 import { INDUSTRIES, TEAM_SIZES, emptyConfig, type Industry, type TeamSize } from "@/lib/setup/types";
 import { saveSettings, useSettings } from "@/lib/settings/storage";
@@ -25,10 +26,17 @@ function Form({ initial }: { initial: Draft }) {
 
   const save = () => {
     const { name, industry, teamSize, ...details } = draft;
-    saveSettings({ ...settings, details: { ...details, email: details.email.trim(), phone: details.phone.trim(), address: details.address.trim() } });
     // Name, industry and team size are the same ones the guided setup uses.
     const config = setup ?? emptyConfig();
-    saveConfig({ ...config, business: { name: name.trim(), industry, teamSize } });
+    const next = { ...config, business: { name: name.trim(), industry, teamSize } };
+    // A new industry brings its own reminder lead time, when setup was set to use one.
+    const lead = industry !== config.business.industry ? industryLeadDays(next) : null;
+    saveSettings({
+      ...settings,
+      details: { ...details, email: details.email.trim(), phone: details.phone.trim(), address: details.address.trim() },
+      notifications: lead ? { ...settings.notifications, leadDays: lead } : settings.notifications,
+    });
+    saveConfig(next);
     setSaved(true);
   };
 

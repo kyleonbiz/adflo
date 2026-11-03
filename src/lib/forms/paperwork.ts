@@ -9,6 +9,11 @@ export const INDUSTRIES = [
   { id: "realestate", label: "Real estate" },
   { id: "health", label: "Healthcare" },
   { id: "retail", label: "Retail" },
+  { id: "beauty", label: "Beauty and wellness" },
+  { id: "childcare", label: "Education and childcare" },
+  { id: "manufacturing", label: "Manufacturing" },
+  { id: "legal", label: "Legal" },
+  { id: "accounting", label: "Accounting and tax" },
 ] as const;
 export type IndustryId = (typeof INDUSTRIES)[number]["id"];
 
@@ -136,6 +141,59 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("retail", "vendor-order", "Vendor order form", "What you are ordering and when you need it", [
     f("Vendor"), f("Items", "longtext"), f("Needed by", "date"), f("Total", "number", false),
   ], { approver: "Owner" }),
+
+  paper("beauty", "client-consent", "Client consent and allergy form", "Before a first service", [
+    f("Client name"), f("Date", "date"), f("Service"), f("Allergies or sensitivities", "longtext", false), f("I understand the service and agree to proceed", "checkbox"),
+  ]),
+  paper("beauty", "patch-test", "Patch test record", "Record each test and its result", [
+    f("Client name"), f("Date", "date"), f("Product tested"), f("Result", "select", true, ["No reaction", "Mild reaction", "Reaction, do not use"]), f("Done by"),
+  ], { repeats: true }),
+  paper("beauty", "sanitation-log", "Station sanitation log", "End-of-day cleaning record", [
+    f("Date", "date"), f("Station"), f("Tools disinfected", "checkbox"), f("Surfaces cleaned", "checkbox"), f("Done by"),
+  ], { repeats: true }),
+
+  paper("childcare", "enrollment", "Enrollment form", "A new child joining", [
+    f("Child's name"), f("Date of birth", "date"), f("Parent or guardian"), f("Phone"), f("Allergies or medical needs", "longtext", false), f("Start date", "date"),
+  ]),
+  paper("childcare", "pickup-auth", "Pickup authorization", "Who may collect a child", [
+    f("Child's name"), f("Authorized person"), f("Relationship"), f("Phone"), f("Photo ID checked", "checkbox", false),
+  ]),
+  paper("childcare", "injury-report", "Injury or incident report", "Write it down the same day", [
+    f("Child's name"), f("Date", "date"), f("What happened", "longtext"), f("First aid given", "longtext", false), f("Parent told", "checkbox"),
+  ]),
+  paper("childcare", "attendance", "Daily attendance sheet", "Who was here today", [
+    f("Date", "date"), f("Room"), f("Children present", "number"), f("Staff on duty", "number"), f("Notes", "longtext", false),
+  ], { repeats: true }),
+
+  paper("manufacturing", "ncr", "Nonconformance report", "A part or batch that missed spec", [
+    f("Part or batch"), f("Date found", "date"), f("What is wrong", "longtext"), f("Quantity affected", "number"), f("Action", "select", true, ["Rework", "Scrap", "Use as is", "Return to supplier"]),
+  ], { repeats: true, approver: "Quality lead" }),
+  paper("manufacturing", "equipment-maint", "Equipment maintenance log", "Service done on a machine", [
+    f("Machine"), f("Date", "date"), f("Work done", "longtext"), f("Hours since last service", "number", false), f("Done by"),
+  ], { repeats: true }),
+  paper("manufacturing", "safety-walk", "Safety walk-through", "Weekly floor check", [
+    f("Area"), f("Date", "date"), f("Guards and signage in place", "checkbox", false), f("Aisles clear", "checkbox", false), f("Issues found", "longtext", false),
+  ], { repeats: true }),
+
+  paper("legal", "matter-intake", "New matter intake", "Open a file for a client", [
+    f("Client name"), f("Email", "email"), f("Phone"), f("Matter type"), f("Opposing party", "text", false), f("Summary", "longtext"),
+  ]),
+  paper("legal", "conflict-check", "Conflict check", "Before taking a matter", [
+    f("Client name"), f("Opposing party"), f("Related parties", "longtext", false), f("Checked by"), f("Conflict found", "checkbox", false),
+  ], { approver: "Managing partner" }),
+  paper("legal", "trust-deposit", "Trust deposit request", "Money held for a client", [
+    f("Client name"), f("Matter"), f("Amount", "number"), f("Received from"), f("Date", "date"),
+  ], { approver: "Managing partner" }),
+
+  paper("accounting", "tax-engagement", "Tax engagement acknowledgment", "Client agrees to scope and fee", [
+    f("Client name"), f("Tax year"), f("Services included", "longtext"), f("Fee", "number"), f("I agree to the engagement terms", "checkbox"),
+  ]),
+  paper("accounting", "doc-checklist", "Client document checklist", "What the client still owes you", [
+    f("Client name"), f("Tax year"), f("W-2s and 1099s received", "checkbox", false), f("Expense records received", "checkbox", false), f("Still missing", "longtext", false),
+  ], { repeats: true }),
+  paper("accounting", "extension", "Extension request", "Ask to file late", [
+    f("Client name"), f("Tax year"), f("Reason", "longtext"), f("New due date", "date"),
+  ], { approver: "Partner" }),
 ];
 
 export const paperworkFor = (industry: IndustryId): Paperwork[] => PAPERWORK.filter((p) => p.industry === industry);

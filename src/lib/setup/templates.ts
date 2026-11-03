@@ -78,7 +78,9 @@ export const TEMPLATES: Template[] = [
 
 export const templatesFor = (module: string) => TEMPLATES.filter((t) => t.module === module);
 export const templateById = (id: string) => TEMPLATES.find((t) => t.id === id);
-export const TEMPLATE_IDS = new Set(TEMPLATES.map((t) => t.id));
+/** The industry bundles a setup can keep (see industries.ts). They are saved beside the template ids. */
+export const BUNDLE_ID_LIST = ["bundle:licenses", "bundle:paperwork", "bundle:projects", "bundle:vendor-docs", "bundle:approvals", "bundle:reminders", "bundle:home"] as const;
+export const TEMPLATE_IDS = new Set<string>([...TEMPLATES.map((t) => t.id), ...BUNDLE_ID_LIST]);
 
 /** Form templates the user installed, in catalogue order. Ids are stable so reinstalling never duplicates. */
 export function installedForms(ids: readonly string[]): FormTemplate[] {

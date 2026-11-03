@@ -13,6 +13,8 @@ import { PROJECT_TEMPLATES, templateDueOn, type ProjectTemplate, type TemplateTa
 import { PROJECT_STATUSES, type Project } from "@/lib/projects/types";
 import { projectFormSchema, type ProjectFormInput, type ProjectFormValues } from "@/lib/projects/validation";
 import { NEW_TYPE, buildCustomType, isCustomType, type CustomTypeInput } from "@/lib/projects/custom-types";
+import { industryProjects } from "@/lib/setup/industries";
+import { useSetupConfig } from "@/lib/setup/storage";
 import { saveCustomTypes, useCustomTypes } from "@/lib/projects/custom-types-storage";
 
 const newTypeId = () => Math.random().toString(36).slice(2, 10);
@@ -54,7 +56,9 @@ export function ProjectFormDialog({
   const [templateId, setTemplateId] = useState("blank");
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const custom = useCustomTypes();
-  const all: ProjectTemplate[] = [...PROJECT_TEMPLATES, ...custom];
+  const setup = useSetupConfig();
+  const forYou = industryProjects(setup);
+  const all: ProjectTemplate[] = [...forYou, ...PROJECT_TEMPLATES.filter((t) => !forYou.some((f) => f.id === t.id)), ...custom];
   const templateById = (id: string) => all.find((t) => t.id === id);
   const template = templateById(templateId);
   const [adding, setAdding] = useState<CustomTypeInput | null>(null);

@@ -16,6 +16,7 @@ import { toIcs } from "@/lib/admin/ics";
 import { downloadText } from "@/components/import/csv-source";
 import { compliance, expiryText, licenseCalendarEvents, renewalSpend, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
+import { industryLicenses } from "@/lib/setup/industries";
 import { TemplateDialog } from "./template-dialog";
 import { draftTemplate, type LicenseDraft, type LicenseTemplate } from "@/lib/licenses/templates";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
@@ -58,7 +59,14 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const setup = useSetupConfig();
   // Starter records installed by Settings (only once setup is finished) sit alongside your own records.
   const licenses = useMemo(
-    () => edited ?? (today ? [...(e2eSeed<License>("licenses") ?? []), ...installedLicenses(setup?.completedOn ? setup.templates : [], today)] : []),
+    () => {
+      if (edited) return edited;
+      if (!today) return [];
+      const starters = installedLicenses(setup?.completedOn ? setup.templates : [], today);
+      // The industry's records skip any a starter template already brought in under the same name.
+      const industry = industryLicenses(setup, today).filter((l) => !starters.some((s) => s.name.toLowerCase() === l.name.toLowerCase()));
+      return [...(e2eSeed<License>("licenses") ?? []), ...starters, ...industry];
+    },
     [edited, today, setup],
   );
 

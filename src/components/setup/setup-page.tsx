@@ -13,6 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 import { AVAILABLE_MODULE_IDS, IMPORTABLE, canFinish, recommendModules, runSetupChecks, setupScore } from "@/lib/setup/logic";
+import { BUNDLES, bundlesFor, defaultBundles, describeBundle, industryLeadDays } from "@/lib/setup/industries";
+import { saveSettings, useSettings } from "@/lib/settings/storage";
 import { clearConfig, saveConfig, useSetupConfig } from "@/lib/setup/storage";
 import { TEMPLATES, templateById, templatesFor } from "@/lib/setup/templates";
 import { INDUSTRIES, STEPS, TEAM_SIZES, emptyConfig, type CheckStatus, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
@@ -27,6 +29,7 @@ const moduleSummary = (id: string) => MODULES.find((m) => m.id === id)?.summary 
 
 function Wizard({ initial, today, base }: { initial: SetupConfig; today: string; base: "/app" }) {
   const [config, setConfig] = useState<SetupConfig>(initial);
+  const settings = useSettings();
 
   /** Every change is saved straight away, so leaving to import data and coming back loses nothing. */
   const update = (change: (c: SetupConfig) => SetupConfig) => {
@@ -51,8 +54,8 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
       if (c.step === 0 && c.modules.length === 0) n = { ...n, modules: recs.map((r) => r.id) };
       // Entering Templates: drop templates of modules that were switched off; install all if none chosen yet.
       if (c.step === 1) {
-        const kept = c.templates.filter((id) => c.modules.includes(templateById(id)?.module ?? ""));
-        n = { ...n, templates: kept.length > 0 ? kept : TEMPLATES.filter((t) => c.modules.includes(t.module)).map((t) => t.id) };
+        const kept = c.templates.filter((id) => (id.startsWith("bundle:") ? bundlesFor(c.modules).some((b) => b.id === id) : c.modules.includes(templateById(id)?.module ?? "")));
+        n = { ...n, templates: kept.length > 0 ? kept : [...TEMPLATES.filter((t) => c.modules.includes(t.module)).map((t) => t.id), ...defaultBundles(c.modules)] };
       }
       return n;
     });
@@ -62,6 +65,8 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
 
   if (done) {
     const installed = config.templates.map(templateById).filter((t) => t !== undefined);
+    const industry = config.business.industry;
+    const bundles = industry ? BUNDLES.filter((b) => config.templates.includes(b.id)) : [];
     return (
       <section aria-label="Setup complete" className="space-y-4 rounded-2xl border bg-card p-6 shadow-panel" data-testid="setup-complete">
         <div className="flex items-start gap-3">
@@ -86,6 +91,14 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
             })}
           </ul>
         </div>
+        {bundles.length > 0 && industry && (
+          <div data-testid="industry-installed">
+            <h3 className="text-sm font-medium">Set up for {industry.toLowerCase()}</h3>
+            <ul className="mt-1 list-disc pl-5 text-sm text-muted-foreground">
+              {bundles.map((b) => <li key={b.id}>{b.label}: {describeBundle(b.id, industry).items.slice(0, 4).join(", ")}{describeBundle(b.id, industry).items.length > 4 ? " and more" : ""}</li>)}
+            </ul>
+          </div>
+        )}
         {installed.length > 0 && (
           <div>
             <h3 className="text-sm font-medium">Installed</h3>
@@ -175,6 +188,30 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
           <>
             <div><h2 className="text-lg font-semibold">Install templates</h2><p className="text-sm text-muted-foreground">Ready-made forms, recurring tasks and records. They appear inside their services when you finish.</p></div>
             {chosen.length === 0 && <p className="text-sm text-muted-foreground">Choose services first.</p>}
+            {config.business.industry && chosen.length > 0 && (
+              <div className="space-y-2 rounded-xl border border-primary/30 bg-accent/30 p-3" data-testid="industry-bundles">
+                <div>
+                  <h3 className="text-sm font-semibold">What we&apos;ll set up for {config.business.industry.toLowerCase() === "other" ? "your business" : `a ${config.business.industry.toLowerCase()} business`}</h3>
+                  <p className="text-xs text-muted-foreground">Tick what you want. Change your industry in Settings later and these follow it.</p>
+                </div>
+                <ul className="space-y-2">
+                  {bundlesFor(chosen).map((b) => {
+                    const d = describeBundle(b.id, config.business.industry as Industry);
+                    return (
+                      <li key={b.id}>
+                        <label className="flex cursor-pointer items-start gap-3 rounded-lg border bg-card p-3 text-sm hover:bg-muted/40">
+                          <input type="checkbox" checked={config.templates.includes(b.id)} onChange={() => toggle("templates", b.id)} aria-label={b.label} className="mt-0.5 size-4 shrink-0 rounded border-input accent-primary" />
+                          <span className="min-w-0">
+                            <span className="flex flex-wrap items-center gap-2 font-medium">{b.label}<Badge variant="muted">{d.count}</Badge></span>
+                            <span className="block text-xs text-muted-foreground">{d.items.slice(0, 5).join(", ")}{d.items.length > 5 ? `, and ${d.items.length - 5} more` : ""}</span>
+                          </span>
+                        </label>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
             {chosen.map((id) => {
               const list = templatesFor(id);
               return (
@@ -252,7 +289,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
         {config.step < 4 ? (
           <Button onClick={next} disabled={(config.step === 0 && !profileDone) || (config.step === 1 && chosen.length === 0)}>Next <ArrowRight /></Button>
         ) : (
-          <Button disabled={!canFinish(checks)} onClick={() => update((c) => ({ ...c, completedOn: today }))}><Rocket /> Finish setup</Button>
+          <Button disabled={!canFinish(checks)} onClick={() => { const lead = industryLeadDays({ ...config, completedOn: today }); if (lead) saveSettings({ ...settings, notifications: { ...settings.notifications, leadDays: lead } }); update((c) => ({ ...c, completedOn: today })); }}><Rocket /> Finish setup</Button>
         )}
       </div>
     </div>

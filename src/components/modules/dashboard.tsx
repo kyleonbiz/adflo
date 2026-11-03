@@ -5,6 +5,8 @@ import { useState, useSyncExternalStore } from "react";
 import { AlertTriangle, BellOff, Hourglass, CalendarClock, FolderKanban, Inbox, ListPlus, Plus, Receipt, ShieldCheck, Store, Upload } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ArrowRight } from "lucide-react";
+import { industryBegin } from "@/lib/setup/industries";
+import { useSetupConfig } from "@/lib/setup/storage";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 import { MODULE_ICONS } from "@/components/modules/module-icons";
 import { Badge } from "@/components/ui/badge";
@@ -66,9 +68,10 @@ function QuickActions({ base }: { base: string }) {
 
 /** Shown only while nothing has been added yet: one card per service, each leading to its first step. */
 function WhereToBegin({ base }: { base: "/app" }) {
-  const START = ["invoices", "licenses", "contacts", "projects", "admin", "forms"];
-  const cards = START.flatMap((slug) => {
-    const m = MODULES.find((x) => (x.slug ?? x.id) === slug);
+  const setup = useSetupConfig();
+  const START = industryBegin(setup) ?? ["invoices", "licenses", "crm", "projects", "admin", "forms"];
+  const cards = START.flatMap((id) => {
+    const m = MODULES.find((x) => x.id === id);
     const href = m ? moduleHref(m, base) : null;
     return m && href ? [{ m, href }] : [];
   });

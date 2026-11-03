@@ -18,7 +18,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Queue on the home dashboard
 - [~] Bridge Vendors -> Contacts (menu merged; records still separate, needs database)
 - [ ] Discuss: what the Projects module should include
-- [ ] Discuss: setup for different industries
+- [x] Discuss: setup for different industries (built with defaults, 17 industries, tick-box bundles in setup, follows industry changes in Settings; every choice is written up in NOTES.md for Kyle to adjust)
 - [x] Forms & Paperwork: pick paperwork by business type (28 forms, repeating ones flagged; print, PDF or download after filling in)
 - [x] Reporting: dropdown with Reports, Scheduled reports, Materials (scheduled: due banner, print or PDF, no email yet; materials: summary plus per-service PDF and CSV)
 - [x] Remove anything that looks AI-coded (Title Case labels now sentence case, blue-to-violet gradients and gradient buttons gone, flat navy sign-in)

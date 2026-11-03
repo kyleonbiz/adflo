@@ -21,6 +21,8 @@ import type { VendorFormValues } from "@/lib/vendors/validation";
 import { addNote, dueFollowUps, logReminder, mailtoLink, reminderEmail } from "@/lib/vendors/follow-up";
 import { readLicenseFile } from "@/lib/licenses/upload";
 import { formatDayLong } from "@/lib/dates";
+import { industryVendorDocs } from "@/lib/setup/industries";
+import { useSetupConfig } from "@/lib/setup/storage";
 import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
@@ -86,6 +88,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER, startNew, dra
   const vendors = edited ?? seed;
   const summary = useMemo(() => (today ? summarize(vendors, today) : null), [vendors, today]);
   const attention = useMemo(() => (today ? needsAttention(vendors, today) : []), [vendors, today]);
+  const setup = useSetupConfig();
   const latest = useRef(vendors);
   useEffect(() => { latest.current = vendors; }, [vendors]);
   const followUps = useMemo(() => (today ? dueFollowUps(vendors, today) : []), [vendors, today]);
@@ -198,8 +201,9 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER, startNew, dra
       say(extra.length > 0 ? `${values.name} updated. ${extra.length} required document${extra.length === 1 ? "" : "s"} added for ${values.category}.` : `${values.name} updated.`);
       return;
     }
-    const documents = defaultRequirements(values.category).map((r) => ({
-      id: rid("vd"), type: r.type, required: true, receivedOn: null, expiresOn: null,
+    const extras = industryVendorDocs(setup).filter((t) => !defaultRequirements(values.category).some((r) => r.type.toLowerCase() === t.toLowerCase()));
+    const documents = [...defaultRequirements(values.category).map((r) => r.type), ...extras].map((type) => ({
+      id: rid("vd"), type, required: true, receivedOn: null, expiresOn: null,
     }));
     update((all) => [...all, {
       ...values, id: rid("v"), status: "onboarding", createdOn: today, documents, decidedBy: null, decidedOn: null, comment: "",

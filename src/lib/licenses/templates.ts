@@ -9,6 +9,11 @@ export const BUSINESS_TYPES = [
   { id: "realestate", label: "Real estate" },
   { id: "health", label: "Healthcare" },
   { id: "retail", label: "Retail" },
+  { id: "beauty", label: "Beauty and wellness" },
+  { id: "childcare", label: "Education and childcare" },
+  { id: "manufacturing", label: "Manufacturing" },
+  { id: "legal", label: "Legal" },
+  { id: "accounting", label: "Accounting and tax" },
 ] as const;
 export type BusinessTypeId = (typeof BUSINESS_TYPES)[number]["id"];
 
@@ -77,6 +82,34 @@ export const LICENSE_TEMPLATES: readonly LicenseTemplate[] = [
   t("retail", "ret-signage", "Signage permit", "permit", "City planning department", 12, ["Signed application", "Renewal fee receipt"]),
   t("retail", "ret-occupancy", "Certificate of occupancy", "permit", "City building department", 12, ["Certificate copy"]),
   t("retail", "ret-property", "Commercial property insurance", "insurance", "Insurance carrier", 12, ["Updated certificate of insurance", "Premium receipt"]),
+
+  t("beauty", "bty-license", "Cosmetology or esthetics license", "professional", "State board of cosmetology", 24, ["Continuing education proof", "Renewal fee receipt"], "One record per licensed person.", [90, 60, 30]),
+  t("beauty", "bty-shop", "Salon or shop license", "permit", "State board or county", 12, ["Inspection report", "Renewal fee receipt"]),
+  t("beauty", "bty-sanitation", "Health and sanitation inspection", "permit", "County health department", 12, ["Inspection report"]),
+  t("beauty", "bty-liability", "Professional liability insurance", "insurance", "Insurance carrier", 12, ["Updated certificate of insurance"]),
+
+  t("childcare", "cc-facility", "Child care facility license", "permit", "State human services department", 12, ["Inspection report", "Renewal application"], "", [90, 60, 30]),
+  t("childcare", "cc-background", "Staff background checks", "certification", "State or FBI", 24, ["Clearance letters for each staff member"], "One record for the whole team, or one per person.", [90, 60, 30]),
+  t("childcare", "cc-firstaid", "CPR and first aid cards", "certification", "American Heart Association or Red Cross", 24, ["Card copies for each staff member"], "", [60, 30, 7]),
+  t("childcare", "cc-fire", "Fire inspection", "permit", "Local fire marshal", 12, ["Inspection certificate"]),
+  t("childcare", "cc-liability", "Liability and abuse coverage", "insurance", "Insurance carrier", 12, ["Updated certificate of insurance"]),
+
+  t("manufacturing", "mfg-environmental", "Environmental permit", "permit", "State environmental agency", 60, ["Monitoring reports", "Renewal fee receipt"], "", [180, 90, 60]),
+  t("manufacturing", "mfg-fire", "Fire marshal inspection", "permit", "Local fire marshal", 12, ["Inspection certificate"]),
+  t("manufacturing", "mfg-osha-log", "OSHA injury log posting", "policy", "Internal", 12, ["Posted 300A summary"], "Post from February 1 to April 30 each year.", [45, 14]),
+  t("manufacturing", "mfg-forklift", "Forklift operator certifications", "certification", "Employer or training provider", 36, ["Certificates for each operator"], "", [90, 60, 30]),
+  t("manufacturing", "mfg-liability", "Product liability insurance", "insurance", "Insurance carrier", 12, ["Updated certificate of insurance", "Premium receipt"]),
+
+  t("legal", "lgl-bar", "Bar admission", "professional", "State bar", 12, ["Annual fee receipt", "CLE compliance proof"], "One record per attorney.", [90, 60, 30]),
+  t("legal", "lgl-cle", "Continuing legal education hours", "certification", "State bar", 36, ["Course completion certificates"], "", [180, 90, 30]),
+  t("legal", "lgl-trust", "Trust account reconciliation", "policy", "State bar", 12, ["Monthly reconciliations", "Signed review"], "", [30, 7]),
+  t("legal", "lgl-malpractice", "Malpractice insurance", "insurance", "Insurance carrier", 12, ["Updated certificate of insurance"]),
+
+  t("accounting", "acc-cpa", "CPA license", "professional", "State board of accountancy", 24, ["CPE proof", "Renewal fee receipt"], "One record per CPA.", [90, 60, 30]),
+  t("accounting", "acc-ptin", "IRS preparer tax identification number (PTIN)", "registration", "IRS", 12, ["Renewal confirmation"], "Renews every year before the filing season.", [90, 60, 30]),
+  t("accounting", "acc-efile", "IRS e-file provider registration", "registration", "IRS", 12, ["Application confirmation"], "", [60, 30]),
+  t("accounting", "acc-cpe", "Continuing professional education hours", "certification", "State board of accountancy", 36, ["Course completion certificates"], "", [180, 90, 30]),
+  t("accounting", "acc-eo", "Professional liability (E&O) insurance", "insurance", "Insurance carrier", 12, ["Updated certificate of insurance"]),
 ];
 
 /** Templates for one business type, plus the ones every business needs. */

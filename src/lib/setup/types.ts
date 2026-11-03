@@ -1,6 +1,7 @@
 export const INDUSTRIES = [
   "Professional services", "Retail & e-commerce", "Construction & trades", "Healthcare practice",
-  "Restaurant & hospitality", "Nonprofit", "Real estate", "Other",
+  "Restaurant & hospitality", "Nonprofit", "Real estate", "Auto & fleet", "Home services", "Beauty & wellness",
+  "Legal", "Accounting & tax", "Trucking & logistics", "Education & childcare", "Manufacturing", "Tech & agency", "Other",
 ] as const;
 export type Industry = (typeof INDUSTRIES)[number];
 
