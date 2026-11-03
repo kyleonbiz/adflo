@@ -71,7 +71,7 @@ describe("buildReports", () => {
     expect(metric("invoices", "Overdue").tone).toBe("danger");
     expect(metric("invoices", "Overdue").note).toMatch(/^\$/);
     expect(by(reports, "licenses").metrics.map((m) => m.label)).toEqual(["Licenses", "Expired", "Expiring soon", "Missing documents"]);
-    expect(metric("forms", "Waiting for approval").value).toBe("2"); // s-1 and s-3 in the sample
+    expect(metric("forms", "New responses").value).toBe("3"); // s-1, s-3 and s-5 in the sample
   });
 
   it("totals documents, leaving out deleted and unfinished uploads, and flags expiry", () => {

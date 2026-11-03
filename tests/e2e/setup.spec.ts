@@ -92,7 +92,7 @@ test.describe("back office setup module", () => {
     await page.goto("/app/forms");
     await expect(page.getByTestId("form-card")).toHaveCount(6);
     await expect(page.getByRole("heading", { name: "Expense reimbursement" })).toBeVisible();
-    await expect(page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" })).toContainText("Approval: Finance manager");
+    await expect(page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" })).toContainText("sent 0 times");
 
     // Licenses: 5 samples + 4 starter records.
     await page.goto("/app/licenses");
@@ -100,7 +100,7 @@ test.describe("back office setup module", () => {
     await expect(page.getByTestId("license-card").filter({ hasText: "Local business permit" })).toBeVisible();
   });
 
-  test("an installed form can be filled in and routes to its approver", async ({ page }) => {
+  test("an installed form can be filled in", async ({ page }) => {
     await completeSetup(page);
     await page.goto("/app/forms");
     const card = page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" });
@@ -115,7 +115,7 @@ test.describe("back office setup module", () => {
     await dialog.getByLabel(/What was it for/).fill("Train ticket");
     await dialog.getByLabel(/Receipt attached/).check();
     await dialog.getByRole("button", { name: "Submit" }).click();
-    await expect(page.getByRole("status")).toContainText("Waiting for Finance manager to approve");
+    await expect(page.getByRole("status")).toContainText("Response added");
   });
 
   test("a setup that is not finished installs nothing", async ({ page }) => {

@@ -11,8 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import {
-  VENDOR_APPROVER, decide, defaultRequirements, duplicatePairs, fileProblem, hasDocumentIssues, mergeVendors, needsAttention, pairKey,
-  reopen, setActive, submitForApproval, summarize, vendorsToCsv,
+  activate, defaultRequirements, duplicatePairs, fileProblem, hasDocumentIssues, mergeVendors, needsAttention, pairKey,
+  setActive, summarize, vendorsToCsv,
 } from "@/lib/vendors/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { VENDOR_CATEGORIES, type Vendor, type VendorCategory, type VendorStatus } from "@/lib/vendors/types";
@@ -23,7 +23,7 @@ import { VendorFormDialog } from "./vendor-form-dialog";
 import { titleCase } from "@/lib/text";
 
 type SortKey = "name" | "status" | "newest";
-const STATUS_ORDER: VendorStatus[] = ["pending_approval", "onboarding", "approved", "inactive", "rejected"];
+const STATUS_ORDER: VendorStatus[] = ["onboarding", "active", "inactive"];
 const SORT_LABEL: Record<SortKey, string> = { name: "Name", status: "Status", newest: "Newest first" };
 
 const SORTS: SortKey[] = ["name", "status", "newest"];
@@ -60,7 +60,7 @@ function downloadCsv(text: string, name: string) {
  * Vendor administration. Vendors live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits and no notifications are sent.
  */
-export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?: string; approver?: string }) {
+export function VendorsPage({ preview }: { preview?: string }) {
   const today = useToday();
   const [edited, setEdited] = useState<Vendor[] | null>(null);
   const [initial] = useState(readFilters);
@@ -73,7 +73,6 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   const [sort, setSort] = useState<SortKey>(initial.sort);
   const [issuesOnly, setIssuesOnly] = useState(initial.issues);
   const [undo, setUndo] = useState<Vendor[] | null>(null);
-  const [deciding, setDeciding] = useState<{ vendor: Vendor; decision: "approved" | "rejected"; comment: string } | null>(null);
   const [merging, setMerging] = useState<{ keep: Vendor; drop: Vendor } | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [focus, setFocus] = useState<{ id: string; n: number } | null>(null);
@@ -121,9 +120,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   const actions: VendorActions = {
     onEdit: (v) => setFormFor(v),
     onDelete: (v) => setDeleting(v),
-    onSubmit: (v) => { patch(v.id, (x) => submitForApproval(x, today)); say(`${v.name} submitted for approval.`); },
-    onDecide: (v, decision, comment) => setDeciding({ vendor: v, decision, comment }),
-    onReopen: (v) => { patch(v.id, reopen); say(`${v.name} reopened for onboarding.`); },
+    onActivate: (v) => { patch(v.id, (x) => activate(x, today)); say(`${v.name} is now active.`); },
     onActive: (v, active) => { patch(v.id, (x) => setActive(x, active)); say(`${v.name} ${active ? "reactivated" : "deactivated"}.`); },
     onSetDocument: (v, d, dates) => {
       if (dates.receivedOn && dates.expiresOn && dates.expiresOn < dates.receivedOn) {
@@ -177,9 +174,9 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
       id: rid("vd"), type: r.type, required: true, receivedOn: null, expiresOn: null,
     }));
     update((all) => [...all, {
-      ...values, id: rid("v"), status: "onboarding", createdOn: today, documents, decidedBy: null, decidedOn: null, comment: "",
+      ...values, id: rid("v"), status: "onboarding", createdOn: today, documents,
     }]);
-    say(`${values.name} added. Collect its ${documents.length} required documents to submit it for approval.`);
+    say(`${values.name} added. Collect its ${documents.length} required documents, then activate it.`);
   };
 
   const q = query.trim().toLowerCase();
@@ -234,8 +231,8 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
 
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryTile icon={Store} label="Vendors" value={summary.vendors} tone="text-primary" onClick={clearFilters} />
-        <SummaryTile icon={CheckCircle2} label="Awaiting approval" value={summary.pendingApproval} tone="text-amber-600" pressed={statusFilter === "pending_approval"}
-          onClick={() => { setIssuesOnly(false); setStatusFilter("pending_approval"); }} />
+        <SummaryTile icon={CheckCircle2} label="Onboarding" value={summary.onboarding} tone="text-amber-600" pressed={statusFilter === "onboarding"}
+          onClick={() => { setIssuesOnly(false); setStatusFilter("onboarding"); }} />
         <SummaryTile icon={FileWarning} label="Document issues" value={summary.documentIssues} tone="text-red-600" pressed={issuesOnly}
           onClick={() => { setStatusFilter("all"); setIssuesOnly(true); }} />
         <SummaryTile icon={Copy} label="Possible duplicates" value={pairs.length} tone="text-sky-600" href="#vendor-duplicates" />
@@ -354,34 +351,6 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
       />
-
-      <Dialog open={!!deciding} onOpenChange={(o) => !o && setDeciding(null)}>
-        <DialogContent variant={deciding?.decision === "rejected" ? "alert" : undefined}>
-          <DialogTitle>{deciding?.decision === "rejected" ? "Reject" : "Approve"} {deciding?.vendor.name}?</DialogTitle>
-          <DialogDescription className="mt-1">
-            {deciding?.decision === "rejected"
-              ? "The vendor goes back to its owner as rejected. It can be reopened for onboarding."
-              : "The vendor becomes approved and can be used. You will be recorded as the approver."}
-            {deciding?.comment.trim() && ` Comment: “${deciding.comment.trim()}”.`}
-          </DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeciding(null)}>Cancel</Button>
-            <Button
-              variant={deciding?.decision === "rejected" ? "destructive" : "default"}
-              onClick={() => {
-                if (deciding) {
-                  const { vendor, decision, comment } = deciding;
-                  patch(vendor.id, (x) => decide(x, decision, approver, today, comment));
-                  say(`${vendor.name} ${decision}.`);
-                }
-                setDeciding(null);
-              }}
-            >
-              {deciding?.decision === "rejected" ? "Reject" : "Approve"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={!!merging} onOpenChange={(o) => !o && setMerging(null)}>
         <DialogContent>

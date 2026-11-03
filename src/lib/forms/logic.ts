@@ -48,24 +48,17 @@ export function cleanValues(form: FormTemplate, values: Record<string, string>):
   return out;
 }
 
-/** A form that needs approval starts "pending"; otherwise the submission is simply "received". */
+/** A new response starts as "new". */
 export function createSubmission(
   form: FormTemplate, values: Record<string, string>, submittedBy: string, today: string, id: string,
 ): Submission {
   return {
     id, formId: form.id, submittedBy: submittedBy.trim() || "Anonymous", submittedOn: today,
-    values: cleanValues(form, values), status: form.requiresApproval ? "pending" : "received",
-    decidedBy: null, decidedOn: null, comment: "",
+    values: cleanValues(form, values), status: "new",
   };
 }
 
-/** Approve or reject a pending submission. Anything already decided (or never pending) is returned unchanged. */
-export function decide(
-  s: Submission, decision: "approved" | "rejected", by: string, today: string, comment = "",
-): Submission {
-  if (s.status !== "pending") return s;
-  return { ...s, status: decision, decidedBy: by, decidedOn: today, comment: comment.trim() };
-}
+export const markDone = (s: Submission, done: boolean): Submission => ({ ...s, status: done ? "done" : "new" });
 
 export function displayValue(f: FormField, raw: string | undefined): string {
   if (f.type === "checkbox") return raw === "true" ? "Yes" : "No";
@@ -89,37 +82,33 @@ export function generateDocument(form: FormTemplate, s: Submission): string {
     ? filled(form.documentTemplate)
     : form.fields.map((f) => `${f.label}: ${displayValue(f, s.values[f.id])}`).join("\n");
 
-  const status = s.status === "received" ? "Received" : s.status[0].toUpperCase() + s.status.slice(1);
-  const lines = [form.name.toUpperCase(), `Submitted by ${s.submittedBy} on ${formatDayLong(s.submittedOn)}`, "", body, "", `Status: ${status}`];
-  if (s.decidedBy && s.decidedOn) lines.push(`Decision by ${s.decidedBy} on ${formatDayLong(s.decidedOn)}${s.comment ? `: ${s.comment}` : ""}`);
+  const lines = [form.name.toUpperCase(), `Submitted by ${s.submittedBy} on ${formatDayLong(s.submittedOn)}`, "", body];
   return lines.join("\n") + "\n";
 }
 
 export function submissionsToCsv(form: FormTemplate, subs: Submission[]): string {
   return toCsv([
-    ["Submitted on", "Submitted by", "Status", "Decided by", "Decided on", "Comment", ...form.fields.map((f) => f.label)],
-    ...subs.map((s) => [
-      s.submittedOn, s.submittedBy, s.status, s.decidedBy ?? "", s.decidedOn ?? "", s.comment,
-      ...form.fields.map((f) => displayValue(f, s.values[f.id])),
-    ]),
+    ["Submitted on", "Submitted by", "Status", ...form.fields.map((f) => f.label)],
+    ...subs.map((s) => [s.submittedOn, s.submittedBy, s.status, ...form.fields.map((f) => displayValue(f, s.values[f.id]))]),
   ]);
 }
 
 export interface PortfolioSummary {
   forms: number;
-  submissions: number;
-  pending: number;
-  decidedThisMonth: number;
+  /** Times forms have been sent out. */
+  sent: number;
+  /** Responses collected, and how many of them nobody has dealt with yet. */
+  responses: number;
+  unread: number;
 }
 
-export function summarize(forms: FormTemplate[], subs: Submission[], today: string): PortfolioSummary {
-  const month = today.slice(0, 7);
+export function summarize(forms: FormTemplate[], subs: Submission[]): PortfolioSummary {
   const ids = new Set(forms.map((f) => f.id));
   const mine = subs.filter((s) => ids.has(s.formId));
   return {
     forms: forms.length,
-    submissions: mine.length,
-    pending: mine.filter((s) => s.status === "pending").length,
-    decidedThisMonth: mine.filter((s) => s.decidedOn?.startsWith(month)).length,
+    sent: forms.reduce((n, f) => n + f.sentCount, 0),
+    responses: mine.length,
+    unread: mine.filter((s) => s.status === "new").length,
   };
 }

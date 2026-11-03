@@ -1,23 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ClipboardCheck, FileInput, Hourglass, Inbox, Plus, Search } from "lucide-react";
+import { CheckCircle2, FileInput, Inbox, Plus, Search, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
-import { createSubmission, decide, generateDocument, submissionsToCsv, summarize } from "@/lib/forms/logic";
+import { createSubmission, generateDocument, markDone, submissionsToCsv, summarize } from "@/lib/forms/logic";
 import { starterForms } from "@/lib/forms/starter-forms";
 import { e2eSeed } from "@/lib/e2e-seed";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedForms } from "@/lib/setup/templates";
 import type { FormBuilderValues } from "@/lib/forms/validation";
+import { AddResponsesDialog } from "./add-responses-dialog";
 import { FillFormDialog } from "./fill-form-dialog";
 import { FormBuilderDialog } from "./form-builder-dialog";
 import { FormCard, type FormActions } from "./form-card";
+import { SendFormDialog } from "./send-form-dialog";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "form";
@@ -42,6 +44,8 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
   const [query, setQuery] = useState(initialQuery);
   const [builderFor, setBuilderFor] = useState<FormTemplate | "new" | null>(null);
   const [filling, setFilling] = useState<FormTemplate | null>(null);
+  const [sending, setSending] = useState<FormTemplate | null>(null);
+  const [adding, setAdding] = useState<FormTemplate | null>(null);
   const [deleting, setDeleting] = useState<FormTemplate | null>(null);
   const [notice, setNotice] = useState("");
 
@@ -61,35 +65,37 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
   }
 
   const actions: FormActions = {
+    onSend: (f) => setSending(f),
     onFill: (f) => setFilling(f),
+    onAddResponses: (f) => setAdding(f),
     onEdit: (f) => setBuilderFor(f),
     onDelete: (f) => setDeleting(f),
-    onDecide: (f, s, decision, comment) => {
-      setEditedSubs(subs.map((x) => (x.id === s.id ? decide(x, decision, f.approver || "Approver", today, comment) : x)));
-      setNotice(`Submission by ${s.submittedBy} ${decision}.`);
+    onMarkDone: (_f, s, done) => {
+      setEditedSubs(subs.map((x) => (x.id === s.id ? markDone(x, done) : x)));
+      setNotice(`Response by ${s.submittedBy} ${done ? "marked done" : "reopened"}.`);
     },
     onDocument: (f, s) => download(generateDocument(f, s), `${slug(f.name)}-${slug(s.submittedBy)}-${s.submittedOn}.txt`, "text/plain"),
     onExport: (f, list) => download(submissionsToCsv(f, list), `${slug(f.name)}-submissions-${today}.csv`, "text/csv"),
     onDeleteSubmission: (_f, s) => {
       setEditedSubs(subs.filter((x) => x.id !== s.id));
-      setNotice(`Submission by ${s.submittedBy} deleted.`);
+      setNotice(`Response by ${s.submittedBy} deleted.`);
     },
   };
 
   const saveForm = (v: FormBuilderValues) => {
     const fields = v.fields.map((f) => ({ ...f, type: f.type as FormTemplate["fields"][number]["type"] }));
-    const next = { name: v.name, description: v.description, fields, requiresApproval: v.requiresApproval, approver: v.requiresApproval ? v.approver : "", documentTemplate: v.documentTemplate };
+    const next = { name: v.name, description: v.description, fields, documentTemplate: v.documentTemplate };
     if (builderFor && builderFor !== "new") {
       const id = builderFor.id;
       setEditedForms(forms.map((f) => (f.id === id ? { ...f, ...next } : f)));
       setNotice(`${v.name} updated.`);
     } else {
-      setEditedForms([...forms, { ...next, id: rid("form") }]);
+      setEditedForms([...forms, { ...next, id: rid("form"), sentCount: 0 }]);
       setNotice(`${v.name} created.`);
     }
   };
 
-  const summary = summarize(forms, subs, today);
+  const summary = summarize(forms, subs);
   const q = query.trim().toLowerCase();
   const visible = forms.filter((f) => !q || [f.name, f.description].some((x) => x.toLowerCase().includes(q)));
 
@@ -98,7 +104,7 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Forms &amp; Paperwork</h1>
-          <p className="text-sm text-muted-foreground">Build reusable forms, collect answers, route approvals and generate documents.</p>
+          <p className="text-sm text-muted-foreground">Build the forms you need, send them to anyone and collect the answers.</p>
         </div>
         <Button onClick={() => setBuilderFor("new")}><Plus /> New form</Button>
       </div>
@@ -110,9 +116,9 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
 
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryTile icon={FileInput} label="Forms" value={summary.forms} tone="text-primary" />
-        <SummaryTile icon={Inbox} label="Submissions" value={summary.submissions} tone="text-sky-600" />
-        <SummaryTile icon={Hourglass} label="Awaiting approval" value={summary.pending} tone="text-amber-600" />
-        <SummaryTile icon={ClipboardCheck} label="Decided this month" value={summary.decidedThisMonth} tone="text-emerald-600" />
+        <SummaryTile icon={Send} label="Times sent" value={summary.sent} tone="text-sky-600" />
+        <SummaryTile icon={Inbox} label="Responses" value={summary.responses} tone="text-emerald-600" />
+        <SummaryTile icon={CheckCircle2} label="New responses" value={summary.unread} tone="text-amber-600" />
       </section>
 
       <section aria-label="Forms" className="space-y-3">
@@ -146,14 +152,39 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
           if (!filling) return;
           const s = createSubmission(filling, values, by, today, rid("s"));
           setEditedSubs([...subs, s]);
-          setNotice(filling.requiresApproval ? `Submitted. Waiting for ${filling.approver} to approve.` : "Submitted. Thank you.");
+          setNotice("Response added.");
+        }}
+      />
+
+      <SendFormDialog
+        form={sending}
+        onOpenChange={(o) => !o && setSending(null)}
+        onSent={(f, count) => {
+          setEditedForms(forms.map((x) => (x.id === f.id ? { ...x, sentCount: x.sentCount + count } : x)));
+          setNotice(`${f.name} sent.`);
+        }}
+      />
+
+      <AddResponsesDialog
+        form={adding}
+        onOpenChange={(o) => !o && setAdding(null)}
+        onAdd={(f, responses) => {
+          const have = new Set(subs.filter((x) => x.formId === f.id).map((x) => JSON.stringify([x.submittedBy, x.values])));
+          const fresh = responses
+            .map((r) => createSubmission(f, r.values, r.submittedBy, today, rid("s")))
+            .filter((s) => !have.has(JSON.stringify([s.submittedBy, s.values])));
+          if (fresh.length > 0) {
+            setEditedSubs([...subs, ...fresh]);
+            setNotice(`Added ${fresh.length} response${fresh.length === 1 ? "" : "s"} to ${f.name}.`);
+          }
+          return fresh.length;
         }}
       />
 
       <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <DialogContent variant="alert">
           <DialogTitle>Delete form?</DialogTitle>
-          <DialogDescription className="mt-1">{deleting?.name} and all of its submissions will be removed.</DialogDescription>
+          <DialogDescription className="mt-1">{deleting?.name} and all of its responses will be removed.</DialogDescription>
           <div className="mt-5 flex justify-end gap-2">
             <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
             <Button

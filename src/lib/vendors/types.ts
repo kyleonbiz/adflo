@@ -46,7 +46,8 @@ export const VENDOR_CATEGORIES = [
 ] as const;
 export type VendorCategory = (typeof VENDOR_CATEGORIES)[number];
 
-export type VendorStatus = "onboarding" | "pending_approval" | "approved" | "rejected" | "inactive";
+/** Onboarding while its required documents are being collected, active once they are in, inactive when switched off. */
+export type VendorStatus = "onboarding" | "active" | "inactive";
 
 /** Dates are `YYYY-MM-DD`. A document is "received" once `receivedOn` is set. */
 export interface VendorDocument {
@@ -72,9 +73,6 @@ export interface Vendor {
   status: VendorStatus;
   createdOn: string;
   documents: VendorDocument[];
-  decidedBy: string | null;
-  decidedOn: string | null;
-  comment: string;
 }
 
 export type DocState = "missing" | "valid" | "expiring" | "expired";

@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, Paperclip, Pencil, Plus, Power, RotateCcw, Send, Trash2, X, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, Paperclip, Pencil, Plus, Power, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatDayLong } from "@/lib/dates";
-import { FILE_EXTENSIONS, approvalBlockers, docState, onboardingProgress, vendorAlerts } from "@/lib/vendors/logic";
+import { FILE_EXTENSIONS, activationBlockers, docState, onboardingProgress, vendorAlerts } from "@/lib/vendors/logic";
 import type { Vendor, VendorDocument } from "@/lib/vendors/types";
 import { cn } from "@/lib/utils";
 import { DOC_BADGE, DOC_LABEL, SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
@@ -14,9 +13,7 @@ import { DOC_BADGE, DOC_LABEL, SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL } from
 export interface VendorActions {
   onEdit: (v: Vendor) => void;
   onDelete: (v: Vendor) => void;
-  onSubmit: (v: Vendor) => void;
-  onDecide: (v: Vendor, decision: "approved" | "rejected", comment: string) => void;
-  onReopen: (v: Vendor) => void;
+  onActivate: (v: Vendor) => void;
   onActive: (v: Vendor, active: boolean) => void;
   onSetDocument: (v: Vendor, d: VendorDocument, dates: { receivedOn: string | null; expiresOn: string | null }) => void;
   onAddDocument: (v: Vendor, type: string, required: boolean) => void;
@@ -81,7 +78,7 @@ function DocumentRow({ vendor, d, today, actions }: { vendor: Vendor; d: VendorD
 /** `focusKey` changes whenever the page wants this card shown: it opens the documents and scrolls to the card. */
 export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendor; today: string; actions: VendorActions; focusKey?: number }) {
   // Onboarding is mostly collecting documents, so start with them in view.
-  const [open, setOpen] = useState(() => vendor.status === "onboarding" && approvalBlockers(vendor, today).length > 0);
+  const [open, setOpen] = useState(() => vendor.status === "onboarding" && activationBlockers(vendor, today).length > 0);
   const ref = useRef<HTMLLIElement>(null);
   const [seenFocus, setSeenFocus] = useState(focusKey);
   if (focusKey !== seenFocus) {
@@ -91,12 +88,11 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
   useEffect(() => {
     if (focusKey !== undefined) ref.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [focusKey]);
-  const [comment, setComment] = useState("");
   const [newDoc, setNewDoc] = useState("");
   const [newRequired, setNewRequired] = useState(true);
   const alerts = vendorAlerts(vendor, today);
   const { done, total } = onboardingProgress(vendor, today);
-  const blockers = approvalBlockers(vendor, today);
+  const blockers = activationBlockers(vendor, today);
   const panelId = `vendor-docs-${vendor.id}`;
 
   return (
@@ -117,32 +113,19 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
               {alerts.map((a) => <li key={a.message}><Badge variant={SEVERITY_BADGE[a.severity]}>{a.message}</Badge></li>)}
             </ul>
           )}
-          {vendor.decidedBy && vendor.decidedOn && (vendor.status === "approved" || vendor.status === "rejected") && (
-            <p className="text-xs text-muted-foreground">
-              {vendor.status === "approved" ? "Approved" : "Rejected"} by {vendor.decidedBy} on {formatDayLong(vendor.decidedOn)}{vendor.comment && `: ${vendor.comment}`}
-            </p>
-          )}
         </div>
         <div className="flex shrink-0 flex-col gap-2 lg:items-end">
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             {vendor.status === "onboarding" && (
-              <Button size="sm" variant="outline" disabled={blockers.length > 0} onClick={() => actions.onSubmit(vendor)}><Send /> Submit for approval</Button>
+              <Button size="sm" variant="outline" disabled={blockers.length > 0} onClick={() => actions.onActivate(vendor)}><CheckCircle2 /> Activate</Button>
             )}
-            {vendor.status === "pending_approval" && (
-              <>
-                <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (optional)" aria-label={`Comment on ${vendor.name}`} className="h-8 w-44 text-xs" maxLength={200} />
-                <Button size="sm" variant="outline" aria-label={`Approve ${vendor.name}`} onClick={() => { actions.onDecide(vendor, "approved", comment); setComment(""); }}><CheckCircle2 /> Approve</Button>
-                <Button size="sm" variant="outline" aria-label={`Reject ${vendor.name}`} onClick={() => { actions.onDecide(vendor, "rejected", comment); setComment(""); }}><XCircle /> Reject</Button>
-              </>
-            )}
-            {vendor.status === "rejected" && <Button size="sm" variant="outline" onClick={() => actions.onReopen(vendor)}><RotateCcw /> Reopen</Button>}
-            {vendor.status === "approved" && <Button size="sm" variant="outline" onClick={() => actions.onActive(vendor, false)}><Power /> Deactivate</Button>}
+            {vendor.status === "active" && <Button size="sm" variant="outline" onClick={() => actions.onActive(vendor, false)}><Power /> Deactivate</Button>}
             {vendor.status === "inactive" && <Button size="sm" variant="outline" onClick={() => actions.onActive(vendor, true)}><Power /> Reactivate</Button>}
             <Button size="icon-sm" variant="ghost" className="size-10 sm:size-8" aria-label={`Edit ${vendor.name}`} onClick={() => actions.onEdit(vendor)}><Pencil /></Button>
             <Button size="icon-sm" variant="ghost" className="size-10 sm:size-8" aria-label={`Delete ${vendor.name}`} onClick={() => actions.onDelete(vendor)}><Trash2 /></Button>
           </div>
           {vendor.status === "onboarding" && blockers.length > 0 && (
-            <p className="max-w-sm text-xs text-muted-foreground lg:text-right">Before approval: {blockers.join(", ")}.</p>
+            <p className="max-w-sm text-xs text-muted-foreground lg:text-right">To activate: {blockers.join(", ")}.</p>
           )}
         </div>
       </div>

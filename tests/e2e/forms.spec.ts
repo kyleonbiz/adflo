@@ -1,21 +1,23 @@
 import { expect, test } from "./fixtures";
 
 test.describe("forms module", () => {
-  test("summary, approval badges and search", async ({ page }) => {
+  test("summary, response counts and search", async ({ page }) => {
     await page.goto("/app/forms");
     await expect(page.getByRole("note")).toContainText("Nothing is saved");
     await expect(page.getByTestId("form-card")).toHaveCount(3);
     const summary = page.getByRole("region", { name: "Summary" });
-    await expect(summary).toContainText("Awaiting approval");
+    await expect(summary).toContainText("New responses");
+    await expect(summary).not.toContainText("pproval");
     const vendor = page.getByTestId("form-card").filter({ hasText: "New vendor intake" });
-    await expect(vendor).toContainText("1 awaiting approval");
-    await expect(vendor).toContainText("Approval: Operations manager");
+    await expect(vendor).toContainText("1 new");
+    await expect(vendor).toContainText("sent 0 times · 2 responses");
+    await expect(vendor).not.toContainText("pproval");
 
     await page.getByRole("textbox", { name: "Search forms" }).fill("time-off");
     await expect(page.getByTestId("form-card")).toHaveCount(1);
   });
 
-  test("filling a form validates, then routes to approval", async ({ page }) => {
+  test("filling a form validates, then adds a new response", async ({ page }) => {
     await page.goto("/app/forms");
     const leave = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
     await leave.getByRole("button", { name: "Fill out" }).click();
@@ -32,38 +34,90 @@ test.describe("forms module", () => {
     await page.getByRole("option", { name: "Sick" }).click();
     await dialog.getByRole("button", { name: "Submit" }).click();
     await expect(dialog).toBeHidden();
-    await expect(page.getByRole("status")).toContainText("Waiting for Priya Shah to approve");
-    await expect(leave).toContainText("2 awaiting approval");
-    await expect(leave).toContainText("3 submissions");
+    await expect(page.getByRole("status")).toContainText("Response added");
+    await expect(leave).toContainText("2 new");
+    await expect(leave).toContainText("3 responses");
   });
 
-  test("approve and reject with a comment, then download the document", async ({ page }) => {
+  test("mark a response done and reopen it, then download the document", async ({ page }) => {
     await page.goto("/app/forms");
     const leave = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
-    await leave.getByRole("button", { name: /^Submissions/ }).click();
-    await leave.getByLabel("Comment on submission by Marta Gill").fill("Enjoy the trip");
-    await leave.getByRole("button", { name: "Approve submission by Marta Gill" }).click();
+    await leave.getByRole("button", { name: /^Responses/ }).click();
     const row = leave.getByTestId("submission-row").filter({ hasText: "Marta Gill" });
-    await expect(row.getByText("Approved", { exact: true })).toBeVisible();
-    await expect(row).toContainText("Approved by Priya Shah");
-    await expect(row).toContainText("Enjoy the trip");
-    await expect(row.getByRole("button", { name: /^Approve/ })).toHaveCount(0);
-    await expect(leave).not.toContainText("awaiting approval");
+    await expect(row.getByText("New", { exact: true })).toBeVisible();
+    await row.getByRole("button", { name: "Mark response by Marta Gill done" }).click();
+    await expect(row.getByText("Done", { exact: true })).toBeVisible();
+    await expect(leave).not.toContainText("1 new");
+    await row.getByRole("button", { name: "Reopen response by Marta Gill" }).click();
+    await expect(row.getByText("New", { exact: true })).toBeVisible();
 
     const download = page.waitForEvent("download");
-    await row.getByRole("button", { name: "Document for submission by Marta Gill" }).click();
+    await row.getByRole("button", { name: "Document for response by Marta Gill" }).click();
     const file = await download;
     expect(file.suggestedFilename()).toMatch(/^time-off-request-marta-gill-\d{4}-\d{2}-\d{2}\.txt$/);
     let text = "";
     for await (const chunk of await file.createReadStream()) text += chunk;
     expect(text).toContain("TIME-OFF REQUEST");
     expect(text).toContain("Type: Vacation");
-    expect(text).toContain("Status: Approved");
+    expect(text).not.toMatch(/Decision|Approved/);
+  });
 
-    const vendor = page.getByTestId("form-card").filter({ hasText: "New vendor intake" });
-    await vendor.getByRole("button", { name: /^Submissions/ }).click();
-    await vendor.getByRole("button", { name: "Reject submission by Dana Whitfield" }).first().click();
-    await expect(vendor.getByText("Rejected", { exact: true })).toBeVisible();
+  test("send a form, a recipient fills it in on the public page, and their answers come back", async ({ page }) => {
+    await page.goto("/app/forms");
+    const feedback = page.getByTestId("form-card").filter({ hasText: "Client feedback" });
+    await feedback.getByRole("button", { name: "Send" }).click();
+    const send = page.getByRole("dialog");
+    await expect(send.getByRole("button", { name: "Open email" })).toBeDisabled();
+    await send.getByLabel("Send the answers to").fill("me@mybusiness.com");
+    await send.getByLabel("Who is it for? (optional)").fill("pat@client.com");
+    const link = await send.getByLabel("Link to the form").inputValue();
+    expect(link).toContain("/form/");
+    await expect(send.getByRole("link", { name: "Open email" })).toHaveAttribute("href", /^mailto:pat%40client\.com\?subject=/);
+    await send.getByRole("button", { name: "Copy link" }).click();
+    await page.keyboard.press("Escape");
+    await expect(feedback).toContainText("sent 1 time ·");
+
+    // The recipient: a plain page, no sign-in, nothing stored.
+    await page.goto(link);
+    await expect(page.getByRole("heading", { level: 1, name: "Client feedback" })).toBeVisible();
+    await page.getByRole("button", { name: "Review my answers" }).click();
+    await expect(page.getByRole("alert").first()).toContainText("required");
+    await page.locator("#fill-by").fill("Pat Lee");
+    await page.getByLabel(/Score/).fill("9");
+    await page.getByLabel("Comments").fill("Fast and thorough.");
+    await page.getByRole("button", { name: "Review my answers" }).click();
+    const done = page.getByTestId("public-form-done");
+    await expect(done).toContainText("Nothing has been sent yet");
+    await expect(done.getByRole("link", { name: "Email my answers" })).toHaveAttribute("href", /^mailto:me%40mybusiness\.com\?subject=/);
+    const answers = (await done.locator("pre").textContent()) ?? "";
+    expect(answers).toContain("Score (1-10): 9");
+
+    // Back in AdFlo, the sender pastes the email.
+    await page.goto("/app/forms");
+    const card = page.getByTestId("form-card").filter({ hasText: "Client feedback" });
+    await card.getByRole("button", { name: /^Responses/ }).click();
+    await card.getByRole("button", { name: "Add responses to Client feedback" }).click();
+    const add = page.getByRole("dialog");
+    await expect(add.getByRole("button", { name: "Add responses" })).toBeDisabled();
+    await add.getByLabel("Paste the emails you received").fill("nothing useful here");
+    await add.getByRole("button", { name: "Add responses" }).click();
+    await expect(add.getByRole("alert")).toContainText("No AdFlo answers were found");
+    await add.getByLabel("Paste the emails you received").fill(`Hi!\n\n${answers}\n\nThanks, Pat`);
+    await add.getByRole("button", { name: "Add responses" }).click();
+    await expect(add).toBeHidden();
+    await expect(page.getByRole("status")).toContainText("Added 1 response to Client feedback");
+    await expect(card.getByTestId("submission-row").filter({ hasText: /^Pat Lee/ })).toContainText("New");
+
+    // Pasting the same email again does not add a duplicate.
+    await card.getByRole("button", { name: "Add responses to Client feedback" }).click();
+    await page.getByRole("dialog").getByLabel("Paste the emails you received").fill(answers);
+    await page.getByRole("dialog").getByRole("button", { name: "Add responses" }).click();
+    await expect(page.getByRole("dialog").getByRole("alert")).toContainText("already added");
+  });
+
+  test("a broken form link shows not found", async ({ page }) => {
+    const res = await page.goto("/form/not-a-real-form");
+    expect(res?.status()).toBe(404);
   });
 
   test("builds a form, uses it, edits it and deletes it", async ({ page }) => {
@@ -93,26 +147,22 @@ test.describe("forms module", () => {
     await expect(problems).toContainText("at least two options");
     await dialog.getByLabel("Options of field 2").fill("Laptop, Monitor");
 
-    await dialog.getByLabel("Submissions need approval").check();
-    await create.click();
-    await expect(problems).toContainText("Enter who approves");
-    await dialog.getByLabel("Approver").fill("IT lead");
+    await expect(dialog).not.toContainText("pproval");
     await dialog.getByLabel("Document template (optional)").fill("Request from {{Name}}: {{Item}}");
     await create.click();
     await expect(dialog).toBeHidden();
 
     const card = page.getByTestId("form-card").filter({ hasText: "Equipment request" });
     await expect(card).toContainText("2 fields");
-    await expect(card).toContainText("Approval: IT lead");
 
     await card.getByRole("button", { name: "Fill out" }).click();
     await page.getByRole("dialog").getByLabel(/^Name/).last().fill("Jo");
     await page.getByRole("dialog").getByRole("combobox", { name: /Item/ }).click();
     await page.getByRole("option", { name: "Monitor" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Submit" }).click();
-    await card.getByRole("button", { name: /^Submissions/ }).click();
+    await card.getByRole("button", { name: /^Responses/ }).click();
     const download = page.waitForEvent("download");
-    await card.getByRole("button", { name: /^Document for submission/ }).click();
+    await card.getByRole("button", { name: /^Document for response/ }).click();
     let text = "";
     for await (const chunk of await (await download).createReadStream()) text += chunk;
     expect(text).toContain("Request from Jo: Monitor");
@@ -127,10 +177,10 @@ test.describe("forms module", () => {
     await expect(page.getByTestId("form-card")).toHaveCount(3);
   });
 
-  test("exports submissions as CSV", async ({ page }) => {
+  test("exports responses as CSV", async ({ page }) => {
     await page.goto("/app/forms");
     const vendor = page.getByTestId("form-card").filter({ hasText: "New vendor intake" });
-    await vendor.getByRole("button", { name: /^Submissions/ }).click();
+    await vendor.getByRole("button", { name: /^Responses/ }).click();
     const download = page.waitForEvent("download");
     await vendor.getByRole("button", { name: "Export CSV" }).click();
     const file = await download;
@@ -144,7 +194,7 @@ test.describe("forms module", () => {
   test("fits a phone screen without horizontal scroll", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
     await page.goto("/app/forms");
-    await page.getByTestId("form-card").first().getByRole("button", { name: /^Submissions/ }).click();
+    await page.getByTestId("form-card").first().getByRole("button", { name: /^Responses/ }).click();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   });

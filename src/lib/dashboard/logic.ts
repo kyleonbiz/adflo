@@ -104,7 +104,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
   const workload: WorkloadRow[] = [
     { label: "Invoices", open: src.invoices.filter((i) => i.status === "sent").length, attention: count("Invoices") },
     { label: "Licenses", open: src.licenses.length, attention: count("Licenses") },
-    { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive" && v.status !== "rejected").length, attention: ven.pendingApproval },
+    { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive").length, attention: ven.documentIssues },
     { label: "Tasks", open: proj.openTasks, attention: count("Tasks") },
   ];
 

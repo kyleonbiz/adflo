@@ -6,7 +6,6 @@ interface Base { id: string; module: string; name: string; description: string }
 
 export interface FormTpl extends Base {
   kind: "form";
-  approver: string;
   fields: Omit<FormField, "id">[];
   documentTemplate: string;
 }
@@ -22,19 +21,19 @@ const f = (label: string, type: FormField["type"], required = true, options: str
 export const TEMPLATES: Template[] = [
   {
     id: "form-employee-onboarding", module: "forms", kind: "form", name: "New employee details",
-    description: "Collect what you need on a new hire's first day.", approver: "",
+    description: "Collect what you need on a new hire's first day.",
     fields: [f("Full name", "text"), f("Personal email", "email"), f("Phone", "text", false), f("Start date", "date"), f("Role", "text"), f("Emergency contact", "text", false), f("W-4 completed", "checkbox", false)],
     documentTemplate: "New employee: {{Full name}}\nRole: {{Role}}\nStart date: {{Start date}}\nEmail: {{Personal email}}\nEmergency contact: {{Emergency contact}}\nW-4 completed: {{W-4 completed}}",
   },
   {
     id: "form-expense-claim", module: "forms", kind: "form", name: "Expense reimbursement",
-    description: "Staff claim back money they spent, and a manager approves it.", approver: "Finance manager",
+    description: "Staff claim back money they spent on the business.",
     fields: [f("Employee name", "text"), f("Expense date", "date"), f("Amount", "number"), f("Category", "select", true, ["Travel", "Meals", "Supplies", "Software", "Other"]), f("What was it for?", "longtext"), f("Receipt attached", "checkbox")],
     documentTemplate: "Expense claim from {{Employee name}}\nDate: {{Expense date}}\nAmount: {{Amount}}\nCategory: {{Category}}\nPurpose: {{What was it for?}}\nReceipt attached: {{Receipt attached}}",
   },
   {
     id: "form-client-intake", module: "forms", kind: "form", name: "New client intake",
-    description: "The basics for every new client, before work starts.", approver: "",
+    description: "The basics for every new client, before work starts.",
     fields: [f("Client name", "text"), f("Contact email", "email"), f("Phone", "text", false), f("Service needed", "select", true, ["Bookkeeping", "Admin support", "Document prep", "Project work", "Other"]), f("Anything we should know?", "longtext", false)],
     documentTemplate: "",
   },
@@ -59,7 +58,7 @@ export function installedForms(ids: readonly string[]): FormTemplate[] {
   return TEMPLATES.flatMap((t) =>
     t.kind === "form" && ids.includes(t.id)
       ? [{
-          id: `tpl-${t.id}`, name: t.name, description: t.description, requiresApproval: t.approver !== "", approver: t.approver,
+          id: `tpl-${t.id}`, name: t.name, description: t.description, sentCount: 0,
           documentTemplate: t.documentTemplate, fields: t.fields.map((fld, i) => ({ ...fld, id: `${t.id}-f${i + 1}` })),
         }]
       : [],

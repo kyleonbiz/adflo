@@ -12,12 +12,12 @@ const BASE: Recommendation[] = [
 const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
   "Professional services": [
     { id: "projects", reason: "Client work needs tasks, deadlines and status reports." },
-    { id: "forms", reason: "Intake forms and approvals for new clients." },
+    { id: "forms", reason: "Intake forms for new clients." },
     { id: "crm", reason: "Keep client contacts clean and de-duplicated." },
     { id: "licenses", reason: "Professional licenses and insurance expire." },
   ],
   "Retail & e-commerce": [
-    { id: "vendors", reason: "Suppliers need documents and approval." },
+    { id: "vendors", reason: "Suppliers need their documents collected." },
     { id: "reporting", reason: "Turn sales exports into reports." },
     { id: "licenses", reason: "Sales tax registration and permits renew." },
     { id: "crm", reason: "Customer lists need cleaning." },
@@ -57,11 +57,11 @@ const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
   ],
 };
 
-/** Which modules to suggest, with a reason each. Bigger teams also get forms, for approvals. */
+/** Which modules to suggest, with a reason each. Bigger teams also get forms, for standard paperwork. */
 export function recommendModules(industry: Industry | "", teamSize: TeamSize | ""): Recommendation[] {
   const list = [...BASE, ...(industry ? BY_INDUSTRY[industry] : [])];
   if ((teamSize === "6-20 people" || teamSize === "21+ people") && !list.some((r) => r.id === "forms")) {
-    list.push({ id: "forms", reason: "A bigger team needs approvals on paper." });
+    list.push({ id: "forms", reason: "A bigger team needs standard paperwork." });
   }
   const seen = new Set<string>();
   return list.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
@@ -136,7 +136,7 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
   }
 
   if (has("vendors") && !has("forms")) {
-    checks.push({ id: "vendors-forms", status: "warn", title: "Vendor intake", detail: "Vendors work best with Forms & Paperwork for intake and approvals.", step: 1 });
+    checks.push({ id: "vendors-forms", status: "warn", title: "Vendor intake", detail: "Vendors work best with Forms & Paperwork for intake.", step: 1 });
   }
   if (has("invoices") && !has("crm")) {
     checks.push({ id: "invoices-crm", status: "warn", title: "Client contacts", detail: "Add CRM & Data to keep the contacts behind your invoices clean.", step: 1 });

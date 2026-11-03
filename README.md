@@ -42,7 +42,7 @@ browser and never uploaded.
 * **Invoices, licenses, vendors, contacts, projects, forms and report data are not persisted yet.** They start empty and are held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
   renewal tasks, overdue notices) but no email is sent yet. Licenses can be pre-filled from an uploaded PDF, Word, text or CSV file (`/api/licenses/parse` reads the number, issuer, holder and dates next to their labels; photos and scans are not read, and the file itself is not stored). Vendors get required documents by category, can only be
-  submitted for approval once every required document is in and unexpired, and are checked for
+  activated once every required document is in and unexpired (there is no approval step: anyone on the team can act), and are checked for
   duplicates (normalized name, similar name, tax ID, contact email, shared company email domain) when
   added and across the list. CRM & Data imports in three steps (choose or paste a
   file, map columns, review) and shows every rejected row by file line before anything changes; matching
@@ -68,9 +68,13 @@ browser and never uploaded.
   hand-edited data is ignored). Finishing installs the chosen templates for real: forms appear in Forms &
   Paperwork and starter records in Licenses & Renewals. An unfinished or
   edited setup installs nothing. Choices are per browser, not per account, until the database is connected.
-  Forms are built in the app, validated on submit,
-  routed to a named approver when required, and turned into a text document by filling `{{Field label}}`
-  placeholders in a single pass (submitted text is never re-expanded); submissions export to CSV.
+  Forms are built in the app and **sent** to anyone: Send gives a link (`/form/<token>`, which carries the whole form, so
+  nothing is looked up or stored) and a ready-written email. The recipient fills it in on a plain public page and
+  emails their answers back; the answers include one `ADFLO-RESPONSE:` line, and **Add responses** reads any number of
+  pasted emails into the form's responses (repeats are skipped, answers for another or since-edited form are refused).
+  Responses are marked new or done. There are no approvals. A response can be turned into a text document by filling
+  `{{Field label}}` placeholders in a single pass (submitted text is never re-expanded); responses export to CSV. Until
+  records are stored in the database, answers return by email rather than appearing on their own.
   Tasks opens on one list of every task, most urgent first, with a quick-add form; a task can stand alone
   (kept in a built-in "General tasks" project that is never listed as a project) or belong to a project, and the Projects tab
   groups bigger jobs. Overdue tasks are flagged and repeating tasks

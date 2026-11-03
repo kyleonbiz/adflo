@@ -24,7 +24,7 @@ describe("recommendModules", () => {
     expect(ids("Nonprofit")).toContain("crm");
     expect(ids("Restaurant & hospitality")).toContain("reporting");
   });
-  it("gives bigger teams forms for approvals, once", () => {
+  it("gives bigger teams forms, once", () => {
     expect(ids("Other")).not.toContain("forms");
     expect(ids("Other", "6-20 people")).toContain("forms");
     expect(ids("Professional services", "21+ people").filter((x) => x === "forms")).toHaveLength(1);

@@ -74,8 +74,8 @@ const LICENSE_STATUS: Record<string, string> = { active: "Active", renewal_windo
 const LICENSE_ORDER = ["Expired", "Expiring", "Renewal open", "Active"];
 const HEALTH: Record<string, string> = { completed: "Completed", on_hold: "On hold", planning: "Planning", late: "Late", at_risk: "At risk", on_track: "On track" };
 const HEALTH_ORDER = ["Late", "At risk", "On track", "Planning", "On hold", "Completed"];
-const SUBMISSION_STATUS: Record<string, string> = { received: "Received", pending: "Pending", approved: "Approved", rejected: "Rejected" };
-const SUBMISSION_ORDER = ["Pending", "Received", "Approved", "Rejected"];
+const SUBMISSION_STATUS: Record<string, string> = { new: "New", done: "Done" };
+const SUBMISSION_ORDER = ["New", "Done"];
 const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "");
 
 function invoices(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
@@ -130,8 +130,8 @@ function vendors(src: ReportSources, today: string): Omit<ModuleReport, "id" | "
     count: src.vendors.length, noun: "vendors",
     metrics: [
       { label: "Vendors", value: String(s.vendors), tone: "neutral" },
-      { label: "Approved", value: String(s.approved), tone: "neutral" },
-      { label: "Awaiting approval", value: String(s.pendingApproval), tone: tone(s.pendingApproval, "warning") },
+      { label: "Active", value: String(s.active), tone: "neutral" },
+      { label: "Onboarding", value: String(s.onboarding), tone: tone(s.onboarding, "warning") },
       { label: "Document issues", value: String(s.documentIssues), tone: tone(s.documentIssues, "warning") },
     ],
     breakdowns: [
@@ -190,25 +190,25 @@ function projects(src: ReportSources, today: string): Omit<ModuleReport, "id" | 
   };
 }
 
-function forms(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
-  const s = formSummary(src.forms, src.submissions, today);
+function forms(src: ReportSources): Omit<ModuleReport, "id" | "name" | "href"> {
+  const s = formSummary(src.forms, src.submissions);
   const names = new Map(src.forms.map((f) => [f.id, f.name]));
   const mine = src.submissions.filter((x) => names.has(x.formId));
   return {
-    count: mine.length, noun: "submissions",
+    count: mine.length, noun: "responses",
     metrics: [
       { label: "Forms", value: String(s.forms), tone: "neutral" },
-      { label: "Submissions", value: String(s.submissions), tone: "neutral" },
-      { label: "Waiting for approval", value: String(s.pending), tone: tone(s.pending, "warning") },
-      { label: "Decided this month", value: String(s.decidedThisMonth), tone: "neutral" },
+      { label: "Times sent", value: String(s.sent), tone: "neutral" },
+      { label: "Responses", value: String(s.responses), tone: "neutral" },
+      { label: "New responses", value: String(s.unread), tone: tone(s.unread, "warning") },
     ],
     breakdowns: [
-      { title: "Submissions by status", rows: tally(mine, (x) => SUBMISSION_STATUS[x.status], SUBMISSION_ORDER) },
-      { title: "Submissions by form", rows: tally(mine, (x) => names.get(x.formId)!) },
+      { title: "Responses by status", rows: tally(mine, (x) => SUBMISSION_STATUS[x.status], SUBMISSION_ORDER) },
+      { title: "Responses by form", rows: tally(mine, (x) => names.get(x.formId)!) },
     ],
     table: {
-      headers: ["Form", "Submitted on", "Submitted by", "Status", "Decided by", "Decided on"],
-      rows: [...mine].sort((a, b) => b.submittedOn.localeCompare(a.submittedOn)).map((x) => [names.get(x.formId)!, x.submittedOn, x.submittedBy, SUBMISSION_STATUS[x.status], x.decidedBy ?? "", x.decidedOn ?? ""]),
+      headers: ["Form", "Received on", "From", "Status"],
+      rows: [...mine].sort((a, b) => b.submittedOn.localeCompare(a.submittedOn)).map((x) => [names.get(x.formId)!, x.submittedOn, x.submittedBy, SUBMISSION_STATUS[x.status]]),
     },
   };
 }
