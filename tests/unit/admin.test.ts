@@ -3,11 +3,11 @@ import { addDays } from "@/lib/dates";
 import { parseEmailText } from "@/lib/admin/email";
 import { foldLine, icsEscape, toIcs } from "@/lib/admin/ics";
 import {
-  calendarEvents, createRequest, decide, dueRoutines, isOverdue, notifications, runRoutines, setStatus, summarize,
+  calendarEvents, createRequest, decide, isOverdue, notifications, setStatus, summarize,
 } from "@/lib/admin/logic";
-import { sampleRequests, sampleRoutines } from "../support/admin-sample-data";
+import { sampleRequests } from "../support/admin-sample-data";
 import { approvalReasons, suggestCategory, suggestPriority } from "@/lib/admin/triage";
-import { requestFormSchema, routineFormSchema } from "@/lib/admin/validation";
+import { requestFormSchema } from "@/lib/admin/validation";
 
 const TODAY = "2026-10-25";
 
@@ -108,51 +108,22 @@ describe("requests", () => {
   });
 });
 
-describe("routines", () => {
-  const routines = sampleRoutines(TODAY);
-  it("finds the due ones", () => {
-    expect(dueRoutines(routines, TODAY).map((r) => r.id)).toEqual(["t-1"]);
-    expect(dueRoutines(routines, addDays(TODAY, 4)).map((r) => r.id)).toEqual(["t-1", "t-2"]);
-  });
-  it("creates one request per due routine and moves it past today", () => {
-    let n = 0;
-    const { routines: next, created } = runRoutines(routines, TODAY, () => `new-${++n}`);
-    expect(created).toHaveLength(1);
-    expect(created[0]).toMatchObject({ id: "new-1", title: "Reconcile bank statements", source: "recurring", dueOn: addDays(TODAY, -2), requester: "Recurring task" });
-    expect(next[0].nextDueOn > TODAY).toBe(true);
-    expect(next[1]).toBe(routines[1]);
-    expect(dueRoutines(next, TODAY)).toEqual([]);
-  });
-  it("does not pile up requests for a routine that missed many runs", () => {
-    const old = [{ ...routines[1], nextDueOn: addDays(TODAY, -20) }]; // weekly
-    const { routines: next, created } = runRoutines(old, TODAY, () => "x");
-    expect(created).toHaveLength(1);
-    expect(next[0].nextDueOn).toBe(addDays(TODAY, 1));
-  });
-  it("treats today as due", () => {
-    const { created } = runRoutines([{ ...routines[1], nextDueOn: TODAY }], TODAY, () => "x");
-    expect(created).toHaveLength(1);
-  });
-});
-
 describe("notifications and summary", () => {
   const requests = sampleRequests(TODAY);
-  const routines = sampleRoutines(TODAY);
   it("lists the most urgent things first", () => {
-    const n = notifications(requests, routines, TODAY);
+    const n = notifications(requests, TODAY);
     expect(n.map((x) => [x.severity, x.message])).toEqual([
       ["critical", `"Reschedule Thursday's vendor call" is 1 day overdue.`],
       ["warning", `"Wire $4,800 to Globex for the annual license" is waiting for approval.`],
       ["info", `"Give Sam access to the shared drive" is waiting for approval.`],
-      ["info", "1 recurring task due: Reconcile bank statements."],
     ]);
   });
   it("announces requests due today", () => {
     const r = createRequest({ title: "Send report", description: "", requester: "", category: "Documents", priority: "normal", dueOn: TODAY, source: "manual" }, TODAY, "z");
-    expect(notifications([r], [], TODAY)).toEqual([{ id: "d-z", severity: "warning", message: '"Send report" is due today.' }]);
+    expect(notifications([r], TODAY)).toEqual([{ id: "d-z", severity: "warning", message: '"Send report" is due today.' }]);
   });
   it("summarizes the sample", () => {
-    expect(summarize(requests, routines, TODAY)).toEqual({ open: 4, pendingApproval: 2, overdue: 1, routinesDue: 1 });
+    expect(summarize(requests, TODAY)).toEqual({ open: 4, pendingApproval: 2, overdue: 1 });
   });
 });
 
@@ -219,10 +190,9 @@ describe("ics", () => {
     expect(toIcs([{ uid: "x", day: "2026-12-31", summary: "s" }], "2026-10-25")).toContain("DTEND;VALUE=DATE:20270101");
     expect(toIcs([], "2026-10-25")).toBe("BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//AdFlo//Requests//EN\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\nEND:VCALENDAR\r\n");
   });
-  it("includes active dated requests and every routine, skipping done and undated ones", () => {
-    const events = calendarEvents(sampleRequests(TODAY), sampleRoutines(TODAY));
-    expect(events.map((e) => e.uid)).toEqual(["request-r-1", "request-r-2", "routine-t-1", "routine-t-2", "routine-t-3"].filter((u) => u !== "request-r-3"));
-    expect(events.find((e) => e.uid === "routine-t-2")!.summary).toBe("Recurring: Send weekly team agenda");
+  it("includes active dated requests, skipping done and undated ones", () => {
+    const events = calendarEvents(sampleRequests(TODAY));
+    expect(events.map((e) => e.uid)).toEqual(["request-r-1", "request-r-2"]);
   });
 });
 
@@ -234,11 +204,5 @@ describe("forms", () => {
   });
   it.each([[{ title: "ab" }], [{ dueOn: "2026-02-30" }], [{ category: "Lunch" }], [{ priority: "urgent" }], [{ description: "x".repeat(1001) }]])("rejects %j", (patch) => {
     expect(requestFormSchema.safeParse({ ...ok, ...patch }).success).toBe(false);
-  });
-  it("validates routines", () => {
-    const r = { title: "Weekly agenda", description: "", category: "Scheduling", every: "weekly", nextDueOn: "2026-11-02" };
-    expect(routineFormSchema.safeParse(r).success).toBe(true);
-    expect(routineFormSchema.safeParse({ ...r, every: "daily" }).success).toBe(false);
-    expect(routineFormSchema.safeParse({ ...r, nextDueOn: "" }).success).toBe(false);
   });
 });

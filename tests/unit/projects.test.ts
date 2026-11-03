@@ -104,6 +104,19 @@ describe("monthly repeats", () => {
   });
 });
 
+describe("quarterly and yearly repeats", () => {
+  it("steps three months, keeping the original day after a short month", () => {
+    const q = completeTask([task({ id: "q", repeat: "quarterly", dueOn: "2026-11-30" })], "q", "2026-11-30", "q1");
+    expect(q.find((t) => t.id === "q1")!.dueOn).toBe("2027-02-28");
+    const q2 = completeTask(q, "q1", "2027-02-28", "q2");
+    expect(q2.find((t) => t.id === "q2")!.dueOn).toBe("2027-05-30");
+  });
+  it("steps a year, handling leap day", () => {
+    const y = completeTask([task({ id: "y", repeat: "yearly", dueOn: "2028-02-29" })], "y", "2028-02-29", "y1");
+    expect(y.find((t) => t.id === "y1")!.dueOn).toBe("2029-02-28");
+  });
+});
+
 describe("sorting", () => {
   const all = sampleProjects(TODAY);
   it("sorts projects by due date with completed last", () => {

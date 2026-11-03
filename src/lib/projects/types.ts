@@ -11,6 +11,8 @@ export const TASK_REPEATS = [
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
+  { value: "quarterly", label: "Quarterly" },
+  { value: "yearly", label: "Yearly" },
 ] as const;
 export type TaskRepeat = (typeof TASK_REPEATS)[number]["value"];
 
@@ -25,7 +27,7 @@ export interface Task {
   doneOn: string | null;
   /** Set once a repeating task has spawned its next occurrence, so reopening and re-completing never duplicates it. */
   followUpId: string | null;
-  /** Day of month a monthly task is anchored to, so a Jan 31 task returns to the 31st after February's 28th. */
+  /** Day of month a monthly, quarterly or yearly task is anchored to, so a Jan 31 task returns to the 31st after February's 28th. */
   anchorDay?: number;
 }
 

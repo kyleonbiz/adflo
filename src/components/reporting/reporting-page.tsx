@@ -10,7 +10,7 @@ import type { Contact } from "@/lib/contacts/types";
 import type { Invoice } from "@/lib/invoices/types";
 import type { License } from "@/lib/licenses/types";
 import type { Project } from "@/lib/projects/types";
-import type { AdminRequest, Routine } from "@/lib/admin/types";
+import type { AdminRequest } from "@/lib/admin/types";
 import type { Submission } from "@/lib/forms/types";
 import type { Vendor } from "@/lib/vendors/types";
 import { buildReports, type ReportSources } from "@/lib/reporting/logic";
@@ -32,7 +32,6 @@ function withSeeds(src: ReportSources): ReportSources {
     vendors: e2eSeed<Vendor>("vendors") ?? src.vendors,
     contacts: e2eSeed<Contact>("contacts") ?? src.contacts,
     requests: e2eSeed<AdminRequest>("requests") ?? src.requests,
-    routines: e2eSeed<Routine>("routines") ?? src.routines,
     submissions: e2eSeed<Submission>("submissions") ?? src.submissions,
     forms: src.forms.length > 0 ? src.forms : starterForms(),
   };

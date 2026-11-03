@@ -8,6 +8,7 @@ const BASE: Recommendation[] = [
   { id: "documents", reason: "Keep every file in one searchable place." },
   { id: "invoices", reason: "Track what you are owed and chase late payments." },
   { id: "admin", reason: "One inbox for requests, with approval for anything risky." },
+  { id: "projects", reason: "Tasks, deadlines and recurring work in one place." },
 ];
 
 const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
@@ -136,12 +137,12 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
     );
   }
 
-  if (has("admin")) {
+  if (has("projects")) {
     const recurring = c.templates.some((t) => t.startsWith("routine-"));
     checks.push(
       recurring
         ? { id: "recurring", status: "pass", title: "Recurring workflow", detail: "Recurring tasks are set up.", step: 2 }
-        : { id: "recurring", status: "warn", title: "Recurring workflow", detail: "Requests is on, but no recurring task is installed. Add one so routine work creates itself.", step: 2 },
+        : { id: "recurring", status: "warn", title: "Recurring workflow", detail: "Projects is on, but no recurring task is installed. Add one so routine work comes back on schedule.", step: 2 },
     );
   }
   if (has("vendors") && !has("forms")) {

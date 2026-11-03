@@ -1,6 +1,6 @@
 import { addDays } from "@/lib/dates";
 import { createRequest, decide, setStatus } from "@/lib/admin/logic";
-import type { AdminRequest, Routine } from "@/lib/admin/types";
+import type { AdminRequest } from "@/lib/admin/types";
 
 export function sampleRequests(today: string): AdminRequest[] {
   const make = (id: string, title: string, description: string, requester: string, category: AdminRequest["category"], priority: AdminRequest["priority"], dueOn: string | null, source: AdminRequest["source"] = "manual") =>
@@ -16,10 +16,3 @@ export function sampleRequests(today: string): AdminRequest[] {
   ];
 }
 
-export function sampleRoutines(today: string): Routine[] {
-  return [
-    { id: "t-1", title: "Reconcile bank statements", description: "Match last month's statements to the ledger.", category: "Finance & payments", every: "monthly", nextDueOn: addDays(today, -2) },
-    { id: "t-2", title: "Send weekly team agenda", description: "", category: "Scheduling", every: "weekly", nextDueOn: addDays(today, 4) },
-    { id: "t-3", title: "Review software subscriptions", description: "Cancel or renew anything unused.", category: "Vendors & purchasing", every: "quarterly", nextDueOn: addDays(today, 40) },
-  ];
-}

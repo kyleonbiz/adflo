@@ -49,7 +49,7 @@ test.describe("reporting module", () => {
     for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork", "Requests"]) {
       await page.getByRole("tab", { name }).click();
       await expect(page.getByTestId("module-report")).toContainText(name);
-      expect(await page.getByTestId("report-metric").count()).toBe(4);
+      expect(await page.getByTestId("report-metric").count()).toBe(name === "Requests" ? 3 : 4);
     }
     await page.goto("/app/reporting?view=projects");
     await expect(page.getByRole("tab", { name: "Projects" })).toHaveAttribute("aria-selected", "true");

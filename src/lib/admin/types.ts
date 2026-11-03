@@ -29,20 +29,3 @@ export interface AdminRequest {
   createdOn: string;
   doneOn: string | null;
 }
-
-export const EVERY = [
-  { value: "weekly", label: "Every week" },
-  { value: "monthly", label: "Every month" },
-  { value: "quarterly", label: "Every quarter" },
-  { value: "yearly", label: "Every year" },
-] as const;
-export type Every = (typeof EVERY)[number]["value"];
-
-export interface Routine {
-  id: string;
-  title: string;
-  description: string;
-  category: Category;
-  every: Every;
-  nextDueOn: string;
-}

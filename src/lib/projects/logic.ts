@@ -60,10 +60,12 @@ export function sortTasks(tasks: Task[]): Task[] {
   return [...open, ...finished];
 }
 
-/** The occurrence after `due`. Monthly tasks keep their original day of month where the month is long enough. */
+const MONTHS_PER_STEP = { monthly: 1, quarterly: 3, yearly: 12 } as const;
+
+/** The occurrence after `due`. Monthly, quarterly and yearly tasks keep their original day of month where the month is long enough. */
 function nextDue(due: string, repeat: Exclude<TaskRepeat, "none">, anchor: number): string {
-  if (repeat !== "monthly") return advanceDay(due, repeat);
-  const first = addMonths(`${due.slice(0, 8)}01`, 1);
+  if (repeat === "daily" || repeat === "weekly") return advanceDay(due, repeat);
+  const first = addMonths(`${due.slice(0, 8)}01`, MONTHS_PER_STEP[repeat]);
   const lastDay = Number(addDays(addMonths(first, 1), -1).slice(8));
   return `${first.slice(0, 8)}${String(Math.min(anchor, lastDay)).padStart(2, "0")}`;
 }

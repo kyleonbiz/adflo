@@ -4,7 +4,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Dashboard } from "@/components/modules/dashboard";
 import { buildDashboard } from "@/lib/dashboard/logic";
-import { sampleRequests, sampleRoutines } from "../support/admin-sample-data";
+import { sampleRequests } from "../support/admin-sample-data";
 import { sampleInvoices } from "../support/invoices-sample-data";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import { sampleProjects } from "../support/projects-sample-data";
@@ -14,7 +14,7 @@ import { todayLocal } from "@/lib/dates";
 const today = todayLocal();
 const data = buildDashboard({
   invoices: sampleInvoices(today), licenses: sampleLicenses(today), projects: sampleProjects(today),
-  vendors: sampleVendors(today), requests: sampleRequests(today), routines: sampleRoutines(today),
+  vendors: sampleVendors(today), requests: sampleRequests(today),
 }, today);
 
 const show = () => render(<Dashboard base="/app" data={data} serverToday={today} name="Kyle" />);

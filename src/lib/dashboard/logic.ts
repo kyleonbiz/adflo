@@ -1,6 +1,6 @@
 import { formatDayLong } from "@/lib/dates";
 import { notifications, summarize as adminSummary } from "@/lib/admin/logic";
-import type { AdminRequest, Routine } from "@/lib/admin/types";
+import type { AdminRequest } from "@/lib/admin/types";
 import { formatMoney, invoiceState, summarize as invoiceSummary } from "@/lib/invoices/logic";
 import type { Invoice } from "@/lib/invoices/types";
 import { licenseStatus, needsReview, summarize as licenseSummary } from "@/lib/licenses/logic";
@@ -17,7 +17,6 @@ export interface DashboardSources {
   projects: Project[];
   vendors: Vendor[];
   requests: AdminRequest[];
-  routines: Routine[];
 }
 
 export type Severity = "critical" | "warning" | "info";
@@ -77,7 +76,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
   const lic = licenseSummary(src.licenses, today);
   const proj = projectSummary(src.projects, today);
   const ven = vendorSummary(src.vendors, today);
-  const adm = adminSummary(src.requests, src.routines, today);
+  const adm = adminSummary(src.requests, today);
   const tone = (n: number, t: Tone): Tone => (n > 0 ? t : "neutral");
 
   const groups: TileGroup[] = [
@@ -106,7 +105,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
       label: a.state === "overdue" ? "Overdue" : a.state === "due_today" ? "Due today" : "Due soon",
       text: `${a.task.title} · ${a.projectName}`,
     })),
-    ...notifications(src.requests, src.routines, today).map((n): AttentionItem => ({
+    ...notifications(src.requests, today).map((n): AttentionItem => ({
       id: `adm-${n.id}`, area: "Admin", href: `${base}/admin`, severity: n.severity,
       label: n.severity === "critical" ? "Overdue" : n.severity === "warning" ? "Due today" : "Heads up",
       text: n.message,

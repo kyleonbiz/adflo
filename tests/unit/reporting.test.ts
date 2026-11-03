@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildReports, emptySources, type ReportSources } from "@/lib/reporting/logic";
 import type { DocumentRecord } from "@/lib/dms/types";
 import { starterForms } from "@/lib/forms/starter-forms";
-import { sampleRequests, sampleRoutines } from "../support/admin-sample-data";
+import { sampleRequests } from "../support/admin-sample-data";
 import { sampleContacts } from "../support/contacts-sample-data";
 import { sampleSubmissions } from "../support/forms-sample-data";
 import { sampleInvoices } from "../support/invoices-sample-data";
@@ -20,7 +20,7 @@ const doc = (over: Partial<DocumentRecord>): DocumentRecord => ({
 
 const full = (): ReportSources => ({
   invoices: sampleInvoices(TODAY), licenses: sampleLicenses(TODAY), projects: sampleProjects(TODAY), vendors: sampleVendors(TODAY),
-  requests: sampleRequests(TODAY), routines: sampleRoutines(TODAY), contacts: sampleContacts(TODAY), forms: starterForms(),
+  requests: sampleRequests(TODAY), contacts: sampleContacts(TODAY), forms: starterForms(),
   submissions: sampleSubmissions(TODAY),
   documents: [
     doc({ id: "d1", category: "contract", sizeBytes: 2048, expiresAt: "2026-11-05T00:00:00Z" }),

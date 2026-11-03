@@ -262,7 +262,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
 
 /**
  * Guided setup (a Settings tab). The choices are saved in this browser (not a database), so nothing leaves the
- * device. Templates installed here appear inside Forms, Requests and Licenses once setup is finished.
+ * device. Templates installed here appear inside Forms, Projects and Licenses once setup is finished.
  */
 export function SetupPage({ base, preview }: { base: "/app"; preview?: string }) {
   const today = useToday();

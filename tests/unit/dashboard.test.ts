@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadDashboardSources } from "@/lib/dashboard/data";
 import type { DashboardSources } from "@/lib/dashboard/logic";
-import { sampleRequests, sampleRoutines } from "../support/admin-sample-data";
+import { sampleRequests } from "../support/admin-sample-data";
 import { sampleInvoices } from "../support/invoices-sample-data";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import { sampleProjects } from "../support/projects-sample-data";
@@ -14,7 +14,7 @@ const T = "2026-10-26";
 
 const sources = (): DashboardSources => ({
   invoices: sampleInvoices(T), licenses: sampleLicenses(T), projects: sampleProjects(T),
-  vendors: sampleVendors(T), requests: sampleRequests(T), routines: sampleRoutines(T),
+  vendors: sampleVendors(T), requests: sampleRequests(T),
 });
 
 describe("buildDashboard", () => {

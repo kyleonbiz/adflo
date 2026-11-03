@@ -20,6 +20,8 @@ import { ProjectCard, type ProjectActions } from "./project-card";
 import { ProjectFormDialog } from "./project-form-dialog";
 import { STATUS_LABEL, TASK_BADGE } from "./status";
 import { titleCase } from "@/lib/text";
+import { useSetupConfig } from "@/lib/setup/storage";
+import { installedRecurringWork } from "@/lib/setup/templates";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -65,7 +67,12 @@ export function ProjectsPage({ preview, initialQuery = "" }: { preview?: string;
 }
 
 function ProjectsView({ today, preview, initialQuery }: { today: string; preview?: string; initialQuery: string }) {
-  const [projects, setProjects] = useState<Project[]>(() => e2eSeed<Project>("projects") ?? []);
+  const setup = useSetupConfig();
+  // Recurring work installed by Settings (only once setup is finished) sits alongside your own projects.
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const installed = installedRecurringWork(setup?.completedOn ? setup.templates : [], today);
+    return [...(e2eSeed<Project>("projects") ?? []), ...(installed ? [installed] : [])];
+  });
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       (e2eSeed<Project>("projects") ?? []).filter((p) => isLive(p) && overdueTasks(p, today).length > 0).slice(0, AUTO_OPEN).map((p) => [p.id, true]),

@@ -7,5 +7,5 @@ import type { DashboardSources } from "./logic";
  * nothing else on the dashboard changes.
  */
 export async function loadDashboardSources(): Promise<DashboardSources> {
-  return { invoices: [], licenses: [], projects: [], vendors: [], requests: [], routines: [] };
+  return { invoices: [], licenses: [], projects: [], vendors: [], requests: [] };
 }

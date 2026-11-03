@@ -24,7 +24,7 @@ export interface ReportSources extends DashboardSources {
 }
 
 export const emptySources = (): ReportSources => ({
-  invoices: [], licenses: [], projects: [], vendors: [], requests: [], routines: [], contacts: [], forms: [], submissions: [], documents: [],
+  invoices: [], licenses: [], projects: [], vendors: [], requests: [], contacts: [], forms: [], submissions: [], documents: [],
 });
 
 export type ReportTone = "neutral" | "warning" | "danger";
@@ -217,14 +217,13 @@ function forms(src: ReportSources, today: string): Omit<ModuleReport, "id" | "na
 }
 
 function admin(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
-  const s = adminSummary(src.requests, src.routines, today);
+  const s = adminSummary(src.requests, today);
   return {
     count: src.requests.length, noun: "requests",
     metrics: [
       { label: "Open requests", value: String(s.open), tone: "neutral" },
       { label: "Waiting for approval", value: String(s.pendingApproval), tone: tone(s.pendingApproval, "warning") },
       { label: "Overdue", value: String(s.overdue), tone: tone(s.overdue, "danger") },
-      { label: "Recurring tasks due", value: String(s.routinesDue), tone: tone(s.routinesDue, "warning") },
     ],
     breakdowns: [
       { title: "Requests by status", rows: tally(src.requests, (r) => REQUEST_STATUS[r.status], REQUEST_ORDER) },

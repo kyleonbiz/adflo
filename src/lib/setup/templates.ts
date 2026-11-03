@@ -1,9 +1,7 @@
 import { addDays, addMonths } from "@/lib/dates";
-import type { Every } from "@/lib/admin/types";
-import type { Category } from "@/lib/admin/types";
 import type { FormField, FormTemplate } from "@/lib/forms/types";
 import type { License } from "@/lib/licenses/types";
-import type { Routine } from "@/lib/admin/types";
+import type { Project, Task, TaskRepeat } from "@/lib/projects/types";
 
 interface Base { id: string; module: string; name: string; description: string }
 
@@ -15,8 +13,7 @@ export interface FormTpl extends Base {
 }
 export interface RoutineTpl extends Base {
   kind: "routine";
-  category: Category;
-  every: Every;
+  every: Exclude<TaskRepeat, "none" | "daily">;
   /** The first run is this many days from the day it is installed. */
   startInDays: number;
 }
@@ -49,20 +46,20 @@ export const TEMPLATES: Template[] = [
     documentTemplate: "",
   },
   {
-    id: "routine-bank-reconciliation", module: "admin", kind: "routine", name: "Reconcile bank statements",
-    description: "Match last month's statements to the ledger.", category: "Finance & payments", every: "monthly", startInDays: 5,
+    id: "routine-bank-reconciliation", module: "projects", kind: "routine", name: "Reconcile bank statements",
+    description: "Match last month's statements to the ledger.", every: "monthly", startInDays: 5,
   },
   {
-    id: "routine-team-agenda", module: "admin", kind: "routine", name: "Send the weekly team agenda",
-    description: "Share priorities for the week ahead.", category: "Scheduling", every: "weekly", startInDays: 3,
+    id: "routine-team-agenda", module: "projects", kind: "routine", name: "Send the weekly team agenda",
+    description: "Share priorities for the week ahead.", every: "weekly", startInDays: 3,
   },
   {
-    id: "routine-subscription-review", module: "admin", kind: "routine", name: "Review software subscriptions",
-    description: "Cancel or renew anything that is unused.", category: "Vendors & purchasing", every: "quarterly", startInDays: 30,
+    id: "routine-subscription-review", module: "projects", kind: "routine", name: "Review software subscriptions",
+    description: "Cancel or renew anything that is unused.", every: "quarterly", startInDays: 30,
   },
   {
-    id: "routine-invoice-followup", module: "admin", kind: "routine", name: "Follow up on overdue invoices",
-    description: "Chase every invoice past its due date.", category: "Finance & payments", every: "weekly", startInDays: 2,
+    id: "routine-invoice-followup", module: "projects", kind: "routine", name: "Follow up on overdue invoices",
+    description: "Chase every invoice past its due date.", every: "weekly", startInDays: 2,
   },
   {
     id: "licenses-small-business", module: "licenses", kind: "license", name: "Common small-business licenses",
@@ -92,12 +89,17 @@ export function installedForms(ids: readonly string[]): FormTemplate[] {
   );
 }
 
-export function installedRoutines(ids: readonly string[], today: string): Routine[] {
-  return TEMPLATES.flatMap((t) =>
+/** Installed recurring templates become repeating tasks in one "Recurring work" project, or null when none are installed. */
+export function installedRecurringWork(ids: readonly string[], today: string): Project | null {
+  const tasks = TEMPLATES.flatMap((t): Task[] =>
     t.kind === "routine" && ids.includes(t.id)
-      ? [{ id: `tpl-${t.id}`, title: t.name, description: t.description, category: t.category, every: t.every, nextDueOn: addDays(today, t.startInDays) }]
+      ? [{ id: `tpl-${t.id}`, title: t.name, assignee: "", dueOn: addDays(today, t.startInDays), repeat: t.every, done: false, doneOn: null, followUpId: null }]
       : [],
   );
+  return tasks.length === 0 ? null : {
+    id: "tpl-recurring-work", name: "Recurring work", client: "", status: "active", startOn: today, dueOn: addMonths(today, 12),
+    description: "Routine work that repeats on a schedule. Completing a task creates the next one.", tasks,
+  };
 }
 
 /** Starter licenses expire a term from today; the notes ask the user to replace them with real dates. */
