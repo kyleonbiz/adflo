@@ -29,7 +29,7 @@ test.describe("reporting module", () => {
     expect(await page.getByTestId("attention-item").count()).toBeGreaterThan(0);
     const cards = page.getByTestId("module-card");
     const card = (name: string) => cards.filter({ has: page.getByRole("heading", { name, exact: true }) });
-    await expect(cards).toHaveCount(8);
+    await expect(cards).toHaveCount(7);
     await expect(card("Invoices")).toContainText("Outstanding");
     await expect(card("CRM & Data")).toContainText("Contacts");
     await expect(card("Documents")).toContainText("No records yet"); // documents are not seeded
@@ -46,7 +46,7 @@ test.describe("reporting module", () => {
     await expect(report).toContainText("Billed by client");
     expect(await page.getByTestId("report-record").count()).toBeGreaterThan(0);
 
-    for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork", "Requests"]) {
+    for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork"]) {
       await page.getByRole("tab", { name }).click();
       await expect(page.getByTestId("module-report")).toContainText(name);
       expect(await page.getByTestId("report-metric").count()).toBe(4);

@@ -1,6 +1,4 @@
 import { addDays, formatDayLong } from "@/lib/dates";
-import { isActive as requestActive, notifications, summarize as adminSummary } from "@/lib/admin/logic";
-import type { AdminRequest, Routine } from "@/lib/admin/types";
 import { formatMoney, invoiceState, summarize as invoiceSummary } from "@/lib/invoices/logic";
 import type { Invoice } from "@/lib/invoices/types";
 import { licenseStatus, needsReview } from "@/lib/licenses/logic";
@@ -16,16 +14,14 @@ export interface DashboardSources {
   licenses: License[];
   projects: Project[];
   vendors: Vendor[];
-  requests: AdminRequest[];
-  routines: Routine[];
 }
 
 export type Severity = "critical" | "warning" | "info";
-export type Area = "Invoices" | "Licenses" | "Projects" | "Admin";
+export type Area = "Invoices" | "Licenses" | "Projects";
 
 /** One headline card: a number, where it links, and a one-line status under it. */
 export interface Kpi {
-  id: "money" | "tasks" | "requests" | "attention";
+  id: "money" | "tasks" | "attention";
   label: string;
   value: string;
   href: string;
@@ -93,7 +89,6 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
   const inv = invoiceSummary(src.invoices, today);
   const proj = projectSummary(src.projects, today);
   const ven = vendorSummary(src.vendors, today);
-  const adm = adminSummary(src.requests, src.routines, today);
   const items: AttentionItem[] = [
     ...invoiceItems(src.invoices, today, base),
     ...licenseItems(src.licenses, today, base),
@@ -103,11 +98,6 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
       label: a.state === "overdue" ? "Overdue" : a.state === "due_today" ? "Due today" : "Due soon",
       text: `${a.task.title} · ${a.projectName}`,
     })),
-    ...notifications(src.requests, src.routines, today).map((n): AttentionItem => ({
-      id: `adm-${n.id}`, area: "Admin", href: `${base}/admin`, severity: n.severity,
-      label: n.severity === "critical" ? "Overdue" : n.severity === "warning" ? "Due today" : "Heads up",
-      text: n.message,
-    })),
   ].sort((a, b) => RANK[a.severity] - RANK[b.severity]); // stable: ties keep the order above
 
   const count = (area: Area) => items.filter((i) => i.area === area).length;
@@ -116,7 +106,6 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
     { label: "Licenses", open: src.licenses.length, attention: count("Licenses") },
     { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive" && v.status !== "rejected").length, attention: ven.pendingApproval },
     { label: "Projects", open: proj.openTasks, attention: count("Projects") },
-    { label: "Requests", open: adm.open, attention: count("Admin") },
   ];
 
   const plural = (n: number, w: string) => `${n} ${w}`;
@@ -125,8 +114,6 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
       note: inv.overdueCount > 0 ? { tone: "bad", text: plural(inv.overdueCount, "overdue") } : { tone: "good", text: "None overdue" } },
     { id: "tasks", label: "Open project tasks", value: String(proj.openTasks), href: `${base}/projects`,
       note: proj.overdueTasks > 0 ? { tone: "bad", text: plural(proj.overdueTasks, "overdue") } : { tone: "good", text: "None overdue" } },
-    { id: "requests", label: "Open requests", value: String(adm.open), href: `${base}/admin`,
-      note: adm.pendingApproval > 0 ? { tone: "warn", text: plural(adm.pendingApproval, "awaiting approval") } : { tone: "good", text: "Nothing waiting" } },
     { id: "attention", label: "Needs attention", value: String(items.length), href: `${base}/overview`,
       note: items.some((i) => i.severity === "critical") ? { tone: "bad", text: "Something is late" } : items.length > 0 ? { tone: "warn", text: "Worth a look" } : { tone: "good", text: "All clear" } },
   ];
@@ -140,7 +127,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
 
 const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
 
-/** Counts what falls due on each of the next seven days: unpaid invoices, open tasks, license expiries and requests. */
+/** Counts what falls due on each of the next seven days: unpaid invoices, open tasks and license expiries. */
 export function upcomingLoad(src: DashboardSources, today: string): UpcomingDay[] {
   const days: UpcomingDay[] = Array.from({ length: 7 }, (_, i) => {
     const day = addDays(today, i);
@@ -157,7 +144,6 @@ export function upcomingLoad(src: DashboardSources, today: string): UpcomingDay[
     for (const t of p.tasks) if (!t.done) add(t.dueOn);
   }
   for (const l of src.licenses) if (l.expiresOn >= today) add(l.expiresOn);
-  for (const r of src.requests) if (requestActive(r)) add(r.dueOn);
   return days;
 }
 

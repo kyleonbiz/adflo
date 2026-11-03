@@ -1,5 +1,4 @@
 import { daysBetween } from "@/lib/dates";
-import { summarize as adminSummary, isActive, isOverdue } from "@/lib/admin/logic";
 import { contactDuplicates, summarize as contactSummary } from "@/lib/contacts/logic";
 import type { Contact } from "@/lib/contacts/types";
 import type { DashboardSources } from "@/lib/dashboard/logic";
@@ -24,7 +23,7 @@ export interface ReportSources extends DashboardSources {
 }
 
 export const emptySources = (): ReportSources => ({
-  invoices: [], licenses: [], projects: [], vendors: [], requests: [], routines: [], contacts: [], forms: [], submissions: [], documents: [],
+  invoices: [], licenses: [], projects: [], vendors: [], contacts: [], forms: [], submissions: [], documents: [],
 });
 
 export type ReportTone = "neutral" | "warning" | "danger";
@@ -75,11 +74,8 @@ const LICENSE_STATUS: Record<string, string> = { active: "Active", renewal_windo
 const LICENSE_ORDER = ["Expired", "Expiring", "Renewal open", "Active"];
 const HEALTH: Record<string, string> = { completed: "Completed", on_hold: "On hold", planning: "Planning", late: "Late", at_risk: "At risk", on_track: "On track" };
 const HEALTH_ORDER = ["Late", "At risk", "On track", "Planning", "On hold", "Completed"];
-const REQUEST_STATUS: Record<string, string> = { pending_approval: "Waiting for approval", open: "Open", in_progress: "In progress", done: "Done", declined: "Declined" };
-const REQUEST_ORDER = ["Waiting for approval", "Open", "In progress", "Done", "Declined"];
 const SUBMISSION_STATUS: Record<string, string> = { received: "Received", pending: "Pending", approved: "Approved", rejected: "Rejected" };
 const SUBMISSION_ORDER = ["Pending", "Received", "Approved", "Rejected"];
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "");
 
 function invoices(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
@@ -216,28 +212,6 @@ function forms(src: ReportSources, today: string): Omit<ModuleReport, "id" | "na
   };
 }
 
-function admin(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
-  const s = adminSummary(src.requests, src.routines, today);
-  return {
-    count: src.requests.length, noun: "requests",
-    metrics: [
-      { label: "Open requests", value: String(s.open), tone: "neutral" },
-      { label: "Waiting for approval", value: String(s.pendingApproval), tone: tone(s.pendingApproval, "warning") },
-      { label: "Overdue", value: String(s.overdue), tone: tone(s.overdue, "danger") },
-      { label: "Recurring tasks due", value: String(s.routinesDue), tone: tone(s.routinesDue, "warning") },
-    ],
-    breakdowns: [
-      { title: "Requests by status", rows: tally(src.requests, (r) => REQUEST_STATUS[r.status], REQUEST_ORDER) },
-      { title: "Requests by category", rows: tally(src.requests, (r) => r.category) },
-      { title: "Active requests by priority", rows: tally(src.requests.filter(isActive), (r) => cap(r.priority), ["High", "Normal", "Low"]) },
-    ],
-    table: {
-      headers: ["Title", "Category", "Priority", "Status", "Requester", "Due", "Overdue", "Created"],
-      rows: src.requests.map((r) => [r.title, r.category, cap(r.priority), REQUEST_STATUS[r.status], r.requester, r.dueOn ?? "", isOverdue(r, today) ? "Yes" : "", r.createdOn]),
-    },
-  };
-}
-
 const EXPIRING_DOC_DAYS = 30;
 
 function documents(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
@@ -264,7 +238,7 @@ function documents(src: ReportSources, today: string): Omit<ModuleReport, "id" |
 }
 
 const BUILDERS: Partial<Record<string, (src: ReportSources, today: string) => Omit<ModuleReport, "id" | "name" | "href">>> = {
-  documents, invoices, licenses, vendors, crm: contacts, projects, forms, admin,
+  documents, invoices, licenses, vendors, crm: contacts, projects, forms,
 };
 
 /** One report per module that holds records, in catalogue order. */

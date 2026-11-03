@@ -19,14 +19,13 @@ AdFlo is software, not a website: opening the site address goes straight into th
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
-(`src/lib/modules/registry.ts`). All eleven exist: **01 Documents**, **02 Invoices**
+(`src/lib/modules/registry.ts`). All ten exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
 **05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Projects**
 (`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
-(`src/lib/datasets/`, `src/components/reporting/`) and **09 Requests** (`src/lib/admin/`,
-`src/components/admin/`) **10 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **11 Settings**
+(`src/lib/datasets/`, `src/components/reporting/`), **09 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **10 Settings**
 (`src/lib/setup/`, `src/components/setup/`). Every service starts empty and keeps its records in the browser until the database is
 connected (see the limits below).
 
@@ -39,8 +38,8 @@ browser and never uploaded.
 
 * **Navigation:** a left sidebar on wide screens (logo, one icon per module, the current module highlighted,
   Settings apart at the bottom) and a menu button that opens the same list as a drawer on a phone.
-* **Pages:** `/app/overview` (Home), `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/admin`, `/app/file-reset`, `/app/setup`. With a database they sit behind sign-in; without one they open as a preview.
-* **Invoices, licenses, vendors, contacts, projects, forms and report data, requests and recurring tasks are not persisted yet.** They start empty and are held in component state; there is no
+* **Pages:** `/app/overview` (Home), `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/file-reset`, `/app/setup`. With a database they sit behind sign-in; without one they open as a preview.
+* **Invoices, licenses, vendors, contacts, projects, forms and and report data are not persisted yet.** They start empty and are held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
   renewal tasks, overdue notices) but no email is sent yet. Licenses can be pre-filled from an uploaded PDF, Word, text or CSV file (`/api/licenses/parse` reads the number, issuer, holder and dates next to their labels; photos and scans are not read, and the file itself is not stored). Vendors get required documents by category, can only be
   submitted for approval once every required document is in and unexpired, and are checked for
@@ -53,12 +52,7 @@ browser and never uploaded.
   break the rules with the file line and reason, drops exact repeats, then builds grouped reports (dates by
   month) and exports CSV or a real `.xlsx` workbook (written with `fflate`; text is stored as plain text, so
   `=CMD()` can never run as a formula). Scheduled summaries show the next send date and a preview but nothing
-  is emailed until there is a backend. Requests suggests a category and priority
-  from fixed keyword rules (**not an AI service**, and it shows which words matched), holds anything that moves
-  money, changes access, deletes or commits the business until a person approves it, fills a request from a
-  pasted email (subject, sender, body; quoted replies dropped), creates one request per due recurring task
-  (never a pile after missed runs), shows a daily digest on screen, and exports an `.ics` calendar of due dates.
-  No email is sent or read and no calendar is connected: those need a backend. Tidy up files reads a folder chosen in the browser,
+  is emailed until there is a backend. Tidy up files reads a folder chosen in the browser,
   hashes every file there (SHA-256, files up to 50 MB, 500 MB in total) so identical files are found without
   uploading anything, and builds a plan: standardized names, duplicates moved to a review folder (never
   deleted), misplaced files moved to the right folder, and optionally everything sorted into suggested
@@ -72,7 +66,7 @@ browser and never uploaded.
   modules with industry and team-size recommendations, templates, existing data, automatic checks). Progress
   is saved in the browser after every change (`localStorage`, validated and cleaned on load, so damaged or
   hand-edited data is ignored). Finishing installs the chosen templates for real: forms appear in Forms &
-  Paperwork, recurring tasks in Requests and starter records in Licenses & Renewals. An unfinished or
+  Paperwork and starter records in Licenses & Renewals. An unfinished or
   edited setup installs nothing. Choices are per browser, not per account, until the database is connected.
   Forms are built in the app, validated on submit,
   routed to a named approver when required, and turned into a text document by filling `{{Field label}}`

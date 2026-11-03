@@ -1,12 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { addDays, addMonths } from "@/lib/dates";
-import { routineFormSchema } from "@/lib/admin/validation";
+import { addMonths } from "@/lib/dates";
 import { validateSubmission } from "@/lib/forms/logic";
 import { formBuilderSchema } from "@/lib/forms/validation";
 import { MODULES } from "@/lib/modules/registry";
 import { AVAILABLE_MODULE_IDS, IMPORTABLE, canFinish, recommendModules, runSetupChecks, sanitizeConfig, setupScore } from "@/lib/setup/logic";
 import { parseStored } from "@/lib/setup/storage";
-import { TEMPLATES, installedForms, installedLicenses, installedRoutines, templatesFor } from "@/lib/setup/templates";
+import { TEMPLATES, installedForms, installedLicenses, templatesFor } from "@/lib/setup/templates";
 import { emptyConfig, type SetupConfig } from "@/lib/setup/types";
 
 const TODAY = "2026-10-25";
@@ -16,12 +15,12 @@ const config = (over: Partial<SetupConfig> = {}): SetupConfig => ({
 
 describe("recommendModules", () => {
   const ids = (industry: Parameters<typeof recommendModules>[0], size: Parameters<typeof recommendModules>[1] = "") => recommendModules(industry, size).map((r) => r.id);
-  it("always starts with documents, invoices and admin support", () => {
-    expect(ids("")).toEqual(["documents", "invoices", "admin"]);
-    expect(ids("Other").slice(0, 3)).toEqual(["documents", "invoices", "admin"]);
+  it("always starts with documents and invoices", () => {
+    expect(ids("")).toEqual(["documents", "invoices"]);
+    expect(ids("Other").slice(0, 2)).toEqual(["documents", "invoices"]);
   });
   it("adds modules for the industry", () => {
-    expect(ids("Construction & trades")).toEqual(["documents", "invoices", "admin", "licenses", "vendors", "projects", "forms"]);
+    expect(ids("Construction & trades")).toEqual(["documents", "invoices", "licenses", "vendors", "projects", "forms"]);
     expect(ids("Nonprofit")).toContain("crm");
     expect(ids("Restaurant & hospitality")).toContain("reporting");
   });
@@ -49,7 +48,7 @@ describe("the template catalogue", () => {
     for (const t of TEMPLATES) expect(AVAILABLE_MODULE_IDS).toContain(t.module);
   });
   it("only offers templates the destination module can read", () => {
-    const kinds: Record<string, string> = { forms: "form", admin: "routine", licenses: "license" };
+    const kinds: Record<string, string> = { forms: "form", licenses: "license" };
     for (const t of TEMPLATES) expect(t.kind).toBe(kinds[t.module]);
   });
   it("installs valid forms: they pass the form builder's own rules and accept a good submission", () => {
@@ -69,15 +68,6 @@ describe("the template catalogue", () => {
       }
     }
   });
-  it("installs valid routines that start in the future", () => {
-    const routines = installedRoutines(TEMPLATES.map((t) => t.id), TODAY);
-    expect(routines).toHaveLength(templatesFor("admin").length);
-    for (const r of routines) {
-      expect(routineFormSchema.safeParse(r).success, r.title).toBe(true);
-      expect(r.nextDueOn > TODAY).toBe(true);
-    }
-    expect(routines.find((r) => r.id === "tpl-routine-team-agenda")!.nextDueOn).toBe(addDays(TODAY, 3));
-  });
   it("installs starter licenses with a term, reminders and a checklist", () => {
     const licenses = installedLicenses(["licenses-small-business"], TODAY);
     expect(licenses).toHaveLength(4);
@@ -89,14 +79,13 @@ describe("the template catalogue", () => {
   it("installs only what was asked for, ignoring unknown ids", () => {
     expect(installedForms(["form-client-intake", "nope"]).map((f) => f.name)).toEqual(["New client intake"]);
     expect(installedForms([])).toEqual([]);
-    expect(installedRoutines(["form-client-intake"], TODAY)).toEqual([]);
     expect(installedLicenses([], TODAY)).toEqual([]);
   });
 });
 
 describe("sanitizeConfig", () => {
   it("round-trips a good config", () => {
-    const good = config({ step: 3, modules: ["forms", "admin"], templates: ["form-client-intake", "routine-team-agenda"], importsDone: ["admin"], completedOn: TODAY });
+    const good = config({ step: 3, modules: ["forms", "crm"], templates: ["form-client-intake"], importsDone: ["crm"], completedOn: TODAY });
     expect(sanitizeConfig(JSON.parse(JSON.stringify(good)))).toEqual(good);
   });
   it.each([null, undefined, 5, "x", [], {}, { version: 2 }, { version: "1" }])("rejects %j", (raw) => expect(sanitizeConfig(raw)).toBeNull());
@@ -107,7 +96,7 @@ describe("sanitizeConfig", () => {
     })!;
     expect(c.step).toBe(4);
     expect(c.business).toEqual({ name: "x".repeat(80), industry: "", teamSize: "" });
-    expect(c.modules).toEqual(["forms", "admin"]);
+    expect(c.modules).toEqual(["forms"]); // "admin" (the removed Requests service) is no longer known
     expect(c.templates).toEqual(["form-client-intake"]);
     expect(c.importsDone).toEqual(["crm"]);
     expect(c.completedOn).toBeNull();
@@ -147,22 +136,15 @@ describe("runSetupChecks", () => {
     expect(c["templates-forms"]).toMatchObject({ status: "pass", detail: "1 of 3 installed." });
     expect(byId(config({ modules: ["crm"] }))["templates-crm"]).toBeUndefined(); // CRM has no templates to install
   });
-  it("wants a recurring task when Requests is on", () => {
-    expect(byId(config({ modules: ["admin"] })).recurring.status).toBe("warn");
-    expect(byId(config({ modules: ["admin"], templates: ["routine-team-agenda"] })).recurring.status).toBe("pass");
-    expect(byId(config({ modules: ["crm"] })).recurring).toBeUndefined();
-  });
   it("suggests the modules that go together", () => {
     expect(byId(config({ modules: ["vendors"] }))["vendors-forms"].status).toBe("warn");
     expect(byId(config({ modules: ["vendors", "forms"] }))["vendors-forms"]).toBeUndefined();
     expect(byId(config({ modules: ["invoices"] }))["invoices-crm"].status).toBe("warn");
     expect(byId(config({ modules: ["invoices", "crm"] }))["invoices-crm"]).toBeUndefined();
-    expect(byId(config({ modules: ["licenses"] }))["licenses-admin"].status).toBe("warn");
   });
   it("asks about existing data for each module that has some, and accepts it as done", () => {
     expect(byId(config({ modules: ["crm"] }))["data-crm"]).toMatchObject({ status: "warn", step: 3, detail: IMPORTABLE.crm });
     expect(byId(config({ modules: ["crm"], importsDone: ["crm"] }))["data-crm"].status).toBe("pass");
-    expect(byId(config({ modules: ["admin"] }))["data-admin"]).toBeUndefined();
   });
   it("scores the share of passing checks and lets a warning-only setup finish", () => {
     expect(setupScore([])).toBe(0);
@@ -179,6 +161,6 @@ describe("runSetupChecks", () => {
     for (const m of AVAILABLE_MODULE_IDS) expect(ids.has(m)).toBe(true);
     expect(AVAILABLE_MODULE_IDS).not.toContain("setup");
     expect(AVAILABLE_MODULE_IDS).not.toContain("file-reset"); // a one-time tool, not a service
-    expect(AVAILABLE_MODULE_IDS).toHaveLength(9);
+    expect(AVAILABLE_MODULE_IDS).toHaveLength(8);
   });
 });

@@ -7,7 +7,6 @@ export interface Recommendation { id: string; reason: string }
 const BASE: Recommendation[] = [
   { id: "documents", reason: "Keep every file in one searchable place." },
   { id: "invoices", reason: "Track what you are owed and chase late payments." },
-  { id: "admin", reason: "One inbox for requests, with approval for anything risky." },
 ];
 
 const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
@@ -62,7 +61,7 @@ const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
 export function recommendModules(industry: Industry | "", teamSize: TeamSize | ""): Recommendation[] {
   const list = [...BASE, ...(industry ? BY_INDUSTRY[industry] : [])];
   if ((teamSize === "6-20 people" || teamSize === "21+ people") && !list.some((r) => r.id === "forms")) {
-    list.push({ id: "forms", reason: "A bigger team needs requests and approvals on paper." });
+    list.push({ id: "forms", reason: "A bigger team needs approvals on paper." });
   }
   const seen = new Set<string>();
   return list.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
@@ -136,22 +135,11 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
     );
   }
 
-  if (has("admin")) {
-    const recurring = c.templates.some((t) => t.startsWith("routine-"));
-    checks.push(
-      recurring
-        ? { id: "recurring", status: "pass", title: "Recurring workflow", detail: "Recurring tasks are set up.", step: 2 }
-        : { id: "recurring", status: "warn", title: "Recurring workflow", detail: "Requests is on, but no recurring task is installed. Add one so routine work creates itself.", step: 2 },
-    );
-  }
   if (has("vendors") && !has("forms")) {
     checks.push({ id: "vendors-forms", status: "warn", title: "Vendor intake", detail: "Vendors work best with Forms & Paperwork for intake and approvals.", step: 1 });
   }
   if (has("invoices") && !has("crm")) {
     checks.push({ id: "invoices-crm", status: "warn", title: "Client contacts", detail: "Add CRM & Data to keep the contacts behind your invoices clean.", step: 1 });
-  }
-  if (has("licenses") && !has("admin")) {
-    checks.push({ id: "licenses-admin", status: "warn", title: "Renewal follow-up", detail: "Requests gives renewal work a place to land.", step: 1 });
   }
   for (const id of c.modules) {
     if (!IMPORTABLE[id]) continue;

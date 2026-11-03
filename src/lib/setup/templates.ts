@@ -1,9 +1,6 @@
-import { addDays, addMonths } from "@/lib/dates";
-import type { Every } from "@/lib/admin/types";
-import type { Category } from "@/lib/admin/types";
+import { addMonths } from "@/lib/dates";
 import type { FormField, FormTemplate } from "@/lib/forms/types";
 import type { License } from "@/lib/licenses/types";
-import type { Routine } from "@/lib/admin/types";
 
 interface Base { id: string; module: string; name: string; description: string }
 
@@ -13,18 +10,11 @@ export interface FormTpl extends Base {
   fields: Omit<FormField, "id">[];
   documentTemplate: string;
 }
-export interface RoutineTpl extends Base {
-  kind: "routine";
-  category: Category;
-  every: Every;
-  /** The first run is this many days from the day it is installed. */
-  startInDays: number;
-}
 export interface LicenseTpl extends Base {
   kind: "license";
   items: { name: string; category: License["category"]; issuer: string; termMonths: number; reminderDays: number[]; documents: string[] }[];
 }
-export type Template = FormTpl | RoutineTpl | LicenseTpl;
+export type Template = FormTpl | LicenseTpl;
 
 const f = (label: string, type: FormField["type"], required = true, options: string[] = []): Omit<FormField, "id"> => ({ label, type, required, options });
 
@@ -47,22 +37,6 @@ export const TEMPLATES: Template[] = [
     description: "The basics for every new client, before work starts.", approver: "",
     fields: [f("Client name", "text"), f("Contact email", "email"), f("Phone", "text", false), f("Service needed", "select", true, ["Bookkeeping", "Admin support", "Document prep", "Project work", "Other"]), f("Anything we should know?", "longtext", false)],
     documentTemplate: "",
-  },
-  {
-    id: "routine-bank-reconciliation", module: "admin", kind: "routine", name: "Reconcile bank statements",
-    description: "Match last month's statements to the ledger.", category: "Finance & payments", every: "monthly", startInDays: 5,
-  },
-  {
-    id: "routine-team-agenda", module: "admin", kind: "routine", name: "Send the weekly team agenda",
-    description: "Share priorities for the week ahead.", category: "Scheduling", every: "weekly", startInDays: 3,
-  },
-  {
-    id: "routine-subscription-review", module: "admin", kind: "routine", name: "Review software subscriptions",
-    description: "Cancel or renew anything that is unused.", category: "Vendors & purchasing", every: "quarterly", startInDays: 30,
-  },
-  {
-    id: "routine-invoice-followup", module: "admin", kind: "routine", name: "Follow up on overdue invoices",
-    description: "Chase every invoice past its due date.", category: "Finance & payments", every: "weekly", startInDays: 2,
   },
   {
     id: "licenses-small-business", module: "licenses", kind: "license", name: "Common small-business licenses",
@@ -88,14 +62,6 @@ export function installedForms(ids: readonly string[]): FormTemplate[] {
           id: `tpl-${t.id}`, name: t.name, description: t.description, requiresApproval: t.approver !== "", approver: t.approver,
           documentTemplate: t.documentTemplate, fields: t.fields.map((fld, i) => ({ ...fld, id: `${t.id}-f${i + 1}` })),
         }]
-      : [],
-  );
-}
-
-export function installedRoutines(ids: readonly string[], today: string): Routine[] {
-  return TEMPLATES.flatMap((t) =>
-    t.kind === "routine" && ids.includes(t.id)
-      ? [{ id: `tpl-${t.id}`, title: t.name, description: t.description, category: t.category, every: t.every, nextDueOn: addDays(today, t.startInDays) }]
       : [],
   );
 }

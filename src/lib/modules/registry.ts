@@ -12,7 +12,7 @@ export interface PlatformModule {
   hidden?: boolean;
 }
 
-/** The eleven service modules of the client portal, in catalogue order. */
+/** The ten service modules of the client portal, in catalogue order. */
 export const MODULES: readonly PlatformModule[] = [
   { id: "documents", number: "01", name: "Documents", slug: "documents", status: "available",
     summary: "Upload, organize and search files; versioning, sharing and an audit trail." },
@@ -30,11 +30,9 @@ export const MODULES: readonly PlatformModule[] = [
     summary: "Reusable forms, submission tracking, document generation and approvals." },
   { id: "reporting", number: "08", name: "Reporting", slug: "reporting", status: "available",
     summary: "Turn raw files into organized records and scheduled reports." },
-  { id: "admin", number: "09", name: "Requests", slug: "admin", status: "available",
-    summary: "Requests, recurring tasks and reminders in one place." },
-  { id: "file-reset", number: "10", name: "Tidy up files", slug: "file-reset", status: "available", hidden: true,
+  { id: "file-reset", number: "09", name: "Tidy up files", slug: "file-reset", status: "available", hidden: true,
     summary: "One-time cleanup: duplicates, folder structure and filenames, with preview and approval." },
-  { id: "setup", number: "11", name: "Settings", slug: "setup", status: "available",
+  { id: "setup", number: "10", name: "Settings", slug: "setup", status: "available",
     summary: "Guided onboarding: pick services, import data and configure recurring workflows." },
 ];
 

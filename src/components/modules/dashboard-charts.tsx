@@ -45,7 +45,7 @@ export function WorkloadChart({ rows }: { rows: WorkloadRow[] }) {
           </g>
         );
       })}
-      {empty && <text x={(W - R) / 2} y={T + plotH / 2} textAnchor="middle" className="fill-muted-foreground text-[14px]">Nothing open yet. Bars appear as you add invoices, tasks and requests.</text>}
+      {empty && <text x={(W - R) / 2} y={T + plotH / 2} textAnchor="middle" className="fill-muted-foreground text-[14px]">Nothing open yet. Bars appear as you add invoices and tasks.</text>}
     </svg>
   );
 }

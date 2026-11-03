@@ -21,7 +21,7 @@ import { titleCase } from "@/lib/text";
 
 const STATUS_ICON: Record<CheckStatus, typeof CheckCircle2> = { pass: CheckCircle2, warn: CircleAlert, fail: CircleX };
 const STATUS_TONE: Record<CheckStatus, string> = { pass: "text-emerald-600", warn: "text-amber-600", fail: "text-red-600" };
-const KIND_LABEL = { form: "Form", routine: "Recurring task", license: "License records" } as const;
+const KIND_LABEL = { form: "Form", license: "License records" } as const;
 
 const moduleName = (id: string) => MODULES.find((m) => m.id === id)?.name ?? id;
 const moduleSummary = (id: string) => MODULES.find((m) => m.id === id)?.summary ?? "";
@@ -262,7 +262,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
 
 /**
  * Guided setup (a Settings tab). The choices are saved in this browser (not a database), so nothing leaves the
- * device. Templates installed here appear inside Forms, Requests and Licenses once setup is finished.
+ * device. Templates installed here appear inside Forms and Licenses once setup is finished.
  */
 export function SetupPage({ base, preview }: { base: "/app"; preview?: string }) {
   const today = useToday();

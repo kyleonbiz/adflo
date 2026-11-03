@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadDashboardSources } from "@/lib/dashboard/data";
 import type { DashboardSources } from "@/lib/dashboard/logic";
-import { sampleRequests, sampleRoutines } from "../support/admin-sample-data";
 import { sampleInvoices } from "../support/invoices-sample-data";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import { sampleProjects } from "../support/projects-sample-data";
@@ -14,7 +13,7 @@ const T = "2026-10-26";
 
 const sources = (): DashboardSources => ({
   invoices: sampleInvoices(T), licenses: sampleLicenses(T), projects: sampleProjects(T),
-  vendors: sampleVendors(T), requests: sampleRequests(T), routines: sampleRoutines(T),
+  vendors: sampleVendors(T),
 });
 
 describe("buildDashboard", () => {
@@ -27,15 +26,15 @@ describe("buildDashboard", () => {
     expect(d.workload.every((w) => w.open === 0 && w.attention === 0)).toBe(true);
     expect(d.upcoming.map((u) => u.count)).toEqual([0, 0, 0, 0, 0, 0, 0]);
   });
-  it("has four cards that link to their service, a workload row per service, and orders the action list by severity", () => {
+  it("has three cards that link to their service, a workload row per service, and orders the action list by severity", () => {
     const d = buildDashboard(sources(), T);
-    expect(d.kpis.map((k) => k.id)).toEqual(["money", "tasks", "requests", "attention"]);
+    expect(d.kpis.map((k) => k.id)).toEqual(["money", "tasks", "attention"]);
     expect(d.kpis.every((k) => k.href.startsWith("/app"))).toBe(true);
     expect(d.kpis[0].note).toEqual({ tone: "bad", text: "2 overdue" });
-    expect(d.workload.map((w) => w.label)).toEqual(["Invoices", "Licenses", "Vendors", "Projects", "Requests"]);
+    expect(d.workload.map((w) => w.label)).toEqual(["Invoices", "Licenses", "Vendors", "Projects"]);
     expect(d.workload[0]).toEqual({ label: "Invoices", open: 4, attention: 3 });
     expect(d.status).toBe("attention");
-    expect(d.kpis[3].value).toBe(String(d.items.length));
+    expect(d.kpis[2].value).toBe(String(d.items.length));
     const rank = { critical: 0, warning: 1, info: 2 };
     const ranks = d.items.map((i) => rank[i.severity]);
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));

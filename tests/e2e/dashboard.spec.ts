@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 
 test.describe("dashboard", () => {
-  test("shows four cards that link through, the charts, and today's to-do list", async ({ page }) => {
+  test("shows three cards that link through, the charts, and today's to-do list", async ({ page }) => {
     await page.goto("/app/overview");
     await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
     await expect(page.getByTestId("workload")).toBeVisible();
@@ -21,7 +21,6 @@ test.describe("dashboard", () => {
     };
     await add("New invoice");
     await expect(page).toHaveURL(/\/app\/invoices\?new=1$/);
-    await add("New request");
     await add("Upload document");
   });
 

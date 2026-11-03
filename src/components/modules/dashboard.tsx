@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, DollarSign, FolderKanban, Info, Inbox, ListPlus } from "lucide-react";
+import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, DollarSign, FolderKanban, Info, ListPlus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { MiniBars, ProgressRing, UpcomingChart, WorkloadChart } from "@/components/modules/dashboard-charts";
 import { TodayTodos } from "@/components/modules/today-todos";
@@ -20,7 +20,7 @@ const SEVERITY_ICON: Record<Severity, { Icon: LucideIcon; tone: string }> = {
   warning: { Icon: Clock, tone: "text-amber-600" },
   info: { Icon: Info, tone: "text-brand-blue" },
 };
-const AREAS: Area[] = ["Invoices", "Licenses", "Projects", "Admin"];
+const AREAS: Area[] = ["Invoices", "Licenses", "Projects"];
 const SHOWN = 5;
 
 function Attention({ items, today }: { items: AttentionItem[]; today: string }) {
@@ -106,7 +106,6 @@ const NOTE = {
 const KPI_ICON: Record<string, { Icon: LucideIcon; box: string }> = {
   money: { Icon: DollarSign, box: "bg-emerald-500" },
   tasks: { Icon: FolderKanban, box: "bg-amber-400" },
-  requests: { Icon: Inbox, box: "bg-cyan-400" },
 };
 
 function KpiCard({ kpi, bars }: { kpi: Kpi; bars: number[] }) {
@@ -168,7 +167,7 @@ export function Dashboard({ data, serverToday }: { base?: "/app"; data: Dashboar
 
   return (
     <div className="space-y-5" data-testid="dashboard">
-      <section aria-label="At a glance" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section aria-label="At a glance" className="grid gap-4 sm:grid-cols-3">
         {data.kpis.map((k) => <KpiCard key={k.id} kpi={k} bars={bars} />)}
       </section>
 
