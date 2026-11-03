@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Download, FileSpreadsheet, SearchX } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
+import { IconSquare } from "@/components/modules/icon-square";
 import { MODULE_ICONS } from "@/components/modules/module-icons";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ export function ModuleReportView({ report, today }: { report: ModuleReport; toda
     <div className="space-y-5" data-testid="module-report">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
-          {Icon && <Icon className="size-5 text-primary" aria-hidden />} {report.name}
+          {Icon && <IconSquare icon={Icon} size="sm" />} {report.name}
           <span className="text-sm font-normal text-muted-foreground">{report.count} {report.noun}</span>
         </h2>
         <div className="flex flex-wrap gap-2">
