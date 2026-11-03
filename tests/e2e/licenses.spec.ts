@@ -130,11 +130,21 @@ test.describe("platform modules", () => {
     await expect(page.getByTestId("review-banner")).toContainText("4 licenses still need review");
   });
 
-  test("licenses: a photo can't be read and says so", async ({ page }) => {
+  test("licenses: a file that only claims to be a photo can't be read and says so", async ({ page }) => {
     await page.goto("/app/licenses");
     await page.getByRole("button", { name: "Add license" }).click();
     await page.getByLabel("Upload a license file", { exact: true }).setInputFiles({ name: "scan.png", mimeType: "image/png", buffer: Buffer.from("not really a png") });
-    await expect(page.getByRole("dialog").getByRole("alert")).toContainText("can't be read yet");
+    await expect(page.getByRole("dialog").getByRole("alert")).toContainText("could not be read");
+  });
+
+  test("licenses: a photo of a license is read and fills the form", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await page.getByRole("button", { name: "Add license" }).click();
+    await page.getByLabel("Upload a license file", { exact: true }).setInputFiles("tests/support/license-scan.png");
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/Filled from license-scan\.png/)).toBeVisible({ timeout: 20_000 });
+    await expect(dialog.getByLabel("License number")).toHaveValue("BL-20931");
+    await expect(dialog.getByLabel("Expires on")).toHaveValue("2027-01-15");
   });
 
   test("licenses: add, validate, edit and delete", async ({ page }) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, BellRing, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, Store, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ import { e2eSeed } from "@/lib/e2e-seed";
 import { VENDOR_CATEGORIES, type Vendor, type VendorCategory, type VendorStatus } from "@/lib/vendors/types";
 import type { VendorFormValues } from "@/lib/vendors/validation";
 import { addNote, dueFollowUps, logReminder, mailtoLink, reminderEmail } from "@/lib/vendors/follow-up";
+import { readLicenseFile } from "@/lib/licenses/upload";
+import { formatDayLong } from "@/lib/dates";
 import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
@@ -84,6 +86,8 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   const vendors = edited ?? seed;
   const summary = useMemo(() => (today ? summarize(vendors, today) : null), [vendors, today]);
   const attention = useMemo(() => (today ? needsAttention(vendors, today) : []), [vendors, today]);
+  const latest = useRef(vendors);
+  useEffect(() => { latest.current = vendors; }, [vendors]);
   const followUps = useMemo(() => (today ? dueFollowUps(vendors, today) : []), [vendors, today]);
   const allPairs = useMemo(() => duplicatePairs(vendors), [vendors]);
   const pairs = useMemo(() => allPairs.filter((p) => !dismissed.includes(pairKey(p.a, p.b))), [allPairs, dismissed]);
@@ -165,6 +169,15 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
         documents: x.documents.map((y) => (y.id === d.id ? { ...y, file: { name: file.name, size: file.size, url }, receivedOn: y.receivedOn ?? today } : y)),
       }));
       say(`${file.name} attached to ${d.type}${d.receivedOn ? "" : ", marked received today"}.`);
+      // Photos, scans and PDFs are read for an expiry date, which fills in only when none is set yet.
+      if (!d.expiresOn && /\.(pdf|docx|png|jpe?g)$/i.test(file.name)) {
+        readLicenseFile(file).then(({ fields }) => {
+          const found = fields.expiresOn;
+          if (!found) return;
+          setEdited(latest.current.map((x) => (x.id === v.id ? { ...x, documents: x.documents.map((y) => (y.id === d.id && !y.expiresOn ? { ...y, expiresOn: found } : y)) } : x)));
+          say(`Read ${file.name}: expires ${formatDayLong(found)}. Check it against the document.`);
+        }).catch(() => { /* reading is a convenience; the file is attached either way */ });
+      }
     },
     onClearFile: (v, d) => {
       if (d.file) URL.revokeObjectURL(d.file.url);

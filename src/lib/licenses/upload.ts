@@ -1,6 +1,6 @@
 import type { ExtractedLicense } from "./parse";
 
-export const LICENSE_UPLOAD_ACCEPT = ".pdf,.docx,.txt,.csv";
+export const LICENSE_UPLOAD_ACCEPT = ".pdf,.docx,.txt,.csv,.png,.jpg,.jpeg,.webp,.bmp";
 
 /** Sends a file to be read and returns what was found, or throws an Error with a message fit to show the user. */
 export async function readLicenseFile(file: File): Promise<{ fields: ExtractedLicense; found: number }> {

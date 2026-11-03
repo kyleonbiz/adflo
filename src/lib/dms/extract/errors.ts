@@ -22,7 +22,7 @@ export class ExtractError extends Error {
 
 export const REASON_LABELS: Record<string, string> = {
   unsupported_type: "This file type has no extractable text.",
-  no_text_found: "No text was found (scanned or image-only files are not read).",
+  no_text_found: "No text was found. For a scanned PDF, save the pages as images and upload those.",
   too_large: "The file is too large to index.",
   encrypted: "The file is password-protected.",
   unsafe_archive: "The file's structure was rejected as unsafe.",

@@ -26,7 +26,7 @@ Databases go last. Update this file in the same commit as the work.
 - [~] Fix for invisible admin bottlenecks (approvals unanswered for 5 days and unstarted work with no due date now flagged in the digest, bell and home feed; escalating to a named owner needs team data)
 - [x] Document signing (in Forms: typed-name signatures with an explicit agreement, several signers, SHA-256 fingerprint and signed-copy PDF; not a certified e-signature service)
 - [x] "Needs your attention" feed
-- [ ] OCR
+- [x] OCR (photos and scans of licenses and certificates are read: license upload fills the form, and attaching a certificate to a vendor document reads its expiry date; scanned PDFs and the document index are not OCR'd yet)
 - [ ] Bridge gaps between Contacts and Forms
 - [x] CRM renamed to Contacts
 - [ ] Notifications made very useful

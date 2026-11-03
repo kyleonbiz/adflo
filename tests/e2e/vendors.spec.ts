@@ -267,4 +267,12 @@ test.describe("vendors module", () => {
     await card.getByRole("button", { name: "They replied" }).click();
     await expect(card.getByTestId("vendor-note").first()).toContainText("Replied");
   });
+
+  test("attaching a photo of a certificate reads its expiry date", async ({ page }) => {
+    await page.goto("/app/vendors");
+    const initech = card(page, "Initech Staffing LLC");
+    await initech.getByLabel("Certificate of insurance file").setInputFiles("tests/support/license-scan.png");
+    await expect(page.getByRole("status")).toContainText("Read license-scan.png: expires", { timeout: 20_000 });
+    await expect(initech.getByLabel("Certificate of insurance expires on")).toHaveValue("2027-01-15");
+  });
 });

@@ -29,10 +29,10 @@ export function POST(req: Request) {
       if (!parsed.success || parsed.data.size === 0) throw new DmsError("validation", "Choose a file to upload.");
       const upload = parsed.data;
       if (upload.size > MAX_BYTES) throw new DmsError("validation", "That file is too large. Use one under 10 MB.");
-      if (!canExtract(upload.name)) {
-        throw new DmsError("validation", "Photos and scans can't be read yet. Upload a PDF, Word, text or CSV file, or enter the details by hand.");
+      if (!canExtract(upload.name, true)) {
+        throw new DmsError("validation", "That file type can't be read. Upload a photo or scan (PNG, JPG), a PDF, Word, text or CSV file, or enter the details by hand.");
       }
-      const result = await extractText({ bytes: new Uint8Array(await upload.arrayBuffer()), fileName: upload.name, mimeType: upload.type });
+      const result = await extractText({ bytes: new Uint8Array(await upload.arrayBuffer()), fileName: upload.name, mimeType: upload.type, ocr: true });
       if (result.status !== "indexed") {
         throw new DmsError("validation", (result.reason && REASON_LABELS[result.reason]) || "That file could not be read.");
       }
