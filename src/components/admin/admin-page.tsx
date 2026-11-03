@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Bell, CalendarPlus, CheckCircle2, Clock, Hourglass, Inbox, Play, Plus, Repeat, Search, ShieldAlert, Trash2, XCircle } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
+import { RemindMenu } from "@/components/modules/remind-menu";
 import { currentApprover, describeProgress } from "@/lib/approvals/chain";
 import { useChains } from "@/lib/approvals/storage";
 import { EmptyState } from "@/components/modules/empty-state";
@@ -58,7 +59,10 @@ function RequestCard({
           </p>
           {r.description && <p className="whitespace-pre-wrap text-sm">{r.description}</p>}
         </div>
-        <Button size="icon-sm" variant="ghost" aria-label={`Delete ${r.title}`} onClick={() => onDelete(r)}><Trash2 /></Button>
+        <div className="flex shrink-0 items-center">
+          {(r.status === "open" || r.status === "in_progress" || r.status === "pending_approval") && <RemindMenu kind="request" id={r.id} text={r.title} area="Admin" href="/app/admin" today={today} />}
+          <Button size="icon-sm" variant="ghost" aria-label={`Delete ${r.title}`} onClick={() => onDelete(r)}><Trash2 /></Button>
+        </div>
       </div>
 
       {r.approvalReasons.length > 0 && (

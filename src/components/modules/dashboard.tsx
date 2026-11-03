@@ -14,6 +14,8 @@ import { TodayTodos } from "@/components/modules/today-todos";
 import { useToday } from "@/components/modules/use-today";
 import type { Area, AttentionItem, DashboardData, QueueItem, Severity, Tone } from "@/lib/dashboard/logic";
 import { formatDayLong } from "@/lib/dates";
+import { clearReminder, reminderItems } from "@/lib/reminders/logic";
+import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
 import { addTodo, newTodoId, hasOpenTodo, pruneTodos } from "@/lib/todos/logic";
@@ -127,7 +129,8 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
   const [area, setArea] = useState<"all" | Area>("all");
   const [all, setAll] = useState(false);
 
-  const live = items.filter((i) => !isSnoozed(snoozed, i.id, today));
+  const reminders = useReminders();
+  const live = [...reminderItems(reminders, today), ...items].filter((i) => !isSnoozed(snoozed, i.id, today));
   const hidden = items.length - live.length;
   const counts = (a: Area) => live.filter((i) => i.area === a).length;
   const filtered = area === "all" ? live : live.filter((i) => i.area === area);
@@ -168,7 +171,7 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
                 <span className="min-w-0 flex-1 truncate"><span className="text-muted-foreground">{it.area} · </span>{it.text}</span>
               </Link>
               <Button type="button" size="icon-sm" variant="ghost" aria-label={`Add to Today: ${it.text}`} title="Add to Today" disabled={hasOpenTodo(todos, it.text, today)} onClick={() => addToToday(it)}><ListPlus /></Button>
-              <Button type="button" size="icon-sm" variant="ghost" aria-label={`Snooze until tomorrow: ${it.text}`} title="Snooze until tomorrow" onClick={() => doSnooze(it.id)}><BellOff /></Button>
+              <Button type="button" size="icon-sm" variant="ghost" aria-label={it.id.startsWith("rem-") ? `Clear reminder: ${it.text}` : `Snooze until tomorrow: ${it.text}`} title={it.id.startsWith("rem-") ? "Clear reminder" : "Snooze until tomorrow"} onClick={() => (it.id.startsWith("rem-") ? saveReminders(clearReminder(reminders, it.id)) : doSnooze(it.id))}><BellOff /></Button>
             </li>
           ))}
         </ul>

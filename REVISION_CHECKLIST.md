@@ -3,11 +3,11 @@
 Kyle's list, in the order it was given. `[x]` done, `[~]` partly done, `[ ]` not started.
 Databases go last. Update this file in the same commit as the work.
 
-- [~] Task / request reminders so admin work doesn't fall through cracks
+- [x] Task / request reminders so admin work doesn't fall through cracks ("Remind me" on requests and project tasks puts them in the bell and home feed from the chosen day; stuck approvals are flagged too)
 - [x] "+" under Projects to add your own project types (in the new-project template dropdown; saved in this browser)
 - [x] Sidebar minimizes to icons only
 - [x] Home screen: more innovative (queue, day summary, where-to-begin cards while empty)
-- [ ] Make the app feel alive
+- [x] Make the app feel alive (pages rise into place in turn, the bell pulses for new items, progress bars animate, home suggests where to begin; all motion off for reduced-motion settings)
 - [x] AI agent can complete tasks in any module, with per-module guardrails (prepares drafts in invoices, requests, contacts, vendors, projects and licenses that open prefilled for you to save; cannot save, delete, approve, pay, send or sign; refuses card numbers, SSNs, passwords and tax IDs; max 3 drafts a turn)
 - [x] Addressed by your name in the app
 - [x] Invoice tracking: frequency choice, stays open until paid (one-time to yearly, shown on each invoice; stays Sent or Overdue until marked paid)

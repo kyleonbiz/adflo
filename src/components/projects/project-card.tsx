@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { RemindMenu } from "@/components/modules/remind-menu";
 import { CheckCircle2, ChevronDown, Download, MoreHorizontal, Pencil, Plus, Repeat, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -209,6 +210,7 @@ export function ProjectCard({ project, today, actions, open, onOpenChange }: {
                       </label>
                       {t.assignee && <span className="text-xs text-muted-foreground">{t.assignee}</span>}
                       {t.dueOn && <Badge variant={TASK_BADGE[state] ?? "muted"} aria-hidden>{dueText(t, today)}</Badge>}
+                      {!t.done && <RemindMenu kind="task" id={t.id} text={`${t.title} · ${project.name}`} area="Projects" href="/app/projects" today={today} />}
                       <Button size="icon-sm" variant="ghost" aria-label={`Edit task ${t.title}`} title="Edit task" onClick={() => setEditing(t.id)}><Pencil /></Button>
                       <Button size="icon-sm" variant="ghost" aria-label={`Remove task ${t.title}`} title="Remove task" onClick={() => actions.onRemoveTask(project, t)}><X /></Button>
                     </li>

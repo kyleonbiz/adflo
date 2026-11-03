@@ -53,7 +53,7 @@ export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?
           </div>
           <div className="px-4 pb-3 sm:hidden"><GlobalSearch /></div>
         </header>
-        <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-3 py-6 outline-none sm:px-6">{children}</main>
+        <main id="main-content" tabIndex={-1} className="page-rise mx-auto max-w-6xl px-3 py-6 outline-none sm:px-6">{children}</main>
       </div>
     </div>
   );

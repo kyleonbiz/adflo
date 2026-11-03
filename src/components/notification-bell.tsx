@@ -9,6 +9,8 @@ import { saveSeen, useSeen } from "@/lib/dashboard/seen-storage";
 import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
 import type { AttentionItem, QueueItem, Severity } from "@/lib/dashboard/logic";
+import { clearReminder, reminderItems } from "@/lib/reminders/logic";
+import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { useSettings } from "@/lib/settings/storage";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +26,8 @@ export function NotificationBell({ items, queue = [], serverToday, overviewHref 
   const snoozed = useSnoozed();
   const settings = useSettings();
   const seen = useSeen();
-  const live = applyPrefs(items, settings.notifications).filter((i) => !isSnoozed(snoozed, i.id, today));
+  const reminders = useReminders();
+  const live = [...reminderItems(reminders, today), ...applyPrefs(items, settings.notifications)].filter((i) => !isSnoozed(snoozed, i.id, today));
   const fresh = unseen(live, seen);
   const overdue = live.filter((i) => i.severity === "critical").length;
   const urgent = live.filter((i) => i.severity === "critical").length;
@@ -36,7 +39,7 @@ export function NotificationBell({ items, queue = [], serverToday, overviewHref 
         <button type="button" aria-label={label} className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-lg border bg-card outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
           <Bell className="size-5" aria-hidden />
           {live.length > 0 && (
-            <span data-testid="notification-count" aria-hidden className={cn("absolute -right-1.5 -top-1.5 min-w-5 rounded-full px-1 text-center text-[11px] font-semibold leading-5 text-white", urgent > 0 ? "bg-red-600" : "bg-amber-600")}>
+            <span data-testid="notification-count" aria-hidden className={cn("absolute -right-1.5 -top-1.5 min-w-5 rounded-full px-1 text-center text-[11px] font-semibold leading-5 text-white", urgent > 0 ? "bg-red-600" : "bg-amber-600", fresh.size > 0 && "bell-pulse")}>
               {live.length > 99 ? "99+" : live.length}
             </span>
           )}
@@ -82,9 +85,9 @@ export function NotificationBell({ items, queue = [], serverToday, overviewHref 
                   </PopoverPrimitive.Close>
                   <button
                     type="button"
-                    aria-label={`Snooze until tomorrow: ${i.text}`}
-                    title="Snooze until tomorrow"
-                    onClick={() => saveSnoozed(snooze(pruneSnoozed(snoozed, today), i.id, today))}
+                    aria-label={i.id.startsWith("rem-") ? `Clear reminder: ${i.text}` : `Snooze until tomorrow: ${i.text}`}
+                    title={i.id.startsWith("rem-") ? "Clear reminder" : "Snooze until tomorrow"}
+                    onClick={() => (i.id.startsWith("rem-") ? saveReminders(clearReminder(reminders, i.id)) : saveSnoozed(snooze(pruneSnoozed(snoozed, today), i.id, today)))}
                     className="mt-1.5 mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
                   ><BellOff className="size-3.5" aria-hidden /></button>
                 </li>
