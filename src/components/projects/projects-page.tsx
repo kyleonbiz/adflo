@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
@@ -19,7 +20,6 @@ import type { ProjectFormValues, TaskFormValues } from "@/lib/projects/validatio
 import { ProjectCard, type ProjectActions } from "./project-card";
 import { ProjectFormDialog } from "./project-form-dialog";
 import { STATUS_LABEL, TASK_BADGE } from "./status";
-import { titleCase } from "@/lib/text";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -308,7 +308,7 @@ function ProjectsView({ today, preview, initialQuery }: { today: string; preview
             <Select value={sort} onValueChange={(v) => setSort(v as ProjectSort)}>
               <SelectTrigger aria-label="Sort projects"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(Object.keys(SORT_LABEL) as ProjectSort[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
+                {(Object.keys(SORT_LABEL) as ProjectSort[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -317,7 +317,7 @@ function ProjectsView({ today, preview, initialQuery }: { today: string; preview
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{titleCase(s.label)}</SelectItem>)}
+                {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -327,11 +327,16 @@ function ProjectsView({ today, preview, initialQuery }: { today: string; preview
         )}
 
         {visible.length === 0 ? (
-          <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            <p>{projects.length === 0 ? "No projects yet." : "No projects match these filters."}</p>
-            {projects.length === 0 ? <Button onClick={() => setFormFor("new")}><Plus /> Create your first project</Button>
-              : filtered && <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
-          </div>
+          projects.length === 0 ? (
+            <EmptyState icon={FolderKanban} title="Start your first project" description="Group the tasks for a piece of work, give it a due date, and see at a glance whether it is on track." points={["Start from a checklist, or add your own project type", "Repeating tasks that come back on schedule", "A status report you can download"]}>
+              <Button onClick={() => setFormFor("new")}><Plus /> Create your first project</Button>
+            </EmptyState>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
+              <p>No projects match these filters.</p>
+              {filtered && <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
+            </div>
+          )
         ) : (
           <ul className="space-y-3">
             {visible.map((p) => (

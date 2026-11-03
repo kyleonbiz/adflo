@@ -16,7 +16,6 @@ import { DEFAULT_DOCUMENTS, LICENSE_CATEGORIES, type License, type LicenseCatego
 import { readLicenseFile, LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { cn } from "@/lib/utils";
 import { licenseFormSchema, type LicenseFormInput, type LicenseFormValues } from "@/lib/licenses/validation";
-import { titleCase } from "@/lib/text";
 
 const REMINDER_PRESETS = [90, 60, 30, 14, 7];
 
@@ -193,7 +192,7 @@ export function LicenseFormDialog({
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="lic-category"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{titleCase(c.label)}</SelectItem>)}
+                      {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 )}

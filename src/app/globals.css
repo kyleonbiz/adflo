@@ -133,10 +133,7 @@
 }
 
 .hero-gradient {
-  background:
-    radial-gradient(60% 40% at 0% 100%, rgb(150 84 244 / 0.45), transparent 72%),
-    radial-gradient(60% 40% at 100% 100%, rgb(49 168 255 / 0.35), transparent 72%),
-    linear-gradient(180deg, #05091a 0%, #080d20 55%, #0d1a46 100%);
+  background: #0b1430;
 }
 
 /* Translucent frame that holds the dashboard card on the public page. */

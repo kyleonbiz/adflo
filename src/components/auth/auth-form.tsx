@@ -80,7 +80,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
           {info}
         </p>
       )}
-      <Button type="submit" variant="gradient" className="w-full" disabled={formState.isSubmitting}>
+      <Button type="submit" className="w-full" disabled={formState.isSubmitting}>
         {formState.isSubmitting ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
       </Button>
       <p className="text-center text-sm text-muted-foreground">

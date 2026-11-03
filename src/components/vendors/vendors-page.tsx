@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import {
@@ -22,7 +23,6 @@ import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
 import { VendorFormDialog } from "./vendor-form-dialog";
-import { titleCase } from "@/lib/text";
 
 type SortKey = "name" | "status" | "newest";
 const STATUS_ORDER: VendorStatus[] = ["pending_approval", "onboarding", "approved", "inactive", "rejected"];
@@ -343,7 +343,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
               <SelectTrigger aria-label="Sort vendors"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
+                {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -361,7 +361,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                {(Object.keys(STATUS_LABEL) as VendorStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
+                {(Object.keys(STATUS_LABEL) as VendorStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -370,10 +370,16 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
           <p className="text-sm text-muted-foreground">Showing vendors with expiring or expired documents. <button type="button" onClick={() => setIssuesOnly(false)} className="font-medium text-primary underline-offset-2 hover:underline">Show all</button></p>
         )}
         {visible.length === 0 ? (
-          <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            <p>{vendors.length === 0 ? "No vendors yet. Use Add vendor above to create your first one." : "No vendors match these filters."}</p>
-            {vendors.length > 0 && filtered && <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
-          </div>
+          vendors.length === 0 ? (
+            <EmptyState icon={Store} title="Add your first vendor" description="Keep every supplier's details and paperwork together, and know who still owes you a document." points={["Required documents set by vendor type", "Reminders that get firmer when a vendor goes quiet", "Approval before a vendor is used"]}>
+              <Button onClick={() => setFormFor("new")}><Plus /> Add vendor</Button>
+            </EmptyState>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
+              <p>No vendors match these filters.</p>
+              {filtered && <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
+            </div>
+          )
         ) : (
           <ul className="space-y-3">
             {visible.map((v) => <VendorCard key={v.id} vendor={v} today={today} actions={actions} focusKey={focus?.id === v.id ? focus.n : undefined} />)}

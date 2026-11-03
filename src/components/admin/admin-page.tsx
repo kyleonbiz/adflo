@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Bell, CalendarPlus, CheckCircle2, Clock, Hourglass, Inbox, Play, Plus, Repeat, Search, ShieldAlert, Trash2, XCircle } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
+import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +25,6 @@ import { installedRoutines } from "@/lib/setup/templates";
 import { PRIORITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
 import { RequestDialog } from "./request-dialog";
 import { RoutineDialog } from "./routine-dialog";
-import { titleCase } from "@/lib/text";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 const APPROVER = "Operations manager";
@@ -229,7 +229,7 @@ export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: 
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="active">Open Or In Progress</SelectItem>
-                {(Object.keys(STATUS_LABEL) as RequestStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
+                {(Object.keys(STATUS_LABEL) as RequestStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -238,15 +238,19 @@ export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: 
               <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}
+                {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
         </div>
         {visible.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            {requests.length === 0 ? "No requests yet. Create the first one." : "No requests match these filters."}
-          </div>
+          requests.length === 0 ? (
+            <EmptyState icon={Inbox} title="Log your first request" description="One place for what people ask of the back office, so nothing is lost in an inbox." points={["Approvals for anything that spends money or grants access", "Due dates that show up on the home screen", "Flags when a request goes quiet"]}>
+              <Button onClick={() => setRequesting(true)}><Plus /> New request</Button>
+            </EmptyState>
+          ) : (
+            <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">No requests match these filters.</div>
+          )
         ) : (
           <ul className="space-y-3">
             {visible.map((r) => (

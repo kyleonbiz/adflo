@@ -29,5 +29,8 @@ test.describe("dashboard", () => {
     await expect(page.getByRole("link", { name: /Outstanding invoices/ })).toContainText("$0.00");
     await expect(page.getByTestId("attention")).toContainText("You are all caught up.");
     await expect(page.getByTestId("today-todos")).toContainText("No tasks yet");
+    await expect(page.getByTestId("where-to-begin")).toContainText("Where to begin");
+    await page.getByTestId("where-to-begin").getByRole("link", { name: /Invoices/ }).click();
+    await expect(page).toHaveURL(/\/app\/invoices$/);
   });
 });

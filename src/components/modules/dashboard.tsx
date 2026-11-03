@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useState, useSyncExternalStore } from "react";
 import { AlertTriangle, BellOff, Hourglass, CalendarClock, FolderKanban, Inbox, ListPlus, Plus, Receipt, ShieldCheck, Store, Upload } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { MODULES, moduleHref } from "@/lib/modules/registry";
+import { MODULE_ICONS } from "@/components/modules/module-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SummaryTile } from "@/components/modules/summary-tile";
@@ -36,6 +39,10 @@ function summary(data: DashboardData): string {
   return "nothing needs you right now";
 }
 
+/** True while no service holds anything, so the home screen can suggest where to begin. */
+const isBlank = (d: DashboardData) =>
+  d.items.length === 0 && d.queue.length === 0 && d.groups.every((g) => g.tiles.every((t) => t.tone === "neutral" && /^(\$?0(\.00)?)$/.test(t.value)));
+
 const subscribe = () => () => {};
 /** Morning, afternoon or evening by the visitor's clock; null on the server so the first paint matches. */
 function useGreeting(): string | null {
@@ -52,6 +59,38 @@ function QuickActions({ base }: { base: string }) {
       <Button asChild size="sm" variant="outline"><Link href={`${base}?upload=1`}><Upload /> Upload document</Link></Button>
       <Button asChild size="sm" variant="outline"><Link href={`${base}/admin?new=1`}><Plus /> New request</Link></Button>
     </div>
+  );
+}
+
+/** Shown only while nothing has been added yet: one card per service, each leading to its first step. */
+function WhereToBegin({ base }: { base: "/app" }) {
+  const START = ["invoices", "licenses", "contacts", "projects", "admin", "forms"];
+  const cards = START.flatMap((slug) => {
+    const m = MODULES.find((x) => (x.slug ?? x.id) === slug);
+    const href = m ? moduleHref(m, base) : null;
+    return m && href ? [{ m, href }] : [];
+  });
+  return (
+    <section aria-labelledby="begin-heading" data-testid="where-to-begin" className="space-y-3">
+      <div>
+        <h2 id="begin-heading" className="text-base font-semibold">Where to begin</h2>
+        <p className="text-sm text-muted-foreground">Nothing is set up yet. Pick whichever is costing you the most time.</p>
+      </div>
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map(({ m, href }) => {
+          const Icon = MODULE_ICONS[m.id];
+          return (
+            <li key={m.id}>
+              <Link href={href} className="group flex h-full flex-col gap-2 rounded-2xl border bg-card p-4 shadow-panel outline-none transition-shadow hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring">
+                <span className="flex items-center gap-2 text-sm font-semibold">{Icon && <Icon className="size-4 text-primary" aria-hidden />}{m.name}</span>
+                <span className="flex-1 text-sm text-muted-foreground">{m.summary}</span>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">Open <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" aria-hidden /></span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -169,6 +208,8 @@ export function Dashboard({ base, data, serverToday, name }: { base: "/app"; dat
         </div>
         <QuickActions base={base} />
       </div>
+
+      {isBlank(data) && <WhereToBegin base={base} />}
 
       <TodayTodos today={today} />
 

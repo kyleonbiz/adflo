@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
@@ -21,7 +22,6 @@ import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
-import { titleCase } from "@/lib/text";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
 type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
@@ -181,16 +181,20 @@ export function InvoicesPage({ preview, startNew, initialQuery = "" }: { preview
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                {FILTERS.map((s) => <SelectItem key={s} value={s}>{titleCase(FILTER_LABEL[s])}</SelectItem>)}
+                {FILTERS.map((s) => <SelectItem key={s} value={s}>{FILTER_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
         </div>
 
         {visible.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            {invoices.length === 0 ? "No invoices yet. Create your first one." : "No invoices match these filters."}
-          </div>
+          invoices.length === 0 ? (
+            <EmptyState icon={Receipt} title="Send your first invoice" description="Create an invoice, choose whether it repeats, and it stays open until you mark it paid." points={["One-time, weekly, monthly, quarterly or yearly", "Reminders before the due date and after it passes", "Download it or send it from your email"]}>
+              <Button onClick={() => setFormFor("new")}><Plus /> New invoice</Button>
+            </EmptyState>
+          ) : (
+            <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">No invoices match these filters.</div>
+          )
         ) : (
           <div className="space-y-5">
             {groups.map((g) => (

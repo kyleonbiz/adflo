@@ -75,4 +75,15 @@ describe("Dashboard", () => {
     render(<Dashboard base="/app" data={{ ...data, queue: [] }} serverToday={today} />);
     expect(screen.getByText("Nothing is waiting on a decision.")).toBeTruthy();
   });
+
+  it("suggests where to begin only while nothing has been added", async () => {
+    const empty = buildDashboard({ invoices: [], licenses: [], projects: [], vendors: [], requests: [], routines: [] }, today);
+    const { unmount } = render(<Dashboard base="/app" data={empty} serverToday={today} />);
+    const begin = screen.getByTestId("where-to-begin");
+    expect(within(begin).getByRole("link", { name: /Invoices/ }).getAttribute("href")).toBe("/app/invoices");
+    expect(within(begin).getByRole("link", { name: /Contacts/ }).getAttribute("href")).toBe("/app/contacts");
+    unmount();
+    render(<Dashboard base="/app" data={data} serverToday={today} />);
+    expect(screen.queryByTestId("where-to-begin")).toBeNull();
+  });
 });

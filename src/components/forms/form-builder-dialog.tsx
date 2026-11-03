@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FIELD_TYPES, type FieldType, type FormField, type FormTemplate } from "@/lib/forms/types";
 import { formBuilderSchema, type FormBuilderValues } from "@/lib/forms/validation";
-import { titleCase } from "@/lib/text";
 
 const rid = () => `f-${Math.random().toString(36).slice(2, 8)}`;
 const textareaClass =
@@ -94,7 +93,7 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
                   <Input value={f.label} onChange={(e) => setField(f.id, { label: e.target.value })} placeholder="Field label" aria-label={`Label of field ${i + 1}`} className="h-9" />
                   <Select value={f.type} onValueChange={(v) => setField(f.id, { type: v as FieldType })}>
                     <SelectTrigger aria-label={`Type of field ${i + 1}`} className="h-9 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>{FIELD_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{titleCase(t.label)}</SelectItem>)}</SelectContent>
+                    <SelectContent>{FIELD_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                   </Select>
                   <label className="flex items-center gap-1.5 text-sm">
                     <input type="checkbox" checked={f.required} onChange={(e) => setField(f.id, { required: e.target.checked })} className="size-4 rounded border-input accent-primary" />

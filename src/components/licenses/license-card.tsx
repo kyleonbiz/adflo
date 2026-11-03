@@ -11,7 +11,6 @@ import { formatDayLong } from "@/lib/dates";
 import { LICENSE_CATEGORIES, RENEWAL_STAGES, type License, type RenewalStage } from "@/lib/licenses/types";
 import { cn } from "@/lib/utils";
 import { SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
-import { titleCase } from "@/lib/text";
 
 export interface LicenseActions {
   onEdit: (license: License) => void;
@@ -87,7 +86,7 @@ export function LicenseCard({ license, today, actions, focusToken = 0 }: { licen
               <Select value={license.stage} onValueChange={(v) => actions.onStage(license, v as RenewalStage)}>
                 <SelectTrigger aria-label={`Renewal stage for ${license.name}`} className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {RENEWAL_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>Renewal: {titleCase(s.label)}</SelectItem>)}
+                  {RENEWAL_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>Renewal: {s.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

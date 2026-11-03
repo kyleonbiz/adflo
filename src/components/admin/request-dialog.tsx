@@ -12,7 +12,6 @@ import type { NewRequest } from "@/lib/admin/logic";
 import { approvalReasons, suggestCategory, suggestPriority } from "@/lib/admin/triage";
 import { CATEGORIES, PRIORITIES, type Category, type Priority, type RequestSource } from "@/lib/admin/types";
 import { requestFormSchema } from "@/lib/admin/validation";
-import { titleCase } from "@/lib/text";
 
 const textareaClass =
   "flex w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-xs aria-invalid:border-destructive focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30";
@@ -105,8 +104,8 @@ function Body({ onClose, onSave }: { onClose: () => void; onSave: (r: NewRequest
               <Select value={category} onValueChange={(v) => setCategory(v as Category | "auto")}>
                 <SelectTrigger id="req-category"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="auto">Suggested: {titleCase(suggestion.category)}</SelectItem>
-                  {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}
+                  <SelectItem value="auto">Suggested: {suggestion.category}</SelectItem>
+                  {CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </Field>
@@ -114,7 +113,7 @@ function Body({ onClose, onSave }: { onClose: () => void; onSave: (r: NewRequest
               <Select value={priority} onValueChange={(v) => setPriority(v as Priority | "auto")}>
                 <SelectTrigger id="req-priority"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="auto">Suggested: {titleCase(suggestPriority(text))}</SelectItem>
+                  <SelectItem value="auto">Suggested: {suggestPriority(text)}</SelectItem>
                   {PRIORITIES.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
                 </SelectContent>
               </Select>

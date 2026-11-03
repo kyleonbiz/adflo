@@ -100,7 +100,7 @@ test.describe("projects module", () => {
 
     await dialog.getByRole("combobox", { name: "Start from a template" }).click();
     await page.getByRole("option", { name: "Vendor Onboarding" }).click();
-    await expect(dialog.getByLabel("Project name")).toHaveValue("Vendor Onboarding");
+    await expect(dialog.getByLabel("Project name")).toHaveValue("Vendor onboarding");
     await expect(dialog).toContainText("7 of 7 tasks will be added");
     await dialog.getByRole("checkbox", { name: /Collect business license copy/ }).uncheck();
     await expect(dialog).toContainText("6 of 7 tasks will be added");

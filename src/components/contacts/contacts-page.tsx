@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { downloadText } from "@/components/import/csv-source";
@@ -20,7 +21,6 @@ import { ContactsTabs } from "./contacts-tabs";
 import { ContactFormDialog } from "./contact-form-dialog";
 import { ImportDialog } from "./import-dialog";
 import { MergeDialog } from "./merge-dialog";
-import { titleCase } from "@/lib/text";
 
 const rid = () => `c-${Math.random().toString(36).slice(2, 10)}`;
 const CATEGORY_BADGE: Record<ContactCategory, "success" | "default" | "warning" | "muted" | "outline"> = {
@@ -230,7 +230,7 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
                 <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}
+                  {CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -238,7 +238,7 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
               <Select value={quick} onValueChange={(v) => { setQuick(v as Quick); setShown(PAGE); }}>
                 <SelectTrigger aria-label="Filter by data quality"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(QUICK_LABEL) as Quick[]).map((k) => <SelectItem key={k} value={k}>{titleCase(QUICK_LABEL[k])}</SelectItem>)}
+                  {(Object.keys(QUICK_LABEL) as Quick[]).map((k) => <SelectItem key={k} value={k}>{QUICK_LABEL[k]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -246,7 +246,7 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
               <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
                 <SelectTrigger aria-label="Sort contacts"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
+                  {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -262,7 +262,7 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
                 setSelected(new Set());
               }}>
                 <SelectTrigger aria-label="Set category for selected" className="h-8"><SelectValue placeholder="Set category…" /></SelectTrigger>
-                <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}</SelectContent>
+                <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             {selectedContacts.length === 2 && (
@@ -279,12 +279,17 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
         )}
 
         {visible.length === 0 ? (
-          <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            <p>{contacts.length === 0 ? "No contacts yet. Add one or import a CSV." : "No contacts match these filters."}</p>
-            {contacts.length === 0
-              ? <div className="flex justify-center gap-2"><Button onClick={() => setFormFor("new")}><Plus /> Add your first contact</Button><Button variant="outline" onClick={() => setImporting(true)}><Upload /> Import CSV</Button></div>
-              : <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
-          </div>
+          contacts.length === 0 ? (
+            <EmptyState icon={Users} title="Build your contact list" description="Customers, leads and partners in one place, cleaned up and ready to use." points={["Import a spreadsheet and map its columns", "Duplicates found and merged for you", "A reminder when nobody has talked to someone in a while"]}>
+              <Button onClick={() => setFormFor("new")}><Plus /> Add your first contact</Button>
+              <Button variant="outline" onClick={() => setImporting(true)}><Upload /> Import CSV</Button>
+            </EmptyState>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
+              <p>No contacts match these filters.</p>
+              <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
+            </div>
+          )
         ) : (
           <div className="overflow-hidden rounded-2xl border bg-card shadow-panel">
             <div aria-hidden className="hidden grid-cols-[1.5rem_minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,1.6fr)_7rem_7.5rem_5.5rem] items-center gap-3 border-b bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground md:grid">

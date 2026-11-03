@@ -12,7 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { findDuplicates } from "@/lib/vendors/logic";
 import { VENDOR_CATEGORIES, type Vendor } from "@/lib/vendors/types";
 import { vendorFormSchema, type VendorFormInput, type VendorFormValues } from "@/lib/vendors/validation";
-import { titleCase } from "@/lib/text";
 
 function defaults(vendor?: Vendor): VendorFormInput {
   if (!vendor) return { name: "", category: "Supplies", contactName: "", email: "", phone: "", taxId: "", notes: "" };
@@ -87,7 +86,7 @@ function VendorFormBody({
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="vendor-category"><SelectValue /></SelectTrigger>
-                    <SelectContent>{VENDOR_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}</SelectContent>
+                    <SelectContent>{VENDOR_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 )}
               />

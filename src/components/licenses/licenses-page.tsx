@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
@@ -24,7 +25,6 @@ import { LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { LicenseFormDialog } from "./license-form-dialog";
 import { RenewDialog } from "./renew-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
-import { titleCase } from "@/lib/text";
 
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -271,7 +271,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
                 <SelectItem value="attention">Needs Attention</SelectItem>
                 <SelectItem value="missing_docs">Documents Missing</SelectItem>
                 <SelectItem value="needs_review">Needs Review</SelectItem>
-                {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
+                {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -280,7 +280,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
               <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{titleCase(c.label)}</SelectItem>)}
+                {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -296,14 +296,17 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
         </div>
 
         {visible.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            {licenses.length === 0 ? "No licenses yet. Add your first one to start tracking renewals." : (
-              <>
-                No licenses match these filters.{" "}
-                <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setQuery(""); setStatusFilter("all"); setCategoryFilter("all"); }}>Clear filters</button>
-              </>
-            )}
-          </div>
+          licenses.length === 0 ? (
+            <EmptyState icon={ShieldCheck} title="Track your first license" description="Add a license, permit, insurance policy or certification with its expiry date, and renewals are tracked for you." points={["Start from a template for your kind of business", "Reminders 60, 30 and 7 days out", "A checklist of documents each renewal needs"]}>
+              <Button onClick={() => setPicking(true)}>Start from a template</Button>
+              <Button variant="outline" onClick={() => openForm("new")}><Plus /> Add license</Button>
+            </EmptyState>
+          ) : (
+            <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
+              No licenses match these filters.{" "}
+              <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setQuery(""); setStatusFilter("all"); setCategoryFilter("all"); }}>Clear filters</button>
+            </div>
+          )
         ) : (
           <ul className="space-y-3">
             {visible.map((l) => <LicenseCard key={l.id} license={l} today={today} actions={actions} focusToken={focus.id === l.id ? focus.token : 0} />)}

@@ -13,7 +13,6 @@ import { addDays } from "@/lib/dates";
 import { formatMoney, generateInvoiceNumber, invoiceTotals } from "@/lib/invoices/logic";
 import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
 import { invoiceFormSchema, parseDollars, type InvoiceFormInput, type InvoiceFormValues } from "@/lib/invoices/validation";
-import { titleCase } from "@/lib/text";
 
 const SENDER_KEY = "adflo.invoice.sender";
 const emptyItem = { description: "", qty: "1", rate: "" };
@@ -221,7 +220,7 @@ export function InvoiceFormDialog({
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger id="inv-recurrence"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {RECURRENCES.map((r) => <SelectItem key={r.value} value={r.value}>{titleCase(r.label)}</SelectItem>)}
+                        {RECURRENCES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   )}

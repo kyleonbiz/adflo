@@ -12,7 +12,6 @@ import { addDays, isDay } from "@/lib/dates";
 import { PROJECT_TEMPLATES, templateDueOn, type ProjectTemplate, type TemplateTask } from "@/lib/projects/templates";
 import { PROJECT_STATUSES, type Project } from "@/lib/projects/types";
 import { projectFormSchema, type ProjectFormInput, type ProjectFormValues } from "@/lib/projects/validation";
-import { titleCase } from "@/lib/text";
 import { NEW_TYPE, buildCustomType, isCustomType, type CustomTypeInput } from "@/lib/projects/custom-types";
 import { saveCustomTypes, useCustomTypes } from "@/lib/projects/custom-types-storage";
 
@@ -134,7 +133,7 @@ export function ProjectFormDialog({
                     <SelectTrigger id="proj-template"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="blank">Blank Project</SelectItem>
-                      {all.map((t) => <SelectItem key={t.id} value={t.id}>{titleCase(t.name)}</SelectItem>)}
+                      {all.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                       <SelectItem value={NEW_TYPE}>+ Add your own project type</SelectItem>
                     </SelectContent>
                   </Select>
@@ -192,7 +191,7 @@ export function ProjectFormDialog({
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="proj-status"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{titleCase(s.label)}</SelectItem>)}
+                      {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 )}

@@ -212,7 +212,7 @@ export function CustomDataReport({ today }: { today: string }) {
                 <li key={r.group} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 text-sm sm:grid-cols-[minmax(0,10rem)_1fr_auto]" data-testid="report-row">
                   <span className="order-1 truncate font-medium" title={r.group}>{r.group}</span>
                   <span className="order-3 col-span-2 h-3 rounded-full bg-secondary sm:order-2 sm:col-span-1" aria-hidden>
-                    <span className="block h-full rounded-full bg-gradient-to-r from-blue-500 to-brand-violet" style={{ width: `${maxValue > 0 ? Math.max(0, (r.value / maxValue) * 100) : 0}%` }} />
+                    <span className="block h-full rounded-full bg-primary" style={{ width: `${maxValue > 0 ? Math.max(0, (r.value / maxValue) * 100) : 0}%` }} />
                   </span>
                   <span className="order-2 text-right tabular-nums sm:order-3">{money(r.value)} <span className="text-xs text-muted-foreground">({r.rows} row{r.rows === 1 ? "" : "s"})</span></span>
                 </li>

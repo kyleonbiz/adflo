@@ -6,13 +6,13 @@ Databases go last. Update this file in the same commit as the work.
 - [~] Task / request reminders so admin work doesn't fall through cracks
 - [x] "+" under Projects to add your own project types (in the new-project template dropdown; saved in this browser)
 - [x] Sidebar minimizes to icons only
-- [~] Home screen: more innovative (queue + day summary done; livelier look to do)
+- [x] Home screen: more innovative (queue, day summary, where-to-begin cards while empty)
 - [ ] Make the app feel alive
 - [ ] AI agent can complete tasks in any module, with per-module guardrails
 - [x] Addressed by your name in the app
 - [x] Invoice tracking: frequency choice, stays open until paid (one-time to yearly, shown on each invoice; stays Sent or Overdue until marked paid)
 - [x] Licenses & Renewals: templates by business (vehicle registration, tags, insurance, inspection, and 7 other business types)
-- [ ] Pages stop opening to bare home screens (landing pages / empty states)
+- [x] Pages stop opening to bare home screens (each module explains itself with a first step when empty; home suggests where to begin)
 - [~] Explore more of Licenses & Renewals (templates, certification/policy types, compliance score done; renewal cost tracking and calendar export to do)
 - [ ] Vendors: deeper dive
 - [x] Queue on the home dashboard
@@ -21,7 +21,7 @@ Databases go last. Update this file in the same commit as the work.
 - [ ] Discuss: setup for different industries
 - [x] Forms & Paperwork: pick paperwork by business type (28 forms, repeating ones flagged; print, PDF or download after filling in)
 - [x] Reporting: dropdown with Reports, Scheduled reports, Materials (scheduled: due banner, print or PDF, no email yet; materials: summary plus per-service PDF and CSV)
-- [ ] Remove anything that looks AI-coded
+- [x] Remove anything that looks AI-coded (Title Case labels now sentence case, blue-to-violet gradients and gradient buttons gone, flat navy sign-in)
 - [ ] Approval chain
 - [~] Fix for invisible admin bottlenecks (approvals unanswered for 5 days and unstarted work with no due date now flagged in the digest, bell and home feed; escalating to a named owner needs team data)
 - [ ] Document signing
