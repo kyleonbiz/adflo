@@ -242,3 +242,31 @@ describe("forms", () => {
     expect(routineFormSchema.safeParse({ ...r, nextDueOn: "" }).success).toBe(false);
   });
 });
+
+import { STALE_APPROVAL_DAYS, STALE_OPEN_DAYS, stuckRequests } from "@/lib/admin/logic";
+import type { AdminRequest } from "@/lib/admin/types";
+
+describe("invisible bottlenecks", () => {
+  const make = (id: string, over: Partial<AdminRequest>): AdminRequest => ({
+    ...createRequest({ title: id, description: "", requester: "A", category: "General", priority: "normal", dueOn: null, source: "manual" }, addDays(TODAY, -10), id), ...over,
+  });
+
+  it("flags approvals nobody answered and open work nobody started, longest first", () => {
+    const stale = make("wire", { status: "pending_approval" });
+    const fresh = { ...make("new", { status: "pending_approval" }), createdOn: addDays(TODAY, -(STALE_APPROVAL_DAYS - 1)) };
+    const unstarted = { ...make("toner", { status: "open" }), createdOn: addDays(TODAY, -STALE_OPEN_DAYS) };
+    const dated = { ...make("dated", { status: "open", dueOn: addDays(TODAY, 3) }), createdOn: addDays(TODAY, -30) };
+    const stuck = stuckRequests([fresh, unstarted, stale, dated], TODAY);
+    expect(stuck.map((s) => [s.request.id, s.reason])).toEqual([["wire", "approval"], ["toner", "unstarted"]]);
+  });
+
+  it("says how long an approval has waited, and warns about it", () => {
+    const n = notifications([make("wire", { status: "pending_approval" })], [], TODAY);
+    expect(n).toEqual([{ id: "a-wire", severity: "warning", message: '"wire" is waiting for approval (10 days so far).' }]);
+  });
+
+  it("notes unstarted work in the digest", () => {
+    const n = notifications([make("toner", { status: "open" })], [], TODAY);
+    expect(n[0].message).toContain("has not been started in 10 days");
+  });
+});

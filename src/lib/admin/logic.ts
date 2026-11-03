@@ -78,6 +78,22 @@ export interface Notification {
   message: string;
 }
 
+/** A request waiting on a decision this long is flagged, because unanswered approvals are where admin work quietly dies. */
+export const STALE_APPROVAL_DAYS = 5;
+/** An open request nobody has started, with no due date to force it, is flagged after this long. */
+export const STALE_OPEN_DAYS = 7;
+
+/** Requests going quiet: approvals nobody answered, and work nobody started. */
+export function stuckRequests(requests: AdminRequest[], today: string): { request: AdminRequest; reason: "approval" | "unstarted"; days: number }[] {
+  const out: { request: AdminRequest; reason: "approval" | "unstarted"; days: number }[] = [];
+  for (const r of requests) {
+    const days = daysBetween(r.createdOn, today);
+    if (r.status === "pending_approval" && days >= STALE_APPROVAL_DAYS) out.push({ request: r, reason: "approval", days });
+    else if (r.status === "open" && !r.dueOn && days >= STALE_OPEN_DAYS) out.push({ request: r, reason: "unstarted", days });
+  }
+  return out.sort((a, b) => b.days - a.days);
+}
+
 /** What the daily digest would say today, most urgent first. */
 export function notifications(requests: AdminRequest[], routines: Routine[], today: string): Notification[] {
   const out: Notification[] = [];
@@ -85,7 +101,13 @@ export function notifications(requests: AdminRequest[], routines: Routine[], tod
   for (const r of requests) {
     if (isOverdue(r, today)) out.push({ id: `o-${r.id}`, severity: "critical", message: `"${r.title}" is ${plural(daysBetween(r.dueOn!, today), "day")} overdue.` });
     else if (isActive(r) && r.dueOn === today) out.push({ id: `d-${r.id}`, severity: "warning", message: `"${r.title}" is due today.` });
-    else if (r.status === "pending_approval") out.push({ id: `a-${r.id}`, severity: r.priority === "high" ? "warning" : "info", message: `"${r.title}" is waiting for approval.` });
+    else if (r.status === "pending_approval") {
+      const days = daysBetween(r.createdOn, today);
+      const stale = days >= STALE_APPROVAL_DAYS;
+      out.push({ id: `a-${r.id}`, severity: stale || r.priority === "high" ? "warning" : "info", message: `"${r.title}" is waiting for approval${stale ? ` (${plural(days, "day")} so far)` : ""}.` });
+    } else if (r.status === "open" && !r.dueOn && daysBetween(r.createdOn, today) >= STALE_OPEN_DAYS) {
+      out.push({ id: `u-${r.id}`, severity: "info", message: `"${r.title}" has not been started in ${plural(daysBetween(r.createdOn, today), "day")} and has no due date.` });
+    }
   }
   const due = dueRoutines(routines, today);
   if (due.length > 0) out.push({ id: "routines", severity: "info", message: `${plural(due.length, "recurring task")} due: ${due.map((r) => r.title).join(", ")}.` });

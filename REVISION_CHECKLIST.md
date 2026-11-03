@@ -23,7 +23,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Reporting: dropdown with Reports, Scheduled reports, Materials (scheduled: due banner, print or PDF, no email yet; materials: summary plus per-service PDF and CSV)
 - [ ] Remove anything that looks AI-coded
 - [ ] Approval chain
-- [ ] Fix for invisible admin bottlenecks
+- [~] Fix for invisible admin bottlenecks (approvals unanswered for 5 days and unstarted work with no due date now flagged in the digest, bell and home feed; escalating to a named owner needs team data)
 - [ ] Document signing
 - [x] "Needs your attention" feed
 - [ ] OCR
