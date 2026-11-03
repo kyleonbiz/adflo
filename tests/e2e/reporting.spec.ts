@@ -31,7 +31,7 @@ test.describe("reporting module", () => {
     const card = (name: string) => cards.filter({ has: page.getByRole("heading", { name, exact: true }) });
     await expect(cards).toHaveCount(8);
     await expect(card("Invoices")).toContainText("Outstanding");
-    await expect(card("CRM & Data")).toContainText("Contacts");
+    await expect(card("Contacts")).toContainText("Contacts");
     await expect(card("Documents")).toContainText("No records yet"); // documents are not seeded
   });
 
@@ -46,7 +46,7 @@ test.describe("reporting module", () => {
     await expect(report).toContainText("Billed by client");
     expect(await page.getByTestId("report-record").count()).toBeGreaterThan(0);
 
-    for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork", "Requests"]) {
+    for (const name of ["Licenses & Renewals", "Vendors", "Contacts", "Projects", "Forms & Paperwork", "Requests"]) {
       await page.getByRole("tab", { name }).click();
       await expect(page.getByTestId("module-report")).toContainText(name);
       expect(await page.getByTestId("report-metric").count()).toBe(4);
@@ -317,5 +317,37 @@ test.describe("reporting module", () => {
     await page.goto("/app/reporting");
     await expect(page.getByRole("heading", { level: 1, name: "Reporting" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Reporting", exact: true })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("the section dropdown opens scheduled reports and materials", async ({ page }) => {
+    await page.goto("/app/reporting");
+    const section = page.getByRole("combobox", { name: "Reporting section" });
+    await section.click();
+    await page.getByRole("option", { name: "Materials" }).click();
+    await expect(page.getByTestId("materials")).toContainText("Business summary");
+    await expect(page.getByTestId("material-row")).toHaveCount(8);
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Invoices spreadsheet" }).click();
+    expect((await download).suggestedFilename()).toMatch(/^invoices-.*\.csv$/);
+
+    await section.click();
+    await page.getByRole("option", { name: "Scheduled reports" }).click();
+    await expect(page.getByText("No reports scheduled")).toBeVisible();
+    await page.getByLabel("Send to (optional)").fill("nope");
+    await page.getByRole("button", { name: "Schedule report" }).click();
+    await expect(page.getByText("These are not email addresses: nope")).toBeVisible();
+    await page.getByLabel("Send to (optional)").fill("owner@example.com");
+    await page.getByRole("button", { name: "Schedule report" }).click();
+    const row = page.getByTestId("scheduled-report");
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText("Business summary");
+    await expect(row).toContainText("owner@example.com");
+    await expect(page.getByTestId("due-banner")).toContainText("1 report is due");
+    const pdf = page.waitForEvent("download");
+    await row.getByRole("button", { name: /^Download PDF/ }).click();
+    expect((await pdf).suggestedFilename()).toMatch(/\.pdf$/);
+    await expect(page.getByTestId("due-banner")).toHaveCount(0); // delivered: moved to its next date
+    await page.reload();
+    await expect(page.getByRole("combobox", { name: "Reporting section" })).toBeVisible();
   });
 });

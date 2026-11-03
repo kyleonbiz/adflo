@@ -20,7 +20,7 @@ Databases go last. Update this file in the same commit as the work.
 - [ ] Discuss: what the Projects module should include
 - [ ] Discuss: setup for different industries
 - [x] Forms & Paperwork: "Choose paperwork" by business type (28 forms, repeating ones flagged); print / PDF / text download after filling in and from each submission
-- [ ] Reporting: dropdown with Reports, Scheduled reports, Materials
+- [x] Reporting: dropdown with Reports, Scheduled reports (due banner, print/PDF; emailing needs a mail service), Materials (summary + per-service PDF and CSV)
 - [ ] Remove anything that looks AI-coded
 - [ ] Approval chain
 - [ ] Fix for invisible admin bottlenecks
