@@ -10,7 +10,7 @@ Databases go last. Update this file in the same commit as the work.
 - [ ] Make the app feel alive
 - [ ] AI agent can complete tasks in any module, with per-module guardrails
 - [x] Addressed by your name in the app
-- [x] Invoice tracking: frequency choice (one-time to yearly, now shown on each invoice), stays Sent/Overdue until marked paid
+- [x] Invoice tracking: frequency choice, stays open until paid (one-time to yearly, shown on each invoice; stays Sent or Overdue until marked paid)
 - [x] Licenses & Renewals: templates by business (vehicle registration, tags, insurance, inspection, and 7 other business types)
 - [ ] Pages stop opening to bare home screens (landing pages / empty states)
 - [~] Explore more of Licenses & Renewals (templates, certification/policy types, compliance score done; renewal cost tracking and calendar export to do)
@@ -19,8 +19,8 @@ Databases go last. Update this file in the same commit as the work.
 - [~] Bridge Vendors -> Contacts (menu merged; records still separate, needs database)
 - [ ] Discuss: what the Projects module should include
 - [ ] Discuss: setup for different industries
-- [x] Forms & Paperwork: "Choose paperwork" by business type (28 forms, repeating ones flagged); print / PDF / text download after filling in and from each submission
-- [x] Reporting: dropdown with Reports, Scheduled reports (due banner, print/PDF; emailing needs a mail service), Materials (summary + per-service PDF and CSV)
+- [x] Forms & Paperwork: pick paperwork by business type (28 forms, repeating ones flagged; print, PDF or download after filling in)
+- [x] Reporting: dropdown with Reports, Scheduled reports, Materials (scheduled: due banner, print or PDF, no email yet; materials: summary plus per-service PDF and CSV)
 - [ ] Remove anything that looks AI-coded
 - [ ] Approval chain
 - [ ] Fix for invisible admin bottlenecks
