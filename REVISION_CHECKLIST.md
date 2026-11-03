@@ -24,7 +24,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Remove anything that looks AI-coded (Title Case labels now sentence case, blue-to-violet gradients and gradient buttons gone, flat navy sign-in)
 - [x] Approval chain (set in Settings > Approvals; up to 6 ordered approvers for requests and for form submissions; a decline stops it; vendors still use one approver)
 - [~] Fix for invisible admin bottlenecks (approvals unanswered for 5 days and unstarted work with no due date now flagged in the digest, bell and home feed; escalating to a named owner needs team data)
-- [ ] Document signing
+- [x] Document signing (in Forms: typed-name signatures with an explicit agreement, several signers, SHA-256 fingerprint and signed-copy PDF; not a certified e-signature service)
 - [x] "Needs your attention" feed
 - [ ] OCR
 - [ ] Bridge gaps between Contacts and Forms

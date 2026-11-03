@@ -186,4 +186,46 @@ test.describe("forms module", () => {
     await page.getByRole("button", { name: "Done" }).click();
     await expect(page.getByTestId("form-card").filter({ hasText: "Temperature log" })).toBeVisible();
   });
+
+  test("request signatures on written text, sign as each person, and download the signed copy", async ({ page }) => {
+    await page.goto("/app/forms");
+    const section = page.getByTestId("signatures");
+    await expect(section).toContainText("Nothing out for signature.");
+    await section.getByRole("button", { name: "Request signatures" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Create request" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("title");
+    await dialog.getByLabel("Title").fill("Equipment loan");
+    await dialog.getByLabel("Text", { exact: true }).fill("Dana borrows one laptop until December.");
+    await dialog.getByLabel(/^Signers/).fill("Dana Whitfield <dana@example.com>\nPat Lee");
+    await dialog.getByRole("button", { name: "Create request" }).click();
+
+    const request = section.getByTestId("signing-request").filter({ hasText: "Equipment loan" });
+    await expect(request).toContainText("Waiting");
+    await expect(request).toContainText("Fingerprint (SHA-256):");
+
+    await request.getByRole("button", { name: "Sign as Dana Whitfield" }).click();
+    const sign = page.getByRole("dialog");
+    await sign.getByLabel("Type your full name to sign").fill("Wrong Name");
+    await sign.getByLabel("I have read this and agree to sign it.").check();
+    await sign.getByRole("button", { name: "Sign", exact: true }).click();
+    await expect(sign.getByRole("alert")).toContainText("Type Dana Whitfield exactly");
+    await sign.getByLabel("Type your full name to sign").fill("Dana Whitfield");
+    await sign.getByRole("button", { name: "Sign", exact: true }).click();
+    await expect(request).toContainText("Partly signed");
+
+    await request.getByRole("button", { name: "Sign as Pat Lee" }).click();
+    await page.getByRole("dialog").getByLabel("Type your full name to sign").fill("Pat Lee");
+    await page.getByRole("dialog").getByLabel("I have read this and agree to sign it.").check();
+    await page.getByRole("dialog").getByRole("button", { name: "Sign", exact: true }).click();
+    await expect(request).toContainText("Signed", { ignoreCase: false });
+    await expect(request.getByRole("button", { name: /^Sign as/ })).toHaveCount(0);
+
+    const pdf = page.waitForEvent("download");
+    await request.getByRole("button", { name: "Download signed copy of Equipment loan" }).click();
+    expect((await pdf).suggestedFilename()).toBe("equipment-loan-signed.pdf");
+
+    await page.reload();
+    await expect(page.getByTestId("signing-request")).toHaveCount(1); // kept in this browser
+  });
 });

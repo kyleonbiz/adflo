@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
+import { formatDayLong } from "@/lib/dates";
 import { createSubmission, decide, generateDocument, submissionsToCsv, summarize } from "@/lib/forms/logic";
 import { describeProgress } from "@/lib/approvals/chain";
 import { useChains } from "@/lib/approvals/storage";
@@ -20,6 +21,7 @@ import type { FormTemplate, Submission } from "@/lib/forms/types";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedForms } from "@/lib/setup/templates";
 import type { FormBuilderValues } from "@/lib/forms/validation";
+import { Signatures } from "./signatures";
 import { DocumentReadyDialog } from "./document-ready-dialog";
 import { PaperworkDialog } from "./paperwork-dialog";
 import { FillFormDialog } from "./fill-form-dialog";
@@ -153,6 +155,15 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
         form={builderFor && builderFor !== "new" ? builderFor : undefined}
         onOpenChange={(o) => !o && setBuilderFor(null)}
         onSave={saveForm}
+      />
+
+      <Signatures
+        today={today}
+        by="You"
+        submissions={subs.flatMap((s) => {
+          const f = forms.find((x) => x.id === s.formId);
+          return f ? [{ id: s.id, label: `${f.name}, ${s.submittedBy}, ${formatDayLong(s.submittedOn)}`, text: generateDocument(f, s) }] : [];
+        })}
       />
 
       <PaperworkDialog
