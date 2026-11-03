@@ -14,13 +14,14 @@ import { describeProgress } from "@/lib/approvals/chain";
 import { useChains } from "@/lib/approvals/storage";
 import { textToPdf } from "@/lib/forms/pdf";
 import { printText } from "@/lib/forms/print";
-import type { Paperwork } from "@/lib/forms/paperwork";
+import { PAPERWORK, type Paperwork } from "@/lib/forms/paperwork";
 import { starterForms } from "@/lib/forms/starter-forms";
 import { e2eSeed } from "@/lib/e2e-seed";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedForms } from "@/lib/setup/templates";
 import type { FormBuilderValues } from "@/lib/forms/validation";
+import { Packets } from "./packets";
 import { Signatures } from "./signatures";
 import { DocumentReadyDialog } from "./document-ready-dialog";
 import { PaperworkDialog } from "./paperwork-dialog";
@@ -155,6 +156,16 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
         form={builderFor && builderFor !== "new" ? builderFor : undefined}
         onOpenChange={(o) => !o && setBuilderFor(null)}
         onSave={saveForm}
+      />
+
+      <Packets
+        today={today}
+        onFillForm={(formId) => {
+          const form = forms.find((x) => x.id === formId) ?? PAPERWORK.find((p) => p.form.id === formId)?.form;
+          if (!form) return;
+          if (!forms.some((x) => x.id === form.id)) setEditedForms([...forms, form]);
+          setFilling(form);
+        }}
       />
 
       <Signatures

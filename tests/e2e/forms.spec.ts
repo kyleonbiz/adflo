@@ -228,4 +228,36 @@ test.describe("forms module", () => {
     await page.reload();
     await expect(page.getByTestId("signing-request")).toHaveCount(1); // kept in this browser
   });
+
+  test("onboarding packets: start one for a new hire, fill a form from it, tick items off, print the checklist", async ({ page }) => {
+    await page.goto("/app/forms");
+    const section = page.getByTestId("packets");
+    await expect(section).toContainText("No packets started");
+    await section.getByRole("button", { name: "Start a packet" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Start packet" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("name");
+    await dialog.getByLabel("Who is it for").fill("Sam Ito");
+    await dialog.getByRole("button", { name: "Start packet" }).click();
+
+    const packet = section.getByTestId("packet").filter({ hasText: "Sam Ito" });
+    await expect(packet).toContainText("0 of 6 done");
+    await packet.getByRole("button", { name: "Fill out New employee information for Sam Ito" }).click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "New employee information" })).toBeVisible();
+    await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+
+    await packet.getByRole("checkbox", { name: "Government-issued ID for Sam Ito" }).check();
+    await expect(packet).toContainText("1 of 6 done");
+    await expect(packet.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "17");
+    for (const label of ["New employee information", "Confidentiality acknowledgment", "Tax withholding form", "Direct deposit details", "Employee handbook acknowledgment"]) {
+      await packet.getByRole("checkbox", { name: `${label} for Sam Ito` }).check();
+    }
+    await expect(packet).toContainText("Complete");
+    const pdf = page.waitForEvent("download");
+    await packet.getByRole("button", { name: "Download PDF for Sam Ito" }).click();
+    expect((await pdf).suggestedFilename()).toBe("new-employee-sam-ito.pdf");
+
+    await page.reload();
+    await expect(page.getByTestId("packet")).toHaveCount(1);
+  });
 });
