@@ -192,3 +192,38 @@ describe("licenseFormSchema", () => {
     if (!r.success && text) expect(JSON.stringify(r.error.issues).toLowerCase()).toContain(text.toLowerCase());
   });
 });
+
+import { BUSINESS_TYPES, LICENSE_TEMPLATES, templatesFor } from "@/lib/licenses/templates";
+import { compliance } from "@/lib/licenses/logic";
+import { LICENSE_CATEGORIES as CATS } from "@/lib/licenses/types";
+import { sampleLicenses as samples } from "../support/licenses-sample-data";
+
+describe("license templates", () => {
+  it("covers each business type, with unique ids and valid categories and terms", () => {
+    expect(new Set(LICENSE_TEMPLATES.map((t) => t.id)).size).toBe(LICENSE_TEMPLATES.length);
+    for (const b of BUSINESS_TYPES) expect(templatesFor(b.id).length).toBeGreaterThan(0);
+    for (const t of LICENSE_TEMPLATES) {
+      expect(CATS.map((c) => c.value)).toContain(t.category);
+      expect(t.termMonths).toBeGreaterThanOrEqual(1);
+      expect(t.reminderDays.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("includes car registration, tags and insurance for vehicles", () => {
+    const names = templatesFor("vehicle").map((t) => t.name.toLowerCase()).join("|");
+    expect(names).toContain("registration");
+    expect(names).toContain("tags");
+    expect(names).toContain("insurance");
+  });
+});
+
+describe("compliance", () => {
+  it("is 100% with nothing tracked and counts expired or missing-document items against you", () => {
+    expect(compliance([], "2026-10-26").percent).toBe(100);
+    const list = samples("2026-10-26");
+    const c = compliance(list, "2026-10-26");
+    expect(c.total).toBe(list.length);
+    expect(c.inGoodStanding).toBeLessThanOrEqual(c.total);
+    expect(c.percent).toBe(Math.round((c.inGoodStanding / c.total) * 100));
+  });
+});

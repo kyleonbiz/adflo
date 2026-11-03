@@ -155,3 +155,17 @@ export function summarize(licenses: License[], today: string): LicenseSummary {
   }
   return s;
 }
+
+export interface Compliance {
+  total: number;
+  /** In date and with every required document received. */
+  inGoodStanding: number;
+  /** Whole percent; 100 when there is nothing to track. */
+  percent: number;
+}
+
+/** How much of what you track is in good standing: not expired, and nothing missing from its document list. */
+export function compliance(licenses: License[], today: string): Compliance {
+  const good = licenses.filter((l) => licenseStatus(l, today) !== "expired" && missingDocuments(l) === 0).length;
+  return { total: licenses.length, inGoodStanding: good, percent: licenses.length === 0 ? 100 : Math.round((good / licenses.length) * 100) };
+}

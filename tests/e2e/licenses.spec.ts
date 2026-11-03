@@ -73,6 +73,25 @@ test.describe("platform modules", () => {
     await expect(card.getByRole("checkbox", { name: "Renewal fee receipt" })).toBeVisible();
   });
 
+  test("licenses: start from a business template (vehicle registration) and see compliance", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await expect(page.getByTestId("compliance")).toContainText("Compliance");
+    await page.getByRole("button", { name: "Start from a template" }).click();
+    const picker = page.getByRole("dialog");
+    await picker.getByRole("combobox", { name: "Your business" }).click();
+    await page.getByRole("option", { name: "Vehicles and fleet" }).click();
+    await expect(picker.getByText("License plate tags / sticker")).toBeVisible();
+    await expect(picker.getByText("Commercial auto insurance")).toBeVisible();
+    await picker.getByRole("button", { name: "Use template: Vehicle registration" }).click();
+    const form = page.getByRole("dialog");
+    await expect(form.getByLabel("License name")).toHaveValue("Vehicle registration");
+    await expect(form.getByLabel("Required documents (one per line)")).toHaveValue(/Registration card/);
+    await form.getByLabel("License number").fill("ABC-1234");
+    await form.getByLabel("I have checked these details against the license document.").check();
+    await form.getByRole("button", { name: "Add license" }).click();
+    await expect(page.getByTestId("license-card").filter({ hasText: "Vehicle registration" })).toBeVisible();
+  });
+
   test("licenses: upload a file to pre-fill a new license", async ({ page }) => {
     await page.goto("/app/licenses");
     const text = [

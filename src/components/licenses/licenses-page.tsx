@@ -11,8 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { expiryText, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
+import { compliance, expiryText, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
+import { TemplateDialog } from "./template-dialog";
+import type { LicenseTemplate } from "@/lib/licenses/templates";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
 import type { LicenseFormValues } from "@/lib/licenses/validation";
 import { useSetupConfig } from "@/lib/setup/storage";
@@ -43,6 +45,8 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [formFor, setFormFor] = useState<License | "new" | null>(null);
   const [deleting, setDeleting] = useState<License | null>(null);
+  const [picking, setPicking] = useState(false);
+  const [template, setTemplate] = useState<LicenseTemplate | undefined>();
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [formSession, setFormSession] = useState(0); // new key per opening, so notes from a previous upload never linger
   const [renewing, setRenewing] = useState<License | null>(null);
@@ -74,8 +78,9 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
     );
   }
 
-  const openForm = (target: License | "new", file: File | null = null) => {
+  const openForm = (target: License | "new", file: File | null = null, tpl?: LicenseTemplate) => {
     setUploadFile(file);
+    setTemplate(tpl);
     setFormSession((n) => n + 1);
     setFormFor(target);
   };
@@ -130,6 +135,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
   const toggleFilter = (f: Filter) => setStatusFilter((cur) => (cur === f ? "all" : f));
 
   const summary = summarize(licenses, today);
+  const standing = compliance(licenses, today);
   const tasks = renewalTasks(licenses, today);
   const q = query.trim().toLowerCase();
   const matchesFilter = (l: License) => {
@@ -169,6 +175,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
               />
             </label>
           </Button>
+          <Button variant="outline" onClick={() => setPicking(true)}>Start from a template</Button>
           <Button onClick={() => openForm("new")}><Plus /> Add license</Button>
         </div>
       </div>
@@ -208,6 +215,12 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
         <SummaryTile icon={AlertTriangle} label="Expired" value={summary.expired} tone="text-red-600" pressed={statusFilter === "expired"} onClick={() => toggleFilter("expired")} />
         <SummaryTile icon={FileWarning} label="Documents missing" value={summary.missingDocuments} tone="text-primary" pressed={statusFilter === "missing_docs"} onClick={() => toggleFilter("missing_docs")} />
       </section>
+
+      {licenses.length > 0 && (
+        <p className="text-sm text-muted-foreground" data-testid="compliance">
+          <span className="font-medium text-foreground">Compliance {standing.percent}%</span> · {standing.inGoodStanding} of {standing.total} in date with every document on file
+        </p>
+      )}
 
       <section aria-labelledby="tasks-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
         <h2 id="tasks-heading" className="text-base font-semibold">Renewal tasks</h2>
@@ -302,11 +315,14 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
         key={formSession}
         open={formFor !== null}
         license={formFor && formFor !== "new" ? formFor : undefined}
+        template={template}
         today={today}
         initialFile={uploadFile}
         onOpenChange={(o) => { if (!o) { setFormFor(null); setUploadFile(null); } }}
         onSubmit={saveForm}
       />
+
+      <TemplateDialog open={picking} onOpenChange={setPicking} onPick={(tpl) => { setPicking(false); openForm("new", null, tpl); }} />
 
       <RenewDialog license={renewing} today={today} onCancel={() => setRenewing(null)} onConfirm={confirmRenewal} />
 

@@ -4,6 +4,8 @@ export const LICENSE_CATEGORIES = [
   { value: "permit", label: "Permit" },
   { value: "insurance", label: "Insurance" },
   { value: "registration", label: "Registration" },
+  { value: "certification", label: "Certification" },
+  { value: "policy", label: "Policy" },
   { value: "other", label: "Other" },
 ] as const;
 export type LicenseCategory = (typeof LICENSE_CATEGORIES)[number]["value"];
@@ -57,6 +59,8 @@ export const DEFAULT_DOCUMENTS: Record<LicenseCategory, string[]> = {
   permit: ["Signed application", "Renewal fee receipt"],
   insurance: ["Updated certificate of insurance"],
   registration: ["Registration certificate"],
+  certification: ["Certificate copy"],
+  policy: ["Reviewed policy", "Sign-off record"],
   other: [],
 };
 
