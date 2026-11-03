@@ -148,7 +148,7 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
     checks.push({ id: "vendors-forms", status: "warn", title: "Vendor intake", detail: "Vendors work best with Forms & Paperwork for intake and approvals.", step: 1 });
   }
   if (has("invoices") && !has("crm")) {
-    checks.push({ id: "invoices-crm", status: "warn", title: "Client contacts", detail: "Add CRM & Data to keep the contacts behind your invoices clean.", step: 1 });
+    checks.push({ id: "invoices-crm", status: "warn", title: "Client contacts", detail: "Add Contacts to keep the contacts behind your invoices clean.", step: 1 });
   }
   if (has("licenses") && !has("admin")) {
     checks.push({ id: "licenses-admin", status: "warn", title: "Renewal follow-up", detail: "Requests gives renewal work a place to land.", step: 1 });

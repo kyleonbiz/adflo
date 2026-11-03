@@ -46,7 +46,7 @@ export async function renderAppShell(
     }
     const { data: ws } = await supabase.from("workspaces").select("name").eq("id", membership.workspaceId).maybeSingle();
     return (
-      <Frame topRight={<AppTopBar workspaceName={ws?.name} userLabel={email} notifications={await loadNotifications()} />}>
+      <Frame topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} />}>
         {content("live", { name: fullName })}
       </Frame>
     );

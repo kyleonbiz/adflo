@@ -17,6 +17,7 @@ import {
 import { e2eSeed } from "@/lib/e2e-seed";
 import { VENDOR_CATEGORIES, type Vendor, type VendorCategory, type VendorStatus } from "@/lib/vendors/types";
 import type { VendorFormValues } from "@/lib/vendors/validation";
+import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
 import { VendorFormDialog } from "./vendor-form-dialog";
@@ -202,6 +203,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
 
   return (
     <div className="space-y-5">
+      <ContactsTabs current="vendors" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Vendors</h1>

@@ -18,7 +18,7 @@ async function openImport(page: Page) {
   return page.getByRole("dialog");
 }
 
-test.describe("CRM & data module", () => {
+test.describe("Contacts module", () => {
   test("summary, duplicates, search and filter", async ({ page }) => {
     await page.goto("/app/contacts");
     await expect(page.getByRole("note")).toContainText("never leave your browser");
@@ -302,7 +302,7 @@ test.describe("CRM & data module", () => {
 
   test("is available in the signed-in app too", async ({ page }) => {
     await page.goto("/app/contacts");
-    await expect(page.getByRole("heading", { level: 1, name: "CRM & Data" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "CRM & Data", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1, name: "Contacts" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Contacts", exact: true })).toHaveAttribute("aria-current", "page");
   });
 });

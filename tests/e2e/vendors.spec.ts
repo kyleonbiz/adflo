@@ -245,6 +245,6 @@ test.describe("vendors module", () => {
   test("is available in the signed-in app too", async ({ page }) => {
     await page.goto("/app/vendors");
     await expect(page.getByRole("heading", { level: 1, name: "Vendors" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Vendors", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation", { name: "Contacts" }).getByRole("link", { name: "Vendors", exact: true })).toHaveAttribute("aria-current", "page");
   });
 });

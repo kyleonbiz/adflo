@@ -21,7 +21,7 @@ async function completeSetup(page: Page) {
   await next(page).click();
   await page.getByLabel("Reconcile bank statements").uncheck();
   await next(page).click();
-  await page.getByLabel("CRM & Data data is done").check();
+  await page.getByLabel("Contacts data is done").check();
   await next(page).click();
   await page.getByRole("button", { name: "Finish setup" }).click();
 }
@@ -42,7 +42,7 @@ test.describe("back office setup module", () => {
     await next(page).click();
     const list = page.getByTestId("module-choices");
     await expect(list.getByText("Recommended", { exact: true })).toHaveCount(7);
-    for (const name of ["Documents", "Invoices", "Requests", "Projects", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) {
+    for (const name of ["Documents", "Invoices", "Requests", "Projects", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) {
       await expect(moduleBox(page, name)).toBeChecked();
     }
     for (const name of ["Vendors", "Reporting"]) await expect(moduleBox(page, name)).not.toBeChecked();
@@ -52,7 +52,7 @@ test.describe("back office setup module", () => {
     await page.getByRole("button", { name: "Use recommended" }).click();
     await expect(moduleBox(page, "Documents")).toBeChecked();
 
-    for (const name of ["Documents", "Invoices", "Requests", "Projects", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) await moduleBox(page, name).uncheck();
+    for (const name of ["Documents", "Invoices", "Requests", "Projects", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) await moduleBox(page, name).uncheck();
     await expect(next(page)).toBeDisabled();
   });
 
@@ -65,7 +65,7 @@ test.describe("back office setup module", () => {
     await expect(groups.filter({ hasText: "Forms & Paperwork" })).toContainText("New employee details");
     await expect(groups.filter({ hasText: "Requests" })).toContainText("Reconcile bank statements");
     await expect(groups.filter({ hasText: "Licenses & Renewals" })).toContainText("Common small-business licenses");
-    await expect(groups.filter({ hasText: "CRM & Data" })).toContainText("Nothing to install");
+    await expect(groups.filter({ hasText: "Contacts" })).toContainText("Nothing to install");
     await expect(page.getByLabel("New employee details")).toBeChecked();
     await expect(page.getByLabel("Weekly team agenda").or(page.getByLabel("Send the weekly team agenda"))).toBeChecked();
   });

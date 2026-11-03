@@ -16,6 +16,7 @@ import { applyImport, contactDuplicates, contactsToCsv, isStale, STALE_DAYS, sum
 import { e2eSeed } from "@/lib/e2e-seed";
 import { CONTACT_CATEGORIES, type Contact, type ContactCategory, type ContactInput } from "@/lib/contacts/types";
 import type { ImportOutcome } from "@/lib/import/run";
+import { ContactsTabs } from "./contacts-tabs";
 import { ContactFormDialog } from "./contact-form-dialog";
 import { ImportDialog } from "./import-dialog";
 import { MergeDialog } from "./merge-dialog";
@@ -40,7 +41,7 @@ const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2)
 const linkClass = "rounded underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
- * CRM & Data. Contacts live in this component's state (starting empty) until the database is
+ * Contacts. Contacts live in this component's state (starting empty) until the database is
  * connected, so nothing here is saved between visits. Imports are read in the browser and never uploaded.
  */
 export function ContactsPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
@@ -147,9 +148,10 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
 
   return (
     <div className="space-y-5">
+      <ContactsTabs current="people" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">CRM &amp; Data</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Contacts</h1>
           <p className="text-sm text-muted-foreground">Keep your contacts in one place: import lists, clean them up, merge duplicates, track who needs a follow-up and export tidy data.</p>
         </div>
         <div className="flex flex-wrap gap-2">

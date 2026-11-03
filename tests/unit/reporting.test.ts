@@ -39,7 +39,7 @@ describe("buildReports", () => {
     const reports = buildReports(full(), TODAY);
     expect(reports.map((r) => r.id)).toEqual(["documents", "invoices", "licenses", "vendors", "crm", "projects", "forms", "admin"]);
     expect(reports.map((r) => r.href)).toEqual(["/app", "/app/invoices", "/app/licenses", "/app/vendors", "/app/contacts", "/app/projects", "/app/forms", "/app/admin"]);
-    expect(reports.map((r) => r.name)).toContain("CRM & Data");
+    expect(reports.map((r) => r.name)).toContain("Contacts");
   });
 
   it("reports zero records everywhere when nothing is stored yet", () => {

@@ -125,7 +125,7 @@ export function Dashboard({ base, data, serverToday, name }: { base: "/app"; dat
   return (
     <div className="space-y-5" data-testid="dashboard">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <p className="text-lg font-medium" data-testid="greeting">{greeting}{name ? `, ${name}` : ""}</p>
+        <p className="text-lg font-medium" data-testid="greeting">{greeting}{name ? `, ${name.split(/\s+/)[0]}` : ""}</p>
         <QuickActions base={base} />
       </div>
 

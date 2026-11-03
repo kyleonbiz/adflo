@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 const NAMES = [
-  "Home", "AI Assistant", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
+  "Home", "AI Assistant", "Documents", "Invoices", "Licenses & Renewals", "Contacts", "Projects", "Forms & Paperwork",
   "Reporting", "Requests", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
@@ -21,11 +21,11 @@ test.describe("module sidebar on a wide screen", () => {
     for (let i = 1; i < boxes.length; i++) expect(boxes[i]!.y).toBeGreaterThan(boxes[i - 1]!.y);
     for (const b of boxes) expect(b!.x + b!.width).toBeLessThanOrEqual(270); // inside a sidebar about 256px wide, no sideways scrolling
 
-    const gapBeforeSetup = boxes[11]!.y - (boxes[10]!.y + boxes[10]!.height);
+    const gapBeforeSetup = boxes[10]!.y - (boxes[9]!.y + boxes[9]!.height);
     const gapBetweenOthers = boxes[6]!.y - (boxes[5]!.y + boxes[5]!.height);
     expect(gapBeforeSetup).toBeGreaterThan(gapBetweenOthers + 20); // set apart
     const viewport = page.viewportSize()!;
-    expect(boxes[11]!.y + boxes[11]!.height).toBeGreaterThan(viewport.height - 120); // down at the bottom
+    expect(boxes[10]!.y + boxes[10]!.height).toBeGreaterThan(viewport.height - 120); // down at the bottom
   });
 
   test("highlights the current module and moves the highlight when you navigate", async ({ page }) => {
@@ -35,13 +35,27 @@ test.describe("module sidebar on a wide screen", () => {
     await expect(nav(page).locator("[aria-current=page]")).toHaveCount(1);
     const bg = (l: ReturnType<typeof nav>) => l.evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(await bg(projects)).not.toBe("rgba(0, 0, 0, 0)");
-    expect(await bg(nav(page).getByRole("link", { name: "Vendors", exact: true }))).toBe("rgba(0, 0, 0, 0)");
+    expect(await bg(nav(page).getByRole("link", { name: "Contacts", exact: true }))).toBe("rgba(0, 0, 0, 0)");
 
-    await nav(page).getByRole("link", { name: "Vendors", exact: true }).click();
+    await nav(page).getByRole("link", { name: "Contacts", exact: true }).click();
+    await expect(page).toHaveURL(/\/app\/contacts$/);
+    await page.getByRole("navigation", { name: "Contacts" }).getByRole("link", { name: "Vendors" }).click();
     await expect(page).toHaveURL(/\/app\/vendors$/);
     await expect(page.getByRole("heading", { level: 1, name: "Vendors" })).toBeVisible();
-    await expect(nav(page).getByRole("link", { name: "Vendors", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(nav(page).getByRole("link", { name: "Contacts", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(projects).not.toHaveAttribute("aria-current", "page");
+  });
+
+  test("collapses to icons only and remembers the choice", async ({ page }) => {
+    await page.goto("/app/overview");
+    await page.getByRole("button", { name: "Collapse menu" }).click();
+    const home = nav(page).getByRole("link", { name: "Home", exact: true });
+    await expect(home).toHaveText("");
+    await expect.poll(async () => (await home.boundingBox())!.width).toBeLessThan(80); // after the width transition
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Expand menu" })).toBeVisible();
+    await page.getByRole("button", { name: "Expand menu" }).click();
+    await expect(nav(page).getByRole("link", { name: "Home", exact: true })).toHaveText("Home");
   });
 
   test("Documents opens the document workspace inside the same frame", async ({ page }) => {

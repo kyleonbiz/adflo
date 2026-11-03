@@ -5,6 +5,8 @@ import { Menu, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Brand } from "@/components/brand";
 import { GlobalSearch } from "./global-search";
+import { useSidebarCollapsed } from "@/lib/sidebar-storage";
+import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
 
 /**
@@ -14,11 +16,12 @@ import { SidebarNav } from "./sidebar-nav";
  */
 export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const collapsed = useSidebarCollapsed();
   return (
     <div className="min-h-dvh lg:flex">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-float focus:outline-none focus:ring-2 focus:ring-ring">Skip to content</a>
-      <aside className="hidden border-r border-white/5 bg-brand-navy lg:sticky lg:top-0 lg:block lg:h-dvh lg:w-64 lg:shrink-0 lg:overflow-y-auto">
-        <SidebarNav base={base} />
+      <aside className={cn("hidden border-r border-white/5 bg-brand-navy transition-[width] duration-200 lg:sticky lg:top-0 lg:block lg:h-dvh lg:shrink-0 lg:overflow-y-auto", collapsed ? "lg:w-[4.5rem]" : "lg:w-64")}>
+        <SidebarNav base={base} collapsed={collapsed} canCollapse />
       </aside>
 
       <div className="min-w-0 flex-1">
