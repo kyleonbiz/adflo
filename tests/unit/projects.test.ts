@@ -224,7 +224,6 @@ describe("project templates", () => {
 });
 
 import { buildCustomType, parseCustomTypes } from "@/lib/projects/custom-types";
-import { PROJECT_TEMPLATES } from "@/lib/projects/templates";
 
 describe("custom project types", () => {
   const ok = { name: "Quarterly tax prep", summary: "", durationDays: "30", tasks: "A\nB\n\nC" };

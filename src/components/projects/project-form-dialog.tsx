@@ -16,6 +16,8 @@ import { titleCase } from "@/lib/text";
 import { NEW_TYPE, buildCustomType, isCustomType, type CustomTypeInput } from "@/lib/projects/custom-types";
 import { saveCustomTypes, useCustomTypes } from "@/lib/projects/custom-types-storage";
 
+const newTypeId = () => Math.random().toString(36).slice(2, 10);
+
 function defaults(project: Project | undefined, today: string): ProjectFormInput {
   if (project) {
     return {
@@ -91,7 +93,7 @@ export function ProjectFormDialog({
 
   const saveType = () => {
     if (!adding) return;
-    const result = buildCustomType(adding, Math.random().toString(36).slice(2, 10), all);
+    const result = buildCustomType(adding, newTypeId(), all);
     if ("error" in result) { setAddError(result.error); return; }
     saveCustomTypes([...custom, result.type]);
     setAdding(null);
