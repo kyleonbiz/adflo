@@ -14,7 +14,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Licenses & Renewals: templates by business (vehicle registration, tags, insurance, inspection, and 7 other business types)
 - [x] Pages stop opening to bare home screens (each module explains itself with a first step when empty; home suggests where to begin)
 - [~] Explore more of Licenses & Renewals (templates, certification/policy types, compliance score done; renewal cost tracking and calendar export to do)
-- [ ] Vendors: deeper dive
+- [x] Vendors: deeper dive (payment terms, how critical, contract end alerts, yearly spend with a 1099 and W-9 check, rating, reminders and notes log, CSV columns)
 - [x] Queue on the home dashboard
 - [~] Bridge Vendors -> Contacts (menu merged; records still separate, needs database)
 - [ ] Discuss: what the Projects module should include

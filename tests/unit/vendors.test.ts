@@ -141,7 +141,7 @@ describe("summary, attention and csv", () => {
   it("exports one row per vendor with document issues and neutralised formulas", () => {
     const csv = vendorsToCsv([{ ...byId("v-2"), name: "=EVIL()" }], TODAY);
     const [header, row] = csv.trimEnd().split("\r\n");
-    expect(header).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes");
+    expect(header).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes,Risk tier,Payment terms,Contract ends,Annual spend,Rating");
     expect(row).toContain("'=EVIL()");
     expect(row).toContain("Approved");
     expect(row).toContain("Certificate of insurance (expired)");
@@ -196,5 +196,40 @@ describe("merging and attachments", () => {
     expect(fileProblem({ name: "W9.PDF", size: 1000 })).toBeNull();
     expect(fileProblem({ name: "w9.exe", size: 1000 })).toContain("not a PDF");
     expect(fileProblem({ name: "w9.pdf", size: 11 * 1024 * 1024 })).toContain("larger than 10 MB");
+  });
+});
+
+import { CONTRACT_NOTICE_DAYS, FORM_1099_DOLLARS, relationshipAlerts } from "@/lib/vendors/logic";
+
+describe("vendor relationship", () => {
+  const base = () => sampleVendors(TODAY).find((v) => v.id === "v-1")!;
+
+  it("raises nothing for a vendor with no contract, spend or rating on record", () => {
+    expect(relationshipAlerts(base(), TODAY)).toEqual([]);
+  });
+
+  it("flags a contract that is ending soon or already over", () => {
+    const soon = relationshipAlerts({ ...base(), contractEndsOn: addDays(TODAY, CONTRACT_NOTICE_DAYS) }, TODAY);
+    expect(soon[0]).toMatchObject({ severity: "info", message: `Contract ends in ${CONTRACT_NOTICE_DAYS} days.` });
+    const critical = relationshipAlerts({ ...base(), contractEndsOn: addDays(TODAY, 10), riskTier: "critical" }, TODAY);
+    expect(critical[0].severity).toBe("warning");
+    expect(relationshipAlerts({ ...base(), contractEndsOn: addDays(TODAY, CONTRACT_NOTICE_DAYS + 1) }, TODAY)).toEqual([]);
+    expect(relationshipAlerts({ ...base(), contractEndsOn: addDays(TODAY, -3) }, TODAY)[0].message).toMatch(/^Contract ended/);
+  });
+
+  it("asks for a W-9 once spend passes the 1099 line", () => {
+    const noW9 = { ...base(), annualSpend: FORM_1099_DOLLARS, documents: [] };
+    expect(relationshipAlerts(noW9, TODAY)[0].message).toContain("1099");
+    expect(relationshipAlerts({ ...noW9, annualSpend: FORM_1099_DOLLARS - 1 }, TODAY)).toEqual([]);
+    expect(relationshipAlerts({ ...base(), annualSpend: 5000 }, TODAY)).toEqual([]); // has a received W-9
+  });
+
+  it("reads the new fields from the form, with sensible defaults", () => {
+    const ok = vendorFormSchema.parse({ name: "Acme", category: "Supplies", contactName: "", email: "a@b.co", phone: "", taxId: "", notes: "" });
+    expect(ok).toMatchObject({ riskTier: "standard", paymentTerms: "Net 30", contractEndsOn: null, annualSpend: null, rating: null });
+    const full = vendorFormSchema.parse({ name: "Acme", category: "Supplies", contactName: "", email: "a@b.co", phone: "", taxId: "", notes: "", riskTier: "critical", paymentTerms: "Net 60", contractEndsOn: "2027-01-15", annualSpend: "24000", rating: "4" });
+    expect(full).toMatchObject({ riskTier: "critical", paymentTerms: "Net 60", contractEndsOn: "2027-01-15", annualSpend: 24000, rating: 4 });
+    expect(vendorFormSchema.safeParse({ name: "Acme", category: "Supplies", contactName: "", email: "a@b.co", phone: "", taxId: "", notes: "", annualSpend: "12.5" }).success).toBe(false);
+    expect(vendorFormSchema.safeParse({ name: "Acme", category: "Supplies", contactName: "", email: "a@b.co", phone: "", taxId: "", notes: "", rating: "9" }).success).toBe(false);
   });
 });

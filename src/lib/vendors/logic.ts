@@ -1,5 +1,5 @@
 import { toCsv } from "@/lib/csv";
-import { daysBetween, formatDayLong } from "@/lib/dates";
+import { daysBetween, formatDayLong, isDay } from "@/lib/dates";
 import type { DocState, Vendor, VendorAlert, VendorCategory, VendorDocument, VendorStatus } from "./types";
 
 /** A document within this many days of expiry is "expiring". */
@@ -100,6 +100,26 @@ export function setActive(v: Vendor, active: boolean): Vendor {
   return v;
 }
 
+/** A contract this close to its end is flagged, early enough to renegotiate or give notice. */
+export const CONTRACT_NOTICE_DAYS = 60;
+/** The IRS asks for a 1099 once you pay a contractor this much in a year. */
+export const FORM_1099_DOLLARS = 600;
+
+/** Alerts from the business side of a vendor: contract dates, and tax paperwork once spending passes the 1099 line. */
+export function relationshipAlerts(v: Vendor, today: string): VendorAlert[] {
+  const out: VendorAlert[] = [];
+  if (v.contractEndsOn && isDay(v.contractEndsOn)) {
+    const left = daysBetween(today, v.contractEndsOn);
+    if (left < 0) out.push({ severity: "warning", message: `Contract ended ${formatDayLong(v.contractEndsOn)}.` });
+    else if (left <= CONTRACT_NOTICE_DAYS) out.push({ severity: v.riskTier === "critical" ? "warning" : "info", message: `Contract ends in ${plural(left, "day")}.` });
+  }
+  const w9 = v.documents.find((d) => /w-?9/i.test(d.type));
+  if ((v.annualSpend ?? 0) >= FORM_1099_DOLLARS && (!w9 || !w9.receivedOn)) {
+    out.push({ severity: "warning", message: "Spend passes the 1099 line and no W-9 is on file." });
+  }
+  return out;
+}
+
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /** Alerts that apply today, most severe first. Inactive and rejected vendors raise none. */
@@ -118,6 +138,7 @@ export function vendorAlerts(v: Vendor, today: string): VendorAlert[] {
       outstanding++;
     }
   }
+  for (const a of relationshipAlerts(v, today)) alerts.push(a);
   if (outstanding > 0 && v.status === "onboarding") alerts.push({ severity: "info", message: `${plural(outstanding, "required document")} outstanding.` });
   if (v.status === "pending_approval") alerts.push({ severity: "info", message: "Awaiting approval." });
   const order = { critical: 0, warning: 1, info: 2 } as const;
@@ -255,11 +276,11 @@ export function hasDocumentIssues(v: Vendor, today: string): boolean {
 
 export function vendorsToCsv(vendors: Vendor[], today: string): string {
   return toCsv([
-    ["Name", "Category", "Status", "Contact", "Email", "Phone", "Tax ID", "Required docs in", "Required docs total", "Document issues", "Notes"],
+    ["Name", "Category", "Status", "Contact", "Email", "Phone", "Tax ID", "Required docs in", "Required docs total", "Document issues", "Notes", "Risk tier", "Payment terms", "Contract ends", "Annual spend", "Rating"],
     ...vendors.map((v) => {
       const p = onboardingProgress(v, today);
       const issues = v.documents.filter((d) => ["expiring", "expired"].includes(docState(d, today))).map((d) => `${d.type} (${docState(d, today)})`);
-      return [v.name, v.category, STATUS_LABEL[v.status], v.contactName, v.email, v.phone, v.taxId, p.done, p.total, issues.join("; "), v.notes];
+      return [v.name, v.category, STATUS_LABEL[v.status], v.contactName, v.email, v.phone, v.taxId, p.done, p.total, issues.join("; "), v.notes, v.riskTier === "critical" ? "Critical" : "Standard", v.paymentTerms ?? "", v.contractEndsOn ?? "", v.annualSpend ?? "", v.rating ?? ""];
     }),
   ]);
 }

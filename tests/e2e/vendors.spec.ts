@@ -229,7 +229,7 @@ test.describe("vendors module", () => {
     expect(file.suggestedFilename()).toMatch(/^vendors-\d{4}-\d{2}-\d{2}\.csv$/);
     let text = "";
     for await (const chunk of await file.createReadStream()) text += chunk;
-    expect(text.split("\r\n")[0]).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes");
+    expect(text.split("\r\n")[0]).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes,Risk tier,Payment terms,Contract ends,Annual spend,Rating");
     expect(text).toContain("Awaiting approval");
     expect(text).toContain("Certificate of insurance (expired)");
   });
@@ -274,5 +274,31 @@ test.describe("vendors module", () => {
     await initech.getByLabel("Certificate of insurance file").setInputFiles("tests/support/license-scan.png");
     await expect(page.getByRole("status")).toContainText("Read license-scan.png: expires", { timeout: 20_000 });
     await expect(initech.getByLabel("Certificate of insurance expires on")).toHaveValue("2027-01-15");
+  });
+
+  test("business terms: contract end, spend, rating and the alerts they raise", async ({ page }) => {
+    await page.goto("/app/vendors");
+    await page.getByRole("button", { name: "Add vendor" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Vendor name").fill("Blue Ridge Printing");
+    await dialog.getByLabel("Contact email").fill("orders@blueridge.example");
+    await dialog.getByRole("combobox", { name: "How much you rely on them" }).click();
+    await page.getByRole("option", { name: "Critical to the business" }).click();
+    await dialog.getByRole("combobox", { name: "Payment terms" }).click();
+    await page.getByRole("option", { name: "Net 45" }).click();
+    await dialog.getByLabel("Spend per year in dollars (optional)").fill("12.5");
+    await dialog.getByRole("button", { name: "Add vendor" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("Whole dollars only");
+    await dialog.getByLabel("Spend per year in dollars (optional)").fill("24000");
+    await dialog.getByLabel("Contract ends (optional)").fill("2099-01-01");
+    await dialog.getByRole("combobox", { name: "Your rating" }).click();
+    await page.getByRole("option", { name: "4 of 5" }).click();
+    await dialog.getByRole("button", { name: "Add vendor" }).click();
+
+    const added = card(page, "Blue Ridge Printing");
+    await expect(added.getByTestId("vendor-terms")).toContainText("Critical");
+    await expect(added.getByTestId("vendor-terms")).toContainText("Net 45 · contract ends");
+    await expect(added.getByTestId("vendor-terms")).toContainText("$24,000 a year · rated 4 of 5");
+    await expect(added.getByRole("list", { name: "Alerts" })).toContainText("Spend passes the 1099 line and no W-9 is on file.");
   });
 });

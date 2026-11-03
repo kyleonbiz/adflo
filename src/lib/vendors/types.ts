@@ -46,6 +46,15 @@ export const VENDOR_CATEGORIES = [
 ] as const;
 export type VendorCategory = (typeof VENDOR_CATEGORIES)[number];
 
+export const RISK_TIERS = [
+  { value: "standard", label: "Standard" },
+  { value: "critical", label: "Critical to the business" },
+] as const;
+export type RiskTier = (typeof RISK_TIERS)[number]["value"];
+
+export const PAYMENT_TERMS = ["Due on receipt", "Net 15", "Net 30", "Net 45", "Net 60"] as const;
+export type PaymentTerms = (typeof PAYMENT_TERMS)[number];
+
 export type VendorStatus = "onboarding" | "pending_approval" | "approved" | "rejected" | "inactive";
 
 /** Dates are `YYYY-MM-DD`. A document is "received" once `receivedOn` is set. */
@@ -87,6 +96,15 @@ export interface Vendor {
   comment: string;
   /** Dated notes and reminders, oldest first. Absent until the first entry. */
   activity?: VendorNote[];
+  /** How much the business leans on this vendor. Absent means standard. */
+  riskTier?: RiskTier;
+  paymentTerms?: PaymentTerms;
+  /** When the current contract ends, `YYYY-MM-DD`. */
+  contractEndsOn?: string | null;
+  /** About how many dollars a year you spend with them. */
+  annualSpend?: number | null;
+  /** Your own 1 to 5 rating. */
+  rating?: number | null;
 }
 
 export type DocState = "missing" | "valid" | "expiring" | "expired";

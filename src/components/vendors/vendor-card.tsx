@@ -118,6 +118,17 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
           <p className="text-sm text-muted-foreground">
             {[vendor.contactName, vendor.email, vendor.phone].filter(Boolean).join(" · ")}
           </p>
+          {(vendor.paymentTerms || vendor.riskTier === "critical" || vendor.contractEndsOn || vendor.annualSpend || vendor.rating) && (
+            <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground" data-testid="vendor-terms">
+              {vendor.riskTier === "critical" && <Badge variant="warning">Critical</Badge>}
+              {[
+                vendor.paymentTerms,
+                vendor.contractEndsOn ? `contract ends ${formatDayLong(vendor.contractEndsOn)}` : "",
+                vendor.annualSpend ? `$${vendor.annualSpend.toLocaleString("en-US")} a year` : "",
+                vendor.rating ? `rated ${vendor.rating} of 5` : "",
+              ].filter(Boolean).join(" · ")}
+            </p>
+          )}
           <p className="text-sm">{total === 0 ? "No required documents" : `${done} of ${total} required documents in`}</p>
           {alerts.length > 0 && (
             <ul className="flex flex-wrap gap-1.5" aria-label="Alerts">

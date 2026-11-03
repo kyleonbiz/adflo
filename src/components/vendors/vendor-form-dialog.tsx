@@ -10,14 +10,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { findDuplicates } from "@/lib/vendors/logic";
-import { VENDOR_CATEGORIES, type Vendor } from "@/lib/vendors/types";
+import { PAYMENT_TERMS, RISK_TIERS, VENDOR_CATEGORIES, type Vendor } from "@/lib/vendors/types";
 import { vendorFormSchema, type VendorFormInput, type VendorFormValues } from "@/lib/vendors/validation";
 
 function defaults(vendor?: Vendor): VendorFormInput {
-  if (!vendor) return { name: "", category: "Supplies", contactName: "", email: "", phone: "", taxId: "", notes: "" };
+  if (!vendor) return { name: "", category: "Supplies", contactName: "", email: "", phone: "", taxId: "", notes: "", riskTier: "standard", paymentTerms: "Net 30", contractEndsOn: "", annualSpend: "", rating: "" };
   return {
     name: vendor.name, category: vendor.category, contactName: vendor.contactName, email: vendor.email,
     phone: vendor.phone, taxId: vendor.taxId, notes: vendor.notes,
+    riskTier: vendor.riskTier ?? "standard", paymentTerms: vendor.paymentTerms ?? "Net 30", contractEndsOn: vendor.contractEndsOn ?? "",
+    annualSpend: vendor.annualSpend == null ? "" : String(vendor.annualSpend), rating: vendor.rating == null ? "" : String(vendor.rating),
   };
 }
 
@@ -102,6 +104,39 @@ function VendorFormBody({
             </Field>
             <Field id="vendor-taxId" label="Tax ID (EIN, Optional)" error={errors.taxId?.message}>
               <Input id="vendor-taxId" autoComplete="off" placeholder="12-3456789" {...invalid("taxId")} {...register("taxId", { onChange: () => setMatches([]) })} />
+            </Field>
+            <Field id="vendor-riskTier" label="How much you rely on them" error={errors.riskTier?.message}>
+              <Controller control={control} name="riskTier" render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="vendor-riskTier" aria-label="How much you rely on them"><SelectValue /></SelectTrigger>
+                  <SelectContent>{RISK_TIERS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+                </Select>
+              )} />
+            </Field>
+            <Field id="vendor-paymentTerms" label="Payment terms" error={errors.paymentTerms?.message}>
+              <Controller control={control} name="paymentTerms" render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="vendor-paymentTerms" aria-label="Payment terms"><SelectValue /></SelectTrigger>
+                  <SelectContent>{PAYMENT_TERMS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              )} />
+            </Field>
+            <Field id="vendor-contractEndsOn" label="Contract ends (optional)" error={errors.contractEndsOn?.message}>
+              <Input id="vendor-contractEndsOn" type="date" {...invalid("contractEndsOn")} {...register("contractEndsOn")} />
+            </Field>
+            <Field id="vendor-annualSpend" label="Spend per year in dollars (optional)" error={errors.annualSpend?.message}>
+              <Input id="vendor-annualSpend" inputMode="numeric" autoComplete="off" placeholder="24000" {...invalid("annualSpend")} {...register("annualSpend")} />
+            </Field>
+            <Field id="vendor-rating" label="Your rating (optional)" error={errors.rating?.message}>
+              <Controller control={control} name="rating" render={({ field }) => (
+                <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
+                  <SelectTrigger id="vendor-rating" aria-label="Your rating"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Not rated</SelectItem>
+                    {[5, 4, 3, 2, 1].map((n) => <SelectItem key={n} value={String(n)}>{n} of 5</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )} />
             </Field>
             <div className="sm:col-span-2">
               <Field id="vendor-notes" label="Notes" error={errors.notes?.message}>

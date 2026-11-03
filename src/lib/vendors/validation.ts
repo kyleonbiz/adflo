@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isPhone } from "@/lib/phone";
-import { VENDOR_CATEGORIES } from "./types";
+import { isDay } from "@/lib/dates";
+import { PAYMENT_TERMS, VENDOR_CATEGORIES } from "./types";
 
 export const vendorFormSchema = z.object({
   name: z.string().trim().min(2, "Enter the vendor name").max(120, "Keep it under 120 characters"),
@@ -14,6 +15,15 @@ export const vendorFormSchema = z.object({
     .refine((v) => v === "" || /^\d{2}-?\d{7}$/.test(v), "Tax ID looks like 12-3456789")
     .transform((v) => v.replace("-", "")),
   notes: z.string().trim().max(1000, "Keep notes under 1000 characters"),
+  riskTier: z.enum(["standard", "critical"]).default("standard"),
+  paymentTerms: z.enum(PAYMENT_TERMS).default("Net 30"),
+  contractEndsOn: z.string().trim().default("").refine((v) => v === "" || isDay(v), "Enter a valid date").transform((v) => (v === "" ? null : v)),
+  annualSpend: z.string().trim().default("")
+    .refine((v) => v === "" || (/^\d{1,9}$/.test(v)), "Whole dollars only, like 24000")
+    .transform((v) => (v === "" ? null : Number(v))),
+  rating: z.string().trim().default("")
+    .refine((v) => v === "" || ["1", "2", "3", "4", "5"].includes(v), "Pick 1 to 5")
+    .transform((v) => (v === "" ? null : Number(v))),
 });
 
 export type VendorFormInput = z.input<typeof vendorFormSchema>;
