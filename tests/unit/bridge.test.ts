@@ -40,5 +40,7 @@ describe("contacts and forms", () => {
     const params = new URLSearchParams(fillLink("pw-nda", p).split("?")[1]);
     expect(personFromParams((k) => params.get(k) ?? undefined)).toEqual({ name: "Dana Whitfield", email: "dana@example.com", phone: "", company: "" });
     expect(personFromParams(() => "x".repeat(500)).name).toHaveLength(120);
+    const bad = personFromParams((k) => ({ name: "Sam Ito", email: "nope", phone: "4111 1111 1111 1111" } as Record<string, string>)[k]);
+    expect(bad).toEqual({ name: "Sam Ito", email: "", phone: "", company: "" });
   });
 });

@@ -18,7 +18,7 @@ import { buildTasks, type TemplateTask } from "@/lib/projects/templates";
 import { PROJECT_STATUSES, type Project, type ProjectStatus, type Task } from "@/lib/projects/types";
 import type { ProjectFormValues, TaskFormValues } from "@/lib/projects/validation";
 import { ProjectCard, type ProjectActions } from "./project-card";
-import { ProjectFormDialog } from "./project-form-dialog";
+import { ProjectFormDialog, type ProjectDraft } from "./project-form-dialog";
 import { STATUS_LABEL, TASK_BADGE } from "./status";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -50,7 +50,7 @@ const isLive = (p: Project) => p.status !== "completed" && p.status !== "on_hold
  * Project administration. Projects and tasks live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
-export function ProjectsPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
+export function ProjectsPage({ preview, initialQuery = "", startNew, draft }: { preview?: string; initialQuery?: string; startNew?: boolean; draft?: ProjectDraft }) {
   const today = useToday();
   if (!today) {
     return (
@@ -61,10 +61,10 @@ export function ProjectsPage({ preview, initialQuery = "" }: { preview?: string;
       </div>
     );
   }
-  return <ProjectsView today={today} preview={preview} initialQuery={initialQuery} />;
+  return <ProjectsView today={today} preview={preview} initialQuery={initialQuery} startNew={startNew} draft={draft} />;
 }
 
-function ProjectsView({ today, preview, initialQuery }: { today: string; preview?: string; initialQuery: string }) {
+function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today: string; preview?: string; initialQuery: string; startNew?: boolean; draft?: ProjectDraft }) {
   const [projects, setProjects] = useState<Project[]>(() => e2eSeed<Project>("projects") ?? []);
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
@@ -75,7 +75,7 @@ function ProjectsView({ today, preview, initialQuery }: { today: string; preview
   const [statusFilter, setStatusFilter] = useState<"all" | ProjectStatus>("all");
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [sort, setSort] = useState<ProjectSort>("due");
-  const [formFor, setFormFor] = useState<Project | "new" | null>(null);
+  const [formFor, setFormFor] = useState<Project | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Project | null>(null);
   const [completing, setCompleting] = useState<Project | null>(null);
   const [notice, setNoticeState] = useState<Notice | null>(null);
@@ -356,6 +356,7 @@ function ProjectsView({ today, preview, initialQuery }: { today: string; preview
       <ProjectFormDialog
         open={formFor !== null}
         project={formFor && formFor !== "new" ? formFor : undefined}
+        draft={draft}
         today={today}
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}

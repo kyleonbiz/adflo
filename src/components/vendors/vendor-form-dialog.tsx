@@ -13,8 +13,11 @@ import { findDuplicates } from "@/lib/vendors/logic";
 import { PAYMENT_TERMS, RISK_TIERS, VENDOR_CATEGORIES, type Vendor } from "@/lib/vendors/types";
 import { vendorFormSchema, type VendorFormInput, type VendorFormValues } from "@/lib/vendors/validation";
 
-function defaults(vendor?: Vendor): VendorFormInput {
-  if (!vendor) return { name: "", category: "Supplies", contactName: "", email: "", phone: "", taxId: "", notes: "", riskTier: "standard", paymentTerms: "Net 30", contractEndsOn: "", annualSpend: "", rating: "" };
+/** Details an assistant draft can start a vendor with. Never a tax ID. */
+export interface VendorDraft { name?: string; contactName?: string; email?: string; phone?: string; category?: string }
+
+function defaults(vendor?: Vendor, draft?: VendorDraft): VendorFormInput {
+  if (!vendor) return { name: draft?.name ?? "", category: (draft?.category as VendorFormInput["category"]) ?? "Supplies", contactName: draft?.contactName ?? "", email: draft?.email ?? "", phone: draft?.phone ?? "", taxId: "", notes: "", riskTier: "standard", paymentTerms: "Net 30", contractEndsOn: "", annualSpend: "", rating: "" };
   return {
     name: vendor.name, category: vendor.category, contactName: vendor.contactName, email: vendor.email,
     phone: vendor.phone, taxId: vendor.taxId, notes: vendor.notes,
@@ -34,16 +37,17 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
 }
 
 function VendorFormBody({
-  vendor, existing, onOpenChange, onSubmit,
+  vendor, draft, existing, onOpenChange, onSubmit,
 }: {
   vendor?: Vendor;
+  draft?: VendorDraft;
   existing: Vendor[];
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: VendorFormValues) => void;
 }) {
   const { register, control, handleSubmit, formState } = useForm<VendorFormInput, unknown, VendorFormValues>({
     resolver: zodResolver(vendorFormSchema),
-    defaultValues: defaults(vendor),
+    defaultValues: defaults(vendor, draft),
   });
   const { errors } = formState;
   const [matches, setMatches] = useState<ReturnType<typeof findDuplicates>>([]);
@@ -169,10 +173,11 @@ function VendorFormBody({
 
 /** Vendor intake form. Matching vendors are shown before saving; the user can still save anyway. */
 export function VendorFormDialog({
-  open, vendor, existing, onOpenChange, onSubmit,
+  open, vendor, draft, existing, onOpenChange, onSubmit,
 }: {
   open: boolean;
   vendor?: Vendor;
+  draft?: VendorDraft;
   existing: Vendor[];
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: VendorFormValues) => void;
@@ -180,7 +185,7 @@ export function VendorFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
-        {open && <VendorFormBody vendor={vendor} existing={existing} onOpenChange={onOpenChange} onSubmit={onSubmit} />}
+        {open && <VendorFormBody vendor={vendor} draft={draft} existing={existing} onOpenChange={onOpenChange} onSubmit={onSubmit} />}
       </DialogContent>
     </Dialog>
   );

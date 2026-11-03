@@ -24,7 +24,7 @@ import { formatDayLong } from "@/lib/dates";
 import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
-import { VendorFormDialog } from "./vendor-form-dialog";
+import { VendorFormDialog, type VendorDraft } from "./vendor-form-dialog";
 
 type SortKey = "name" | "status" | "newest";
 const STATUS_ORDER: VendorStatus[] = ["pending_approval", "onboarding", "approved", "inactive", "rejected"];
@@ -64,13 +64,13 @@ function downloadCsv(text: string, name: string) {
  * Vendor administration. Vendors live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits and no notifications are sent.
  */
-export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?: string; approver?: string }) {
+export function VendorsPage({ preview, approver = VENDOR_APPROVER, startNew, draft }: { preview?: string; approver?: string; startNew?: boolean; draft?: VendorDraft }) {
   const today = useToday();
   const [edited, setEdited] = useState<Vendor[] | null>(null);
   const [initial] = useState(readFilters);
   const [query, setQuery] = useState(initial.q);
   const [statusFilter, setStatusFilter] = useState<"all" | VendorStatus>(initial.status);
-  const [formFor, setFormFor] = useState<Vendor | "new" | null>(null);
+  const [formFor, setFormFor] = useState<Vendor | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Vendor | null>(null);
   const [notice, setNotice] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | VendorCategory>(initial.category);
@@ -403,6 +403,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
       <VendorFormDialog
         open={formFor !== null}
         vendor={formFor && formFor !== "new" ? formFor : undefined}
+        draft={draft}
         existing={vendors}
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}

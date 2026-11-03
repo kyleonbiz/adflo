@@ -17,14 +17,17 @@ import { saveCustomTypes, useCustomTypes } from "@/lib/projects/custom-types-sto
 
 const newTypeId = () => Math.random().toString(36).slice(2, 10);
 
-function defaults(project: Project | undefined, today: string): ProjectFormInput {
+/** Details an assistant draft can start a project with. */
+export interface ProjectDraft { name?: string; client?: string; description?: string; dueOn?: string }
+
+function defaults(project: Project | undefined, today: string, draft?: ProjectDraft): ProjectFormInput {
   if (project) {
     return {
       name: project.name, client: project.client, description: project.description,
       status: project.status, startOn: project.startOn, dueOn: project.dueOn,
     };
   }
-  return { name: "", client: "", description: "", status: "planning", startOn: today, dueOn: addDays(today, 30) };
+  return { name: draft?.name ?? "", client: draft?.client ?? "", description: draft?.description ?? "", status: "planning", startOn: today, dueOn: draft?.dueOn ?? addDays(today, 30) };
 }
 
 function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) {
@@ -39,10 +42,11 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
 
 /** Create or edit a project. `project` present means edit. */
 export function ProjectFormDialog({
-  open, project, today, onOpenChange, onSubmit,
+  open, project, draft, today, onOpenChange, onSubmit,
 }: {
   open: boolean;
   project?: Project;
+  draft?: ProjectDraft;
   today: string;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: ProjectFormValues, tasks: TemplateTask[]) => void;
@@ -57,13 +61,13 @@ export function ProjectFormDialog({
   const [addError, setAddError] = useState("");
   const { register, control, handleSubmit, reset, formState, getValues, setValue } = useForm<ProjectFormInput, unknown, ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
-    defaultValues: defaults(project, today),
+    defaultValues: defaults(project, today, draft),
   });
   const { errors } = formState;
 
   useEffect(() => {
-    if (open) reset(defaults(project, today));
-  }, [open, project, today, reset]);
+    if (open) reset(defaults(project, today, draft));
+  }, [open, project, draft, today, reset]);
 
   // Every way of closing the dialog (cancel, escape, save) comes through here, so the next open starts blank.
   const setOpen = (next: boolean) => {

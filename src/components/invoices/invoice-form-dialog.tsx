@@ -40,7 +40,10 @@ function remembered(existing: Invoice[]): Remembered {
   return { fromName: "", fromAddress: "", fromPhone: "", fromEmail: "", paymentMethods: "" };
 }
 
-function defaults(invoice: Invoice | undefined, today: string, existing: Invoice[]): InvoiceFormInput {
+/** Details an assistant draft can start a new invoice with. */
+export interface InvoiceDraft { client?: string; clientEmail?: string; description?: string; amount?: string; dueOn?: string; recurrence?: string }
+
+function defaults(invoice: Invoice | undefined, today: string, existing: Invoice[], draft?: InvoiceDraft): InvoiceFormInput {
   if (invoice) {
     return {
       number: invoice.number,
@@ -56,8 +59,10 @@ function defaults(invoice: Invoice | undefined, today: string, existing: Invoice
   return {
     number: generateInvoiceNumber(today, existing.map((i) => i.number)),
     ...remembered(existing),
-    client: "", clientEmail: "", items: [{ ...emptyItem }], taxRate: "", issuedOn: today, dueOn: addDays(today, 30),
-    recurrence: "none", reminderDays: "7, 1", notes: "Thank you for choosing our services! If you have any questions about this invoice, please contact us.",
+    client: draft?.client ?? "", clientEmail: draft?.clientEmail ?? "",
+    items: [{ ...emptyItem, ...(draft?.description ? { description: draft.description } : {}), ...(draft?.amount ? { qty: "1", rate: draft.amount } : {}) }],
+    taxRate: "", issuedOn: today, dueOn: draft?.dueOn ?? addDays(today, 30),
+    recurrence: (draft?.recurrence as InvoiceFormInput["recurrence"]) ?? "none", reminderDays: "7, 1", notes: "Thank you for choosing our services! If you have any questions about this invoice, please contact us.",
   };
 }
 
@@ -80,10 +85,11 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 /** Create or edit an invoice. `invoice` present means edit. */
 export function InvoiceFormDialog({
-  open, invoice, existing, today, onOpenChange, onSubmit,
+  open, invoice, draft, existing, today, onOpenChange, onSubmit,
 }: {
   open: boolean;
   invoice?: Invoice;
+  draft?: InvoiceDraft;
   existing: Invoice[];
   today: string;
   onOpenChange: (open: boolean) => void;
@@ -91,14 +97,14 @@ export function InvoiceFormDialog({
 }) {
   const { register, control, handleSubmit, reset, setError, formState } = useForm<InvoiceFormInput, unknown, InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
-    defaultValues: defaults(invoice, today, existing),
+    defaultValues: defaults(invoice, today, existing, draft),
   });
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const { errors } = formState;
   const watched = useWatch({ control, name: ["items", "taxRate"] });
 
   useEffect(() => {
-    if (open) reset(defaults(invoice, today, existing));
+    if (open) reset(defaults(invoice, today, existing, draft));
     // `existing` only seeds the suggested number and sender when the dialog opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, invoice, today, reset]);

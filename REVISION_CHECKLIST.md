@@ -8,7 +8,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Sidebar minimizes to icons only
 - [x] Home screen: more innovative (queue, day summary, where-to-begin cards while empty)
 - [ ] Make the app feel alive
-- [ ] AI agent can complete tasks in any module, with per-module guardrails
+- [x] AI agent can complete tasks in any module, with per-module guardrails (prepares drafts in invoices, requests, contacts, vendors, projects and licenses that open prefilled for you to save; cannot save, delete, approve, pay, send or sign; refuses card numbers, SSNs, passwords and tax IDs; max 3 drafts a turn)
 - [x] Addressed by your name in the app
 - [x] Invoice tracking: frequency choice, stays open until paid (one-time to yearly, shown on each invoice; stays Sent or Overdue until marked paid)
 - [x] Licenses & Renewals: templates by business (vehicle registration, tags, insurance, inspection, and 7 other business types)

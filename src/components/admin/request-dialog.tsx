@@ -26,13 +26,16 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
   );
 }
 
-function Body({ onClose, onSave }: { onClose: () => void; onSave: (r: NewRequest) => void }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [requester, setRequester] = useState("");
-  const [dueOn, setDueOn] = useState("");
-  const [category, setCategory] = useState<Category | "auto">("auto");
-  const [priority, setPriority] = useState<Priority | "auto">("auto");
+/** Details an assistant draft can start a request with. */
+export interface RequestDraft { title?: string; description?: string; requester?: string; dueOn?: string; category?: string; priority?: string }
+
+function Body({ onClose, onSave, draft }: { onClose: () => void; onSave: (r: NewRequest) => void; draft?: RequestDraft }) {
+  const [title, setTitle] = useState(draft?.title ?? "");
+  const [description, setDescription] = useState(draft?.description ?? "");
+  const [requester, setRequester] = useState(draft?.requester ?? "");
+  const [dueOn, setDueOn] = useState(draft?.dueOn ?? "");
+  const [category, setCategory] = useState<Category | "auto">((draft?.category as Category | undefined) ?? "auto");
+  const [priority, setPriority] = useState<Priority | "auto">((draft?.priority as Priority | undefined) ?? "auto");
   const [source, setSource] = useState<RequestSource>("manual");
   const [emailOpen, setEmailOpen] = useState(false);
   const [emailText, setEmailText] = useState("");
@@ -142,10 +145,10 @@ function Body({ onClose, onSave }: { onClose: () => void; onSave: (r: NewRequest
   );
 }
 
-export function RequestDialog({ open, onOpenChange, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; onSave: (r: NewRequest) => void }) {
+export function RequestDialog({ open, onOpenChange, onSave, draft }: { open: boolean; onOpenChange: (open: boolean) => void; onSave: (r: NewRequest) => void; draft?: RequestDraft }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">{open && <Body onClose={() => onOpenChange(false)} onSave={onSave} />}</DialogContent>
+      <DialogContent className="sm:max-w-xl">{open && <Body onClose={() => onOpenChange(false)} onSave={onSave} draft={draft} />}</DialogContent>
     </Dialog>
   );
 }

@@ -25,7 +25,7 @@ import { CATEGORIES, type AdminRequest, type Category, type RequestStatus, type 
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedRoutines } from "@/lib/setup/templates";
 import { PRIORITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
-import { RequestDialog } from "./request-dialog";
+import { RequestDialog, type RequestDraft } from "./request-dialog";
 import { RoutineDialog } from "./routine-dialog";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -98,7 +98,7 @@ function RequestCard({
  * data) until the database is connected. Categories and approval flags come from fixed keyword rules,
  * not an AI service, and the digest is shown on screen rather than emailed.
  */
-export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: string; startNew?: boolean; initialQuery?: string }) {
+export function AdminPage({ preview, startNew, draft, initialQuery = "" }: { preview?: string; startNew?: boolean; draft?: RequestDraft; initialQuery?: string }) {
   const today = useToday();
   const chains = useChains();
   const [editedRequests, setEditedRequests] = useState<AdminRequest[] | null>(null);
@@ -280,7 +280,7 @@ export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: 
         )}
       </section>
 
-      <RequestDialog open={requesting} onOpenChange={setRequesting} onSave={create} />
+      <RequestDialog open={requesting} onOpenChange={setRequesting} onSave={create} draft={draft} />
       <RoutineDialog
         open={addingRoutine}
         today={today}

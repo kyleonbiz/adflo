@@ -15,7 +15,7 @@ import { formatDayLong } from "@/lib/dates";
 import { compliance, expiryText, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { TemplateDialog } from "./template-dialog";
-import type { LicenseTemplate } from "@/lib/licenses/templates";
+import { draftTemplate, type LicenseDraft, type LicenseTemplate } from "@/lib/licenses/templates";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
 import type { LicenseFormValues } from "@/lib/licenses/validation";
 import { useSetupConfig } from "@/lib/setup/storage";
@@ -36,17 +36,17 @@ const NOTICE_MS = 8000;
  * Licenses & Renewals. Records live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits.
  */
-export function LicensesPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
+export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { preview?: string; initialQuery?: string; startNew?: boolean; draft?: LicenseDraft }) {
   const today = useToday();
   const [edited, setEdited] = useState<License[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("expiry");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [formFor, setFormFor] = useState<License | "new" | null>(null);
+  const [formFor, setFormFor] = useState<License | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<License | null>(null);
   const [picking, setPicking] = useState(false);
-  const [template, setTemplate] = useState<LicenseTemplate | undefined>();
+  const [template, setTemplate] = useState<LicenseTemplate | undefined>(() => (draft ? draftTemplate(draft) : undefined));
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [formSession, setFormSession] = useState(0); // new key per opening, so notes from a previous upload never linger
   const [renewing, setRenewing] = useState<License | null>(null);

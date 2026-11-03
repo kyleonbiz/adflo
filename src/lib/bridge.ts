@@ -1,3 +1,4 @@
+import { looksSensitive } from "@/lib/assistant/guardrails";
 import type { FormField, FormTemplate } from "@/lib/forms/types";
 
 /** The few things a contact and a form have in common. */
@@ -52,8 +53,12 @@ const query = (p: Partial<Person>) => {
 export const fillLink = (formId: string, p: Partial<Person>) => `/app/forms?fill=${encodeURIComponent(formId)}${query(p) ? `&${query(p)}` : ""}`;
 export const addContactLink = (p: Partial<Person>) => `/app/contacts?add=1${query(p) ? `&${query(p)}` : ""}`;
 
-/** Reads the person out of address-bar parameters, keeping only short text. */
+/** Reads the person out of address-bar parameters. Anyone can type a link, so short text only, a real-looking email, and nothing that looks like a card number or password. */
 export function personFromParams(get: (k: string) => string | undefined): Partial<Person> {
-  const clean = (v: string | undefined) => (v ?? "").trim().slice(0, 120);
-  return { name: clean(get("name")), email: clean(get("email")), phone: clean(get("phone")), company: clean(get("company")) };
+  const clean = (v: string | undefined) => {
+    const t = (v ?? "").trim().slice(0, 120);
+    return looksSensitive(t) ? "" : t;
+  };
+  const email = clean(get("email"));
+  return { name: clean(get("name")), email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : "", phone: clean(get("phone")), company: clean(get("company")) };
 }

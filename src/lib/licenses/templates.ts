@@ -1,4 +1,4 @@
-import type { LicenseCategory } from "./types";
+import { DEFAULT_DOCUMENTS, LICENSE_CATEGORIES, type LicenseCategory } from "./types";
 
 export const BUSINESS_TYPES = [
   { id: "general", label: "Any business" },
@@ -82,4 +82,16 @@ export const LICENSE_TEMPLATES: readonly LicenseTemplate[] = [
 /** Templates for one business type, plus the ones every business needs. */
 export function templatesFor(type: BusinessTypeId): LicenseTemplate[] {
   return LICENSE_TEMPLATES.filter((l) => l.businessType === type);
+}
+
+/** Details an assistant draft can start a license record with. */
+export interface LicenseDraft { name?: string; category?: string; issuer?: string; expiresOn?: string }
+
+/** Turns a draft into the same shape a template has, so the form opens with it. The expiry date is left for the owner to confirm from the document. */
+export function draftTemplate(d: LicenseDraft): LicenseTemplate {
+  const category = (LICENSE_CATEGORIES.some((c) => c.value === d.category) ? d.category : "business") as LicenseCategory;
+  return {
+    id: "draft", businessType: "general", name: d.name ?? "", category, issuer: d.issuer ?? "", termMonths: 12,
+    reminderDays: [60, 30, 7], documents: DEFAULT_DOCUMENTS[category], notes: "",
+  };
 }

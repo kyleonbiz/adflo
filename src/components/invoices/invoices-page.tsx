@@ -20,7 +20,7 @@ import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
 import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
-import { InvoiceFormDialog } from "./invoice-form-dialog";
+import { InvoiceFormDialog, type InvoiceDraft } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
@@ -45,7 +45,7 @@ function downloadCsv(text: string, name: string) {
  * Invoice administration. Records live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits and no reminder emails are sent.
  */
-export function InvoicesPage({ preview, startNew, initialQuery = "" }: { preview?: string; startNew?: boolean; initialQuery?: string }) {
+export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { preview?: string; startNew?: boolean; draft?: InvoiceDraft; initialQuery?: string }) {
   const today = useToday();
   const [edited, setEdited] = useState<Invoice[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
@@ -214,6 +214,7 @@ export function InvoicesPage({ preview, startNew, initialQuery = "" }: { preview
       <InvoiceFormDialog
         open={formFor !== null}
         invoice={formFor && formFor !== "new" ? formFor : undefined}
+        draft={draft}
         existing={invoices}
         today={today}
         onOpenChange={(o) => !o && setFormFor(null)}
