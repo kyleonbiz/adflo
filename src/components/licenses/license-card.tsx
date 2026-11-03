@@ -72,6 +72,7 @@ export function LicenseCard({ license, today, actions, focusToken = 0 }: { licen
               {alerts.map((a) => <li key={a.message}><Badge variant={SEVERITY_BADGE[a.severity]}>{a.message}</Badge></li>)}
             </ul>
           )}
+          {license.renewalCost ? <p className="text-xs text-muted-foreground">Renewal fee about ${license.renewalCost.toLocaleString("en-US")}.</p> : null}
           {license.verifiedOn && <p className="text-xs text-muted-foreground">Details reviewed {formatDayLong(license.verifiedOn)}.</p>}
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <BellRing className="size-3.5" aria-hidden />

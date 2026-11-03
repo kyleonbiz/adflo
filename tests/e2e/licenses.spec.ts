@@ -189,4 +189,32 @@ test.describe("platform modules", () => {
     await page.getByRole("link", { name: "Documents", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
   });
+
+  test("licenses: the renewals can be added to a calendar", async ({ page }) => {
+    await page.goto("/app/licenses");
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Add to calendar" }).click();
+    const file = await download;
+    expect(file.suggestedFilename()).toMatch(/^renewals-.*\.ics$/);
+    let text = "";
+    for await (const chunk of await file.createReadStream()) text += chunk;
+    expect(text).toContain("BEGIN:VCALENDAR");
+    expect(text).toContain("City Operating Permit expires");
+  });
+
+  test("licenses: a renewal fee shows on the card and in what is coming up", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await page.getByRole("button", { name: "Add license" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("License name").fill("Parking permit");
+    await dialog.getByLabel("Renewal fee in dollars (optional)").fill("12.50");
+    await dialog.getByLabel("I have checked these details against the license document.").check();
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("Whole dollars only");
+    await dialog.getByLabel("Renewal fee in dollars (optional)").fill("125");
+    await dialog.getByLabel("Expires on").fill(new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10));
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    await expect(page.getByTestId("license-card").filter({ hasText: "Parking permit" })).toContainText("Renewal fee about $125.");
+    await expect(page.getByTestId("renewal-spend")).toContainText("about $125");
+  });
 });

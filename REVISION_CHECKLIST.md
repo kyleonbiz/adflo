@@ -13,7 +13,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Invoice tracking: frequency choice, stays open until paid (one-time to yearly, shown on each invoice; stays Sent or Overdue until marked paid)
 - [x] Licenses & Renewals: templates by business (vehicle registration, tags, insurance, inspection, and 7 other business types)
 - [x] Pages stop opening to bare home screens (each module explains itself with a first step when empty; home suggests where to begin)
-- [~] Explore more of Licenses & Renewals (templates, certification/policy types, compliance score done; renewal cost tracking and calendar export to do)
+- [x] Explore more of Licenses & Renewals (templates, certification and policy types, compliance score, add renewals to your calendar, renewal fees with what is coming up in 90 days)
 - [x] Vendors: deeper dive (payment terms, how critical, contract end alerts, yearly spend with a 1099 and W-9 check, rating, reminders and notes log, CSV columns)
 - [x] Queue on the home dashboard
 - [~] Bridge Vendors -> Contacts (menu merged; records still separate, needs database)

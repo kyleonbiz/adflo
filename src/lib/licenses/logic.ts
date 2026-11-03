@@ -1,4 +1,5 @@
-import { addDays, addMonths, daysBetween } from "@/lib/dates";
+import type { CalendarEvent } from "@/lib/admin/ics";
+import { addDays, addMonths, daysBetween, isDay } from "@/lib/dates";
 import type { License, LicenseAlert, LicenseStatus, RenewalTask } from "./types";
 
 /** Within this many days of expiry a license counts as "expiring". */
@@ -168,4 +169,32 @@ export interface Compliance {
 export function compliance(licenses: License[], today: string): Compliance {
   const good = licenses.filter((l) => licenseStatus(l, today) !== "expired" && missingDocuments(l) === 0).length;
   return { total: licenses.length, inGoodStanding: good, percent: licenses.length === 0 ? 100 : Math.round((good / licenses.length) * 100) };
+}
+
+/** Expiry and reminder dates as calendar events, so renewals show up in the owner's own calendar. Reminder days that already passed are left out. */
+export function licenseCalendarEvents(licenses: License[], today: string): CalendarEvent[] {
+  const events: CalendarEvent[] = [];
+  for (const l of licenses) {
+    if (!isDay(l.expiresOn)) continue;
+    const detail = [l.issuer && `Issuer: ${l.issuer}`, l.number && `Number: ${l.number}`].filter(Boolean).join("\n");
+    events.push({ uid: `license-${l.id}-expires`, day: l.expiresOn, summary: `${l.name} expires`, description: detail || undefined });
+    for (const days of l.reminderDays) {
+      const day = addDays(l.expiresOn, -days);
+      if (day >= today) events.push({ uid: `license-${l.id}-remind-${days}`, day, summary: `Renew ${l.name} (${days} days left)`, description: detail || undefined });
+    }
+  }
+  return events.sort((a, b) => a.day.localeCompare(b.day));
+}
+
+/** What renewals due in the next `withinDays` days (expired ones included) will cost, using the fees entered on each license. */
+export function renewalSpend(licenses: License[], today: string, withinDays = 90): { dollars: number; count: number; unknown: number } {
+  let dollars = 0;
+  let count = 0;
+  let unknown = 0;
+  for (const l of licenses) {
+    if (daysBetween(today, l.expiresOn) > withinDays) continue;
+    count++;
+    if (l.renewalCost) dollars += l.renewalCost; else unknown++;
+  }
+  return { dollars, count, unknown };
 }

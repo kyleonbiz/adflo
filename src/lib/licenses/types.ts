@@ -49,6 +49,8 @@ export interface License {
   notes: string;
   /** The day someone confirmed the details match the license itself. Absent means it still needs review. */
   verifiedOn?: string;
+  /** What renewing costs, in whole dollars. Absent when not known. */
+  renewalCost?: number | null;
   renewals?: RenewalRecord[];
 }
 

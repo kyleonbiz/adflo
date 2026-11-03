@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CalendarClock, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
+import { AlertTriangle, CalendarClock, CalendarPlus, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -12,7 +12,9 @@ import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { compliance, expiryText, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
+import { toIcs } from "@/lib/admin/ics";
+import { downloadText } from "@/components/import/csv-source";
+import { compliance, expiryText, licenseCalendarEvents, renewalSpend, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { TemplateDialog } from "./template-dialog";
 import { draftTemplate, type LicenseDraft, type LicenseTemplate } from "@/lib/licenses/templates";
@@ -136,6 +138,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
 
   const summary = summarize(licenses, today);
   const standing = compliance(licenses, today);
+  const spend = renewalSpend(licenses, today);
   const tasks = renewalTasks(licenses, today);
   const q = query.trim().toLowerCase();
   const matchesFilter = (l: License) => {
@@ -175,6 +178,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
               />
             </label>
           </Button>
+          <Button variant="outline" disabled={licenses.length === 0} onClick={() => downloadText(toIcs(licenseCalendarEvents(licenses, today), today), `renewals-${today}.ics`, "text/calendar")}><CalendarPlus /> Add to calendar</Button>
           <Button variant="outline" onClick={() => setPicking(true)}>Start from a template</Button>
           <Button onClick={() => openForm("new")}><Plus /> Add license</Button>
         </div>
@@ -219,6 +223,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
       {licenses.length > 0 && (
         <p className="text-sm text-muted-foreground" data-testid="compliance">
           <span className="font-medium text-foreground">Compliance {standing.percent}%</span> · {standing.inGoodStanding} of {standing.total} in date with every document on file
+          {spend.count > 0 && <span data-testid="renewal-spend"> · {spend.count} to renew in 90 days{spend.dollars > 0 ? `, about $${spend.dollars.toLocaleString("en-US")}` : ""}{spend.unknown > 0 ? ` (${spend.unknown} without a fee entered)` : ""}</span>}
         </p>
       )}
 

@@ -26,20 +26,20 @@ function defaults(license: License | undefined, today: string, template?: Licens
     return {
       name: license.name, category: license.category, issuer: license.issuer, number: license.number,
       holder: license.holder, issuedOn: license.issuedOn, expiresOn: license.expiresOn,
-      renewalTermMonths: String(license.renewalTermMonths), reminderDays: license.reminderDays.join(", "),
+      renewalTermMonths: String(license.renewalTermMonths), renewalCost: license.renewalCost == null ? "" : String(license.renewalCost), reminderDays: license.reminderDays.join(", "),
       notes: license.notes, documents: "", reviewed: false,
     };
   }
   if (template) {
     return {
       name: template.name, category: template.category, issuer: template.issuer, number: "", holder: "", issuedOn: today,
-      expiresOn: addMonths(today, template.termMonths), renewalTermMonths: String(template.termMonths),
+      expiresOn: addMonths(today, template.termMonths), renewalTermMonths: String(template.termMonths), renewalCost: "",
       reminderDays: template.reminderDays.join(", "), notes: template.notes, documents: template.documents.join("\n"), reviewed: false,
     };
   }
   return {
     name: "", category: "business", issuer: "", number: "", holder: "", issuedOn: today,
-    expiresOn: addMonths(today, 12), renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "",
+    expiresOn: addMonths(today, 12), renewalTermMonths: "12", renewalCost: "", reminderDays: "60, 30, 7", notes: "",
     documents: DEFAULT_DOCUMENTS.business.join("\n"), reviewed: false,
   };
 }
@@ -212,6 +212,9 @@ export function LicenseFormDialog({
             </Field>
             <Field id="lic-expiresOn" label="Expires On" error={errors.expiresOn?.message}>
               <Input id="lic-expiresOn" type="date" {...invalid("expiresOn")} {...register("expiresOn")} />
+            </Field>
+            <Field id="lic-renewalCost" label="Renewal fee in dollars (optional)" error={errors.renewalCost?.message}>
+              <Input id="lic-renewalCost" inputMode="numeric" placeholder="250" {...invalid("renewalCost")} {...register("renewalCost")} />
             </Field>
             <Field id="lic-renewalTermMonths" label="Renewal Term (Months)" error={errors.renewalTermMonths?.message}>
               <Input id="lic-renewalTermMonths" inputMode="numeric" {...invalid("renewalTermMonths")} {...register("renewalTermMonths")} />
