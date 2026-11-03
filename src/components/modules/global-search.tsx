@@ -9,7 +9,7 @@ import { MODULES, moduleHref } from "@/lib/modules/registry";
 /** Services whose list has its own search box, which a `?q=` link fills in. */
 const RECORD_SEARCH = new Set(["documents", "invoices", "licenses", "vendors", "crm", "projects", "forms"]);
 const RECORD_NOUN: Record<string, string> = {
-  documents: "documents", invoices: "invoices", licenses: "licenses", vendors: "vendors", crm: "contacts", projects: "projects", forms: "forms",
+  documents: "documents", invoices: "invoices", licenses: "licenses", vendors: "vendors", crm: "contacts", projects: "tasks and projects", forms: "forms",
 };
 
 export interface SearchResult { key: string; title: string; detail: string; href: string }

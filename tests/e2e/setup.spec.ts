@@ -16,7 +16,7 @@ async function completeSetup(page: Page) {
   await page.goto("/app/setup?tab=setup");
   await fillProfile(page);
   await next(page).click();
-  await moduleBox(page, "Projects").uncheck();
+  await moduleBox(page, "Tasks").uncheck();
   await moduleBox(page, "Vendors").check();
   await next(page).click();
   await next(page).click();
@@ -41,7 +41,7 @@ test.describe("back office setup module", () => {
     await next(page).click();
     const list = page.getByTestId("module-choices");
     await expect(list.getByText("Recommended", { exact: true })).toHaveCount(6);
-    for (const name of ["Documents", "Invoices", "Projects", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) {
+    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) {
       await expect(moduleBox(page, name)).toBeChecked();
     }
     for (const name of ["Vendors", "Reporting"]) await expect(moduleBox(page, name)).not.toBeChecked();
@@ -51,7 +51,7 @@ test.describe("back office setup module", () => {
     await page.getByRole("button", { name: "Use recommended" }).click();
     await expect(moduleBox(page, "Documents")).toBeChecked();
 
-    for (const name of ["Documents", "Invoices", "Projects", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) await moduleBox(page, name).uncheck();
+    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "CRM & Data", "Licenses & Renewals"]) await moduleBox(page, name).uncheck();
     await expect(next(page)).toBeDisabled();
   });
 
@@ -86,7 +86,7 @@ test.describe("back office setup module", () => {
     await expect(installed).toContainText("New employee details (Form, in Forms & Paperwork)");
     await expect(installed).toContainText("Common small-business licenses (License records, in Licenses & Renewals)");
     await expect(done.getByRole("link", { name: "Vendors" })).toBeVisible();
-    await expect(done.getByRole("link", { name: "Projects" })).toHaveCount(0);
+    await expect(done.getByRole("link", { name: "Tasks" })).toHaveCount(0);
 
     // Forms: 3 samples + 3 installed.
     await page.goto("/app/forms");

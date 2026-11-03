@@ -25,7 +25,7 @@ describe("Dashboard", () => {
   it("shows three cards that link to their service, the charts and today's progress", () => {
     show();
     expect(screen.getByRole("link", { name: /Outstanding invoices/ }).getAttribute("href")).toBe("/app/invoices");
-    expect(screen.getByRole("link", { name: /Open project tasks/ }).getAttribute("href")).toBe("/app/projects");
+    expect(screen.getByRole("link", { name: /Open tasks/ }).getAttribute("href")).toBe("/app/projects");
     expect(screen.getByRole("img", { name: /^Open work by service/ })).toBeTruthy();
     expect(screen.getByRole("img", { name: /^Due in the next 7 days/ })).toBeTruthy();
     expect(screen.getByRole("img", { name: /Today's tasks done: 0%/ })).toBeTruthy();

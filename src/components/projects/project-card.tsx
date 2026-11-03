@@ -28,7 +28,7 @@ export interface ProjectActions {
   onRemoveTask: (project: Project, task: Task) => void;
 }
 
-function dueText(task: Task, today: string): string {
+export function dueText(task: Task, today: string): string {
   if (!task.dueOn) return "";
   const left = daysBetween(today, task.dueOn);
   if (task.done) return `done ${formatDayLong(task.doneOn ?? task.dueOn)}`;
@@ -43,7 +43,7 @@ const BORDER: Partial<Record<ReturnType<typeof projectHealth>, string>> = {
 };
 
 /** Add a task, or edit one when `task` is given. */
-function TaskForm({ project, task, onSubmit, onCancel }: {
+export function TaskForm({ project, task, onSubmit, onCancel }: {
   project: Project;
   task?: Task;
   onSubmit: (values: TaskFormValues) => void;

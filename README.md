@@ -22,7 +22,7 @@ The app is growing from a document manager into a client portal of eleven servic
 (`src/lib/modules/registry.ts`). All ten exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
-**05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Projects**
+**05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Tasks**
 (`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
 (`src/lib/datasets/`, `src/components/reporting/`), **09 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **10 Settings**
@@ -39,7 +39,7 @@ browser and never uploaded.
 * **Navigation:** a left sidebar on wide screens (logo, one icon per module, the current module highlighted,
   Settings apart at the bottom) and a menu button that opens the same list as a drawer on a phone.
 * **Pages:** `/app/overview` (Home), `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/file-reset`, `/app/setup`. With a database they sit behind sign-in; without one they open as a preview.
-* **Invoices, licenses, vendors, contacts, projects, forms and and report data are not persisted yet.** They start empty and are held in component state; there is no
+* **Invoices, licenses, vendors, contacts, projects, forms and report data are not persisted yet.** They start empty and are held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
   renewal tasks, overdue notices) but no email is sent yet. Licenses can be pre-filled from an uploaded PDF, Word, text or CSV file (`/api/licenses/parse` reads the number, issuer, holder and dates next to their labels; photos and scans are not read, and the file itself is not stored). Vendors get required documents by category, can only be
   submitted for approval once every required document is in and unexpired, and are checked for
@@ -71,8 +71,10 @@ browser and never uploaded.
   Forms are built in the app, validated on submit,
   routed to a named approver when required, and turned into a text document by filling `{{Field label}}`
   placeholders in a single pass (submitted text is never re-expanded); submissions export to CSV.
-  Projects flag overdue tasks and repeating tasks
-  schedule their next occurrence when completed, with a plain-text status report. Invoices support recurring series ("Create
+  Tasks opens on one list of every task, most urgent first, with a quick-add form; a task can stand alone
+  (kept in a built-in "General tasks" project that is never listed as a project) or belong to a project, and the Projects tab
+  groups bigger jobs. Overdue tasks are flagged and repeating tasks
+  schedule their next occurrence when completed, with a plain-text status report per project. Invoices support recurring series ("Create
   next" drafts the following invoice) and a CSV report whose cells are neutralised against spreadsheet formulas.
 
 ## Contents

@@ -31,7 +31,7 @@ describe("buildDashboard", () => {
     expect(d.kpis.map((k) => k.id)).toEqual(["money", "tasks", "attention"]);
     expect(d.kpis.every((k) => k.href.startsWith("/app"))).toBe(true);
     expect(d.kpis[0].note).toEqual({ tone: "bad", text: "2 overdue" });
-    expect(d.workload.map((w) => w.label)).toEqual(["Invoices", "Licenses", "Vendors", "Projects"]);
+    expect(d.workload.map((w) => w.label)).toEqual(["Invoices", "Licenses", "Vendors", "Tasks"]);
     expect(d.workload[0]).toEqual({ label: "Invoices", open: 4, attention: 3 });
     expect(d.status).toBe("attention");
     expect(d.kpis[2].value).toBe(String(d.items.length));

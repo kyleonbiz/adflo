@@ -10,7 +10,7 @@ import { daysOverdue, formatMoney, invoiceState, summarize as invoiceSummary } f
 import { licenseStatus, missingDocuments, daysLeft, summarize as licenseSummary } from "@/lib/licenses/logic";
 import { LICENSE_CATEGORIES, RENEWAL_STAGES } from "@/lib/licenses/types";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
-import { progress, projectHealth, summarize as projectSummary } from "@/lib/projects/logic";
+import { isGeneral, progress, projectHealth, summarize as projectSummary } from "@/lib/projects/logic";
 import { PROJECT_STATUSES } from "@/lib/projects/types";
 import { STATUS_LABEL as VENDOR_STATUS, onboardingProgress, summarize as vendorSummary } from "@/lib/vendors/logic";
 
@@ -168,9 +168,10 @@ function contacts(src: ReportSources, today: string): Omit<ModuleReport, "id" | 
 
 function projects(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
   const s = projectSummary(src.projects, today);
+  const list = src.projects.filter((p) => !isGeneral(p)); // the built-in bucket for standalone tasks is not a project
   const open = src.projects.filter((p) => p.status !== "completed" && p.status !== "on_hold").flatMap((p) => p.tasks.filter((t) => !t.done));
   return {
-    count: src.projects.length, noun: "projects",
+    count: list.length, noun: "projects",
     metrics: [
       { label: "Active projects", value: String(s.activeProjects), tone: "neutral" },
       { label: "Open tasks", value: String(s.openTasks), tone: "neutral" },
@@ -178,13 +179,13 @@ function projects(src: ReportSources, today: string): Omit<ModuleReport, "id" | 
       { label: "Done this month", value: String(s.completedThisMonth), tone: "neutral" },
     ],
     breakdowns: [
-      { title: "Projects by health", rows: tally(src.projects, (p) => HEALTH[projectHealth(p, today)], HEALTH_ORDER) },
-      { title: "Projects by status", rows: tally(src.projects, (p) => label(PROJECT_STATUSES, p.status), PROJECT_STATUSES.map((x) => x.label)) },
+      { title: "Projects by health", rows: tally(list, (p) => HEALTH[projectHealth(p, today)], HEALTH_ORDER) },
+      { title: "Projects by status", rows: tally(list, (p) => label(PROJECT_STATUSES, p.status), PROJECT_STATUSES.map((x) => x.label)) },
       { title: "Open tasks by person", rows: tally(open, (t) => t.assignee || "Unassigned") },
     ],
     table: {
       headers: ["Project", "Client", "Status", "Health", "Tasks done", "Tasks", "Due"],
-      rows: src.projects.map((p) => { const g = progress(p); return [p.name, p.client, label(PROJECT_STATUSES, p.status), HEALTH[projectHealth(p, today)], g.done, g.total, p.dueOn]; }),
+      rows: list.map((p) => { const g = progress(p); return [p.name, p.client, label(PROJECT_STATUSES, p.status), HEALTH[projectHealth(p, today)], g.done, g.total, p.dueOn]; }),
     },
   };
 }

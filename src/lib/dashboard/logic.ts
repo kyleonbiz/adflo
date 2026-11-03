@@ -17,7 +17,7 @@ export interface DashboardSources {
 }
 
 export type Severity = "critical" | "warning" | "info";
-export type Area = "Invoices" | "Licenses" | "Projects";
+export type Area = "Invoices" | "Licenses" | "Tasks";
 
 /** One headline card: a number, where it links, and a one-line status under it. */
 export interface Kpi {
@@ -93,7 +93,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
     ...invoiceItems(src.invoices, today, base),
     ...licenseItems(src.licenses, today, base),
     ...taskAlerts(src.projects, today).map((a): AttentionItem => ({
-      id: `task-${a.task.id}`, area: "Projects", href: `${base}/projects`,
+      id: `task-${a.task.id}`, area: "Tasks", href: `${base}/projects`,
       severity: a.state === "overdue" ? "critical" : "warning",
       label: a.state === "overdue" ? "Overdue" : a.state === "due_today" ? "Due today" : "Due soon",
       text: `${a.task.title} · ${a.projectName}`,
@@ -105,14 +105,14 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
     { label: "Invoices", open: src.invoices.filter((i) => i.status === "sent").length, attention: count("Invoices") },
     { label: "Licenses", open: src.licenses.length, attention: count("Licenses") },
     { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive" && v.status !== "rejected").length, attention: ven.pendingApproval },
-    { label: "Projects", open: proj.openTasks, attention: count("Projects") },
+    { label: "Tasks", open: proj.openTasks, attention: count("Tasks") },
   ];
 
   const plural = (n: number, w: string) => `${n} ${w}`;
   const kpis: Kpi[] = [
     { id: "money", label: "Outstanding invoices", value: formatMoney(inv.outstandingCents), href: `${base}/invoices`,
       note: inv.overdueCount > 0 ? { tone: "bad", text: plural(inv.overdueCount, "overdue") } : { tone: "good", text: "None overdue" } },
-    { id: "tasks", label: "Open project tasks", value: String(proj.openTasks), href: `${base}/projects`,
+    { id: "tasks", label: "Open tasks", value: String(proj.openTasks), href: `${base}/projects`,
       note: proj.overdueTasks > 0 ? { tone: "bad", text: plural(proj.overdueTasks, "overdue") } : { tone: "good", text: "None overdue" } },
     { id: "attention", label: "Needs attention", value: String(items.length), href: `${base}/overview`,
       note: items.some((i) => i.severity === "critical") ? { tone: "bad", text: "Something is late" } : items.length > 0 ? { tone: "warn", text: "Worth a look" } : { tone: "good", text: "All clear" } },

@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 const NAMES = [
-  "Home", "AI Assistant", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
+  "Home", "AI Assistant", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Tasks", "Forms & Paperwork",
   "Reporting", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
@@ -30,7 +30,7 @@ test.describe("module sidebar on a wide screen", () => {
 
   test("highlights the current module and moves the highlight when you navigate", async ({ page }) => {
     await page.goto("/app/projects");
-    const projects = nav(page).getByRole("link", { name: "Projects", exact: true });
+    const projects = nav(page).getByRole("link", { name: "Tasks", exact: true });
     await expect(projects).toHaveAttribute("aria-current", "page");
     await expect(nav(page).locator("[aria-current=page]")).toHaveCount(1);
     const bg = (l: ReturnType<typeof nav>) => l.evaluate((el) => getComputedStyle(el).backgroundColor);

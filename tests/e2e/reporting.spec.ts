@@ -46,13 +46,13 @@ test.describe("reporting module", () => {
     await expect(report).toContainText("Billed by client");
     expect(await page.getByTestId("report-record").count()).toBeGreaterThan(0);
 
-    for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork"]) {
+    for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Tasks", "Forms & Paperwork"]) {
       await page.getByRole("tab", { name }).click();
       await expect(page.getByTestId("module-report")).toContainText(name);
       expect(await page.getByTestId("report-metric").count()).toBe(4);
     }
     await page.goto("/app/reporting?view=projects");
-    await expect(page.getByRole("tab", { name: "Projects" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tab", { name: "Tasks" })).toHaveAttribute("aria-selected", "true");
     await page.getByRole("tab", { name: "Overview" }).click();
     await expect(page).not.toHaveURL(/view=/);
   });
