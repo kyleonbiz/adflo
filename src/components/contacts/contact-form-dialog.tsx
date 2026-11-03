@@ -22,11 +22,11 @@ function Field({ id, label, error, required, children }: { id: string; label: st
 }
 
 function Body({
-  contact, existing, today, onClose, onSave,
-}: { contact?: Contact; existing: Contact[]; today: string; onClose: () => void; onSave: (value: ContactInput) => void }) {
+  contact, prefill, existing, today, onClose, onSave,
+}: { contact?: Contact; prefill?: Partial<ContactInput>; existing: Contact[]; today: string; onClose: () => void; onSave: (value: ContactInput) => void }) {
   const [v, setV] = useState<Record<string, string>>({
-    name: contact?.name ?? "", email: contact?.email ?? "", phone: contact?.phone ?? "",
-    company: contact?.company ?? "", category: contact?.category ?? "Other", notes: contact?.notes ?? "",
+    name: contact?.name ?? prefill?.name ?? "", email: contact?.email ?? prefill?.email ?? "", phone: contact?.phone ?? prefill?.phone ?? "",
+    company: contact?.company ?? prefill?.company ?? "", category: contact?.category ?? "Other", notes: contact?.notes ?? "",
     lastContacted: contact?.lastContacted ?? "",
   });
   const [errors, setErrors] = useState<Partial<Record<ContactField, string>>>({});
@@ -107,10 +107,12 @@ function Body({
 }
 
 export function ContactFormDialog({
-  open, contact, existing, today, onOpenChange, onSave,
+  open, contact, prefill, existing, today, onOpenChange, onSave,
 }: {
   open: boolean;
   contact?: Contact;
+  /** Details to start a new contact with, such as a name and email taken from a filled-in form. */
+  prefill?: Partial<ContactInput>;
   existing: Contact[];
   today: string;
   onOpenChange: (open: boolean) => void;
@@ -119,7 +121,7 @@ export function ContactFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
-        {open && <Body contact={contact} existing={existing} today={today} onClose={() => onOpenChange(false)} onSave={onSave} />}
+        {open && <Body contact={contact} prefill={prefill} existing={existing} today={today} onClose={() => onOpenChange(false)} onSave={onSave} />}
       </DialogContent>
     </Dialog>
   );

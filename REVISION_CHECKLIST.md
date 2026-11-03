@@ -27,7 +27,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Document signing (in Forms: typed-name signatures with an explicit agreement, several signers, SHA-256 fingerprint and signed-copy PDF; not a certified e-signature service)
 - [x] "Needs your attention" feed
 - [x] OCR (photos and scans of licenses and certificates are read: license upload fills the form, and attaching a certificate to a vendor document reads its expiry date; scanned PDFs and the document index are not OCR'd yet)
-- [ ] Bridge gaps between Contacts and Forms
+- [x] Bridge gaps between Contacts and Forms (fill out a form for a contact with their details already in; add the person from a filled-in form to Contacts)
 - [x] CRM renamed to Contacts
 - [x] Notifications made very useful (bell respects the Settings choices, marks what is new, snoozes per item, lists what is waiting on you and for how long)
 - [~] Certifications and compliance tracking for licenses and policies (Certification and Policy types, compliance score; per-policy review cycles still to do)

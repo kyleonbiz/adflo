@@ -1,13 +1,14 @@
 "use client";
 
-import { Download, FileText, Printer } from "lucide-react";
+import Link from "next/link";
+import { Download, FileText, Printer, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 /** Shown right after a form is submitted: print it, save it as a PDF, or download it. */
 export function DocumentReadyDialog({
-  open, title, onOpenChange, onPrint, onPdf, onText,
-}: { open: boolean; title: string; onOpenChange: (open: boolean) => void; onPrint: () => void; onPdf: () => void; onText: () => void }) {
+  open, title, contact, onOpenChange, onPrint, onPdf, onText,
+}: { open: boolean; title: string; contact?: { name: string; href: string } | null; onOpenChange: (open: boolean) => void; onPrint: () => void; onPdf: () => void; onText: () => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
@@ -17,6 +18,7 @@ export function DocumentReadyDialog({
           <Button onClick={onPrint}><Printer /> Print</Button>
           <Button variant="outline" onClick={onPdf}><Download /> Download PDF</Button>
           <Button variant="outline" onClick={onText}><FileText /> Download as text</Button>
+          {contact && <Button variant="outline" asChild><Link href={contact.href}><UserPlus /> Add {contact.name} to Contacts</Link></Button>}
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Done</Button>
         </div>
       </DialogContent>

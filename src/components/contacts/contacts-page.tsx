@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Clock, Download, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
+import { Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,8 @@ import { applyImport, contactDuplicates, contactsToCsv, isStale, STALE_DAYS, sum
 import { e2eSeed } from "@/lib/e2e-seed";
 import { CONTACT_CATEGORIES, type Contact, type ContactCategory, type ContactInput } from "@/lib/contacts/types";
 import type { ImportOutcome } from "@/lib/import/run";
+import type { Person } from "@/lib/bridge";
+import { SendFormDialog } from "./send-form-dialog";
 import { ContactsTabs } from "./contacts-tabs";
 import { ContactFormDialog } from "./contact-form-dialog";
 import { ImportDialog } from "./import-dialog";
@@ -44,7 +46,7 @@ const linkClass = "rounded underline-offset-2 hover:text-foreground hover:underl
  * Contacts. Contacts live in this component's state (starting empty) until the database is
  * connected, so nothing here is saved between visits. Imports are read in the browser and never uploaded.
  */
-export function ContactsPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
+export function ContactsPage({ preview, initialQuery = "", initialAdd }: { preview?: string; initialQuery?: string; initialAdd?: Partial<Person> }) {
   const today = useToday();
   const [edited, setEdited] = useState<Contact[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
@@ -54,7 +56,8 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
   const [shown, setShown] = useState(PAGE);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [allPairs, setAllPairs] = useState(false);
-  const [formFor, setFormFor] = useState<Contact | "new" | null>(null);
+  const [formFor, setFormFor] = useState<Contact | "new" | null>(initialAdd ? "new" : null);
+  const [sendingTo, setSendingTo] = useState<Contact | null>(null);
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState<Contact[] | null>(null);
   const [merging, setMerging] = useState<[Contact, Contact] | null>(null);
@@ -316,6 +319,7 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center md:order-last">
+                      <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Fill out a form for ${c.name}`} title="Fill out a form for this contact" onClick={() => setSendingTo(c)}><FileText /></Button>
                       <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Edit ${c.name}`} onClick={() => setFormFor(c)}><Pencil /></Button>
                       <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Delete ${c.name}`} onClick={() => setDeleting([c])}><Trash2 /></Button>
                     </div>
@@ -352,7 +356,8 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
         )}
       </section>
 
-      <ContactFormDialog open={formFor !== null} contact={formFor && formFor !== "new" ? formFor : undefined} existing={contacts} today={today} onOpenChange={(o) => !o && setFormFor(null)} onSave={saveContact} />
+      <SendFormDialog person={sendingTo} onOpenChange={(o) => !o && setSendingTo(null)} />
+      <ContactFormDialog open={formFor !== null} contact={formFor && formFor !== "new" ? formFor : undefined} prefill={initialAdd} existing={contacts} today={today} onOpenChange={(o) => !o && setFormFor(null)} onSave={saveContact} />
       <ImportDialog open={importing} existing={contacts} onOpenChange={setImporting} onImport={runApply} />
       <MergeDialog pair={merging} onOpenChange={(o) => !o && setMerging(null)} onMerge={doMerge} />
 

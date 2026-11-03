@@ -49,15 +49,18 @@ function FieldInput({ field, value, error, onChange }: { field: FormField; value
 
 /** Fill out a form. Validation runs on submit, and the same rules guard what gets stored. */
 export function FillFormDialog({
-  open, form, onOpenChange, onSubmit,
+  open, form, initialValues, initialBy, onOpenChange, onSubmit,
 }: {
   open: boolean;
   form: FormTemplate | null;
+  /** Answers to start with, and who is filling it in, for a form opened from a contact. */
+  initialValues?: Record<string, string>;
+  initialBy?: string;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: Record<string, string>, submittedBy: string) => void;
 }) {
-  const [values, setValues] = useState<Record<string, string>>({});
-  const [by, setBy] = useState("");
+  const [values, setValues] = useState<Record<string, string>>(initialValues ?? {});
+  const [by, setBy] = useState(initialBy ?? "");
   const [errors, setErrors] = useState<FieldErrors>({});
 
   const close = (o: boolean) => {

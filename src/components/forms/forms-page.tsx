@@ -21,6 +21,7 @@ import type { FormTemplate, Submission } from "@/lib/forms/types";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedForms } from "@/lib/setup/templates";
 import type { FormBuilderValues } from "@/lib/forms/validation";
+import { addContactLink, personFromSubmission, prefillFromPerson, type Person } from "@/lib/bridge";
 import { Packets } from "./packets";
 import { Signatures } from "./signatures";
 import { DocumentReadyDialog } from "./document-ready-dialog";
@@ -46,14 +47,16 @@ function download(text: string | Uint8Array, name: string, type: string) {
  * Forms & Paperwork. Forms and submissions live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
-export function FormsPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
+export function FormsPage({ preview, initialQuery = "", initialFill }: { preview?: string; initialQuery?: string; initialFill?: { formId: string; person: Partial<Person> } }) {
   const today = useToday();
   const chains = useChains();
   const [editedForms, setEditedForms] = useState<FormTemplate[] | null>(null);
   const [editedSubs, setEditedSubs] = useState<Submission[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [builderFor, setBuilderFor] = useState<FormTemplate | "new" | null>(null);
-  const [filling, setFilling] = useState<FormTemplate | null>(null);
+  // A link from a contact opens its form straight away, with the contact's details in.
+  const fromLink = initialFill ? [...starterForms(), ...PAPERWORK.map((p) => p.form)].find((f) => f.id === initialFill.formId) ?? null : null;
+  const [filling, setFilling] = useState<FormTemplate | null>(fromLink);
   const [deleting, setDeleting] = useState<FormTemplate | null>(null);
   const [choosing, setChoosing] = useState(false);
   const [ready, setReady] = useState<{ form: FormTemplate; sub: Submission } | null>(null);
@@ -61,7 +64,11 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
 
   const setup = useSetupConfig();
   // Forms installed by Settings (only once setup is finished) sit alongside your own records.
-  const forms = useMemo(() => editedForms ?? [...starterForms(), ...installedForms(setup?.completedOn ? setup.templates : [])], [editedForms, setup]);
+  const forms = useMemo(() => {
+    if (editedForms) return editedForms;
+    const base = [...starterForms(), ...installedForms(setup?.completedOn ? setup.templates : [])];
+    return fromLink && !base.some((f) => f.id === fromLink.id) ? [...base, fromLink] : base;
+  }, [editedForms, setup, fromLink]);
   const subs = useMemo(() => editedSubs ?? e2eSeed<Submission>("submissions") ?? [], [editedSubs]);
 
   if (!today) {
@@ -191,6 +198,7 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
       <DocumentReadyDialog
         open={ready !== null}
         title={ready?.form.name ?? ""}
+        contact={ready ? (() => { const p = personFromSubmission(ready.form, ready.sub.values, ready.sub.submittedBy); return p ? { name: p.name, href: addContactLink(p) } : null; })() : null}
         onOpenChange={(o) => !o && setReady(null)}
         onPrint={() => ready && printText(ready.form.name, generateDocument(ready.form, ready.sub))}
         onPdf={() => ready && download(textToPdf(generateDocument(ready.form, ready.sub)), fileName(ready.form, ready.sub, "pdf"), "application/pdf")}
@@ -198,8 +206,11 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
       />
 
       <FillFormDialog
+        key={filling?.id ?? "none"}
         open={filling !== null}
         form={filling}
+        initialValues={filling && initialFill && filling.id === initialFill.formId ? prefillFromPerson(filling, initialFill.person) : undefined}
+        initialBy={filling && initialFill && filling.id === initialFill.formId ? initialFill.person.name : undefined}
         onOpenChange={(o) => !o && setFilling(null)}
         onSubmit={(values, by) => {
           if (!filling) return;
