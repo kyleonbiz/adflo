@@ -30,7 +30,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Bridge gaps between Contacts and Forms (fill out a form for a contact with their details already in; add the person from a filled-in form to Contacts)
 - [x] CRM renamed to Contacts
 - [x] Notifications made very useful (bell respects the Settings choices, marks what is new, snoozes per item, lists what is waiting on you and for how long)
-- [~] Certifications and compliance tracking for licenses and policies (Certification and Policy types, compliance score; per-policy review cycles still to do)
+- [x] Certifications and compliance tracking for licenses and policies (Certification and Policy types with templates, review cycle = renewal term with reminders, document checklist, compliance score)
 - [x] Onboarding packets (in Forms: new employee, vendor and client packets of forms, documents and signatures; progress bar, stale flag after 7 days, print or PDF checklist)
 - [~] Ghosting fix: automated vendor compliance reminders + comments/notes log for updates and CYA (due-reminder rules, escalating wording, ghosted flag after 3 and a dated notes log done; sending opens your email app until a mail service exists)
 - [ ] Contact / vendor profile with all their documents and notes in one place (needs database)

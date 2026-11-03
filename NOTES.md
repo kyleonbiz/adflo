@@ -1,10 +1,10 @@
 # AdFlo — Working Notes
 
 **Revision list (Kyle's 30 items):** the live checklist is `REVISION_CHECKLIST.md`. Branch `revision-part-1`, PR #22.
-Shipped so far: icon-only sidebar, Contacts (Vendors as a tab), name greeting, home queue + day summary, license templates by business + certification/policy types + compliance score, invoice frequency label, "Choose paperwork" by business type with print/PDF/download, Reporting section dropdown (scheduled reports, materials), custom project types, vendor follow-up reminders + notes log, stuck-approval flags.
-Still to do (no database needed): approval chain, document signing, onboarding packets, OCR, useful notifications, AI-agent guardrails per module, landing pages/empty states, AI-look cleanup, livelier home. Needs a database (last): shared contact/vendor profiles, real record merge, emailing reminders and scheduled reports.
+Done without a database (everything keeps its records in the browser, like the rest of the app): icon sidebar, Contacts with Vendors tab, name greeting, home queue and where-to-begin, empty states, sentence-case labels, license templates/certifications/compliance/calendar/fees, invoice frequency label, Choose paperwork + print/PDF, signatures, onboarding packets, approval chains (Settings > Approvals), Reporting dropdown (scheduled reports, materials), custom project types, vendor follow-ups/notes/terms, stuck-approval flags, "Remind me", OCR for license and vendor-document photos, useful notifications, Contacts<->Forms bridge, assistant drafts with guardrails, motion.
+Waiting on a database or outside service (last): shared contact/vendor profiles, real vendor/contact record merge, emailing reminders and scheduled reports, naming an owner for stuck work, OCR of scanned PDFs and of the document index.
 To discuss first: setup for different industries, what the Projects module should include.
-Note for tests: run `npx tsc --noEmit` before every push (the Vercel build type-checks tests).
+Working notes for tests: run `npm run typecheck` before every push (the Vercel build type-checks tests). Run Playwright with `--output=/tmp/...` (traces written inside the project make the dev server reload pages in a loop and the first tests fail), and never leave a stray `next dev` running (a leaked one is reused and misbehaves).
 
 ## To do
 - [ ] **Automation discovery** — go through every module and list what can be automated.
