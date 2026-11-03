@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, ChevronDown, Download, FileText, Pencil, Play, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, Download, FileText, Pencil, Play, Printer, Trash2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,8 @@ export interface FormActions {
   onDelete: (form: FormTemplate) => void;
   onDecide: (form: FormTemplate, s: Submission, decision: "approved" | "rejected", comment: string) => void;
   onDocument: (form: FormTemplate, s: Submission) => void;
+  onPrint: (form: FormTemplate, s: Submission) => void;
+  onPdf: (form: FormTemplate, s: Submission) => void;
   onExport: (form: FormTemplate, subs: Submission[]) => void;
   onDeleteSubmission: (form: FormTemplate, s: Submission) => void;
 }
@@ -47,6 +49,8 @@ function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission
           </>
         )}
         <Button size="sm" variant="ghost" aria-label={`Document for submission by ${s.submittedBy}`} onClick={() => actions.onDocument(form, s)}><FileText /> Document</Button>
+        <Button size="sm" variant="ghost" aria-label={`PDF for submission by ${s.submittedBy}`} onClick={() => actions.onPdf(form, s)}><Download /> PDF</Button>
+        <Button size="sm" variant="ghost" aria-label={`Print submission by ${s.submittedBy}`} onClick={() => actions.onPrint(form, s)}><Printer /> Print</Button>
         <Button size="icon-sm" variant="ghost" aria-label={`Delete submission by ${s.submittedBy}`} onClick={() => actions.onDeleteSubmission(form, s)}><Trash2 /></Button>
       </div>
     </li>

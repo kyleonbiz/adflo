@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDayShort } from "@/lib/dates";
 import { formatMoney, invoiceAlerts, invoiceState } from "@/lib/invoices/logic";
-import type { Invoice } from "@/lib/invoices/types";
+import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
 import { downloadInvoice } from "./download";
 import { SEVERITY_BADGE, STATE_BADGE, STATE_LABEL } from "./status";
 
@@ -41,7 +41,11 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
           <span className="flex items-center gap-2">
             <span className="font-semibold">{invoice.number}</span>
             <Badge variant={STATE_BADGE[state]}>{STATE_LABEL[state]}</Badge>
-            {invoice.recurrence !== "none" && <Repeat className="size-3.5 text-muted-foreground" aria-label="Repeats" />}
+            {invoice.recurrence !== "none" && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <Repeat className="size-3.5" aria-hidden /> {RECURRENCES.find((r) => r.value === invoice.recurrence)?.label}
+              </span>
+            )}
           </span>
           <span className="block truncate text-sm text-muted-foreground">
             <span className="font-medium text-foreground">{invoice.client}</span>

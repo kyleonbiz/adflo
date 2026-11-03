@@ -9,21 +9,27 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { createSubmission, decide, generateDocument, submissionsToCsv, summarize } from "@/lib/forms/logic";
+import { textToPdf } from "@/lib/forms/pdf";
+import { printText } from "@/lib/forms/print";
+import type { Paperwork } from "@/lib/forms/paperwork";
 import { starterForms } from "@/lib/forms/starter-forms";
 import { e2eSeed } from "@/lib/e2e-seed";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedForms } from "@/lib/setup/templates";
 import type { FormBuilderValues } from "@/lib/forms/validation";
+import { DocumentReadyDialog } from "./document-ready-dialog";
+import { PaperworkDialog } from "./paperwork-dialog";
 import { FillFormDialog } from "./fill-form-dialog";
 import { FormBuilderDialog } from "./form-builder-dialog";
 import { FormCard, type FormActions } from "./form-card";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+const fileName = (f: FormTemplate, s: Submission, ext: string) => `${slug(f.name)}-${slug(s.submittedBy)}-${s.submittedOn}.${ext}`;
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "form";
 
-function download(text: string, name: string, type: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: `${type};charset=utf-8` }));
+function download(text: string | Uint8Array, name: string, type: string) {
+  const url = URL.createObjectURL(new Blob([text as BlobPart], { type: typeof text === "string" ? `${type};charset=utf-8` : type }));
   const a = document.createElement("a");
   a.href = url;
   a.download = name;
@@ -43,6 +49,8 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
   const [builderFor, setBuilderFor] = useState<FormTemplate | "new" | null>(null);
   const [filling, setFilling] = useState<FormTemplate | null>(null);
   const [deleting, setDeleting] = useState<FormTemplate | null>(null);
+  const [choosing, setChoosing] = useState(false);
+  const [ready, setReady] = useState<{ form: FormTemplate; sub: Submission } | null>(null);
   const [notice, setNotice] = useState("");
 
   const setup = useSetupConfig();
@@ -68,7 +76,9 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
       setEditedSubs(subs.map((x) => (x.id === s.id ? decide(x, decision, f.approver || "Approver", today, comment) : x)));
       setNotice(`Submission by ${s.submittedBy} ${decision}.`);
     },
-    onDocument: (f, s) => download(generateDocument(f, s), `${slug(f.name)}-${slug(s.submittedBy)}-${s.submittedOn}.txt`, "text/plain"),
+    onDocument: (f, s) => download(generateDocument(f, s), fileName(f, s, "txt"), "text/plain"),
+    onPdf: (f, s) => download(textToPdf(generateDocument(f, s)), fileName(f, s, "pdf"), "application/pdf"),
+    onPrint: (f, s) => printText(f.name, generateDocument(f, s)),
     onExport: (f, list) => download(submissionsToCsv(f, list), `${slug(f.name)}-submissions-${today}.csv`, "text/csv"),
     onDeleteSubmission: (_f, s) => {
       setEditedSubs(subs.filter((x) => x.id !== s.id));
@@ -100,7 +110,10 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
           <h1 className="text-2xl font-semibold tracking-tight">Forms &amp; Paperwork</h1>
           <p className="text-sm text-muted-foreground">Build reusable forms, collect answers, route approvals and generate documents.</p>
         </div>
-        <Button onClick={() => setBuilderFor("new")}><Plus /> New form</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setBuilderFor("new")}><Plus /> New form</Button>
+          <Button onClick={() => setChoosing(true)}>Choose paperwork</Button>
+        </div>
       </div>
 
       {preview && (
@@ -138,6 +151,26 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
         onSave={saveForm}
       />
 
+      <PaperworkDialog
+        open={choosing}
+        onOpenChange={setChoosing}
+        onPick={(p: Paperwork) => {
+          setChoosing(false);
+          // The form joins your list the first time you use it, so repeating paperwork stays one click away.
+          if (!forms.some((x) => x.id === p.form.id)) setEditedForms([...forms, p.form]);
+          setFilling(p.form);
+        }}
+      />
+
+      <DocumentReadyDialog
+        open={ready !== null}
+        title={ready?.form.name ?? ""}
+        onOpenChange={(o) => !o && setReady(null)}
+        onPrint={() => ready && printText(ready.form.name, generateDocument(ready.form, ready.sub))}
+        onPdf={() => ready && download(textToPdf(generateDocument(ready.form, ready.sub)), fileName(ready.form, ready.sub, "pdf"), "application/pdf")}
+        onText={() => ready && download(generateDocument(ready.form, ready.sub), fileName(ready.form, ready.sub, "txt"), "text/plain")}
+      />
+
       <FillFormDialog
         open={filling !== null}
         form={filling}
@@ -146,6 +179,7 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
           if (!filling) return;
           const s = createSubmission(filling, values, by, today, rid("s"));
           setEditedSubs([...subs, s]);
+          setReady({ form: filling, sub: s });
           setNotice(filling.requiresApproval ? `Submitted. Waiting for ${filling.approver} to approve.` : "Submitted. Thank you.");
         }}
       />

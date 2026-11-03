@@ -126,6 +126,7 @@ test.describe("back office setup module", () => {
     await dialog.getByLabel(/What was it for/).fill("Train ticket");
     await dialog.getByLabel(/Receipt attached/).check();
     await dialog.getByRole("button", { name: "Submit" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
     await expect(page.getByRole("status")).toContainText("Waiting for Finance manager to approve");
   });
 

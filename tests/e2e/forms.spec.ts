@@ -31,6 +31,7 @@ test.describe("forms module", () => {
     await dialog.getByRole("combobox", { name: /Type/ }).click();
     await page.getByRole("option", { name: "Sick" }).click();
     await dialog.getByRole("button", { name: "Submit" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
     await expect(dialog).toBeHidden();
     await expect(page.getByRole("status")).toContainText("Waiting for Priya Shah to approve");
     await expect(leave).toContainText("2 awaiting approval");
@@ -110,6 +111,7 @@ test.describe("forms module", () => {
     await page.getByRole("dialog").getByRole("combobox", { name: /Item/ }).click();
     await page.getByRole("option", { name: "Monitor" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Submit" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
     await card.getByRole("button", { name: /^Submissions/ }).click();
     const download = page.waitForEvent("download");
     await card.getByRole("button", { name: /^Document for submission/ }).click();
@@ -153,5 +155,35 @@ test.describe("forms module", () => {
     await page.goto("/app/forms");
     await expect(page.getByRole("heading", { level: 1, name: "Forms & Paperwork" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Forms & Paperwork", exact: true })).toHaveAttribute("aria-current", "page");
+  });
+  test("choose paperwork by business type, fill it in, then print or download it", async ({ page }) => {
+    await page.goto("/app/forms");
+    await page.getByRole("button", { name: "Choose paperwork" }).click();
+    const picker = page.getByRole("dialog");
+    await picker.getByRole("combobox", { name: "Your business" }).click();
+    await page.getByRole("option", { name: "Restaurant or food service" }).click();
+    await expect(picker.getByText("Temperature log")).toBeVisible();
+    await picker.getByLabel("Only forms I fill in again and again").check();
+    await expect(picker.getByText("Food waste and spoilage log")).toBeVisible();
+    await picker.getByRole("button", { name: "Fill out: Temperature log" }).click();
+
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Your name").fill("Sam");
+    await dialog.getByLabel(/^Date/).fill("2026-11-02");
+    await dialog.getByLabel(/Checked by/).fill("Sam");
+    await dialog.getByLabel(/Walk-in cooler/).fill("38");
+    await dialog.getByLabel(/Freezer/).fill("0");
+    await dialog.getByRole("button", { name: "Submit" }).click();
+
+    await expect(page.getByRole("heading", { name: "Your paperwork is ready" })).toBeVisible();
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download PDF" }).click();
+    const file = await download;
+    expect(file.suggestedFilename()).toMatch(/\.pdf$/);
+    let head = "";
+    for await (const chunk of await file.createReadStream()) { head += chunk; break; }
+    expect(head.startsWith("%PDF")).toBe(true);
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(page.getByTestId("form-card").filter({ hasText: "Temperature log" })).toBeVisible();
   });
 });
