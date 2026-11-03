@@ -22,7 +22,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Forms & Paperwork: pick paperwork by business type (28 forms, repeating ones flagged; print, PDF or download after filling in)
 - [x] Reporting: dropdown with Reports, Scheduled reports, Materials (scheduled: due banner, print or PDF, no email yet; materials: summary plus per-service PDF and CSV)
 - [x] Remove anything that looks AI-coded (Title Case labels now sentence case, blue-to-violet gradients and gradient buttons gone, flat navy sign-in)
-- [ ] Approval chain
+- [x] Approval chain (set in Settings > Approvals; up to 6 ordered approvers for requests and for form submissions; a decline stops it; vendors still use one approver)
 - [~] Fix for invisible admin bottlenecks (approvals unanswered for 5 days and unstarted work with no due date now flagged in the digest, bell and home feed; escalating to a named owner needs team data)
 - [ ] Document signing
 - [x] "Needs your attention" feed

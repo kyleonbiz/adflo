@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { createSubmission, decide, generateDocument, submissionsToCsv, summarize } from "@/lib/forms/logic";
+import { describeProgress } from "@/lib/approvals/chain";
+import { useChains } from "@/lib/approvals/storage";
 import { textToPdf } from "@/lib/forms/pdf";
 import { printText } from "@/lib/forms/print";
 import type { Paperwork } from "@/lib/forms/paperwork";
@@ -43,6 +45,7 @@ function download(text: string | Uint8Array, name: string, type: string) {
  */
 export function FormsPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
   const today = useToday();
+  const chains = useChains();
   const [editedForms, setEditedForms] = useState<FormTemplate[] | null>(null);
   const [editedSubs, setEditedSubs] = useState<Submission[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
@@ -73,8 +76,9 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
     onEdit: (f) => setBuilderFor(f),
     onDelete: (f) => setDeleting(f),
     onDecide: (f, s, decision, comment) => {
-      setEditedSubs(subs.map((x) => (x.id === s.id ? decide(x, decision, f.approver || "Approver", today, comment) : x)));
-      setNotice(`Submission by ${s.submittedBy} ${decision}.`);
+      const after = decide(s, decision, f.approver || "Approver", today, comment);
+      setEditedSubs(subs.map((x) => (x.id === s.id ? after : x)));
+      setNotice(after.status === "pending" && after.approval ? `Submission by ${s.submittedBy} approved. ${describeProgress(after.approval)}.` : `Submission by ${s.submittedBy} ${decision}.`);
     },
     onDocument: (f, s) => download(generateDocument(f, s), fileName(f, s, "txt"), "text/plain"),
     onPdf: (f, s) => download(textToPdf(generateDocument(f, s)), fileName(f, s, "pdf"), "application/pdf"),
@@ -177,10 +181,10 @@ export function FormsPage({ preview, initialQuery = "" }: { preview?: string; in
         onOpenChange={(o) => !o && setFilling(null)}
         onSubmit={(values, by) => {
           if (!filling) return;
-          const s = createSubmission(filling, values, by, today, rid("s"));
+          const s = createSubmission(filling, values, by, today, rid("s"), chains.forms);
           setEditedSubs([...subs, s]);
           setReady({ form: filling, sub: s });
-          setNotice(filling.requiresApproval ? `Submitted. Waiting for ${filling.approver} to approve.` : "Submitted. Thank you.");
+          setNotice(s.approval && s.approval.steps.length > 1 ? `Submitted. ${describeProgress(s.approval)}.` : filling.requiresApproval ? `Submitted. Waiting for ${s.approval?.steps[0] ?? filling.approver} to approve.` : "Submitted. Thank you.");
         }}
       />
 

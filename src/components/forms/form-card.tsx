@@ -9,6 +9,7 @@ import { formatDayLong } from "@/lib/dates";
 import { displayValue } from "@/lib/forms/logic";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
 import { cn } from "@/lib/utils";
+import { currentApprover, describeProgress } from "@/lib/approvals/chain";
 import { SUBMISSION_BADGE, SUBMISSION_LABEL } from "./status";
 
 export interface FormActions {
@@ -35,7 +36,15 @@ function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission
         </div>
         <Badge variant={SUBMISSION_BADGE[s.status]}>{SUBMISSION_LABEL[s.status]}</Badge>
       </div>
-      {s.decidedBy && s.decidedOn && (
+      {s.approval && s.approval.steps.length > 1 && (
+        <div className="space-y-0.5 text-xs" data-testid="approval-chain">
+          {s.status === "pending" && currentApprover(s.approval) && <p className="font-medium text-amber-800">{describeProgress(s.approval)}</p>}
+          {s.approval.log.map((e, i) => (
+            <p key={i} className="text-muted-foreground">{e.decision === "approved" ? "Approved" : "Rejected"} by {e.by} on {formatDayLong(e.on)}{e.comment && `: ${e.comment}`}</p>
+          ))}
+        </div>
+      )}
+      {s.decidedBy && s.decidedOn && !(s.approval && s.approval.steps.length > 1) && (
         <p className="text-xs text-muted-foreground">
           {s.status === "approved" ? "Approved" : "Rejected"} by {s.decidedBy} on {formatDayLong(s.decidedOn)}{s.comment && `: ${s.comment}`}
         </p>
@@ -44,8 +53,8 @@ function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission
         {s.status === "pending" && (
           <>
             <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (optional)" aria-label={`Comment on submission by ${s.submittedBy}`} className="h-8 max-w-56 text-xs" maxLength={200} />
-            <Button size="sm" variant="outline" aria-label={`Approve submission by ${s.submittedBy}`} onClick={() => actions.onDecide(form, s, "approved", comment)}><CheckCircle2 /> Approve</Button>
-            <Button size="sm" variant="outline" aria-label={`Reject submission by ${s.submittedBy}`} onClick={() => actions.onDecide(form, s, "rejected", comment)}><XCircle /> Reject</Button>
+            <Button size="sm" variant="outline" aria-label={`Approve submission by ${s.submittedBy}`} onClick={() => { actions.onDecide(form, s, "approved", comment); setComment(""); }}><CheckCircle2 /> Approve</Button>
+            <Button size="sm" variant="outline" aria-label={`Reject submission by ${s.submittedBy}`} onClick={() => { actions.onDecide(form, s, "rejected", comment); setComment(""); }}><XCircle /> Reject</Button>
           </>
         )}
         <Button size="sm" variant="ghost" aria-label={`Document for submission by ${s.submittedBy}`} onClick={() => actions.onDocument(form, s)}><FileText /> Document</Button>

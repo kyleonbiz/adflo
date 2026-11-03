@@ -10,6 +10,8 @@ export type Priority = (typeof PRIORITIES)[number];
 export type RequestStatus = "pending_approval" | "open" | "in_progress" | "done" | "declined";
 export type RequestSource = "manual" | "email" | "recurring";
 
+import type { ApprovalProgress } from "@/lib/approvals/chain";
+
 /** Dates are `YYYY-MM-DD`. */
 export interface AdminRequest {
   id: string;
@@ -28,6 +30,8 @@ export interface AdminRequest {
   comment: string;
   createdOn: string;
   doneOn: string | null;
+  /** Who has to sign off, in order, and who already has. Set when the request needs approval. */
+  approval?: ApprovalProgress;
 }
 
 export const EVERY = [

@@ -1,3 +1,4 @@
+import { advance, currentApprover, startProgress } from "@/lib/approvals/chain";
 import { advanceDay, daysBetween, formatDayLong } from "@/lib/dates";
 import type { CalendarEvent } from "./ics";
 import { approvalReasons } from "./triage";
@@ -14,17 +15,31 @@ export interface NewRequest {
 }
 
 /** A request that trips an approval rule waits for a decision; anything else is open straight away. */
-export function createRequest(input: NewRequest, today: string, id: string): AdminRequest {
+export function createRequest(input: NewRequest, today: string, id: string, chain: string[] = []): AdminRequest {
   const reasons = approvalReasons(input.title, input.description, input.category);
-  return {
+  const request: AdminRequest = {
     ...input, id, status: reasons.length > 0 ? "pending_approval" : "open", approvalReasons: reasons,
     decidedBy: null, decidedOn: null, comment: "", createdOn: today, doneOn: null,
   };
+  if (reasons.length > 0 && chain.length > 0) request.approval = startProgress(chain, VENDOR_FALLBACK);
+  return request;
 }
 
-/** Approve (becomes open) or decline a request that is waiting. Anything else is returned unchanged. */
+const VENDOR_FALLBACK = "Operations manager";
+
+/**
+ * Approve (becomes open) or decline a request that is waiting. With an approval chain, an approval
+ * moves it to the next approver and it only opens after the last; a decline ends it at once.
+ * Anything not waiting is returned unchanged.
+ */
 export function decide(r: AdminRequest, decision: "approved" | "declined", by: string, today: string, comment = ""): AdminRequest {
   if (r.status !== "pending_approval") return r;
+  if (r.approval && currentApprover(r.approval) !== null) {
+    const { progress, outcome } = advance(r.approval, decision, today, comment);
+    if (outcome === "pending") return { ...r, approval: progress };
+    const last = progress.log[progress.log.length - 1];
+    return { ...r, approval: progress, status: outcome === "approved" ? "open" : "declined", decidedBy: last.by, decidedOn: today, comment: comment.trim() };
+  }
   return { ...r, status: decision === "approved" ? "open" : "declined", decidedBy: by, decidedOn: today, comment: comment.trim() };
 }
 

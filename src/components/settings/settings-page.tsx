@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ApprovalsSection } from "./approvals-section";
 import { Appearance } from "./appearance";
 import { NotificationsSection } from "./notifications-section";
 import { ProfileSection } from "./profile-section";
@@ -10,6 +11,7 @@ export const SETTINGS_TABS = [
   { id: "profile", label: "Business profile", blurb: "Your business details, used across AdFlo." },
   { id: "team", label: "Team", blurb: "Who can open this workspace, and what they can do." },
   { id: "notifications", label: "Notifications", blurb: "Which reminders you want, and how early." },
+  { id: "approvals", label: "Approvals", blurb: "Who signs off, in what order, before a request or form goes ahead." },
   { id: "appearance", label: "Appearance", blurb: "Choose a bright Day view or a darker Night view." },
   { id: "setup", label: "Guided setup", blurb: "Five short steps to get your services, templates and checks in place." },
 ] as const;
@@ -45,6 +47,7 @@ export function SettingsPage({ tab, mode, base, preview }: { tab: SettingsTab; m
       {tab === "profile" && <ProfileSection />}
       {tab === "team" && <TeamSection mode={mode} />}
       {tab === "notifications" && <NotificationsSection />}
+      {tab === "approvals" && <ApprovalsSection />}
       {tab === "appearance" && <Appearance />}
       {tab === "setup" && <SetupPage base={base} preview={preview} />}
     </div>

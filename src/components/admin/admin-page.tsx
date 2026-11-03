@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import { Bell, CalendarPlus, CheckCircle2, Clock, Hourglass, Inbox, Play, Plus, Repeat, Search, ShieldAlert, Trash2, XCircle } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
+import { currentApprover, describeProgress } from "@/lib/approvals/chain";
+import { useChains } from "@/lib/approvals/storage";
 import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
@@ -62,7 +64,15 @@ function RequestCard({
       {r.approvalReasons.length > 0 && (
         <p className="flex items-start gap-2 text-xs text-amber-800"><ShieldAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden /> Needs approval: {r.approvalReasons.join("; ")}.</p>
       )}
-      {r.decidedBy && r.decidedOn && (
+      {r.approval && r.approval.steps.length > 1 && (
+        <div className="space-y-0.5 text-xs" data-testid="approval-chain">
+          {r.status === "pending_approval" && currentApprover(r.approval) && <p className="font-medium text-amber-800">{describeProgress(r.approval)}</p>}
+          {r.approval.log.map((e, i) => (
+            <p key={i} className="text-muted-foreground">{e.decision === "approved" ? "Approved" : "Declined"} by {e.by} on {formatDayLong(e.on)}{e.comment && `: ${e.comment}`}</p>
+          ))}
+        </div>
+      )}
+      {r.decidedBy && r.decidedOn && !(r.approval && r.approval.steps.length > 1) && (
         <p className="text-xs text-muted-foreground">{r.status === "declined" ? "Declined" : "Approved"} by {r.decidedBy} on {formatDayLong(r.decidedOn)}{r.comment && `: ${r.comment}`}</p>
       )}
 
@@ -70,8 +80,8 @@ function RequestCard({
         {r.status === "pending_approval" && (
           <>
             <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (optional)" aria-label={`Comment on ${r.title}`} className="h-8 w-48 text-xs" maxLength={200} />
-            <Button size="sm" variant="outline" aria-label={`Approve ${r.title}`} onClick={() => onDecide(r, "approved", comment)}><CheckCircle2 /> Approve</Button>
-            <Button size="sm" variant="outline" aria-label={`Decline ${r.title}`} onClick={() => onDecide(r, "declined", comment)}><XCircle /> Decline</Button>
+            <Button size="sm" variant="outline" aria-label={`Approve ${r.title}`} onClick={() => { onDecide(r, "approved", comment); setComment(""); }}><CheckCircle2 /> Approve</Button>
+            <Button size="sm" variant="outline" aria-label={`Decline ${r.title}`} onClick={() => { onDecide(r, "declined", comment); setComment(""); }}><XCircle /> Decline</Button>
           </>
         )}
         {r.status === "open" && <Button size="sm" variant="outline" aria-label={`Start ${r.title}`} onClick={() => onStatus(r, "in_progress")}><Play /> Start</Button>}
@@ -90,6 +100,7 @@ function RequestCard({
  */
 export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: string; startNew?: boolean; initialQuery?: string }) {
   const today = useToday();
+  const chains = useChains();
   const [editedRequests, setEditedRequests] = useState<AdminRequest[] | null>(null);
   const [editedRoutines, setEditedRoutines] = useState<Routine[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
@@ -129,7 +140,7 @@ export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: 
     .sort((a, b) => Number(["done", "declined"].includes(a.status)) - Number(["done", "declined"].includes(b.status)) || (a.dueOn ?? "9999") .localeCompare(b.dueOn ?? "9999"));
 
   const create = (input: NewRequest) => {
-    const r = createRequest(input, today, rid("r"));
+    const r = createRequest(input, today, rid("r"), chains.requests);
     setEditedRequests([r, ...requests]);
     setNotice(r.status === "pending_approval" ? `"${r.title}" needs approval before work starts.` : `"${r.title}" created.`);
   };
@@ -257,7 +268,11 @@ export function AdminPage({ preview, startNew, initialQuery = "" }: { preview?: 
               <RequestCard
                 key={r.id} r={r} today={today}
                 onStatus={(x, s) => { patch(x.id, (y) => setStatus(y, s, today)); setNotice(`"${x.title}" is now ${STATUS_LABEL[s].toLowerCase()}.`); }}
-                onDecide={(x, d, c) => { patch(x.id, (y) => decide(y, d, APPROVER, today, c)); setNotice(`"${x.title}" ${d}.`); }}
+                onDecide={(x, d, c) => {
+                  const after = decide(x, d, APPROVER, today, c);
+                  patch(x.id, () => after);
+                  setNotice(after.status === "pending_approval" && after.approval ? `"${x.title}" approved. ${describeProgress(after.approval)}.` : `"${x.title}" ${d}.`);
+                }}
                 onDelete={setDeleting}
               />
             ))}

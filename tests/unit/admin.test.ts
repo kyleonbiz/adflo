@@ -270,3 +270,43 @@ describe("invisible bottlenecks", () => {
     expect(n[0].message).toContain("has not been started in 10 days");
   });
 });
+
+import { createSubmission as makeSub, decide as decideSub } from "@/lib/forms/logic";
+import { starterForms } from "@/lib/forms/starter-forms";
+
+describe("approval chains on requests and form submissions", () => {
+  const input = { title: "Wire the deposit", description: "wire transfer", requester: "A", category: "Finance & payments" as const, priority: "normal" as const, dueOn: null, source: "manual" as const };
+
+  it("moves a request through each approver, opening it only after the last", () => {
+    let r = createRequest(input, TODAY, "r1", ["Department head", "Finance manager"]);
+    expect(r.status).toBe("pending_approval");
+    r = decide(r, "approved", "x", TODAY, "fine");
+    expect(r.status).toBe("pending_approval");
+    expect(r.approval?.log.map((e) => e.by)).toEqual(["Department head"]);
+    r = decide(r, "approved", "x", TODAY);
+    expect(r.status).toBe("open");
+    expect(r.decidedBy).toBe("Finance manager");
+  });
+
+  it("declines a request at the first step, and behaves as before with no chain", () => {
+    const declined = decide(createRequest(input, TODAY, "r2", ["A", "B"]), "declined", "x", TODAY, "no");
+    expect(declined.status).toBe("declined");
+    expect(declined.approval?.log).toHaveLength(1);
+    const plain = createRequest(input, TODAY, "r3");
+    expect(plain.approval).toBeUndefined();
+    expect(decide(plain, "approved", "Boss", TODAY).decidedBy).toBe("Boss");
+  });
+
+  it("applies the same chain to a form submission", () => {
+    const form = starterForms().find((f) => f.requiresApproval)!;
+    let s = makeSub(form, {}, "Sam", TODAY, "s1", ["Lead", "Director"]);
+    expect(s.status).toBe("pending");
+    s = decideSub(s, "approved", "x", TODAY);
+    expect(s.status).toBe("pending");
+    s = decideSub(s, "approved", "x", TODAY);
+    expect(s.status).toBe("approved");
+    expect(makeSub(form, {}, "Sam", TODAY, "s2").approval).toBeUndefined();
+    const rejected = decideSub(makeSub(form, {}, "Sam", TODAY, "s3", ["Lead", "Director"]), "rejected", "x", TODAY);
+    expect(rejected.status).toBe("rejected");
+  });
+});

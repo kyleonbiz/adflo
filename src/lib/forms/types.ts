@@ -30,6 +30,8 @@ export interface FormTemplate {
   documentTemplate: string;
 }
 
+import type { ApprovalProgress } from "@/lib/approvals/chain";
+
 export type SubmissionStatus = "received" | "pending" | "approved" | "rejected";
 
 export interface Submission {
@@ -43,4 +45,6 @@ export interface Submission {
   decidedBy: string | null;
   decidedOn: string | null;
   comment: string;
+  /** Set when an approval chain applies: who signs off, in order, and who already has. */
+  approval?: ApprovalProgress;
 }
