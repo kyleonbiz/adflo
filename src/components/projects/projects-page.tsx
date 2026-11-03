@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Download, FolderKanban, ListTodo, Plus, Search, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Download, FolderKanban, ListTodo, Plus, Repeat, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -12,7 +12,10 @@ import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { completeTask, overdueTasks, projectsReport, reopenTask, sortProjects, summarize, taskAlerts, type ProjectSort } from "@/lib/projects/logic";
+import { RECURRING_PROJECT_ID, addMilestone, addUpdate, completeTask, overdueTasks, projectsReport, recurringProject, removeMilestone, reopenTask, sortProjects, summarize, taskAlerts, toggleMilestone, type ProjectSort } from "@/lib/projects/logic";
+import { installedRecurringTasks } from "@/lib/setup/templates";
+import { useSetupConfig } from "@/lib/setup/storage";
+import { RecurringTaskDialog } from "./recurring-task-dialog";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { buildTasks, type TemplateTask } from "@/lib/projects/templates";
 import { PROJECT_STATUSES, type Project, type ProjectStatus, type Task } from "@/lib/projects/types";
@@ -65,7 +68,13 @@ export function ProjectsPage({ preview, initialQuery = "", startNew, draft }: { 
 }
 
 function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today: string; preview?: string; initialQuery: string; startNew?: boolean; draft?: ProjectDraft }) {
-  const [projects, setProjects] = useState<Project[]>(() => e2eSeed<Project>("projects") ?? []);
+  const setup = useSetupConfig();
+  const [projects, setProjects] = useState<Project[]>(() => {
+    // Repeating tasks installed by setup (once it is finished) start the Recurring work project.
+    const tasks = installedRecurringTasks(setup?.completedOn ? setup.templates : [], today);
+    return [...(e2eSeed<Project>("projects") ?? []), ...(tasks.length > 0 ? [recurringProject(tasks, today)] : [])];
+  });
+  const [addingRecurring, setAddingRecurring] = useState(false);
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       (e2eSeed<Project>("projects") ?? []).filter((p) => isLive(p) && overdueTasks(p, today).length > 0).slice(0, AUTO_OPEN).map((p) => [p.id, true]),
@@ -146,6 +155,19 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
       }));
       setNotice(`"${v.title}" updated.`);
     },
+    onAddMilestone: (p, title, dueOn) => {
+      const r = addMilestone(p, { title, dueOn }, rid("m"));
+      if ("error" in r) return r.error;
+      patch(p.id, () => r.project);
+      setNotice(`Milestone "${title.trim()}" added to ${p.name}.`);
+      return null;
+    },
+    onToggleMilestone: (p, id) => patch(p.id, (x) => toggleMilestone(x, id, today)),
+    onRemoveMilestone: (p, id) => patch(p.id, (x) => removeMilestone(x, id)),
+    onAddUpdate: (p, text) => {
+      patch(p.id, (x) => addUpdate(x, { text, by: x.owner || "You", on: today }, rid("u")));
+      setNotice(`Update posted to ${p.name}.`);
+    },
     onRemoveTask: (p, t) => {
       const index = p.tasks.findIndex((y) => y.id === t.id);
       patch(p.id, (x) => ({ ...x, tasks: x.tasks.filter((y) => y.id !== t.id) }));
@@ -153,7 +175,9 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
     },
   };
 
-  const saveForm = (values: ProjectFormValues, templateTasks: TemplateTask[]) => {
+  const saveForm = (formValues: ProjectFormValues, templateTasks: TemplateTask[]) => {
+    const { linkKind, linkName, ...rest } = formValues;
+    const values = { ...rest, linked: linkKind === "none" ? null : { kind: linkKind, name: linkName } };
     const status = values.status as ProjectStatus;
     if (formFor && formFor !== "new") {
       patch(formFor.id, (x) => ({ ...x, ...values, status }));
@@ -165,6 +189,15 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
       if (tasks.length > 0) setOpen((o) => ({ ...o, [id]: true }));
       setNotice(tasks.length > 0 ? `${values.name} created with ${plural(tasks.length, "task")}.` : `${values.name} created.`);
     }
+  };
+
+  const addRecurring = (v: TaskFormValues) => {
+    const task: Task = { id: rid("t"), title: v.title, assignee: v.assignee, dueOn: v.dueOn, repeat: v.repeat as Task["repeat"], done: false, doneOn: null, followUpId: null };
+    setProjects((all) => all.some((p) => p.id === RECURRING_PROJECT_ID)
+      ? all.map((p) => (p.id === RECURRING_PROJECT_ID ? { ...p, tasks: [...p.tasks, task] } : p))
+      : [...all, recurringProject([task], today)]);
+    setOpen((o) => ({ ...o, [RECURRING_PROJECT_ID]: true }));
+    setNotice(`"${v.title}" will come round ${v.repeat === "daily" ? "every day" : v.repeat === "weekly" ? "every week" : v.repeat === "monthly" ? "every month" : v.repeat === "quarterly" ? "every quarter" : "every year"}.`);
   };
 
   const deleteProject = (p: Project) => {
@@ -204,7 +237,7 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
           <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
           <p className="text-sm text-muted-foreground">Plan projects, assign tasks, repeat routine work and see what is slipping.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             onClick={() => downloadText(projectsReport(visible, today), `status-report-${today}.txt`)}
@@ -213,6 +246,7 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
           >
             <Download /> {filtered ? `Report for ${plural(visible.length, "project")}` : "Status report"}
           </Button>
+          <Button variant="outline" onClick={() => setAddingRecurring(true)}><Repeat /> Add recurring task</Button>
           <Button onClick={() => setFormFor("new")}><Plus /> New project</Button>
         </div>
       </div>
@@ -352,6 +386,8 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
           </ul>
         )}
       </section>
+
+      <RecurringTaskDialog open={addingRecurring} today={today} onOpenChange={setAddingRecurring} onSave={addRecurring} />
 
       <ProjectFormDialog
         open={formFor !== null}

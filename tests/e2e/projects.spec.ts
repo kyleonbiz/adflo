@@ -215,4 +215,56 @@ test.describe("projects module", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Projects" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Projects", exact: true })).toHaveAttribute("aria-current", "page");
   });
+
+  test("an owner, who it is for, milestones and a log of updates", async ({ page }) => {
+    await page.goto("/app/projects");
+    await page.getByRole("button", { name: "New project" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Project name").fill("Office move");
+    await dialog.getByLabel("Owner (optional)").fill("Priya Shah");
+    await dialog.getByRole("combobox", { name: "For a contact or vendor?" }).click();
+    await page.getByRole("option", { name: "A vendor" }).click();
+    await dialog.getByRole("button", { name: "Create project" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("Enter who it is for");
+    await dialog.getByLabel("Vendor name").fill("Blue Ridge Movers");
+    await dialog.getByRole("button", { name: "Create project" }).click();
+
+    const card = page.getByTestId("project-card").filter({ hasText: "Office move" });
+    await expect(card).toContainText("Owner: Priya Shah");
+    await expect(card.getByTestId("project-link").getByRole("link", { name: "Blue Ridge Movers" })).toHaveAttribute("href", "/app/vendors?q=Blue%20Ridge%20Movers");
+    await card.getByRole("button", { name: /^Tasks/ }).click();
+
+    await card.getByLabel("New milestone for Office move").fill("Keys handed over");
+    await card.getByRole("button", { name: "Add milestone to Office move" }).click();
+    await expect(card.getByRole("alert")).toContainText("Choose a date");
+    await card.getByLabel("Milestone date for Office move").fill("2020-01-15");
+    await card.getByRole("button", { name: "Add milestone to Office move" }).click();
+    const milestones = card.getByTestId("milestones");
+    await expect(milestones).toContainText("0 of 1, 1 overdue");
+    await milestones.getByLabel("Keys handed over done").check();
+    await expect(milestones).toContainText("1 of 1");
+
+    await card.getByLabel("Add an update to Office move").fill("Movers booked for the 14th");
+    await card.getByRole("button", { name: "Post" }).click();
+    await expect(card.getByTestId("update").first()).toContainText("Priya Shah");
+    await expect(card.getByTestId("update").first()).toContainText("Movers booked for the 14th");
+  });
+
+  test("repeating work is added in Projects and comes round again when finished", async ({ page }) => {
+    await page.goto("/app/projects");
+    await page.getByRole("button", { name: "Add recurring task" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("button", { name: "Add recurring task" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("Enter a task");
+    await dialog.getByLabel("Task").fill("Review software subscriptions");
+    await dialog.getByRole("combobox", { name: "How often" }).click();
+    await page.getByRole("option", { name: "Quarterly" }).click();
+    await dialog.getByRole("button", { name: "Add recurring task" }).click();
+
+    const home = page.getByTestId("project-card").filter({ hasText: "Recurring work" });
+    await expect(home.getByRole("checkbox", { name: /Review software subscriptions/ })).toBeVisible();
+    await home.getByRole("checkbox", { name: /Review software subscriptions/ }).check();
+    await expect(page.getByRole("status")).toContainText("The next one is scheduled");
+    await expect(home.getByRole("checkbox", { name: /Review software subscriptions/ })).toHaveCount(2);
+  });
 });

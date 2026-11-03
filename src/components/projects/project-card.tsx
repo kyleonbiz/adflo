@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { RemindMenu } from "@/components/modules/remind-menu";
-import { CheckCircle2, ChevronDown, Download, MoreHorizontal, Pencil, Plus, Repeat, Trash2, X } from "lucide-react";
+import { CheckCircle2, ChevronDown, Download, Flag, MoreHorizontal, Pencil, Plus, Repeat, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { daysBetween, formatDayLong } from "@/lib/dates";
-import { allTasksDone, overdueTasks, progress, projectHealth, sortTasks, taskState } from "@/lib/projects/logic";
+import Link from "next/link";
+import { allTasksDone, isRecurringProject, milestoneSummary, milestonesOf, overdueTasks, progress, projectHealth, sortTasks, taskState, updatesOf } from "@/lib/projects/logic";
 import { PROJECT_STATUSES, TASK_REPEATS, type Project, type ProjectStatus, type Task } from "@/lib/projects/types";
 import { taskFormSchema, type TaskFormValues } from "@/lib/projects/validation";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,68 @@ export interface ProjectActions {
   onAddTask: (project: Project, values: TaskFormValues) => void;
   onEditTask: (project: Project, task: Task, values: TaskFormValues) => void;
   onRemoveTask: (project: Project, task: Task) => void;
+  onAddMilestone: (project: Project, title: string, dueOn: string) => string | null;
+  onToggleMilestone: (project: Project, id: string) => void;
+  onRemoveMilestone: (project: Project, id: string) => void;
+  onAddUpdate: (project: Project, text: string) => void;
+}
+
+/** Where to go to see the contact or vendor a project is for. */
+export const linkHref = (p: Project): string | null =>
+  p.linked ? `${p.linked.kind === "vendor" ? "/app/vendors" : "/app/contacts"}?q=${encodeURIComponent(p.linked.name)}` : null;
+
+function MilestonesAndUpdates({ project, today, actions }: { project: Project; today: string; actions: ProjectActions }) {
+  const [title, setTitle] = useState("");
+  const [dueOn, setDueOn] = useState("");
+  const [error, setError] = useState("");
+  const [note, setNote] = useState("");
+  const milestones = milestonesOf(project);
+  const updates = [...updatesOf(project)].reverse();
+  const ms = milestoneSummary(project, today);
+  return (
+    <div className="grid gap-4 border-t pt-3 lg:grid-cols-2">
+      <section aria-label={`Milestones for ${project.name}`} className="min-w-0 space-y-2" data-testid="milestones">
+        <h4 className="flex items-center gap-2 text-sm font-medium"><Flag className="size-4 text-muted-foreground" aria-hidden /> Milestones{ms.total > 0 && <span className="font-normal text-muted-foreground">{ms.done} of {ms.total}{ms.overdue > 0 ? `, ${ms.overdue} overdue` : ""}</span>}</h4>
+        {milestones.length === 0 ? <p className="text-xs text-muted-foreground">No milestones yet. Add the dates that matter, like sign-off or launch.</p> : (
+          <ul className="space-y-1">
+            {milestones.map((m) => (
+              <li key={m.id} className="flex items-center gap-2 text-sm" data-testid="milestone">
+                <input type="checkbox" checked={!!m.doneOn} onChange={() => actions.onToggleMilestone(project, m.id)} aria-label={`${m.title} done`} className="size-4 rounded border-input accent-primary" />
+                <span className={cn("min-w-0 flex-1 break-words", m.doneOn && "text-muted-foreground line-through")}>{m.title}</span>
+                <span className={cn("shrink-0 text-xs", !m.doneOn && m.dueOn < today ? "font-medium text-destructive" : "text-muted-foreground")}>{m.doneOn ? `done ${formatDayLong(m.doneOn)}` : formatDayLong(m.dueOn)}</span>
+                <Button size="icon-sm" variant="ghost" aria-label={`Remove milestone ${m.title}`} onClick={() => actions.onRemoveMilestone(project, m.id)}><X /></Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <form className="flex flex-wrap items-center gap-2" noValidate onSubmit={(e) => {
+          e.preventDefault();
+          const problem = actions.onAddMilestone(project, title, dueOn);
+          if (problem) return setError(problem);
+          setTitle(""); setDueOn(""); setError("");
+        }}>
+          <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="Milestone" aria-label={`New milestone for ${project.name}`} className="h-9 min-w-32 flex-1" />
+          <Input type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} aria-label={`Milestone date for ${project.name}`} className="h-9 w-40" />
+          <Button type="submit" size="sm" variant="outline" className="h-9" aria-label={`Add milestone to ${project.name}`}><Plus /> Add</Button>
+        </form>
+        {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      </section>
+      <section aria-label={`Updates for ${project.name}`} className="min-w-0 space-y-2" data-testid="updates">
+        <h4 className="text-sm font-medium">Updates</h4>
+        <form className="flex flex-wrap items-center gap-2" noValidate onSubmit={(e) => { e.preventDefault(); if (!note.trim()) return; actions.onAddUpdate(project, note); setNote(""); }}>
+          <Input value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} placeholder="What changed? Who said what?" aria-label={`Add an update to ${project.name}`} className="h-9 min-w-40 flex-1" />
+          <Button type="submit" size="sm" variant="outline" className="h-9" disabled={!note.trim()}>Post</Button>
+        </form>
+        {updates.length === 0 ? <p className="text-xs text-muted-foreground">Nothing posted yet. Updates stay with the project, newest first.</p> : (
+          <ol className="max-h-48 space-y-1.5 overflow-y-auto">
+            {updates.map((u) => (
+              <li key={u.id} className="text-sm" data-testid="update"><span className="text-xs text-muted-foreground">{formatDayLong(u.on)} · {u.by}</span><span className="block break-words">{u.text}</span></li>
+            ))}
+          </ol>
+        )}
+      </section>
+    </div>
+  );
 }
 
 function dueText(task: Task, today: string): string {
@@ -129,8 +192,14 @@ export function ProjectCard({ project, today, actions, open, onOpenChange }: {
             {overdue > 0 && <Badge variant="danger">{overdue} overdue</Badge>}
           </div>
           <p className="text-sm text-muted-foreground">
-            {[project.client, `${formatDayLong(project.startOn)} to ${formatDayLong(project.dueOn)}`].filter(Boolean).join(" · ")}
+            {[project.client, project.owner && `Owner: ${project.owner}`, `${formatDayLong(project.startOn)} to ${formatDayLong(project.dueOn)}`].filter(Boolean).join(" · ")}
           </p>
+          {project.linked && linkHref(project) && (
+            <p className="text-sm" data-testid="project-link">
+              For {project.linked.kind === "vendor" ? "vendor" : "contact"}{" "}
+              <Link href={linkHref(project)!} className="font-medium text-primary underline-offset-2 hover:underline">{project.linked.name}</Link>
+            </p>
+          )}
           {project.description && <p className="text-sm">{project.description}</p>}
           <div className="flex items-center gap-3">
             <Progress value={percent} className="max-w-xs" aria-label={`${project.name} progress`} />
@@ -219,6 +288,7 @@ export function ProjectCard({ project, today, actions, open, onOpenChange }: {
               </ul>
             )}
             <TaskForm project={project} onSubmit={(values) => actions.onAddTask(project, values)} />
+            {!isRecurringProject(project) && <MilestonesAndUpdates project={project} today={today} actions={actions} />}
           </div>
         )}
       </div>

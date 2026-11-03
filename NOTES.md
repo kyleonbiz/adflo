@@ -25,6 +25,12 @@ Working notes for tests: run `npm run typecheck` before every push (the Vercel b
 - [x] **Settings page** — renamed; tabs: Business profile, Team, Notifications, Appearance, Guided setup (`/app/setup?tab=...`).
 - [ ] **Admin research** — what else can an admin do?
 - [x] **Rename "Data Entry & Reporting" → "Reporting"** — already done (commit 87dacd6); verify no leftover labels.
-- [~] **Requests (was Admin Support)** — renamed. Still to do: move recurring tasks into Projects so repeating work lives in one place; approvals stay in Requests.
+- [x] **Requests (was Admin Support)** — renamed. Recurring tasks now live in Projects (a Recurring work project); approvals stay in Requests.
 - [x] **File reset** — now a one-time "Tidy up files" tool: out of the sidebar, linked from Documents and Guided setup.
 - [x] **Day/Night view switch** — done, in Settings › Appearance (Day, Night, Match my device).
+
+## Projects module (defaults chosen, change as you like)
+- A project has an owner, a progress bar from its tasks, milestones with dates, and a dated updates log (who, when, what).
+- A project can be linked to a contact or a vendor, so you can jump from the work to the person.
+- Recurring tasks moved out of Requests into a Recurring work project; Requests keeps requests and approvals.
+- Everything is kept in the browser, like the rest of the app, until the database is added.

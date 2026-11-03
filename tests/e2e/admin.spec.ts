@@ -18,7 +18,6 @@ test.describe("admin support module", () => {
     const digest = page.getByTestId("digest");
     await expect(digest).toContainText("is 1 day overdue");
     await expect(digest).toContainText("waiting for approval");
-    await expect(digest).toContainText("1 recurring task due: Reconcile bank statements");
 
     await page.getByRole("combobox", { name: "Filter by status" }).click();
     await page.getByRole("option", { name: "Awaiting approval" }).click();
@@ -130,27 +129,14 @@ test.describe("admin support module", () => {
     await expect(created.getByText("From email", { exact: true })).toBeVisible();
   });
 
-  test("recurring tasks: create the due ones, add and delete", async ({ page }) => {
+  test("recurring work has moved to Projects, and Requests points there", async ({ page }) => {
     await page.goto("/app/admin");
-    await expect(page.getByTestId("routine-row")).toHaveCount(3);
-    await expect(page.getByTestId("routine-row").first()).toContainText("Due");
-    await page.getByRole("button", { name: "Create due requests" }).click();
-    await expect(page.getByRole("status")).toContainText("Created 1 request from recurring tasks.");
-    await expect(page.getByTestId("request-card")).toHaveCount(8);
-    const made = card(page, "Reconcile bank statements");
-    await expect(made.getByText("Recurring", { exact: true })).toBeVisible();
-    await expect(made).toContainText("Needs approval: finance requests need approval");
-    await expect(page.getByRole("button", { name: "Create due requests" })).toBeDisabled();
-
-    await page.getByRole("region", { name: "Recurring tasks" }).getByRole("button", { name: "Add" }).click();
-    const dialog = page.getByRole("dialog");
-    await dialog.getByRole("button", { name: "Add recurring task" }).click();
-    await expect(dialog.getByRole("alert").first()).toContainText("Enter a short title");
-    await dialog.getByLabel("Title").fill("Back up the shared drive");
-    await dialog.getByRole("button", { name: "Add recurring task" }).click();
-    await expect(page.getByTestId("routine-row")).toHaveCount(4);
-    await page.getByRole("button", { name: "Delete recurring task Back up the shared drive" }).click();
-    await expect(page.getByTestId("routine-row")).toHaveCount(3);
+    await expect(page.getByTestId("routine-row")).toHaveCount(0);
+    const moved = page.getByTestId("recurring-moved");
+    await expect(moved).toContainText("now live in Projects");
+    await moved.getByRole("link", { name: "Open recurring work" }).click();
+    await expect(page).toHaveURL(/\/app\/projects$/);
+    await expect(page.getByRole("button", { name: "Add recurring task" })).toBeVisible();
   });
 
   test("downloads a calendar file with the due dates", async ({ page }) => {
@@ -163,8 +149,8 @@ test.describe("admin support module", () => {
     expect(ics.startsWith("BEGIN:VCALENDAR\r\n")).toBe(true);
     expect(ics.endsWith("END:VCALENDAR\r\n")).toBe(true);
     expect(ics).toContain("SUMMARY:Reschedule Thursday's vendor call");
-    expect(ics).toContain("SUMMARY:Recurring: Send weekly team agenda");
-    expect((ics.match(/BEGIN:VEVENT/g) ?? []).length).toBe(5);
+    expect(ics).not.toContain("Recurring:"); // repeating work is in Projects now
+    expect((ics.match(/BEGIN:VEVENT/g) ?? []).length).toBe(2);
     expect(ics).not.toContain("Wire $4,800"); // waiting for approval, so not scheduled yet
   });
 

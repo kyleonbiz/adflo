@@ -16,7 +16,6 @@ async function completeSetup(page: Page) {
   await page.goto("/app/setup?tab=setup");
   await fillProfile(page);
   await next(page).click();
-  await moduleBox(page, "Projects").uncheck();
   await moduleBox(page, "Vendors").check();
   await next(page).click();
   await page.getByLabel("Reconcile bank statements").uncheck();
@@ -63,7 +62,7 @@ test.describe("back office setup module", () => {
     await next(page).click();
     const groups = page.getByTestId("template-group");
     await expect(groups.filter({ hasText: "Forms & Paperwork" })).toContainText("New employee details");
-    await expect(groups.filter({ hasText: "Requests" })).toContainText("Reconcile bank statements");
+    await expect(groups.filter({ hasText: "Projects" })).toContainText("Reconcile bank statements");
     await expect(groups.filter({ hasText: "Licenses & Renewals" })).toContainText("Common small-business licenses");
     await expect(groups.filter({ hasText: "Contacts" })).toContainText("Nothing to install");
     await expect(page.getByLabel("New employee details")).toBeChecked();
@@ -87,11 +86,11 @@ test.describe("back office setup module", () => {
     await expect(done).toContainText("Acme Studio is set up");
     const installed = page.getByTestId("installed-list");
     await expect(installed).toContainText("New employee details (Form, in Forms & Paperwork)");
-    await expect(installed).toContainText("Send the weekly team agenda (Recurring task, in Requests)");
+    await expect(installed).toContainText("Send the weekly team agenda (Recurring task, in Projects)");
     await expect(installed).toContainText("Common small-business licenses (License records, in Licenses & Renewals)");
     await expect(installed).not.toContainText("Reconcile bank statements");
     await expect(done.getByRole("link", { name: "Vendors" })).toBeVisible();
-    await expect(done.getByRole("link", { name: "Projects" })).toHaveCount(0);
+    await expect(done.getByRole("link", { name: "Projects" })).toBeVisible();
 
     // Forms: 3 samples + 3 installed + 3 for the industry (professional services).
     await page.goto("/app/forms");
@@ -99,11 +98,13 @@ test.describe("back office setup module", () => {
     await expect(page.getByRole("heading", { name: "Expense reimbursement" })).toBeVisible();
     await expect(page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" })).toContainText("Approval: Finance manager");
 
-    // Admin: 3 sample recurring tasks + 3 installed (bank reconciliation was unticked).
-    await page.goto("/app/admin");
-    await expect(page.getByTestId("routine-row")).toHaveCount(6);
-    await expect(page.getByTestId("routine-row").filter({ hasText: "Follow up on overdue invoices" })).toContainText("every week");
-    await expect(page.getByTestId("routine-row").filter({ hasText: "Reconcile bank statements" })).toHaveCount(1); // the sample one only
+    // Projects: the recurring templates became repeating tasks in a "Recurring work" project (bank reconciliation was unticked).
+    await page.goto("/app/projects");
+    const recurring = page.getByTestId("project-card").filter({ hasText: "Recurring work" });
+    await recurring.getByRole("button", { name: /^Tasks/ }).click().catch(() => {});
+    await expect(recurring).toContainText("3 tasks");
+    await expect(recurring.getByRole("checkbox", { name: /Follow up on overdue invoices/ })).toBeVisible();
+    await expect(recurring.getByRole("checkbox", { name: /Reconcile bank statements/ })).toHaveCount(0);
 
     // Licenses: 5 samples + 4 starter records + 5 for the industry (its sixth, general liability, is already a starter record).
     await page.goto("/app/licenses");

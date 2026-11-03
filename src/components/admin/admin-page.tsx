@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Bell, CalendarPlus, CheckCircle2, Clock, Hourglass, Inbox, Play, Plus, Repeat, Search, ShieldAlert, Trash2, XCircle } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
 import { RemindMenu } from "@/components/modules/remind-menu";
@@ -18,16 +19,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatDayLong } from "@/lib/dates";
 import { toIcs } from "@/lib/admin/ics";
 import {
-  EVERY_TEXT, calendarEvents, createRequest, decide, dueRoutines, dueText, isOverdue, notifications, runRoutines, setStatus, summarize,
+  calendarEvents, createRequest, decide, dueText, isOverdue, notifications, setStatus, summarize,
   type NewRequest,
 } from "@/lib/admin/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { CATEGORIES, type AdminRequest, type Category, type RequestStatus, type Routine } from "@/lib/admin/types";
-import { useSetupConfig } from "@/lib/setup/storage";
-import { installedRoutines } from "@/lib/setup/templates";
 import { PRIORITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
 import { RequestDialog, type RequestDraft } from "./request-dialog";
-import { RoutineDialog } from "./routine-dialog";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 const APPROVER = "Operations manager";
@@ -98,30 +96,23 @@ function RequestCard({
 }
 
 /**
- * Requests. Requests and recurring tasks live in this component's state (starting empty
- * data) until the database is connected. Categories and approval flags come from fixed keyword rules,
+ * Requests. Requests live in this component's state (starting empty) until the database is connected. Repeating work lives in Projects. Categories and approval flags come from fixed keyword rules,
  * not an AI service, and the digest is shown on screen rather than emailed.
  */
 export function AdminPage({ preview, startNew, draft, initialQuery = "" }: { preview?: string; startNew?: boolean; draft?: RequestDraft; initialQuery?: string }) {
   const today = useToday();
   const chains = useChains();
   const [editedRequests, setEditedRequests] = useState<AdminRequest[] | null>(null);
-  const [editedRoutines, setEditedRoutines] = useState<Routine[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | RequestStatus>("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | Category>("all");
   const [requesting, setRequesting] = useState(!!startNew);
-  const [addingRoutine, setAddingRoutine] = useState(false);
   const [deleting, setDeleting] = useState<AdminRequest | null>(null);
   const [notice, setNotice] = useState("");
 
   const requests = useMemo(() => editedRequests ?? e2eSeed<AdminRequest>("requests") ?? [], [editedRequests]);
-  const setup = useSetupConfig();
-  // Recurring tasks installed by Settings (only once setup is finished) sit alongside your own records.
-  const routines = useMemo(
-    () => editedRoutines ?? (today ? [...(e2eSeed<Routine>("routines") ?? []), ...installedRoutines(setup?.completedOn ? setup.templates : [], today)] : []),
-    [editedRoutines, today, setup],
-  );
+  // Repeating work moved to Projects, so Requests only deals with requests.
+  const routines: Routine[] = [];
 
   if (!today) {
     return (
@@ -169,7 +160,7 @@ export function AdminPage({ preview, startNew, draft, initialQuery = "" }: { pre
         <SummaryTile icon={Inbox} label="Open requests" value={summary.open} tone="text-primary" />
         <SummaryTile icon={Hourglass} label="Awaiting approval" value={summary.pendingApproval} tone="text-amber-600" />
         <SummaryTile icon={Clock} label="Overdue" value={summary.overdue} tone="text-red-600" />
-        <SummaryTile icon={Repeat} label="Recurring due" value={summary.routinesDue} tone="text-sky-600" />
+        <SummaryTile icon={Repeat} label="Recurring work" value="In Projects" tone="text-sky-600" href="/app/projects" />
       </section>
 
       <div className="grid gap-3 lg:grid-cols-2">
@@ -190,45 +181,10 @@ export function AdminPage({ preview, startNew, draft, initialQuery = "" }: { pre
           <p className="mt-3 text-xs text-muted-foreground">Shown here only. It is not emailed until email sending is connected.</p>
         </section>
 
-        <section aria-labelledby="routines-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 id="routines-heading" className="flex items-center gap-2 text-base font-semibold"><Repeat className="size-4 text-primary" aria-hidden /> Recurring tasks</h2>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={dueRoutines(routines, today).length === 0}
-                onClick={() => {
-                  let n = 0;
-                  const result = runRoutines(routines, today, () => `r-${Math.random().toString(36).slice(2, 10)}-${++n}`);
-                  setEditedRoutines(result.routines);
-                  setEditedRequests([...result.created, ...requests]);
-                  setNotice(`Created ${result.created.length} request${result.created.length === 1 ? "" : "s"} from recurring tasks.`);
-                }}
-              >
-                <Play /> Create due requests
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setAddingRoutine(true)}><Plus /> Add</Button>
-            </div>
-          </div>
-          {routines.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">No recurring tasks yet.</p>
-          ) : (
-            <ul className="mt-2 divide-y">
-              {routines.map((r) => (
-                <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-sm" data-testid="routine-row">
-                  <span className="min-w-0">
-                    <span className="block truncate font-medium">{r.title}</span>
-                    <span className="text-xs text-muted-foreground">{EVERY_TEXT[r.every]} · next {dueText(r.nextDueOn, today)}</span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-1">
-                    {r.nextDueOn <= today && <Badge variant="warning">Due</Badge>}
-                    <Button size="icon-sm" variant="ghost" aria-label={`Delete recurring task ${r.title}`} onClick={() => setEditedRoutines(routines.filter((x) => x.id !== r.id))}><Trash2 /></Button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+        <section aria-labelledby="routines-heading" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="recurring-moved">
+          <h2 id="routines-heading" className="flex items-center gap-2 text-base font-semibold"><Repeat className="size-4 text-primary" aria-hidden /> Recurring work</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Tasks that come round again now live in Projects, so all repeating work is in one place. Requests keeps what needs a decision.</p>
+          <Button asChild size="sm" variant="outline" className="mt-3"><Link href="/app/projects">Open recurring work</Link></Button>
         </section>
       </div>
 
@@ -285,13 +241,6 @@ export function AdminPage({ preview, startNew, draft, initialQuery = "" }: { pre
       </section>
 
       <RequestDialog open={requesting} onOpenChange={setRequesting} onSave={create} draft={draft} />
-      <RoutineDialog
-        open={addingRoutine}
-        today={today}
-        onOpenChange={setAddingRoutine}
-        onSave={(r) => { setEditedRoutines([...routines, { ...r, id: rid("t") }]); setNotice(`Recurring task "${r.title}" added.`); }}
-      />
-
       <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
         <DialogContent variant="alert">
           <DialogTitle>Delete request?</DialogTitle>

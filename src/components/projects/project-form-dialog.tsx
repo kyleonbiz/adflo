@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -27,9 +27,10 @@ function defaults(project: Project | undefined, today: string, draft?: ProjectDr
     return {
       name: project.name, client: project.client, description: project.description,
       status: project.status, startOn: project.startOn, dueOn: project.dueOn,
+      owner: project.owner ?? "", linkKind: project.linked?.kind ?? "none", linkName: project.linked?.name ?? "",
     };
   }
-  return { name: draft?.name ?? "", client: draft?.client ?? "", description: draft?.description ?? "", status: "planning", startOn: today, dueOn: draft?.dueOn ?? addDays(today, 30) };
+  return { name: draft?.name ?? "", client: draft?.client ?? "", description: draft?.description ?? "", status: "planning", startOn: today, dueOn: draft?.dueOn ?? addDays(today, 30), owner: "", linkKind: "none", linkName: "" };
 }
 
 function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) {
@@ -68,6 +69,7 @@ export function ProjectFormDialog({
     defaultValues: defaults(project, today, draft),
   });
   const { errors } = formState;
+  const linkKind = useWatch({ control, name: "linkKind" });
 
   useEffect(() => {
     if (open) reset(defaults(project, today, draft));
@@ -205,6 +207,28 @@ export function ProjectFormDialog({
                 )}
               />
             </Field>
+            <Field id="proj-owner" label="Owner (optional)" error={errors.owner?.message}>
+              <Input id="proj-owner" autoComplete="off" placeholder="Who is accountable" {...invalid("owner")} {...register("owner")} />
+            </Field>
+            <Field id="proj-linkKind" label="For a contact or vendor?" error={errors.linkKind?.message}>
+              <Controller control={control} name="linkKind" render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="proj-linkKind" aria-label="For a contact or vendor?"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Neither</SelectItem>
+                    <SelectItem value="contact">A contact</SelectItem>
+                    <SelectItem value="vendor">A vendor</SelectItem>
+                  </SelectContent>
+                </Select>
+              )} />
+            </Field>
+            {linkKind !== "none" && (
+              <div className="sm:col-span-2">
+                <Field id="proj-linkName" label={linkKind === "vendor" ? "Vendor name" : "Contact name"} error={errors.linkName?.message}>
+                  <Input id="proj-linkName" autoComplete="off" {...invalid("linkName")} {...register("linkName")} />
+                </Field>
+              </div>
+            )}
             <Field id="proj-startOn" label="Starts On" error={errors.startOn?.message}>
               <Input id="proj-startOn" type="date" {...invalid("startOn")} {...register("startOn")} />
             </Field>

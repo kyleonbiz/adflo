@@ -3,7 +3,7 @@ import type { Every } from "@/lib/admin/types";
 import type { Category } from "@/lib/admin/types";
 import type { FormField, FormTemplate } from "@/lib/forms/types";
 import type { License } from "@/lib/licenses/types";
-import type { Routine } from "@/lib/admin/types";
+import type { Task } from "@/lib/projects/types";
 
 interface Base { id: string; module: string; name: string; description: string }
 
@@ -49,19 +49,19 @@ export const TEMPLATES: Template[] = [
     documentTemplate: "",
   },
   {
-    id: "routine-bank-reconciliation", module: "admin", kind: "routine", name: "Reconcile bank statements",
+    id: "routine-bank-reconciliation", module: "projects", kind: "routine", name: "Reconcile bank statements",
     description: "Match last month's statements to the ledger.", category: "Finance & payments", every: "monthly", startInDays: 5,
   },
   {
-    id: "routine-team-agenda", module: "admin", kind: "routine", name: "Send the weekly team agenda",
+    id: "routine-team-agenda", module: "projects", kind: "routine", name: "Send the weekly team agenda",
     description: "Share priorities for the week ahead.", category: "Scheduling", every: "weekly", startInDays: 3,
   },
   {
-    id: "routine-subscription-review", module: "admin", kind: "routine", name: "Review software subscriptions",
+    id: "routine-subscription-review", module: "projects", kind: "routine", name: "Review software subscriptions",
     description: "Cancel or renew anything that is unused.", category: "Vendors & purchasing", every: "quarterly", startInDays: 30,
   },
   {
-    id: "routine-invoice-followup", module: "admin", kind: "routine", name: "Follow up on overdue invoices",
+    id: "routine-invoice-followup", module: "projects", kind: "routine", name: "Follow up on overdue invoices",
     description: "Chase every invoice past its due date.", category: "Finance & payments", every: "weekly", startInDays: 2,
   },
   {
@@ -94,10 +94,17 @@ export function installedForms(ids: readonly string[]): FormTemplate[] {
   );
 }
 
-export function installedRoutines(ids: readonly string[], today: string): Routine[] {
+/**
+ * Recurring tasks live in Projects now (the "Recurring work" project), so the routine templates install
+ * as repeating tasks. Completing one schedules the next, at the same pace.
+ */
+export function installedRecurringTasks(ids: readonly string[], today: string): Task[] {
   return TEMPLATES.flatMap((t) =>
     t.kind === "routine" && ids.includes(t.id)
-      ? [{ id: `tpl-${t.id}`, title: t.name, description: t.description, category: t.category, every: t.every, nextDueOn: addDays(today, t.startInDays) }]
+      ? [{
+          id: `tpl-${t.id}`, title: t.name, assignee: "", dueOn: addDays(today, t.startInDays), repeat: t.every as Task["repeat"],
+          done: false, doneOn: null, followUpId: null,
+        } satisfies Task]
       : [],
   );
 }

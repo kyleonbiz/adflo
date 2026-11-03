@@ -190,12 +190,12 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
     );
   }
 
-  if (has("admin")) {
+  if (has("projects")) {
     const recurring = c.templates.some((t) => t.startsWith("routine-"));
     checks.push(
       recurring
-        ? { id: "recurring", status: "pass", title: "Recurring workflow", detail: "Recurring tasks are set up.", step: 2 }
-        : { id: "recurring", status: "warn", title: "Recurring workflow", detail: "Requests is on, but no recurring task is installed. Add one so routine work creates itself.", step: 2 },
+        ? { id: "recurring", status: "pass", title: "Recurring workflow", detail: "Recurring tasks are set up in Projects.", step: 2 }
+        : { id: "recurring", status: "warn", title: "Recurring workflow", detail: "Projects is on, but no recurring task is installed. Add one so routine work comes round on its own.", step: 2 },
     );
   }
   if (has("vendors") && !has("forms")) {

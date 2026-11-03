@@ -251,3 +251,60 @@ describe("custom project types", () => {
     expect(parseCustomTypes(JSON.stringify([{ id: "other" }, "type" in r ? r.type : null]))).toHaveLength(1);
   });
 });
+
+import { RECURRING_PROJECT_ID, addMilestone, addUpdate, completeTask as completeT, isRecurringProject, milestoneSummary, milestonesOf, recurringProject, removeMilestone, toggleMilestone, updatesOf } from "@/lib/projects/logic";
+import { projectFormSchema as pfs } from "@/lib/projects/validation";
+
+describe("project scope: milestones, updates, owner and link", () => {
+  const T = "2026-10-25";
+  const project = (): Project => ({ ...sampleProjects(T)[0], milestones: [], updates: [] });
+
+  it("adds milestones in date order, ticks them off and counts the overdue ones", () => {
+    let p = project();
+    for (const [title, dueOn] of [["Launch", "2026-12-01"], ["Sign-off", "2026-10-20"], ["Draft", "2026-11-05"]]) {
+      const r = addMilestone(p, { title, dueOn }, `m-${title}`);
+      if ("error" in r) throw new Error(r.error);
+      p = r.project;
+    }
+    expect(milestonesOf(p).map((m) => m.title)).toEqual(["Sign-off", "Draft", "Launch"]);
+    expect(milestoneSummary(p, T)).toMatchObject({ done: 0, total: 3, overdue: 1 });
+    expect(milestoneSummary(p, T).next?.title).toBe("Sign-off");
+    p = toggleMilestone(p, "m-Sign-off", T);
+    expect(milestoneSummary(p, T)).toMatchObject({ done: 1, overdue: 0 });
+    expect(toggleMilestone(p, "m-Sign-off", T).milestones?.find((m) => m.id === "m-Sign-off")?.doneOn).toBeNull();
+    expect(removeMilestone(p, "m-Launch").milestones).toHaveLength(2);
+  });
+
+  it("refuses a nameless or undated milestone and caps how many a project can hold", () => {
+    expect(addMilestone(project(), { title: "  ", dueOn: "2026-11-01" }, "a")).toHaveProperty("error");
+    expect(addMilestone(project(), { title: "Launch", dueOn: "" }, "a")).toHaveProperty("error");
+    let p = project();
+    for (let i = 0; i < 20; i++) { const r = addMilestone(p, { title: `M${i}`, dueOn: "2026-11-01" }, `m${i}`); if ("project" in r) p = r.project; }
+    expect(addMilestone(p, { title: "One more", dueOn: "2026-11-01" }, "x")).toHaveProperty("error");
+  });
+
+  it("keeps a dated log of updates, ignoring blank ones", () => {
+    let p = addUpdate(project(), { text: " Client approved the draft ", by: "Dana", on: T }, "u1");
+    p = addUpdate(p, { text: "Waiting on photos", by: "", on: "2026-10-26" }, "u2");
+    expect(updatesOf(p).map((u) => [u.on, u.by, u.text])).toEqual([[T, "Dana", "Client approved the draft"], ["2026-10-26", "You", "Waiting on photos"]]);
+    expect(addUpdate(p, { text: "   ", by: "x", on: T }, "u3")).toBe(p);
+  });
+
+  it("takes an owner and an optional contact or vendor link from the form", () => {
+    const base = { name: "Spring cleanup", client: "", description: "", status: "planning", startOn: "2026-11-01", dueOn: "2026-12-01" };
+    expect(pfs.parse(base)).toMatchObject({ owner: "", linkKind: "none", linkName: "" });
+    expect(pfs.parse({ ...base, owner: "Priya", linkKind: "vendor", linkName: "Acme" })).toMatchObject({ owner: "Priya", linkKind: "vendor", linkName: "Acme" });
+    expect(pfs.safeParse({ ...base, linkKind: "contact", linkName: "" }).success).toBe(false);
+    expect(pfs.safeParse({ ...base, linkKind: "company", linkName: "x" }).success).toBe(false);
+  });
+
+  it("repeats quarterly and yearly tasks, and gives repeating work one home", () => {
+    const task = (repeat: "quarterly" | "yearly") => ({ id: "t1", title: "Review", assignee: "", dueOn: "2026-10-25", repeat, done: false, doneOn: null, followUpId: null });
+    expect(completeT([task("quarterly")], "t1", T, "n1").find((t) => t.id === "n1")?.dueOn).toBe("2027-01-25");
+    expect(completeT([task("yearly")], "t1", T, "n2").find((t) => t.id === "n2")?.dueOn).toBe("2027-10-25");
+    const home = recurringProject([task("yearly")], T);
+    expect(home.id).toBe(RECURRING_PROJECT_ID);
+    expect(isRecurringProject(home)).toBe(true);
+    expect(isRecurringProject(project())).toBe(false);
+  });
+});

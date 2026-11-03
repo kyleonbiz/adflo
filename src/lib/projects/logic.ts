@@ -1,5 +1,5 @@
-import { addDays, addMonths, advanceDay, daysBetween, formatDayLong } from "@/lib/dates";
-import type { Project, ProjectHealth, Task, TaskRepeat, TaskState } from "./types";
+import { addDays, addMonths, advanceDay, daysBetween, formatDayLong, isDay } from "@/lib/dates";
+import type { Milestone, Project, ProjectHealth, Task, TaskRepeat, TaskState } from "./types";
 
 /** An open task due within this many days is "due soon". */
 export const DUE_SOON_DAYS = 3;
@@ -175,3 +175,53 @@ export function projectsReport(projects: Project[], today: string): string {
   });
   return [header, "", ...sections.map((s) => s.trimEnd()).flatMap((s) => [s, "", "-----", ""])].join("\n").trimEnd() + "\n";
 }
+
+// ---- milestones, updates and the recurring-work project
+
+export const MAX_MILESTONES = 20;
+export const MAX_UPDATES = 200;
+
+export const milestonesOf = (p: Project): Milestone[] => [...(p.milestones ?? [])].sort((a, b) => a.dueOn.localeCompare(b.dueOn));
+export const updatesOf = (p: Project) => p.updates ?? [];
+
+export function addMilestone(p: Project, m: { title: string; dueOn: string }, id: string): { project: Project } | { error: string } {
+  const title = m.title.trim();
+  if (!title) return { error: "Enter a name for the milestone." };
+  if (title.length > 120) return { error: "Keep the name under 120 characters." };
+  if (!isDay(m.dueOn)) return { error: "Choose a date for the milestone." };
+  if ((p.milestones ?? []).length >= MAX_MILESTONES) return { error: `A project can have at most ${MAX_MILESTONES} milestones.` };
+  return { project: { ...p, milestones: [...(p.milestones ?? []), { id, title, dueOn: m.dueOn, doneOn: null }] } };
+}
+
+export const toggleMilestone = (p: Project, id: string, today: string): Project => ({
+  ...p, milestones: (p.milestones ?? []).map((m) => (m.id === id ? { ...m, doneOn: m.doneOn ? null : today } : m)),
+});
+
+export const removeMilestone = (p: Project, id: string): Project => ({ ...p, milestones: (p.milestones ?? []).filter((m) => m.id !== id) });
+
+export function milestoneSummary(p: Project, today: string): { done: number; total: number; overdue: number; next: Milestone | null } {
+  const all = milestonesOf(p);
+  const open = all.filter((m) => !m.doneOn);
+  return { done: all.length - open.length, total: all.length, overdue: open.filter((m) => m.dueOn < today).length, next: open[0] ?? null };
+}
+
+/** Adds a dated note to the project's log. Blank notes are refused. */
+export function addUpdate(p: Project, u: { text: string; by: string; on: string }, id: string): Project {
+  const text = u.text.trim().slice(0, 1000);
+  if (!text) return p;
+  return { ...p, updates: [...(p.updates ?? []), { id, on: u.on, by: u.by.trim().slice(0, 80) || "You", text }].slice(-MAX_UPDATES) };
+}
+
+/** The one project where repeating work lives. Every repeating task added from the project page or installed by setup goes here. */
+export const RECURRING_PROJECT_ID = "recurring-work";
+export const RECURRING_PROJECT_NAME = "Recurring work";
+
+export function recurringProject(tasks: Task[], today: string): Project {
+  return {
+    id: RECURRING_PROJECT_ID, name: RECURRING_PROJECT_NAME, client: "", status: "active", startOn: today, dueOn: addDays(today, 365),
+    description: "Work that comes round again: monthly reconciliations, weekly agendas, quarterly reviews. Completing a task schedules the next one.",
+    tasks,
+  };
+}
+
+export const isRecurringProject = (p: Project) => p.id === RECURRING_PROJECT_ID;
