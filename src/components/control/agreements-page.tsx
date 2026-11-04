@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AgreementText } from "./agreement-text";
 import { agreementState, type AgreementTemplate, type SentAgreement } from "@/lib/control/types";
 
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" });
@@ -94,7 +95,7 @@ export function AgreementsPage({ templates, sent, canPublish, sample }: { templa
       <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Published">
         <h2 className="font-semibold">Published</h2>
         {templates.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">Nothing published yet.</p> : (
-          <ul className="mt-2 divide-y">{templates.map((t) => (<li key={t.id} className="py-2.5 text-sm"><details><summary className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="font-medium">{t.title}</span> <span className="text-muted-foreground">v{t.version} · {day(t.createdAt)}</span></summary><p className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-lg bg-muted p-3 text-xs">{t.body}</p></details></li>))}</ul>
+          <ul className="mt-2 divide-y">{templates.map((t) => (<li key={t.id} className="py-2.5 text-sm"><details><summary className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="font-medium">{t.title}</span> <span className="text-muted-foreground">v{t.version} · {day(t.createdAt)}</span></summary><div className="mt-2 max-h-64 overflow-y-auto rounded-lg bg-muted p-3"><AgreementText body={t.body} /></div></details></li>))}</ul>
         )}
       </section>
       {canPublish && !sample && (
@@ -102,7 +103,7 @@ export function AgreementsPage({ templates, sent, canPublish, sample }: { templa
           <h2 className="font-semibold">Publish an agreement or a new version</h2>
           <p className="text-xs text-muted-foreground">Use the same title as an existing agreement to publish its next version.</p>
           <div className="space-y-1.5"><Label htmlFor="ap-title">Title</Label><Input id="ap-title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} aria-invalid={!!errors.title} />{errors.title && <p role="alert" className="text-xs text-destructive">{errors.title}</p>}</div>
-          <div className="space-y-1.5"><Label htmlFor="ap-body">Text</Label><textarea id="ap-body" rows={8} value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />{errors.body && <p role="alert" className="text-xs text-destructive">{errors.body}</p>}</div>
+          <div className="space-y-1.5"><Label htmlFor="ap-body">Text</Label><p className="text-xs text-muted-foreground">Formatting: # Heading, ## Subheading, - bullet, 1. numbered item. Leave a blank line between paragraphs.</p><textarea id="ap-body" rows={8} value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />{errors.body && <p role="alert" className="text-xs text-destructive">{errors.body}</p>}</div>
           {message && <p role="alert" className="text-sm text-destructive">{message}</p>}
           <Button type="submit" disabled={busy}>{busy ? "Publishing…" : "Publish"}</Button>
         </form>

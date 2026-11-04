@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Brand } from "@/components/brand";
+import { AgreementText } from "@/components/control/agreement-text";
 import { AcceptForm } from "@/components/control/agreement-accept";
 import { hashToken } from "@/lib/control/token";
 import { isAgreementToken } from "@/lib/control/validation";
@@ -33,7 +34,7 @@ export default async function AgreementPage({ params }: PageProps<"/agreement/[t
           <>
             <div><p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prepared for {view.client_name}</p><h1 className="mt-1 text-2xl font-semibold tracking-tight">{view.title}</h1><p className="text-sm text-muted-foreground">Version {view.version}</p></div>
             <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Agreement text">
-              <article className="max-h-[32rem] overflow-y-auto whitespace-pre-wrap rounded-xl bg-muted p-4 text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring" tabIndex={0}>{view.body}</article>
+              <article className="max-h-[32rem] overflow-y-auto rounded-xl bg-muted p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring" tabIndex={0}><AgreementText body={view.body} /></article>
             </section>
             <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Acceptance">
               <h2 className="mb-3 font-semibold">Your acceptance</h2>
