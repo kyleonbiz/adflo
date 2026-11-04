@@ -36,6 +36,8 @@ export interface InvoiceChecks {
   unusualAmount: boolean;
   /** How far from the average, in percent, counts as unusual. */
   variancePct: (typeof VARIANCE_OPTIONS)[number];
+  /** Show "Add client to Contacts" in each invoice's menu. */
+  addToContacts: boolean;
 }
 
 export interface AppSettings {
@@ -49,5 +51,5 @@ export const defaultSettings = (): AppSettings => ({
   version: 1,
   details: { email: "", phone: "", address: "", timezone: "America/New_York" },
   notifications: { enabled: { renewals: true, overdueInvoices: true, approvals: true, weeklyDigest: false }, leadDays: 30 },
-  invoiceChecks: { duplicates: false, unusualAmount: false, variancePct: 25 },
+  invoiceChecks: { duplicates: false, unusualAmount: false, variancePct: 25, addToContacts: false },
 });

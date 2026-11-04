@@ -4,6 +4,7 @@ import {
   findDuplicateInvoice, invoiceWarnings, unusualAmount, invoiceAlerts, invoiceState, invoicesToCsv, markPaid, markSent, needsAttention, nextInvoiceNumber,
   nextOverdueNotice, nextRecurringInvoice, nextReminder, groupInvoices, hasNextInvoice, invoiceTotals, describeItems, generateInvoiceNumber, paymentDateError, reopen, voidInvoice, summarize, formatMoney, daysOverdue,
 } from "@/lib/invoices/logic";
+import { addContactPath } from "@/lib/invoices/share";
 import { parseSettings } from "@/lib/settings/storage";
 import { sampleInvoices } from "../support/invoices-sample-data";
 import type { Invoice } from "@/lib/invoices/types";
@@ -297,8 +298,12 @@ describe("optional invoice checks", () => {
 
 describe("invoice check settings", () => {
   it("default to off and survive a bad saved value", () => {
-    expect(parseSettings("").invoiceChecks).toEqual({ duplicates: false, unusualAmount: false, variancePct: 25 });
+    expect(parseSettings("").invoiceChecks).toEqual({ duplicates: false, unusualAmount: false, variancePct: 25, addToContacts: false });
     const raw = JSON.stringify({ version: 1, invoiceChecks: { duplicates: true, unusualAmount: "yes", variancePct: 7 } });
-    expect(parseSettings(raw).invoiceChecks).toEqual({ duplicates: true, unusualAmount: false, variancePct: 25 });
+    expect(parseSettings(raw).invoiceChecks).toEqual({ duplicates: true, unusualAmount: false, variancePct: 25, addToContacts: false });
+  });
+  it("builds a link that starts a contact from the client", () => {
+    expect(addContactPath({ client: " Acme & Sons ", clientEmail: "bill@acme.com" })).toBe("/app/contacts?new=1&name=Acme+%26+Sons&email=bill%40acme.com");
+    expect(addContactPath({ client: "Acme", clientEmail: "" })).toBe("/app/contacts?new=1&name=Acme");
   });
 });

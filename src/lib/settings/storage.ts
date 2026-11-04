@@ -35,6 +35,7 @@ export function parseSettings(raw: string): AppSettings {
       invoiceChecks: {
         duplicates: ic.duplicates === true,
         unusualAmount: ic.unusualAmount === true,
+        addToContacts: ic.addToContacts === true,
         variancePct: (VARIANCE_OPTIONS as readonly unknown[]).includes(ic.variancePct) ? (ic.variancePct as AppSettings["invoiceChecks"]["variancePct"]) : base.invoiceChecks.variancePct,
       },
     };

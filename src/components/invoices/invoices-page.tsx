@@ -15,7 +15,7 @@ import { e2eSeed } from "@/lib/e2e-seed";
 import {
   formatMoney, describeItems, groupInvoices, hasNextInvoice, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent,   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
-import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
+import { addContactPath, invoiceMailto, invoicePath } from "@/lib/invoices/share";
 import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
@@ -96,6 +96,10 @@ export function InvoicesPage({ preview, startNew, initialQuery = "" }: { preview
       try { await navigator.clipboard.writeText(link); setNotice(`Link to ${i.number} copied.`); }
       catch { setNotice(`Copy this link to ${i.number}: ${link}`); }
     },
+    // A new tab, because invoices live only in this tab until the database is connected.
+    onAddContact: invoiceChecks.addToContacts
+      ? (i) => { window.open(addContactPath(i), "_blank", "noopener"); setNotice(`Opened Contacts in a new tab to add ${i.client}.`); }
+      : undefined,
     onNext: (i) => {
       if (hasNextInvoice(i, invoices)) { setNotice(`The next invoice after ${i.number} already exists.`); return; }
       const next = nextRecurringInvoice(i, invoices, newId());

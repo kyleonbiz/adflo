@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle2, Copy, Download, Eye, Link2, Mail, MoreHorizontal, Pencil, Repeat, Send, Trash2, Undo2 } from "lucide-react";
+import { Ban, CheckCircle2, Copy, Download, Eye, Link2, Mail, MoreHorizontal, Pencil, Repeat, Send, Trash2, Undo2, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -21,6 +21,8 @@ export interface InvoiceActions {
   onEmail: (invoice: Invoice) => void;
   onReopen: (invoice: Invoice) => void;
   onCopyLink: (invoice: Invoice) => void;
+  /** Present only when the "Add client to Contacts" option is switched on. */
+  onAddContact?: (invoice: Invoice) => void;
 }
 
 /** One compact row. Clicking the left side opens the invoice; the right side holds the actions. */
@@ -76,6 +78,9 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
             <DropdownMenuItem onSelect={() => actions.onView(invoice)}><Eye /> View</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => actions.onEdit(invoice)}><Pencil /> Edit</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => actions.onCopyLink(invoice)}><Link2 /> Copy link</DropdownMenuItem>
+            {actions.onAddContact && invoice.client.trim() && (
+              <DropdownMenuItem onSelect={() => actions.onAddContact?.(invoice)}><UserPlus /> Add client to Contacts</DropdownMenuItem>
+            )}
             {invoice.status === "draft" && (
               <DropdownMenuItem onSelect={() => actions.onSend(invoice)}><Send /> Mark sent</DropdownMenuItem>
             )}

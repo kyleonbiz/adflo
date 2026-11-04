@@ -6,9 +6,10 @@ import { saveSettings, useSettings } from "@/lib/settings/storage";
 import { VARIANCE_OPTIONS, type InvoiceChecks } from "@/lib/settings/types";
 import { cn } from "@/lib/utils";
 
-const CHECKS: { key: "duplicates" | "unusualAmount"; label: string; detail: string }[] = [
+const CHECKS: { key: "duplicates" | "unusualAmount" | "addToContacts"; label: string; detail: string }[] = [
   { key: "duplicates", label: "Duplicate check", detail: "Warn when a client already has an invoice for the same total issued within 3 days." },
   { key: "unusualAmount", label: "Unusual amount", detail: "Warn when a total is far from the client's average over their recent invoices (needs at least 3)." },
+  { key: "addToContacts", label: "Add client to Contacts", detail: "Adds a menu item on each invoice that opens a new contact, started from the client's name and email." },
 ];
 
 export function InvoiceChecksSection() {
@@ -17,7 +18,7 @@ export function InvoiceChecksSection() {
   const update = (n: Partial<InvoiceChecks>) => saveSettings({ ...settings, invoiceChecks: { ...checks, ...n } });
 
   return (
-    <section aria-label="Invoice checks" className="space-y-4 rounded-2xl border bg-card p-5 shadow-panel">
+    <section aria-label="Invoice options" className="space-y-4 rounded-2xl border bg-card p-5 shadow-panel">
       <ul className="divide-y">
         {CHECKS.map((c) => (
           <li key={c.key} className="flex items-center justify-between gap-4 py-3 first:pt-0">
@@ -46,7 +47,7 @@ export function InvoiceChecksSection() {
         </Select>
       </div>
       <p className="text-xs text-muted-foreground">
-        Warnings appear when you save an invoice. You can always choose Save anyway. Your choices are saved in this browser.
+        Checks warn when you save an invoice. You can always choose Save anyway. Your choices are saved in this browser.
       </p>
     </section>
   );

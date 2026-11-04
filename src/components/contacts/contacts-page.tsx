@@ -43,7 +43,7 @@ const linkClass = "rounded underline-offset-2 hover:text-foreground hover:underl
  * CRM & Data. Contacts live in this component's state (starting empty) until the database is
  * connected, so nothing here is saved between visits. Imports are read in the browser and never uploaded.
  */
-export function ContactsPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
+export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?: string; initialQuery?: string; prefill?: Partial<ContactInput> }) {
   const today = useToday();
   const [edited, setEdited] = useState<Contact[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
@@ -53,7 +53,9 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
   const [shown, setShown] = useState(PAGE);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [allPairs, setAllPairs] = useState(false);
-  const [formFor, setFormFor] = useState<Contact | "new" | null>(null);
+  const [formFor, setFormFor] = useState<Contact | "new" | null>(prefill ? "new" : null);
+  // The starting values apply to the first new contact only, not to ones added later.
+  const [pendingPrefill, setPendingPrefill] = useState(prefill);
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState<Contact[] | null>(null);
   const [merging, setMerging] = useState<[Contact, Contact] | null>(null);
@@ -345,7 +347,7 @@ export function ContactsPage({ preview, initialQuery = "" }: { preview?: string;
         )}
       </section>
 
-      <ContactFormDialog open={formFor !== null} contact={formFor && formFor !== "new" ? formFor : undefined} existing={contacts} today={today} onOpenChange={(o) => !o && setFormFor(null)} onSave={saveContact} />
+      <ContactFormDialog open={formFor !== null} contact={formFor && formFor !== "new" ? formFor : undefined} prefill={pendingPrefill} existing={contacts} today={today} onOpenChange={(o) => { if (!o) { setFormFor(null); setPendingPrefill(undefined); } }} onSave={saveContact} />
       <ImportDialog open={importing} existing={contacts} onOpenChange={setImporting} onImport={runApply} />
       <MergeDialog pair={merging} onOpenChange={(o) => !o && setMerging(null)} onMerge={doMerge} />
 
