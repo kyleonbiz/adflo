@@ -16,6 +16,25 @@ AdFlo is software, not a website: opening the site address goes straight into th
   development only and is refused in production unless `DMS_ALLOW_DEV_MODE=true`.
 * **Old demo links** – `/demo/...` redirects to the same page under `/app/...`.
 
+## Control Center (staff console)
+
+`/control` is Aurum Ventura's own back office, separate from the client app: a client directory (status, plan, seats,
+owner, notes) and an audit log of every staff change. It uses the same look as the app. Staff are rows in
+`staff_members` (roles `owner`, `support`, `billing`); clients are never staff and cannot see these tables. Anyone who is
+not active staff gets a 404. Every change to a client is written to `staff_audit_log` by a database trigger, and only the
+Owner can read the log. Billing is read-only; Owner and Support can edit clients. Without a database it opens as a
+development-only preview with labelled sample clients (a production build without a database shows nothing).
+
+**Create the first Owner** (once, in the Supabase SQL editor, after signing up through `/signup`):
+
+```sql
+insert into public.staff_members (user_id, role, display_name, email)
+select id, 'owner', 'Your Name', email from auth.users where email = 'you@example.com';
+```
+
+Planned next: onboarding checklist, seat usage, pricing, team accounts, support queue, password resets, agreements,
+monitoring and required two-factor sign-in. Billing is deliberately later.
+
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules

@@ -2,21 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText } from "lucide-react";
+import { FileText, type LucideIcon } from "lucide-react";
 import { AdFloMark, Brand } from "@/components/brand";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 import { AddEntryMenu } from "./add-entry-menu";
 import { MODULE_ICONS } from "./module-icons";
 import { cn } from "@/lib/utils";
 
-interface Item { id: string; label: string; href: string }
+export interface NavItem { id: string; label: string; href: string; icon?: LucideIcon }
+type Item = NavItem;
 
 /** `/app` is the documents module itself, so it only matches exactly; every other link also matches its sub-pages. */
-const isActive = (pathname: string, href: string, base: string) =>
+export const isActive = (pathname: string, href: string, base: string) =>
   href === base ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
-function NavLink({ item, active, onNavigate, collapsed }: { item: Item; active: boolean; onNavigate?: () => void; collapsed?: boolean }) {
-  const Icon = MODULE_ICONS[item.id] ?? FileText;
+export function NavLink({ item, active, onNavigate, collapsed }: { item: Item; active: boolean; onNavigate?: () => void; collapsed?: boolean }) {
+  const Icon = item.icon ?? MODULE_ICONS[item.id] ?? FileText;
   return (
     <Link
       href={item.href}
