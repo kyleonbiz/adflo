@@ -65,4 +65,22 @@ describe("Dashboard", () => {
     expect(screen.getByText("You are all caught up.")).toBeTruthy();
   });
 
+  it("has a Licenses & Renewals tab with the counts and what expires next", async () => {
+    const user = userEvent.setup();
+    show();
+    expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe("true");
+    await user.click(screen.getByRole("tab", { name: "Licenses & Renewals" }));
+    const tab = screen.getByTestId("licenses-tab");
+    expect(within(tab).getAllByTestId("license-next")).toHaveLength(data.licenses.next.length);
+    expect(within(tab).getByTestId("licenses-standing").textContent).toBe(`${data.licenses.inGoodStanding}%`);
+    expect(screen.queryByTestId("workload")).toBeNull(); // the overview charts are not on this tab
+  });
+
+  it("invites you to add licenses when there are none", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard base="/app" data={{ ...data, licenses: { ...data.licenses, total: 0, next: [] } }} serverToday={today} />);
+    await user.click(screen.getByRole("tab", { name: "Licenses & Renewals" }));
+    expect(screen.getByText("No licenses tracked yet")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Start from a template" }).getAttribute("href")).toBe("/app/licenses");
+  });
 });

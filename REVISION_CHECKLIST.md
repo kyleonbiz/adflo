@@ -38,14 +38,14 @@ Databases go last. Update this file in the same commit as the work.
 
 ## Round 2 (your newer list, plus what did not survive the merge)
 
-- [ ] Licenses & Renewals gets its own tab on the dashboard
+- [x] Licenses & Renewals gets its own tab on the dashboard (counts by state, what expires next, good-standing percent)
 - [ ] Audit trail: who did what and when (created, uploaded, edited), per record and in one log
 - [ ] Calendar page in the navigation menu (due dates from every service)
 - [ ] Fix the Reporting page: it is just a bunch of boxes
 - [ ] Dropdowns on service tabs where they make sense
-- [ ] Rename the AI assistant to Addy
+- [x] Rename the AI assistant to Addy
 - [ ] Send a form after creating it (main may already cover this; compare)
-- [ ] Make the app feel alive: pages ease in (the effect exists but nothing uses it now)
+- [x] Make the app feel alive: pages ease in again
 - [ ] "Remind me" on the flat Tasks list too, not only inside Projects
 - [ ] AI assistant completes a task in any service, within its limits (drafts only today)
 - [ ] OCR for scanned PDFs (photos and scans only today)

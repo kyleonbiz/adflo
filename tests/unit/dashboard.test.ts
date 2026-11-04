@@ -94,3 +94,21 @@ describe("todos from the dashboard", () => {
     expect(laterCount(l, T)).toBe(1);
   });
 });
+
+describe("licenses panel", () => {
+  it("counts each state, lists the soonest expiries first and says how many are in good standing", () => {
+    const d = buildDashboard(sources(), T);
+    const p = d.licenses;
+    expect(p.total).toBe(sources().licenses.length);
+    expect(p.active + p.renewalOpen + p.expiringSoon + p.expired).toBe(p.total);
+    expect(p.next.length).toBeLessThanOrEqual(6);
+    expect(p.next.map((n) => n.expiresOn)).toEqual([...p.next.map((n) => n.expiresOn)].sort());
+    expect(p.inGoodStanding).toBeGreaterThanOrEqual(0);
+    expect(p.inGoodStanding).toBeLessThanOrEqual(100);
+  });
+
+  it("is empty with no licenses", async () => {
+    const p = buildDashboard(await loadDashboardSources(), T).licenses;
+    expect(p).toMatchObject({ total: 0, next: [], inGoodStanding: 100 });
+  });
+});

@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, DollarSign, FolderKanban, Info, ListPlus } from "lucide-react";
+import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, DollarSign, FolderKanban, Info, ListPlus, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { MiniBars, ProgressRing, UpcomingChart, WorkloadChart } from "@/components/modules/dashboard-charts";
 import { TodayTodos } from "@/components/modules/today-todos";
 import { useToday } from "@/components/modules/use-today";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Area, AttentionItem, DashboardData, Kpi, Severity } from "@/lib/dashboard/logic";
+import { formatDayLong } from "@/lib/dates";
+import type { Area, AttentionItem, DashboardData, Kpi, LicensesPanel, Severity } from "@/lib/dashboard/logic";
 import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
 import { clearReminder, reminderItems } from "@/lib/reminders/logic";
@@ -161,6 +163,68 @@ function ProgressCard({ today, status }: { today: string; status: DashboardData[
   );
 }
 
+const LICENSE_STATE = {
+  active: { label: "Active", variant: "success" },
+  renewal_window: { label: "Renewal open", variant: "default" },
+  expiring: { label: "Expiring soon", variant: "warning" },
+  expired: { label: "Expired", variant: "danger" },
+} as const;
+
+/** The dashboard's Licenses & Renewals tab: where each license stands and which ones need action next. */
+function LicensesTab({ panel }: { panel: LicensesPanel }) {
+  if (panel.total === 0) {
+    return (
+      <section aria-label="Licenses & Renewals" className="rounded-2xl border bg-card p-6 shadow-panel" data-testid="licenses-tab">
+        <h2 className="text-lg font-semibold">No licenses tracked yet</h2>
+        <p className="mt-1 max-w-xl text-sm text-muted-foreground">Add your licenses, permits and insurance to see here what is current, what is about to expire and what is overdue.</p>
+        <Button asChild className="mt-4"><Link href="/app/licenses">Start from a template</Link></Button>
+      </section>
+    );
+  }
+  const stats: { label: string; value: number; tone: string }[] = [
+    { label: "Active", value: panel.active, tone: "text-emerald-600" },
+    { label: "Renewal open", value: panel.renewalOpen, tone: "text-primary" },
+    { label: "Expiring soon", value: panel.expiringSoon, tone: "text-amber-600" },
+    { label: "Expired", value: panel.expired, tone: "text-red-600" },
+  ];
+  return (
+    <section aria-label="Licenses & Renewals" className="space-y-5" data-testid="licenses-tab">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {stats.map((s) => (
+          <Link key={s.label} href="/app/licenses" className="rounded-2xl border bg-card p-4 shadow-panel outline-none transition-shadow hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring">
+            <p className="text-sm text-muted-foreground">{s.label}</p>
+            <p className={cn("mt-1 text-3xl font-semibold tabular-nums", s.tone)}>{s.value}</p>
+          </Link>
+        ))}
+      </div>
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_16rem]">
+        <section aria-labelledby="next-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
+          <h2 id="next-heading" className="text-base font-semibold">Expiring next</h2>
+          <ul className="mt-2 divide-y">
+            {panel.next.map((l) => (
+              <li key={l.id} data-testid="license-next" className="flex items-center gap-3 py-2.5">
+                <Link href="/app/licenses" className="min-w-0 flex-1 rounded-md outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+                  <span className="block truncate text-sm font-medium">{l.name}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {l.daysLeft < 0 ? `Expired ${formatDayLong(l.expiresOn)}` : `Expires ${formatDayLong(l.expiresOn)}, in ${l.daysLeft} ${l.daysLeft === 1 ? "day" : "days"}`}
+                  </span>
+                </Link>
+                <Badge variant={LICENSE_STATE[l.status].variant} className="shrink-0">{LICENSE_STATE[l.status].label}</Badge>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section aria-labelledby="standing-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
+          <h2 id="standing-heading" className="flex items-center gap-2 text-base font-semibold"><ShieldCheck className="size-4 text-emerald-600" aria-hidden /> Good standing</h2>
+          <p className="mt-2 text-3xl font-semibold tabular-nums" data-testid="licenses-standing">{panel.inGoodStanding}%</p>
+          <p className="mt-1 text-sm text-muted-foreground">Not expired, with every required document in.</p>
+          {panel.missingDocuments > 0 && <p className="mt-3 text-sm text-amber-700">{panel.missingDocuments} {panel.missingDocuments === 1 ? "document" : "documents"} still missing</p>}
+        </section>
+      </div>
+    </section>
+  );
+}
+
 /**
  * The signed-in landing page. The numbers, charts and action list arrive already computed from the server
  * (`data`), so the first paint is complete; only the visitor's own to-dos and snoozes are read in the browser.
@@ -168,9 +232,22 @@ function ProgressCard({ today, status }: { today: string; status: DashboardData[
 export function Dashboard({ data, serverToday }: { base?: "/app"; data: DashboardData; serverToday: string; name?: string }) {
   const today = useToday(serverToday) ?? serverToday;
   const bars = data.workload.map((w) => w.attention);
+  const [tab, setTab] = useState<"overview" | "licenses">("overview");
 
   return (
     <div className="space-y-5" data-testid="dashboard">
+      <div role="tablist" aria-label="Dashboard views" className="flex gap-1 border-b">
+        {([["overview", "Overview"], ["licenses", "Licenses & Renewals"]] as const).map(([id, label]) => (
+          <button
+            key={id} type="button" role="tab" id={`dash-tab-${id}`} aria-selected={tab === id} aria-controls="dash-panel" onClick={() => setTab(id)}
+            className={cn("-mb-px border-b-2 px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring", tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div id="dash-panel" role="tabpanel" aria-labelledby={`dash-tab-${tab}`} className="space-y-5">
+      {tab === "licenses" ? <LicensesTab panel={data.licenses} /> : (<>
       <section aria-label="At a glance" className="grid gap-4 sm:grid-cols-3">
         {data.kpis.map((k) => <KpiCard key={k.id} kpi={k} bars={bars} />)}
       </section>
@@ -201,6 +278,8 @@ export function Dashboard({ data, serverToday }: { base?: "/app"; data: Dashboar
           <TodayTodos today={today} />
           <Attention items={data.items} today={today} />
         </aside>
+      </div>
+      </>)}
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { addDays, formatDayLong } from "@/lib/dates";
 import { formatMoney, invoiceState, summarize as invoiceSummary } from "@/lib/invoices/logic";
 import type { Invoice } from "@/lib/invoices/types";
-import { licenseStatus, needsReview } from "@/lib/licenses/logic";
+import { compliance, daysLeft, licenseStatus, needsReview, summarize as licenseSummary } from "@/lib/licenses/logic";
 import type { License } from "@/lib/licenses/types";
 import { summarize as projectSummary, taskAlerts } from "@/lib/projects/logic";
 import type { Project } from "@/lib/projects/types";
@@ -34,8 +34,23 @@ export interface WorkloadRow { label: string; open: number; attention: number }
 export interface UpcomingDay { day: string; label: string; count: number }
 export interface AttentionItem { id: string; area: Area; severity: Severity; label: string; text: string; href: string }
 /** Plain data (no functions or dates), so a server component can hand it to the client dashboard. */
+/** The Licenses & Renewals tab on the dashboard: how many are in each state, and which expire next. */
+export interface LicensesPanel {
+  total: number;
+  active: number;
+  renewalOpen: number;
+  expiringSoon: number;
+  expired: number;
+  /** Share of licenses that are not expired and have every required document, 0 to 100. */
+  inGoodStanding: number;
+  missingDocuments: number;
+  /** The licenses that expire soonest (already expired ones first), at most six. */
+  next: { id: string; name: string; expiresOn: string; daysLeft: number; status: "active" | "renewal_window" | "expiring" | "expired" }[];
+}
+
 export interface DashboardData {
   kpis: Kpi[];
+  licenses: LicensesPanel;
   workload: WorkloadRow[];
   upcoming: UpcomingDay[];
   /** Overall state for the status line: something critical, something to look at, or nothing. */
@@ -118,8 +133,16 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
       note: items.some((i) => i.severity === "critical") ? { tone: "bad", text: "Something is late" } : items.length > 0 ? { tone: "warn", text: "Worth a look" } : { tone: "good", text: "All clear" } },
   ];
 
+  const lic = licenseSummary(src.licenses, today);
+  const licenses: LicensesPanel = {
+    total: lic.total, active: lic.active, renewalOpen: lic.renewalWindow, expiringSoon: lic.expiring, expired: lic.expired,
+    inGoodStanding: compliance(src.licenses, today).percent, missingDocuments: lic.missingDocuments,
+    next: [...src.licenses].sort((a, b) => a.expiresOn.localeCompare(b.expiresOn)).slice(0, 6)
+      .map((l) => ({ id: l.id, name: l.name, expiresOn: l.expiresOn, daysLeft: daysLeft(l, today), status: licenseStatus(l, today) })),
+  };
+
   return {
-    kpis, workload, items,
+    kpis, workload, items, licenses,
     upcoming: upcomingLoad(src, today),
     status: items.some((i) => i.severity === "critical") ? "attention" : items.length > 0 ? "watch" : "clear",
   };
