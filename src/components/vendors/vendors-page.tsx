@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, Store, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, ShieldAlert, Store, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import {
-  VENDOR_APPROVER, decide, defaultRequirements, duplicatePairs, fileProblem, hasDocumentIssues, mergeVendors, needsAttention, pairKey,
+  VENDOR_APPROVER, decide, defaultRequirements, duplicatePairs, fileProblem, hasDocumentIssues, isNonCompliant, mergeVendors, needsAttention, pairKey,
   reopen, setActive, submitForApproval, summarize, vendorsToCsv,
 } from "@/lib/vendors/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
@@ -72,6 +72,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   const [categoryFilter, setCategoryFilter] = useState<"all" | VendorCategory>(initial.category);
   const [sort, setSort] = useState<SortKey>(initial.sort);
   const [issuesOnly, setIssuesOnly] = useState(initial.issues);
+  const [nonCompliantOnly, setNonCompliantOnly] = useState(false);
   const [undo, setUndo] = useState<Vendor[] | null>(null);
   const [deciding, setDeciding] = useState<{ vendor: Vendor; decision: "approved" | "rejected"; comment: string } | null>(null);
   const [merging, setMerging] = useState<{ keep: Vendor; drop: Vendor } | null>(null);
@@ -183,8 +184,8 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   };
 
   const q = query.trim().toLowerCase();
-  const filtered = statusFilter !== "all" || categoryFilter !== "all" || issuesOnly || q !== "";
-  const clearFilters = () => { setQuery(""); setStatusFilter("all"); setCategoryFilter("all"); setIssuesOnly(false); };
+  const filtered = statusFilter !== "all" || categoryFilter !== "all" || issuesOnly || nonCompliantOnly || q !== "";
+  const clearFilters = () => { setQuery(""); setStatusFilter("all"); setCategoryFilter("all"); setIssuesOnly(false); setNonCompliantOnly(false); };
   const showVendor = (id: string) => {
     // The card might be filtered out; clear filters so it can be found, then open its documents.
     clearFilters();
@@ -194,6 +195,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
     .filter((v) => statusFilter === "all" || v.status === statusFilter)
     .filter((v) => categoryFilter === "all" || v.category === categoryFilter)
     .filter((v) => !issuesOnly || hasDocumentIssues(v, today))
+    .filter((v) => !nonCompliantOnly || isNonCompliant(v, today))
     .filter((v) => !q || [v.name, v.contactName, v.email, v.category].some((f) => f.toLowerCase().includes(q)))
     .sort((a, b) =>
       sort === "status" ? STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status) || a.name.localeCompare(b.name)
@@ -232,12 +234,14 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
         )}
       </div>
 
-      <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <SummaryTile icon={Store} label="Vendors" value={summary.vendors} tone="text-primary" onClick={clearFilters} />
         <SummaryTile icon={CheckCircle2} label="Awaiting approval" value={summary.pendingApproval} tone="text-amber-600" pressed={statusFilter === "pending_approval"}
-          onClick={() => { setIssuesOnly(false); setStatusFilter("pending_approval"); }} />
+          onClick={() => { setIssuesOnly(false); setNonCompliantOnly(false); setStatusFilter("pending_approval"); }} />
         <SummaryTile icon={FileWarning} label="Document issues" value={summary.documentIssues} tone="text-red-600" pressed={issuesOnly}
-          onClick={() => { setStatusFilter("all"); setIssuesOnly(true); }} />
+          onClick={() => { setStatusFilter("all"); setNonCompliantOnly(false); setIssuesOnly(true); }} />
+        <SummaryTile icon={ShieldAlert} label="Non-compliant" value={summary.nonCompliant} tone="text-red-600" pressed={nonCompliantOnly}
+          onClick={() => { setStatusFilter("all"); setIssuesOnly(false); setNonCompliantOnly((on) => !on); }} />
         <SummaryTile icon={Copy} label="Possible duplicates" value={pairs.length} tone="text-sky-600" href="#vendor-duplicates" />
       </section>
 

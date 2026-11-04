@@ -23,6 +23,8 @@ export const licenseFormSchema = z
           .min(1, "Add at least one reminder, e.g. 60, 30, 7")
           .max(8, "Use at most 8 reminders"),
       ),
+    /** Licenses this one relies on, by id. */
+    dependsOn: z.array(z.string()).max(20).default([]),
     notes: z.string().trim().max(1000, "Keep notes under 1000 characters"),
     /** Every license is checked against the real document before it is saved. */
     reviewed: z.boolean().refine((v) => v, "Confirm you have checked these details against the license"),

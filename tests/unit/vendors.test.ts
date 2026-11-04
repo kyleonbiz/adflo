@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  approvalBlockers, decide, defaultRequirements, docState, duplicatePairs, editDistance, findDuplicates,
+  approvalBlockers, complianceIssues, isNonCompliant, decide, defaultRequirements, docState, duplicatePairs, editDistance, findDuplicates,
   needsAttention, normalizeName, onboardingProgress, reopen, setActive, submitForApproval, summarize,
   vendorAlerts, vendorsToCsv, mergeVendors, pairKey, fileProblem,
 } from "@/lib/vendors/logic";
@@ -133,7 +133,7 @@ describe("duplicate detection", () => {
 
 describe("summary, attention and csv", () => {
   it("summarizes the sample vendors", () => {
-    expect(summarize(all, TODAY)).toEqual({ vendors: 6, approved: 2, pendingApproval: 1, documentIssues: 2, duplicatePairs: 1 });
+    expect(summarize(all, TODAY)).toEqual({ vendors: 6, approved: 2, pendingApproval: 1, documentIssues: 2, nonCompliant: 1, duplicatePairs: 1 });
   });
   it("ranks critical alerts before warnings", () => {
     expect(needsAttention(all, TODAY).map((n) => [n.vendor.id, n.alert.severity])).toEqual([["v-2", "critical"], ["v-1", "warning"]]);
@@ -196,5 +196,30 @@ describe("merging and attachments", () => {
     expect(fileProblem({ name: "W9.PDF", size: 1000 })).toBeNull();
     expect(fileProblem({ name: "w9.exe", size: 1000 })).toContain("not a PDF");
     expect(fileProblem({ name: "w9.pdf", size: 11 * 1024 * 1024 })).toContain("larger than 10 MB");
+  });
+});
+
+describe("vendor compliance", () => {
+  const coi = (over: Partial<VendorDocument> = {}) => doc({ id: "c", type: "Certificate of insurance", receivedOn: "2026-01-01", expiresOn: addDays(TODAY, 200), ...over });
+
+  it("is compliant while required documents are in date", () => {
+    expect(isNonCompliant(vendor({ status: "approved", documents: [coi()] }), TODAY)).toBe(false);
+  });
+  it("turns an approved vendor non-compliant when a required document expires", () => {
+    const v = vendor({ status: "approved", documents: [coi({ expiresOn: addDays(TODAY, -1) })] });
+    expect(isNonCompliant(v, TODAY)).toBe(true);
+    expect(complianceIssues(v, TODAY)).toEqual(["Certificate of insurance has expired"]);
+    expect(summarize([v], TODAY).nonCompliant).toBe(1);
+  });
+  it("does not apply to optional documents or to vendors that are not approved", () => {
+    const expired = coi({ expiresOn: addDays(TODAY, -1) });
+    expect(isNonCompliant(vendor({ status: "approved", documents: [{ ...expired, required: false }] }), TODAY)).toBe(false);
+    for (const status of ["onboarding", "pending_approval", "inactive", "rejected"] as const) {
+      expect(isNonCompliant(vendor({ status, documents: [expired] }), TODAY)).toBe(false);
+    }
+  });
+  it("recovers when the document is renewed", () => {
+    const v = vendor({ status: "approved", documents: [coi({ expiresOn: addDays(TODAY, -1) })] });
+    expect(isNonCompliant({ ...v, documents: [coi()] }, TODAY)).toBe(false);
   });
 });

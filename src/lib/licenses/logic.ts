@@ -1,10 +1,13 @@
 import { addDays, addMonths, daysBetween } from "@/lib/dates";
-import type { License, LicenseAlert, LicenseStatus, RenewalTask } from "./types";
+import type { License, LicenseAlert, LicenseStatus, RenewalTask, RiskTier } from "./types";
 
 /** Within this many days of expiry a license counts as "expiring". */
 export const EXPIRING_DAYS = 30;
 /** Within this many days (or expired) the missing-document alert becomes critical. */
 export const CRITICAL_DAYS = 14;
+
+/** Past this many days out a license is Safe; from here down to `EXPIRING_DAYS` it is a Warning. */
+export const SAFE_DAYS = 60;
 
 export function daysLeft(license: License, today: string): number {
   return daysBetween(today, license.expiresOn);
@@ -22,6 +25,25 @@ export function licenseStatus(license: License, today: string): LicenseStatus {
   if (left <= renewalWindowDays(license)) return "renewal_window";
   return "active";
 }
+
+/** The licenses this one depends on that have expired. Dependencies that no longer exist are ignored. */
+export function expiredDependencies(license: License, all: License[], today: string): License[] {
+  const wanted = new Set(license.dependsOn ?? []);
+  return all.filter((l) => l.id !== license.id && wanted.has(l.id) && daysLeft(l, today) < 0);
+}
+
+/**
+ * Safe, Warning or Critical. An expired dependency makes a license Critical whatever its own date says.
+ * Once a renewal is submitted the license's own date can raise no more than a Warning.
+ */
+export function riskTier(license: License, today: string, all: License[] = []): RiskTier {
+  if (expiredDependencies(license, all, today).length > 0) return "critical";
+  const left = daysLeft(license, today);
+  const own: RiskTier = left > SAFE_DAYS ? "safe" : left >= EXPIRING_DAYS ? "warning" : "critical";
+  return own === "critical" && license.stage === "submitted" ? "warning" : own;
+}
+
+export const TIER_RANK: Record<RiskTier, number> = { critical: 0, warning: 1, safe: 2 };
 
 /** Every license must be checked against the real document before it can be trusted. */
 export function needsReview(license: License): boolean {
@@ -54,7 +76,7 @@ export function expiryText(left: number): string {
  * Alerts that apply today, most severe first. Once a renewal is submitted the ball is in the issuer's
  * court, so expiry alerts calm down and missing documents no longer nag.
  */
-export function licenseAlerts(license: License, today: string): LicenseAlert[] {
+export function licenseAlerts(license: License, today: string, all: License[] = []): LicenseAlert[] {
   const left = daysLeft(license, today);
   const missing = missingDocuments(license);
   const submitted = license.stage === "submitted";
@@ -72,6 +94,9 @@ export function licenseAlerts(license: License, today: string): LicenseAlert[] {
     else alerts.push({ severity: "info", message: text });
   }
 
+  for (const dep of expiredDependencies(license, all, today)) {
+    alerts.push({ severity: "critical", message: `${dep.name} has expired, which puts this license at risk.` });
+  }
   if (!submitted && missing > 0 && left <= renewalWindowDays(license)) {
     alerts.push({
       severity: left <= CRITICAL_DAYS ? "critical" : "warning",

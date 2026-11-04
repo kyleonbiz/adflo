@@ -27,13 +27,13 @@ function defaults(license: License | undefined, today: string): LicenseFormInput
       name: license.name, category: license.category, issuer: license.issuer, number: license.number,
       holder: license.holder, issuedOn: license.issuedOn, expiresOn: license.expiresOn,
       renewalTermMonths: String(license.renewalTermMonths), reminderDays: license.reminderDays.join(", "),
-      notes: license.notes, documents: "", reviewed: false,
+      notes: license.notes, documents: "", reviewed: false, dependsOn: license.dependsOn ?? [],
     };
   }
   return {
     name: "", category: "business", issuer: "", number: "", holder: "", issuedOn: today,
     expiresOn: addMonths(today, 12), renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "",
-    documents: DEFAULT_DOCUMENTS.business.join("\n"), reviewed: false,
+    documents: DEFAULT_DOCUMENTS.business.join("\n"), reviewed: false, dependsOn: [],
   };
 }
 
@@ -49,10 +49,12 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
 
 /** Add or edit a license. `license` present means edit. */
 export function LicenseFormDialog({
-  open, license, today, initialFile, onOpenChange, onSubmit,
+  open, license, others = [], today, initialFile, onOpenChange, onSubmit,
 }: {
   open: boolean;
   license?: License;
+  /** The other licenses this one could depend on. */
+  others?: License[];
   /** A file chosen before the dialog opened; it is read as soon as the dialog shows. */
   initialFile?: File | null;
   today: string;
@@ -236,6 +238,22 @@ export function LicenseFormDialog({
                   />
                 </Field>
               </div>
+            )}
+            {others.length > 0 && (
+              <fieldset className="space-y-1.5 sm:col-span-2">
+                <legend className="text-sm font-medium">Depends on (Optional)</legend>
+                <p className="text-xs text-muted-foreground">If any of these expires, this license is marked Critical, whatever its own date is.</p>
+                <ul className="grid gap-1 sm:grid-cols-2">
+                  {others.map((o) => (
+                    <li key={o.id}>
+                      <label className="flex cursor-pointer items-center gap-2 text-sm">
+                        <input type="checkbox" value={o.id} className="size-4 rounded border-input accent-primary" {...register("dependsOn")} />
+                        <span className="truncate">{o.name}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </fieldset>
             )}
             <div className="sm:col-span-2">
               <Field id="lic-notes" label="Notes" error={errors.notes?.message}>

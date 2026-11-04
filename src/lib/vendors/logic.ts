@@ -76,6 +76,17 @@ export function approvalBlockers(v: Vendor, today: string): string[] {
     .map((d) => (docState(d, today) === "expired" ? `${d.type} has expired` : `${d.type} is missing`));
 }
 
+/**
+ * Why an approved vendor is out of compliance: a required document (such as the certificate of
+ * insurance) has expired or is missing. Empty means compliant. Vendors that are not approved are
+ * still being onboarded or are switched off, so this does not apply to them.
+ */
+export function complianceIssues(v: Vendor, today: string): string[] {
+  return v.status === "approved" ? approvalBlockers(v, today) : [];
+}
+
+export const isNonCompliant = (v: Vendor, today: string) => complianceIssues(v, today).length > 0;
+
 /** Moves an onboarding vendor to approval, but only when every required document is in. */
 export function submitForApproval(v: Vendor, today: string): Vendor {
   if (v.status !== "onboarding" || approvalBlockers(v, today).length > 0) return v;
@@ -222,6 +233,7 @@ export interface VendorSummary {
   approved: number;
   pendingApproval: number;
   documentIssues: number;
+  nonCompliant: number;
   duplicatePairs: number;
 }
 
@@ -232,6 +244,7 @@ export function summarize(vendors: Vendor[], today: string): VendorSummary {
     approved: vendors.filter((v) => v.status === "approved").length,
     pendingApproval: vendors.filter((v) => v.status === "pending_approval").length,
     documentIssues: live.reduce((n, v) => n + v.documents.filter((d) => ["expiring", "expired"].includes(docState(d, today))).length, 0),
+    nonCompliant: vendors.filter((v) => isNonCompliant(v, today)).length,
     duplicatePairs: duplicatePairs(vendors).length,
   };
 }

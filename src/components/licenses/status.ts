@@ -1,4 +1,4 @@
-import type { AlertSeverity, LicenseStatus, RenewalStage } from "@/lib/licenses/types";
+import type { AlertSeverity, LicenseStatus, RenewalStage, RiskTier } from "@/lib/licenses/types";
 
 export const STATUS_LABEL: Record<LicenseStatus, string> = {
   active: "Active",
@@ -13,6 +13,9 @@ export const STATUS_BADGE: Record<LicenseStatus, "success" | "default" | "warnin
   expiring: "warning",
   expired: "danger",
 };
+
+export const TIER_LABEL: Record<RiskTier, string> = { safe: "Safe", warning: "Warning", critical: "Critical" };
+export const TIER_BADGE: Record<RiskTier, "success" | "warning" | "danger"> = { safe: "success", warning: "warning", critical: "danger" };
 
 export const SEVERITY_BADGE: Record<AlertSeverity, "danger" | "warning" | "default"> = {
   critical: "danger",

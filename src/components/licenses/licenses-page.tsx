@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { expiryText, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
+import { expiryText, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, riskTier, summarize, TIER_RANK, type RenewalInput } from "@/lib/licenses/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
 import type { LicenseFormValues } from "@/lib/licenses/validation";
@@ -26,7 +26,7 @@ import { titleCase } from "@/lib/text";
 
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
 
-type Filter = "all" | "attention" | "missing_docs" | "needs_review" | LicenseStatus;
+type Filter = "all" | "attention" | "missing_docs" | "needs_review" | "tier_critical" | "tier_warning" | "tier_safe" | LicenseStatus;
 type Sort = "expiry" | "name";
 const NOTICE_MS = 8000;
 
@@ -134,7 +134,8 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
   const q = query.trim().toLowerCase();
   const matchesFilter = (l: License) => {
     if (statusFilter === "all") return true;
-    if (statusFilter === "attention") return licenseStatus(l, today) !== "active";
+    if (statusFilter === "attention") return licenseStatus(l, today) !== "active" || riskTier(l, today, licenses) === "critical";
+    if (statusFilter.startsWith("tier_")) return riskTier(l, today, licenses) === statusFilter.slice(5);
     if (statusFilter === "missing_docs") return missingDocuments(l) > 0;
     if (statusFilter === "needs_review") return needsReview(l);
     return licenseStatus(l, today) === statusFilter;
@@ -143,7 +144,8 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
     .filter(matchesFilter)
     .filter((l) => categoryFilter === "all" || l.category === categoryFilter)
     .filter((l) => !q || [l.name, l.issuer, l.number, l.holder].some((f) => f.toLowerCase().includes(q)))
-    .sort((a, b) => (sort === "name" ? a.name.localeCompare(b.name) : a.expiresOn < b.expiresOn ? -1 : a.expiresOn > b.expiresOn ? 1 : 0));
+    // Critical licenses come first, then Warning, then Safe; the chosen order applies within each.
+    .sort((a, b) => TIER_RANK[riskTier(a, today, licenses)] - TIER_RANK[riskTier(b, today, licenses)] || (sort === "name" ? a.name.localeCompare(b.name) : a.expiresOn < b.expiresOn ? -1 : a.expiresOn > b.expiresOn ? 1 : 0));
 
   return (
     <div className="space-y-5">
@@ -258,6 +260,9 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
                 <SelectItem value="attention">Needs Attention</SelectItem>
                 <SelectItem value="missing_docs">Documents Missing</SelectItem>
                 <SelectItem value="needs_review">Needs Review</SelectItem>
+                <SelectItem value="tier_critical">Critical Risk</SelectItem>
+                <SelectItem value="tier_warning">Warning Risk</SelectItem>
+                <SelectItem value="tier_safe">Safe</SelectItem>
                 {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -293,7 +298,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
           </div>
         ) : (
           <ul className="space-y-3">
-            {visible.map((l) => <LicenseCard key={l.id} license={l} today={today} actions={actions} focusToken={focus.id === l.id ? focus.token : 0} />)}
+            {visible.map((l) => <LicenseCard key={l.id} license={l} all={licenses} today={today} actions={actions} focusToken={focus.id === l.id ? focus.token : 0} />)}
           </ul>
         )}
       </section>
@@ -302,6 +307,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
         key={formSession}
         open={formFor !== null}
         license={formFor && formFor !== "new" ? formFor : undefined}
+        others={licenses.filter((l) => !formFor || formFor === "new" || l.id !== formFor.id)}
         today={today}
         initialFile={uploadFile}
         onOpenChange={(o) => { if (!o) { setFormFor(null); setUploadFile(null); } }}
@@ -322,7 +328,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
               variant="destructive"
               onClick={() => {
                 if (deleting) {
-                  commit(licenses.filter((l) => l.id !== deleting.id), `${deleting.name} deleted.`);
+                  commit(licenses.filter((l) => l.id !== deleting.id).map((l) => (l.dependsOn?.includes(deleting.id) ? { ...l, dependsOn: l.dependsOn.filter((d) => d !== deleting.id) } : l)), `${deleting.name} deleted.`);
                 }
                 setDeleting(null);
               }}
