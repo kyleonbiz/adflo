@@ -40,7 +40,7 @@ Databases go last. Update this file in the same commit as the work.
 
 - [x] Licenses & Renewals gets its own tab on the dashboard (counts by state, what expires next, good-standing percent)
 - [x] Audit trail: who did what and when (new Activity page: the person's name, what they did, the time; filter by area; saved in this browser)
-- [ ] Calendar page in the navigation menu (due dates from every service)
+- [x] Calendar page in the navigation menu (month grid and agenda; invoices due, license expiries and renewals, tasks, milestones, vendor documents, reminders; filter by kind)
 - [ ] Fix the Reporting page: it is just a bunch of boxes
 - [ ] Dropdowns on service tabs where they make sense
 - [x] Rename the AI assistant to Addy
