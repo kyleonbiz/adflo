@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { toIcs } from "@/lib/admin/ics";
+import { toIcs } from "@/lib/ics";
 import { downloadText } from "@/components/import/csv-source";
 import { compliance, expiryText, licenseCalendarEvents, renewalSpend, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { e2eSeed } from "@/lib/e2e-seed";

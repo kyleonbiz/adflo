@@ -9,7 +9,6 @@ describe("paperwork library", () => {
     for (const p of PAPERWORK) {
       expect(new Set(p.form.fields.map((x) => x.id)).size).toBe(p.form.fields.length);
       expect(new Set(p.form.fields.map((x) => x.label.toLowerCase())).size).toBe(p.form.fields.length);
-      if (p.form.requiresApproval) expect(p.form.approver).not.toBe("");
       for (const fld of p.form.fields) if (fld.type === "select") expect(fld.options.length).toBeGreaterThan(0);
     }
   });

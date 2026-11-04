@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { IconSquare } from "@/components/modules/icon-square";
 import { MODULE_ICONS } from "@/components/modules/module-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,8 +45,13 @@ export function Overview({ reports, attention, onOpen }: { reports: ModuleReport
           const Icon = MODULE_ICONS[r.id];
           return (
             <article key={r.id} className="flex flex-col rounded-2xl border bg-card p-4 shadow-panel" data-testid="module-card">
-              <h3 className="flex items-center gap-2 text-base font-semibold">{Icon && <Icon className="size-4 text-primary" aria-hidden />} {r.name}</h3>
-              <p className="text-xs text-muted-foreground">{r.count === 0 ? "No records yet" : `${r.count} ${r.noun}`}</p>
+              <div className="flex items-center gap-3">
+                {Icon && <IconSquare icon={Icon} size="sm" />}
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold">{r.name}</h3>
+                  <p className="text-xs text-muted-foreground">{r.count === 0 ? "No records yet" : `${r.count} ${r.noun}`}</p>
+                </div>
+              </div>
               {r.count > 0 && (
                 <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2">
                   {r.metrics.slice(0, 4).map((m) => (

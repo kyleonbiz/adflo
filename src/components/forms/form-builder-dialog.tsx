@@ -18,18 +18,15 @@ interface Draft {
   name: string;
   description: string;
   fields: (Omit<FormField, "options"> & { optionsText: string })[];
-  requiresApproval: boolean;
-  approver: string;
   documentTemplate: string;
 }
 
 function toDraft(form?: FormTemplate): Draft {
   if (!form) {
-    return { name: "", description: "", fields: [{ id: rid(), label: "Name", type: "text", required: true, optionsText: "" }], requiresApproval: false, approver: "", documentTemplate: "" };
+    return { name: "", description: "", fields: [{ id: rid(), label: "Name", type: "text", required: true, optionsText: "" }], documentTemplate: "" };
   }
   return {
-    name: form.name, description: form.description, requiresApproval: form.requiresApproval,
-    approver: form.approver, documentTemplate: form.documentTemplate,
+    name: form.name, description: form.description, documentTemplate: form.documentTemplate,
     fields: form.fields.map((f) => ({ id: f.id, label: f.label, type: f.type, required: f.required, optionsText: f.options.join(", ") })),
   };
 }
@@ -115,19 +112,6 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
             <Plus /> Add field
           </Button>
         </fieldset>
-
-        <div className="space-y-2 rounded-xl border p-3">
-          <label className="flex items-center gap-2 text-sm font-medium">
-            <input type="checkbox" checked={draft.requiresApproval} onChange={(e) => setDraft({ ...draft, requiresApproval: e.target.checked })} className="size-4 rounded border-input accent-primary" />
-            Submissions need approval
-          </label>
-          {draft.requiresApproval && (
-            <div className="space-y-1.5">
-              <Label htmlFor="fb-approver">Approver</Label>
-              <Input id="fb-approver" autoComplete="off" value={draft.approver} onChange={(e) => setDraft({ ...draft, approver: e.target.value })} placeholder="Name or role" />
-            </div>
-          )}
-        </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="fb-template">Document Template (Optional)</Label>

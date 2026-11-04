@@ -55,7 +55,8 @@ export type RiskTier = (typeof RISK_TIERS)[number]["value"];
 export const PAYMENT_TERMS = ["Due on receipt", "Net 15", "Net 30", "Net 45", "Net 60"] as const;
 export type PaymentTerms = (typeof PAYMENT_TERMS)[number];
 
-export type VendorStatus = "onboarding" | "pending_approval" | "approved" | "rejected" | "inactive";
+/** Onboarding while its required documents are being collected, active once they are in, inactive when switched off. */
+export type VendorStatus = "onboarding" | "active" | "inactive";
 
 /** Dates are `YYYY-MM-DD`. A document is "received" once `receivedOn` is set. */
 export interface VendorDocument {
@@ -91,9 +92,6 @@ export interface Vendor {
   status: VendorStatus;
   createdOn: string;
   documents: VendorDocument[];
-  decidedBy: string | null;
-  decidedOn: string | null;
-  comment: string;
   /** Dated notes and reminders, oldest first. Absent until the first entry. */
   activity?: VendorNote[];
   /** How much the business leans on this vendor. Absent means standard. */

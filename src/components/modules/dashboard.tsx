@@ -1,130 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
-import { AlertTriangle, BellOff, Hourglass, CalendarClock, FolderKanban, Inbox, ListPlus, Plus, Receipt, ShieldCheck, Store, Upload } from "lucide-react";
+import { useState } from "react";
+import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, DollarSign, FolderKanban, Info, ListPlus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { ArrowRight } from "lucide-react";
-import { industryBegin } from "@/lib/setup/industries";
-import { useSetupConfig } from "@/lib/setup/storage";
-import { MODULES, moduleHref } from "@/lib/modules/registry";
-import { MODULE_ICONS } from "@/components/modules/module-icons";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { SummaryTile } from "@/components/modules/summary-tile";
+import { MiniBars, ProgressRing, UpcomingChart, WorkloadChart } from "@/components/modules/dashboard-charts";
 import { TodayTodos } from "@/components/modules/today-todos";
 import { useToday } from "@/components/modules/use-today";
-import type { Area, AttentionItem, DashboardData, QueueItem, Severity, Tone } from "@/lib/dashboard/logic";
-import { formatDayLong } from "@/lib/dates";
-import { clearReminder, reminderItems } from "@/lib/reminders/logic";
-import { saveReminders, useReminders } from "@/lib/reminders/storage";
+import { Button } from "@/components/ui/button";
+import type { Area, AttentionItem, DashboardData, Kpi, Severity } from "@/lib/dashboard/logic";
 import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
-import { addTodo, newTodoId, hasOpenTodo, pruneTodos } from "@/lib/todos/logic";
+import { clearReminder, reminderItems } from "@/lib/reminders/logic";
+import { saveReminders, useReminders } from "@/lib/reminders/storage";
+import { addTodo, newTodoId, hasOpenTodo, pruneTodos, todaysTodos } from "@/lib/todos/logic";
 import { saveTodos, useTodos } from "@/lib/todos/storage";
-import { STALE_QUEUE_DAYS } from "@/lib/dashboard/logic";
 import { cn } from "@/lib/utils";
 
-const BADGE = { critical: "danger", warning: "warning", info: "default" } as const satisfies Record<Severity, string>;
-const TILE_ICON: Record<string, LucideIcon> = {
-  outstanding: Receipt, "overdue-invoices": AlertTriangle, licenses: ShieldCheck, vendors: Store,
-  tasks: FolderKanban, "overdue-tasks": CalendarClock, requests: Inbox, approvals: Inbox,
+const SEVERITY_ICON: Record<Severity, { Icon: LucideIcon; tone: string }> = {
+  critical: { Icon: AlertTriangle, tone: "text-red-600" },
+  warning: { Icon: Clock, tone: "text-amber-600" },
+  info: { Icon: Info, tone: "text-brand-blue" },
 };
-const TONE: Record<Tone, string> = { neutral: "text-primary", warning: "text-amber-600", danger: "text-red-600" };
-const AREAS: Area[] = ["Invoices", "Licenses", "Projects", "Admin"];
+const AREAS: Area[] = ["Invoices", "Licenses", "Tasks"];
 const SHOWN = 5;
-
-/** One plain sentence on how the day looks. */
-function summary(data: DashboardData): string {
-  const urgent = data.items.filter((i) => i.severity === "critical").length;
-  if (urgent > 0) return `${urgent} ${urgent === 1 ? "thing is" : "things are"} overdue`;
-  if (data.queue.length > 0) return `${data.queue.length} waiting on your decision`;
-  if (data.items.length > 0) return `${data.items.length} to keep an eye on`;
-  return "nothing needs you right now";
-}
-
-/** True while no service holds anything, so the home screen can suggest where to begin. */
-const isBlank = (d: DashboardData) =>
-  d.items.length === 0 && d.queue.length === 0 && d.groups.every((g) => g.tiles.every((t) => t.tone === "neutral" && /^(\$?0(\.00)?)$/.test(t.value)));
-
-const subscribe = () => () => {};
-/** Morning, afternoon or evening by the visitor's clock; null on the server so the first paint matches. */
-function useGreeting(): string | null {
-  return useSyncExternalStore(subscribe, () => {
-    const h = new Date().getHours();
-    return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-  }, () => null);
-}
-
-function QuickActions({ base }: { base: string }) {
-  return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Quick actions">
-      <Button asChild size="sm"><Link href={`${base}/invoices?new=1`}><Plus /> New invoice</Link></Button>
-      <Button asChild size="sm" variant="outline"><Link href={`${base}?upload=1`}><Upload /> Upload document</Link></Button>
-      <Button asChild size="sm" variant="outline"><Link href={`${base}/admin?new=1`}><Plus /> New request</Link></Button>
-    </div>
-  );
-}
-
-/** Shown only while nothing has been added yet: one card per service, each leading to its first step. */
-function WhereToBegin({ base }: { base: "/app" }) {
-  const setup = useSetupConfig();
-  const START = industryBegin(setup) ?? ["invoices", "licenses", "crm", "projects", "admin", "forms"];
-  const cards = START.flatMap((id) => {
-    const m = MODULES.find((x) => x.id === id);
-    const href = m ? moduleHref(m, base) : null;
-    return m && href ? [{ m, href }] : [];
-  });
-  return (
-    <section aria-labelledby="begin-heading" data-testid="where-to-begin" className="space-y-3">
-      <div>
-        <h2 id="begin-heading" className="text-base font-semibold">Where to begin</h2>
-        <p className="text-sm text-muted-foreground">Nothing is set up yet. Pick whichever is costing you the most time.</p>
-      </div>
-      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map(({ m, href }) => {
-          const Icon = MODULE_ICONS[m.id];
-          return (
-            <li key={m.id}>
-              <Link href={href} className="group flex h-full flex-col gap-2 rounded-2xl border bg-card p-4 shadow-panel outline-none transition-shadow hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring">
-                <span className="flex items-center gap-2 text-sm font-semibold">{Icon && <Icon className="size-4 text-primary" aria-hidden />}{m.name}</span>
-                <span className="flex-1 text-sm text-muted-foreground">{m.summary}</span>
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">Open <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" aria-hidden /></span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}
-
-/** What is waiting on a decision from you, oldest first, so nothing sits unseen. */
-function Queue({ queue }: { queue: QueueItem[] }) {
-  const stale = queue.filter((q) => q.stale).length;
-  return (
-    <section aria-labelledby="queue-heading" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="queue">
-      <h2 id="queue-heading" className="flex items-center gap-2 text-base font-semibold"><Hourglass className="size-4 text-muted-foreground" aria-hidden /> Waiting on you</h2>
-      {queue.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">Nothing is waiting on a decision.</p>
-      ) : (
-        <>
-          <p className="mt-1 text-sm text-muted-foreground">{queue.length} waiting{stale > 0 ? `, ${stale} for ${STALE_QUEUE_DAYS}+ days` : ""}</p>
-          <ul className="mt-3 divide-y">
-            {queue.map((q) => (
-              <li key={q.id} data-testid="queue-item">
-                <Link href={q.href} className="flex items-center gap-3 rounded-md py-2 text-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
-                  <span className="min-w-0 flex-1 truncate"><span className="text-muted-foreground">{q.kind} · </span>{q.title}</span>
-                  <Badge variant={q.stale ? "warning" : "muted"} className="shrink-0">{q.waitingDays === 0 ? "Today" : `${q.waitingDays}d`}</Badge>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </section>
-  );
-}
 
 function Attention({ items, today }: { items: AttentionItem[]; today: string }) {
   const snoozed = useSnoozed();
@@ -133,8 +32,9 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
   const [all, setAll] = useState(false);
 
   const reminders = useReminders();
-  const live = [...reminderItems(reminders, today), ...items].filter((i) => !isSnoozed(snoozed, i.id, today));
-  const hidden = items.length - live.length;
+  const everything = [...reminderItems(reminders, today), ...items];
+  const live = everything.filter((i) => !isSnoozed(snoozed, i.id, today));
+  const hidden = everything.length - live.length;
   const counts = (a: Area) => live.filter((i) => i.area === a).length;
   const filtered = area === "all" ? live : live.filter((i) => i.area === area);
   const shown = all ? filtered : filtered.slice(0, SHOWN);
@@ -169,9 +69,14 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
         <ul className="mt-3 divide-y">
           {shown.map((it) => (
             <li key={it.id} data-testid="attention-item" className="flex items-center gap-2 py-2">
-              <Link href={it.href} className="flex min-w-0 flex-1 items-center gap-3 rounded-md text-sm outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
-                <Badge variant={BADGE[it.severity]} className="shrink-0">{it.label}</Badge>
-                <span className="min-w-0 flex-1 truncate"><span className="text-muted-foreground">{it.area} · </span>{it.text}</span>
+              <Link href={it.href} className="flex min-w-0 flex-1 items-center gap-3 rounded-md outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+                <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl border bg-card shadow-panel", SEVERITY_ICON[it.severity].tone)}>
+                  {(() => { const { Icon } = SEVERITY_ICON[it.severity]; return <Icon className="size-5" aria-hidden />; })()}
+                </span>
+                <span className="min-w-0 flex-1 text-sm">
+                  <span className="block truncate font-medium">{it.text}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{it.area} · {it.label}</span>
+                </span>
               </Link>
               <Button type="button" size="icon-sm" variant="ghost" aria-label={`Add to Today: ${it.text}`} title="Add to Today" disabled={hasOpenTodo(todos, it.text, today)} onClick={() => addToToday(it)}><ListPlus /></Button>
               <Button type="button" size="icon-sm" variant="ghost" aria-label={it.id.startsWith("rem-") ? `Clear reminder: ${it.text}` : `Snooze until tomorrow: ${it.text}`} title={it.id.startsWith("rem-") ? "Clear reminder" : "Snooze until tomorrow"} onClick={() => (it.id.startsWith("rem-") ? saveReminders(clearReminder(reminders, it.id)) : doSnooze(it.id))}><BellOff /></Button>
@@ -197,42 +102,105 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
   );
 }
 
+const NOTE = {
+  good: { Icon: CheckCircle2, tone: "text-emerald-600" },
+  warn: { Icon: Clock, tone: "text-amber-600" },
+  bad: { Icon: ArrowDown, tone: "text-red-600" },
+} as const;
+const KPI_ICON: Record<string, { Icon: LucideIcon; box: string }> = {
+  money: { Icon: DollarSign, box: "bg-emerald-500" },
+  tasks: { Icon: FolderKanban, box: "bg-amber-400" },
+};
+
+function KpiCard({ kpi, bars }: { kpi: Kpi; bars: number[] }) {
+  const { Icon: NoteIcon, tone } = NOTE[kpi.note.tone];
+  const icon = KPI_ICON[kpi.id];
+  return (
+    <Link href={kpi.href} className="flex min-h-36 flex-col justify-between rounded-2xl border bg-card p-4 shadow-panel outline-none transition-shadow hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring">
+      <div>
+        <p className="text-3xl font-semibold tabular-nums">{kpi.value}</p>
+        <p className="text-sm text-muted-foreground">{kpi.label}</p>
+      </div>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <p className={cn("flex items-center gap-1.5 text-sm font-medium", tone)}><NoteIcon className="size-4" aria-hidden /> {kpi.note.text}</p>
+        {icon ? (
+          <span className={cn("grid size-12 shrink-0 place-items-center rounded-xl text-white shadow-sm", icon.box)}><icon.Icon className="size-6" aria-hidden /></span>
+        ) : (
+          <MiniBars values={bars} label="Needs attention by service" />
+        )}
+      </div>
+    </Link>
+  );
+}
+
+const STATUS = {
+  clear: { text: "ALL CLEAR", dot: "bg-emerald-500", line: "Nothing is late or due soon." },
+  watch: { text: "WORTH A LOOK", dot: "bg-amber-400", line: "A few things are coming due." },
+  attention: { text: "NEEDS ATTENTION", dot: "bg-red-500", line: "Something is overdue." },
+} as const;
+
+/** How much of today's list is done, next to the overall state of the back office. */
+function ProgressCard({ today, status }: { today: string; status: DashboardData["status"] }) {
+  const list = todaysTodos(useTodos(), today);
+  const done = list.filter((t) => t.done).length;
+  const pct = list.length === 0 ? 0 : Math.round((done / list.length) * 100);
+  const s = STATUS[status];
+  return (
+    <section aria-labelledby="progress-heading" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="progress">
+      <h2 id="progress-heading" className="text-base font-semibold">Today&apos;s progress</h2>
+      <div className="mt-2 flex items-center justify-around gap-3">
+        <ProgressRing percent={pct} label="Today's tasks done" />
+        <div className="text-sm">
+          <p className="text-muted-foreground">{list.length === 0 ? "No tasks for today" : `${done} of ${list.length} tasks done`}</p>
+          <p className="mt-3 text-muted-foreground">Status</p>
+          <p className="flex items-center gap-2 font-semibold tracking-wide"><span className={cn("size-3 rounded-full", s.dot)} aria-hidden /> {s.text}</p>
+          <p className="mt-1 max-w-48 text-xs text-muted-foreground">{s.line}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /**
- * The signed-in landing page. The numbers and the action list arrive already computed from the server
- * (`data`), so the first paint is complete; only the visitor's own to-dos, snoozes and greeting are read in the browser.
+ * The signed-in landing page. The numbers, charts and action list arrive already computed from the server
+ * (`data`), so the first paint is complete; only the visitor's own to-dos and snoozes are read in the browser.
  */
-export function Dashboard({ base, data, serverToday, name }: { base: "/app"; data: DashboardData; serverToday: string; name?: string }) {
+export function Dashboard({ data, serverToday }: { base?: "/app"; data: DashboardData; serverToday: string; name?: string }) {
   const today = useToday(serverToday) ?? serverToday;
-  const greeting = useGreeting() ?? "Welcome back";
+  const bars = data.workload.map((w) => w.attention);
 
   return (
     <div className="space-y-5" data-testid="dashboard">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-xl font-semibold tracking-tight" data-testid="greeting">{greeting}{name ? `, ${name.split(/\s+/)[0]}` : ""}</p>
-          <p className="text-sm text-muted-foreground" data-testid="day-summary">{formatDayLong(today)} · {summary(data)}</p>
-        </div>
-        <QuickActions base={base} />
-      </div>
+      <section aria-label="At a glance" className="grid gap-4 sm:grid-cols-3">
+        {data.kpis.map((k) => <KpiCard key={k.id} kpi={k} bars={bars} />)}
+      </section>
 
-      {isBlank(data) && <WhereToBegin base={base} />}
-
-      <TodayTodos today={today} />
-
-      <div className="grid gap-5 lg:grid-cols-3">
-        {data.groups.map((g) => (
-          <section key={g.title} aria-labelledby={`group-${g.title}`} className="space-y-2">
-            <h2 id={`group-${g.title}`} className="text-sm font-semibold text-muted-foreground">{g.title}</h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-              {g.tiles.map((t) => <SummaryTile key={t.id} icon={TILE_ICON[t.id] ?? Inbox} label={t.label} value={t.value} tone={TONE[t.tone]} href={t.href} />)}
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="min-w-0 space-y-5">
+          <section aria-labelledby="workload-heading" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="workload">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 id="workload-heading" className="text-base font-semibold">Open work by service</h2>
+              <p className="flex items-center gap-4 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-brand-sky" aria-hidden /> Open</span>
+                <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-brand-purple-deep" aria-hidden /> Needs attention</span>
+              </p>
             </div>
+            <div className="mt-3"><WorkloadChart rows={data.workload} /></div>
           </section>
-        ))}
-      </div>
 
-      <div className="grid gap-5 lg:grid-cols-5">
-        <div className="lg:col-span-3"><Attention items={data.items} today={today} /></div>
-        <div className="lg:col-span-2"><Queue queue={data.queue} /></div>
+          <div className="grid gap-5 lg:grid-cols-2">
+            <ProgressCard today={today} status={data.status} />
+            <section aria-labelledby="upcoming-heading" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="upcoming">
+              <h2 id="upcoming-heading" className="text-base font-semibold">Due in the next 7 days</h2>
+              <div className="mt-2"><UpcomingChart days={data.upcoming} /></div>
+            </section>
+          </div>
+        </div>
+
+        <aside aria-label="Today and attention" className="order-first min-w-0 space-y-5 xl:order-none">
+          <TodayTodos today={today} />
+          <Attention items={data.items} today={today} />
+        </aside>
       </div>
     </div>
   );

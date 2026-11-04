@@ -64,16 +64,4 @@ test.describe("industry setup", () => {
     await expect(page.getByTestId("license-card").filter({ hasText: "Vehicle registration" })).toBeVisible();
   });
 
-  test("the home screen starts with the services this industry leans on", async ({ page }) => {
-    await page.goto("/app/setup?tab=setup");
-    await pickIndustry(page, "Education & childcare");
-    await next(page).click();
-    await next(page).click();
-    await next(page).click();
-    await next(page).click();
-    await page.getByRole("button", { name: "Finish setup" }).click();
-    await page.goto("/app/overview");
-    const begin = page.getByTestId("where-to-begin");
-    await expect(begin.getByRole("link").first()).toContainText("Licenses");
-  });
 });

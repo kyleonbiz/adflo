@@ -1,9 +1,7 @@
-import { daysBetween, formatDayLong } from "@/lib/dates";
-import { notifications, summarize as adminSummary } from "@/lib/admin/logic";
-import type { AdminRequest, Routine } from "@/lib/admin/types";
+import { addDays, formatDayLong } from "@/lib/dates";
 import { formatMoney, invoiceState, summarize as invoiceSummary } from "@/lib/invoices/logic";
 import type { Invoice } from "@/lib/invoices/types";
-import { licenseStatus, needsReview, summarize as licenseSummary } from "@/lib/licenses/logic";
+import { licenseStatus, needsReview } from "@/lib/licenses/logic";
 import type { License } from "@/lib/licenses/types";
 import { summarize as projectSummary, taskAlerts } from "@/lib/projects/logic";
 import type { Project } from "@/lib/projects/types";
@@ -16,39 +14,33 @@ export interface DashboardSources {
   licenses: License[];
   projects: Project[];
   vendors: Vendor[];
-  requests: AdminRequest[];
-  routines: Routine[];
 }
 
 export type Severity = "critical" | "warning" | "info";
-export type Area = "Invoices" | "Licenses" | "Projects" | "Admin";
-export type Tone = "neutral" | "warning" | "danger";
+export type Area = "Invoices" | "Licenses" | "Tasks";
 
-export interface Tile { id: string; label: string; value: string; href: string; tone: Tone }
-export interface TileGroup { title: string; tiles: Tile[] }
+/** One headline card: a number, where it links, and a one-line status under it. */
+export interface Kpi {
+  id: "money" | "tasks" | "attention";
+  label: string;
+  value: string;
+  href: string;
+  /** The line under the number: what is wrong (`bad`), worth a look (`warn`) or fine (`good`). */
+  note: { tone: "good" | "warn" | "bad"; text: string };
+}
+/** Open work in a service, and how much of it needs attention: one pair of bars in the overview chart. */
+export interface WorkloadRow { label: string; open: number; attention: number }
+/** How much falls due on one of the next seven days (anything already late counts on today). */
+export interface UpcomingDay { day: string; label: string; count: number }
 export interface AttentionItem { id: string; area: Area; severity: Severity; label: string; text: string; href: string }
-/** Something that cannot move until you decide. `waitingDays` is how long it has sat; `stale` marks the ones quietly going cold. */
-export interface QueueItem { id: string; kind: "Request" | "Vendor"; title: string; href: string; waitingDays: number; stale: boolean }
 /** Plain data (no functions or dates), so a server component can hand it to the client dashboard. */
-export interface DashboardData { groups: TileGroup[]; items: AttentionItem[]; queue: QueueItem[] }
-
-/** A decision waiting this many days or more is flagged, because that is how admin work gets lost. */
-export const STALE_QUEUE_DAYS = 3;
-
-/** Everything waiting on a decision from you, longest wait first. */
-export function buildQueue(src: DashboardSources, today: string, base = "/app"): QueueItem[] {
-  const wait = (from: string) => Math.max(0, daysBetween(from, today));
-  const out: QueueItem[] = [
-    ...src.requests.filter((r) => r.status === "pending_approval").map((r): QueueItem => {
-      const waitingDays = wait(r.createdOn);
-      return { id: `req-${r.id}`, kind: "Request", title: r.title, href: `${base}/admin`, waitingDays, stale: waitingDays >= STALE_QUEUE_DAYS };
-    }),
-    ...src.vendors.filter((v) => v.status === "pending_approval").map((v): QueueItem => {
-      const waitingDays = wait(v.createdOn);
-      return { id: `ven-${v.id}`, kind: "Vendor", title: v.name, href: `${base}/vendors`, waitingDays, stale: waitingDays >= STALE_QUEUE_DAYS };
-    }),
-  ];
-  return out.sort((a, b) => b.waitingDays - a.waitingDays);
+export interface DashboardData {
+  kpis: Kpi[];
+  workload: WorkloadRow[];
+  upcoming: UpcomingDay[];
+  /** Overall state for the status line: something critical, something to look at, or nothing. */
+  status: "attention" | "watch" | "clear";
+  items: AttentionItem[];
 }
 
 const RANK: Record<Severity, number> = { critical: 0, warning: 1, info: 2 };
@@ -95,46 +87,64 @@ function licenseItems(licenses: License[], today: string, base: string): Attenti
 /** The numbers and the action list for the dashboard, computed once for a given day. */
 export function buildDashboard(src: DashboardSources, today: string, base = "/app"): DashboardData {
   const inv = invoiceSummary(src.invoices, today);
-  const lic = licenseSummary(src.licenses, today);
   const proj = projectSummary(src.projects, today);
   const ven = vendorSummary(src.vendors, today);
-  const adm = adminSummary(src.requests, src.routines, today);
-  const tone = (n: number, t: Tone): Tone => (n > 0 ? t : "neutral");
-
-  const groups: TileGroup[] = [
-    { title: "Money", tiles: [
-      { id: "outstanding", label: "Outstanding invoices", value: formatMoney(inv.outstandingCents), href: `${base}/invoices`, tone: "neutral" },
-      { id: "overdue-invoices", label: "Overdue invoices", value: String(inv.overdueCount), href: `${base}/invoices`, tone: tone(inv.overdueCount, "danger") },
-    ] },
-    { title: "Compliance", tiles: [
-      { id: "licenses", label: "Licenses to renew", value: String(lic.renewalWindow + lic.expiring + lic.expired), href: `${base}/licenses`, tone: tone(lic.expiring + lic.expired, "warning") },
-      { id: "vendors", label: "Vendors awaiting approval", value: String(ven.pendingApproval), href: `${base}/vendors`, tone: tone(ven.pendingApproval, "warning") },
-    ] },
-    { title: "Work", tiles: [
-      { id: "tasks", label: "Open project tasks", value: String(proj.openTasks), href: `${base}/projects`, tone: "neutral" },
-      { id: "overdue-tasks", label: "Overdue tasks", value: String(proj.overdueTasks), href: `${base}/projects`, tone: tone(proj.overdueTasks, "danger") },
-      { id: "requests", label: "Open requests", value: String(adm.open), href: `${base}/admin`, tone: "neutral" },
-      { id: "approvals", label: "Waiting for approval", value: String(adm.pendingApproval), href: `${base}/admin`, tone: tone(adm.pendingApproval, "warning") },
-    ] },
-  ];
-
   const items: AttentionItem[] = [
     ...invoiceItems(src.invoices, today, base),
     ...licenseItems(src.licenses, today, base),
     ...taskAlerts(src.projects, today).map((a): AttentionItem => ({
-      id: `task-${a.task.id}`, area: "Projects", href: `${base}/projects`,
+      id: `task-${a.task.id}`, area: "Tasks", href: `${base}/projects`,
       severity: a.state === "overdue" ? "critical" : "warning",
       label: a.state === "overdue" ? "Overdue" : a.state === "due_today" ? "Due today" : "Due soon",
       text: `${a.task.title} · ${a.projectName}`,
     })),
-    ...notifications(src.requests, src.routines, today).map((n): AttentionItem => ({
-      id: `adm-${n.id}`, area: "Admin", href: `${base}/admin`, severity: n.severity,
-      label: n.severity === "critical" ? "Overdue" : n.severity === "warning" ? "Due today" : "Heads up",
-      text: n.message,
-    })),
   ].sort((a, b) => RANK[a.severity] - RANK[b.severity]); // stable: ties keep the order above
 
-  return { groups, items, queue: buildQueue(src, today, base) };
+  const count = (area: Area) => items.filter((i) => i.area === area).length;
+  const workload: WorkloadRow[] = [
+    { label: "Invoices", open: src.invoices.filter((i) => i.status === "sent").length, attention: count("Invoices") },
+    { label: "Licenses", open: src.licenses.length, attention: count("Licenses") },
+    { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive").length, attention: ven.documentIssues },
+    { label: "Tasks", open: proj.openTasks, attention: count("Tasks") },
+  ];
+
+  const plural = (n: number, w: string) => `${n} ${w}`;
+  const kpis: Kpi[] = [
+    { id: "money", label: "Outstanding invoices", value: formatMoney(inv.outstandingCents), href: `${base}/invoices`,
+      note: inv.overdueCount > 0 ? { tone: "bad", text: plural(inv.overdueCount, "overdue") } : { tone: "good", text: "None overdue" } },
+    { id: "tasks", label: "Open tasks", value: String(proj.openTasks), href: `${base}/projects`,
+      note: proj.overdueTasks > 0 ? { tone: "bad", text: plural(proj.overdueTasks, "overdue") } : { tone: "good", text: "None overdue" } },
+    { id: "attention", label: "Needs attention", value: String(items.length), href: `${base}/overview`,
+      note: items.some((i) => i.severity === "critical") ? { tone: "bad", text: "Something is late" } : items.length > 0 ? { tone: "warn", text: "Worth a look" } : { tone: "good", text: "All clear" } },
+  ];
+
+  return {
+    kpis, workload, items,
+    upcoming: upcomingLoad(src, today),
+    status: items.some((i) => i.severity === "critical") ? "attention" : items.length > 0 ? "watch" : "clear",
+  };
+}
+
+const WEEKDAY = ["S", "M", "T", "W", "T", "F", "S"];
+
+/** Counts what falls due on each of the next seven days: unpaid invoices, open tasks and license expiries. */
+export function upcomingLoad(src: DashboardSources, today: string): UpcomingDay[] {
+  const days: UpcomingDay[] = Array.from({ length: 7 }, (_, i) => {
+    const day = addDays(today, i);
+    return { day, label: WEEKDAY[new Date(`${day}T12:00:00Z`).getUTCDay()], count: 0 };
+  });
+  const last = days[6].day;
+  const add = (due: string | null | undefined) => {
+    if (!due || due > last) return;
+    days[due < today ? 0 : days.findIndex((d) => d.day === due)].count++;
+  };
+  for (const i of src.invoices) if (i.status === "sent") add(i.dueOn);
+  for (const p of src.projects) {
+    if (p.status === "completed" || p.status === "on_hold") continue;
+    for (const t of p.tasks) if (!t.done) add(t.dueOn);
+  }
+  for (const l of src.licenses) if (l.expiresOn >= today) add(l.expiresOn);
+  return days;
 }
 
 /** The calendar day in `timeZone` (an IANA name such as the one Vercel sends), or in UTC when it is missing or invalid. */

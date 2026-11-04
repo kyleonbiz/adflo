@@ -91,7 +91,7 @@ function MilestonesAndUpdates({ project, today, actions }: { project: Project; t
   );
 }
 
-function dueText(task: Task, today: string): string {
+export function dueText(task: Task, today: string): string {
   if (!task.dueOn) return "";
   const left = daysBetween(today, task.dueOn);
   if (task.done) return `done ${formatDayLong(task.doneOn ?? task.dueOn)}`;
@@ -106,7 +106,7 @@ const BORDER: Partial<Record<ReturnType<typeof projectHealth>, string>> = {
 };
 
 /** Add a task, or edit one when `task` is given. */
-function TaskForm({ project, task, onSubmit, onCancel }: {
+export function TaskForm({ project, task, onSubmit, onCancel }: {
   project: Project;
   task?: Task;
   onSubmit: (values: TaskFormValues) => void;
@@ -279,7 +279,7 @@ export function ProjectCard({ project, today, actions, open, onOpenChange }: {
                       </label>
                       {t.assignee && <span className="text-xs text-muted-foreground">{t.assignee}</span>}
                       {t.dueOn && <Badge variant={TASK_BADGE[state] ?? "muted"} aria-hidden>{dueText(t, today)}</Badge>}
-                      {!t.done && <RemindMenu kind="task" id={t.id} text={`${t.title} · ${project.name}`} area="Projects" href="/app/projects" today={today} />}
+                      {!t.done && <RemindMenu kind="task" id={t.id} text={`${t.title} · ${project.name}`} area="Tasks" href="/app/projects" today={today} />}
                       <Button size="icon-sm" variant="ghost" aria-label={`Edit task ${t.title}`} title="Edit task" onClick={() => setEditing(t.id)}><Pencil /></Button>
                       <Button size="icon-sm" variant="ghost" aria-label={`Remove task ${t.title}`} title="Remove task" onClick={() => actions.onRemoveTask(project, t)}><X /></Button>
                     </li>

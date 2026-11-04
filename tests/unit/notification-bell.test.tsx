@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NotificationBell } from "@/components/notification-bell";
-import type { AttentionItem, QueueItem } from "@/lib/dashboard/logic";
+import type { AttentionItem } from "@/lib/dashboard/logic";
 import { applyPrefs, parseSeen, rememberSeen, unseen } from "@/lib/dashboard/prefs";
 import { defaultSettings } from "@/lib/settings/types";
 
@@ -57,24 +57,17 @@ describe("NotificationBell", () => {
     expect(screen.getByRole("link", { name: /Invoice b/ })).toBeInTheDocument();
   });
 
-  it("lists what is waiting on you, with how long", async () => {
-    const queue: QueueItem[] = [{ id: "req-1", kind: "Request", title: "Wire the deposit", href: "/app/admin", waitingDays: 6, stale: true }];
-    render(<NotificationBell items={[]} queue={queue} serverToday="2026-10-26" />);
-    await userEvent.click(screen.getByRole("button", { name: "Notifications" }));
-    expect(screen.getByTestId("bell-queue")).toHaveTextContent("Request · Wire the deposit");
-    expect(screen.getByTestId("bell-queue")).toHaveTextContent("6d");
-  });
 });
 
 describe("notification choices", () => {
   const mk = (id: string, area: AttentionItem["area"], text = "x"): AttentionItem => ({ id, area, severity: "warning", label: "L", text, href: "/app" });
-  const all = [mk("inv-1", "Invoices"), mk("lic-1", "Licenses"), mk("adm-a-1", "Admin", '"Wire" is waiting for approval.'), mk("adm-o-1", "Admin", '"Toner" is 3 days overdue.'), mk("task-1", "Projects")];
+  const all = [mk("inv-1", "Invoices"), mk("lic-1", "Licenses"), mk("task-1", "Tasks"), mk("task-2", "Tasks", "Toner is 3 days overdue.")];
 
   it("hides kinds switched off in Settings and keeps the rest", () => {
     const prefs = defaultSettings().notifications;
-    expect(applyPrefs(all, prefs)).toHaveLength(5);
-    const off = { ...prefs, enabled: { ...prefs.enabled, renewals: false, overdueInvoices: false, approvals: false } };
-    expect(applyPrefs(all, off).map((i) => i.id)).toEqual(["adm-o-1", "task-1"]);
+    expect(applyPrefs(all, prefs)).toHaveLength(4);
+    const off = { ...prefs, enabled: { ...prefs.enabled, renewals: false, overdueInvoices: false } };
+    expect(applyPrefs(all, off).map((i) => i.id)).toEqual(["task-1", "task-2"]);
   });
 
   it("works out what is new and reads the saved list defensively", () => {

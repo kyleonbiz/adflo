@@ -5,9 +5,8 @@ const CASES: { path: string; title: string; action: string; opens: RegExp | stri
   { path: "/app/invoices", title: "Send your first invoice", action: "New invoice", opens: "dialog" },
   { path: "/app/licenses", title: "Track your first license", action: "Start from a template", opens: "dialog" },
   { path: "/app/vendors", title: "Add your first vendor", action: "Add vendor", opens: "dialog" },
-  { path: "/app/projects", title: "Start your first project", action: "Create your first project", opens: "dialog" },
+  { path: "/app/projects?view=projects", title: "Start your first project", action: "Create your first project", opens: "dialog" },
   { path: "/app/contacts", title: "Build your contact list", action: "Add your first contact", opens: "dialog" },
-  { path: "/app/admin", title: "Log your first request", action: "New request", opens: "dialog" },
 ];
 
 test.describe("empty states", () => {

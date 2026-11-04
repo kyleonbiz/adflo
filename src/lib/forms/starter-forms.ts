@@ -8,8 +8,8 @@ const f = (id: string, label: string, type: FormField["type"], required = true, 
 export function starterForms(): FormTemplate[] {
   return [
     {
-      id: "form-vendor", name: "New vendor intake", description: "Collect the basics before a supplier is approved.",
-      requiresApproval: true, approver: "Operations manager",
+      id: "form-vendor", name: "New vendor intake", description: "Collect the basics before you start working with a supplier.",
+      sentCount: 0,
       fields: [
         f("v-name", "Company name", "text"), f("v-contact", "Contact email", "email"),
         f("v-service", "Service category", "select", true, ["Supplies", "Software", "Professional services", "Other"]),
@@ -19,8 +19,8 @@ export function starterForms(): FormTemplate[] {
       documentTemplate: "Vendor: {{Company name}}\nContact: {{Contact email}}\nCategory: {{Service category}}\nExpected annual spend: {{Expected annual spend}}\nW-9 on file: {{W-9 on file}}\n\nNotes:\n{{Notes}}",
     },
     {
-      id: "form-leave", name: "Time-off request", description: "Request leave for approval.",
-      requiresApproval: true, approver: "Priya Shah",
+      id: "form-leave", name: "Time-off request", description: "Ask for time off.",
+      sentCount: 0,
       fields: [
         f("l-name", "Employee name", "text"), f("l-from", "First day off", "date"), f("l-to", "Last day off", "date"),
         f("l-type", "Type", "select", true, ["Vacation", "Sick", "Personal"]), f("l-reason", "Reason", "longtext", false),
@@ -29,7 +29,7 @@ export function starterForms(): FormTemplate[] {
     },
     {
       id: "form-feedback", name: "Client feedback", description: "Short survey sent after a project closes.",
-      requiresApproval: false, approver: "",
+      sentCount: 0,
       fields: [f("c-name", "Your name", "text", false), f("c-score", "Score (1-10)", "number"), f("c-comments", "Comments", "longtext", false)],
       documentTemplate: "",
     },

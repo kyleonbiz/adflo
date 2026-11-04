@@ -1,4 +1,3 @@
-import { CATEGORIES, PRIORITIES } from "@/lib/admin/types";
 import { isDay } from "@/lib/dates";
 import { CONTACT_CATEGORIES } from "@/lib/contacts/types";
 import { RECURRENCES } from "@/lib/invoices/types";
@@ -15,7 +14,7 @@ import { VENDOR_CATEGORIES } from "@/lib/vendors/types";
 export type FieldKind = "text" | "email" | "date" | "amount" | "choice";
 export interface FieldRule { kind: FieldKind; max: number; options?: readonly string[] }
 export interface DraftService {
-  id: "invoices" | "admin" | "contacts" | "vendors" | "projects" | "licenses";
+  id: "invoices" | "contacts" | "vendors" | "projects" | "licenses";
   /** What it is called in a sentence: "a draft invoice". */
   noun: string;
   /** The page that opens the draft. */
@@ -40,14 +39,6 @@ export const DRAFT_SERVICES: readonly DraftService[] = [
     refuses: ["marking an invoice paid, voiding or deleting it", "sending an invoice to a client", "bank or card details"],
   },
   {
-    id: "admin", noun: "a draft request", path: "/app/admin", open: "new=1",
-    fields: {
-      title: text(120), description: text(1000), requester: text(80), dueOn: { kind: "date", max: 10 },
-      category: choice(CATEGORIES), priority: choice(PRIORITIES),
-    },
-    refuses: ["approving or declining a request", "marking a request done or deleting it"],
-  },
-  {
     id: "contacts", noun: "a new contact", path: "/app/contacts", open: "add=1",
     fields: { name: text(120), email: { kind: "email", max: 254 }, phone: text(30), company: text(120), category: choice(CONTACT_CATEGORIES) },
     refuses: ["deleting or merging contacts", "importing a list of contacts"],
@@ -55,7 +46,7 @@ export const DRAFT_SERVICES: readonly DraftService[] = [
   {
     id: "vendors", noun: "a new vendor", path: "/app/vendors", open: "new=1",
     fields: { name: text(120), contactName: text(80), email: { kind: "email", max: 254 }, phone: text(30), category: choice(VENDOR_CATEGORIES) },
-    refuses: ["approving or rejecting a vendor", "tax IDs and bank details", "sending reminders to vendors"],
+    refuses: ["tax IDs and bank details", "sending reminders to vendors"],
   },
   {
     id: "projects", noun: "a new project", path: "/app/projects", open: "new=1",

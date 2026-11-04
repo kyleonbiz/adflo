@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { buildReports, emptySources, type ReportSources } from "@/lib/reporting/logic";
 import type { DocumentRecord } from "@/lib/dms/types";
 import { starterForms } from "@/lib/forms/starter-forms";
-import { sampleRequests, sampleRoutines } from "../support/admin-sample-data";
 import { sampleContacts } from "../support/contacts-sample-data";
 import { sampleSubmissions } from "../support/forms-sample-data";
 import { sampleInvoices } from "../support/invoices-sample-data";
@@ -20,7 +19,7 @@ const doc = (over: Partial<DocumentRecord>): DocumentRecord => ({
 
 const full = (): ReportSources => ({
   invoices: sampleInvoices(TODAY), licenses: sampleLicenses(TODAY), projects: sampleProjects(TODAY), vendors: sampleVendors(TODAY),
-  requests: sampleRequests(TODAY), routines: sampleRoutines(TODAY), contacts: sampleContacts(TODAY), forms: starterForms(),
+  contacts: sampleContacts(TODAY), forms: starterForms(),
   submissions: sampleSubmissions(TODAY),
   documents: [
     doc({ id: "d1", category: "contract", sizeBytes: 2048, expiresAt: "2026-11-05T00:00:00Z" }),
@@ -37,8 +36,8 @@ const sum = (rows: { value: number }[]) => rows.reduce((n, r) => n + r.value, 0)
 describe("buildReports", () => {
   it("makes one report per service that holds records, in catalogue order, each linking to its page", () => {
     const reports = buildReports(full(), TODAY);
-    expect(reports.map((r) => r.id)).toEqual(["documents", "invoices", "licenses", "vendors", "crm", "projects", "forms", "admin"]);
-    expect(reports.map((r) => r.href)).toEqual(["/app", "/app/invoices", "/app/licenses", "/app/vendors", "/app/contacts", "/app/projects", "/app/forms", "/app/admin"]);
+    expect(reports.map((r) => r.id)).toEqual(["documents", "invoices", "licenses", "vendors", "crm", "projects", "forms"]);
+    expect(reports.map((r) => r.href)).toEqual(["/app", "/app/invoices", "/app/licenses", "/app/vendors", "/app/contacts", "/app/projects", "/app/forms"]);
     expect(reports.map((r) => r.name)).toContain("Contacts");
   });
 
@@ -59,7 +58,6 @@ describe("buildReports", () => {
     expect(sum(by(reports, "licenses").breakdowns[0].rows)).toBe(src.licenses.length);
     expect(sum(by(reports, "vendors").breakdowns[0].rows)).toBe(src.vendors.length);
     expect(sum(by(reports, "projects").breakdowns[0].rows)).toBe(src.projects.length);
-    expect(sum(by(reports, "admin").breakdowns[0].rows)).toBe(src.requests.length);
     expect(by(reports, "crm").count).toBe(src.contacts.length);
     expect(by(reports, "forms").count).toBe(src.submissions.length);
     for (const r of reports) for (const row of r.table.rows) expect(row, r.id).toHaveLength(r.table.headers.length);
@@ -73,7 +71,7 @@ describe("buildReports", () => {
     expect(metric("invoices", "Overdue").tone).toBe("danger");
     expect(metric("invoices", "Overdue").note).toMatch(/^\$/);
     expect(by(reports, "licenses").metrics.map((m) => m.label)).toEqual(["Licenses", "Expired", "Expiring soon", "Missing documents"]);
-    expect(metric("forms", "Waiting for approval").value).toBe("2"); // s-1 and s-3 in the sample
+    expect(metric("forms", "New responses").value).toBe("3"); // s-1, s-3 and s-5 in the sample
   });
 
   it("totals documents, leaving out deleted and unfinished uploads, and flags expiry", () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  allTasksDone, completeTask, overdueTasks, progress, projectHealth, projectsReport, reopenTask, sortProjects, sortTasks, summarize, taskAlerts, taskState,
+  GENERAL_PROJECT_ID, allTasksDone, completeTask, generalProject, isGeneral, overdueTasks, progress, projectHealth, projectsReport, reopenTask, sortProjects, sortTasks, summarize, taskAlerts, taskList, taskState,
 } from "@/lib/projects/logic";
 import { sampleProjects } from "../support/projects-sample-data";
 import { PROJECT_TEMPLATES, buildTasks, templateById, templateDueOn } from "@/lib/projects/templates";
@@ -223,88 +223,40 @@ describe("project templates", () => {
   });
 });
 
-import { buildCustomType, parseCustomTypes } from "@/lib/projects/custom-types";
-
-describe("custom project types", () => {
-  const ok = { name: "Quarterly tax prep", summary: "", durationDays: "30", tasks: "A\nB\n\nC" };
-
-  it("builds a type with its tasks spread evenly across the duration", () => {
-    const r = buildCustomType(ok, "x1", PROJECT_TEMPLATES);
-    if ("error" in r) throw new Error(r.error);
-    expect(r.type.id).toBe("custom-x1");
-    expect(r.type.tasks.map((t) => [t.title, t.offsetDays])).toEqual([["A", 10], ["B", 20], ["C", 30]]);
-    expect(r.type.summary).toContain("3 tasks");
+describe("taskList", () => {
+  const all = sampleProjects(TODAY);
+  it("flattens open tasks across projects, most urgent first, undated last", () => {
+    expect(taskList(all, TODAY).map((i) => [i.task.title, i.state])).toEqual([
+      ["Import vendor list", "overdue"],
+      ["Submit city permit renewal", "due_today"],
+      ["Configure invoice templates", "due_soon"],
+      ["Weekly check-in", "due_soon"],
+      ["Scope the cleanup", "open"],
+      ["Export contact list", "open"],
+      ["Train staff", "open"],
+      ["Update insurance certificate", "unscheduled"],
+    ]);
   });
-
-  it("refuses a missing or duplicate name, a bad length and too many tasks", () => {
-    expect(buildCustomType({ ...ok, name: " " }, "x", [])).toHaveProperty("error");
-    expect(buildCustomType({ ...ok, name: "client onboarding" }, "x", PROJECT_TEMPLATES)).toHaveProperty("error");
-    expect(buildCustomType({ ...ok, durationDays: "0" }, "x", [])).toHaveProperty("error");
-    expect(buildCustomType({ ...ok, durationDays: "2.5" }, "x", [])).toHaveProperty("error");
-    expect(buildCustomType({ ...ok, tasks: Array.from({ length: 31 }, (_, i) => `t${i}`).join("\n") }, "x", [])).toHaveProperty("error");
-  });
-
-  it("allows a type with no tasks and reads saved types defensively", () => {
-    const r = buildCustomType({ ...ok, tasks: "" }, "x2", []);
-    expect("type" in r && r.type.tasks).toEqual([]);
-    expect(parseCustomTypes("nope")).toEqual([]);
-    expect(parseCustomTypes(JSON.stringify([{ id: "other" }, "type" in r ? r.type : null]))).toHaveLength(1);
+  it("skips tasks in on-hold or completed projects, and shows finished tasks only on request", () => {
+    const held = all.map((p) => (p.id === "p-1" ? { ...p, status: "on_hold" as const } : p));
+    expect(taskList(held, TODAY).map((i) => i.task.title)).not.toContain("Import vendor list");
+    expect(taskList(all, TODAY).every((i) => !i.task.done)).toBe(true);
+    const withDone = taskList(all, TODAY, true);
+    expect(withDone.filter((i) => i.task.done).length).toBe(5);
+    const firstDone = withDone.findIndex((i) => i.task.done);
+    expect(withDone.slice(firstDone).every((i) => i.task.done)).toBe(true); // finished tasks come last
   });
 });
 
-import { RECURRING_PROJECT_ID, addMilestone, addUpdate, completeTask as completeT, isRecurringProject, milestoneSummary, milestonesOf, recurringProject, removeMilestone, toggleMilestone, updatesOf } from "@/lib/projects/logic";
-import { projectFormSchema as pfs } from "@/lib/projects/validation";
-
-describe("project scope: milestones, updates, owner and link", () => {
-  const T = "2026-10-25";
-  const project = (): Project => ({ ...sampleProjects(T)[0], milestones: [], updates: [] });
-
-  it("adds milestones in date order, ticks them off and counts the overdue ones", () => {
-    let p = project();
-    for (const [title, dueOn] of [["Launch", "2026-12-01"], ["Sign-off", "2026-10-20"], ["Draft", "2026-11-05"]]) {
-      const r = addMilestone(p, { title, dueOn }, `m-${title}`);
-      if ("error" in r) throw new Error(r.error);
-      p = r.project;
-    }
-    expect(milestonesOf(p).map((m) => m.title)).toEqual(["Sign-off", "Draft", "Launch"]);
-    expect(milestoneSummary(p, T)).toMatchObject({ done: 0, total: 3, overdue: 1 });
-    expect(milestoneSummary(p, T).next?.title).toBe("Sign-off");
-    p = toggleMilestone(p, "m-Sign-off", T);
-    expect(milestoneSummary(p, T)).toMatchObject({ done: 1, overdue: 0 });
-    expect(toggleMilestone(p, "m-Sign-off", T).milestones?.find((m) => m.id === "m-Sign-off")?.doneOn).toBeNull();
-    expect(removeMilestone(p, "m-Launch").milestones).toHaveLength(2);
-  });
-
-  it("refuses a nameless or undated milestone and caps how many a project can hold", () => {
-    expect(addMilestone(project(), { title: "  ", dueOn: "2026-11-01" }, "a")).toHaveProperty("error");
-    expect(addMilestone(project(), { title: "Launch", dueOn: "" }, "a")).toHaveProperty("error");
-    let p = project();
-    for (let i = 0; i < 20; i++) { const r = addMilestone(p, { title: `M${i}`, dueOn: "2026-11-01" }, `m${i}`); if ("project" in r) p = r.project; }
-    expect(addMilestone(p, { title: "One more", dueOn: "2026-11-01" }, "x")).toHaveProperty("error");
-  });
-
-  it("keeps a dated log of updates, ignoring blank ones", () => {
-    let p = addUpdate(project(), { text: " Client approved the draft ", by: "Dana", on: T }, "u1");
-    p = addUpdate(p, { text: "Waiting on photos", by: "", on: "2026-10-26" }, "u2");
-    expect(updatesOf(p).map((u) => [u.on, u.by, u.text])).toEqual([[T, "Dana", "Client approved the draft"], ["2026-10-26", "You", "Waiting on photos"]]);
-    expect(addUpdate(p, { text: "   ", by: "x", on: T }, "u3")).toBe(p);
-  });
-
-  it("takes an owner and an optional contact or vendor link from the form", () => {
-    const base = { name: "Spring cleanup", client: "", description: "", status: "planning", startOn: "2026-11-01", dueOn: "2026-12-01" };
-    expect(pfs.parse(base)).toMatchObject({ owner: "", linkKind: "none", linkName: "" });
-    expect(pfs.parse({ ...base, owner: "Priya", linkKind: "vendor", linkName: "Acme" })).toMatchObject({ owner: "Priya", linkKind: "vendor", linkName: "Acme" });
-    expect(pfs.safeParse({ ...base, linkKind: "contact", linkName: "" }).success).toBe(false);
-    expect(pfs.safeParse({ ...base, linkKind: "company", linkName: "x" }).success).toBe(false);
-  });
-
-  it("repeats quarterly and yearly tasks, and gives repeating work one home", () => {
-    const task = (repeat: "quarterly" | "yearly") => ({ id: "t1", title: "Review", assignee: "", dueOn: "2026-10-25", repeat, done: false, doneOn: null, followUpId: null });
-    expect(completeT([task("quarterly")], "t1", T, "n1").find((t) => t.id === "n1")?.dueOn).toBe("2027-01-25");
-    expect(completeT([task("yearly")], "t1", T, "n2").find((t) => t.id === "n2")?.dueOn).toBe("2027-10-25");
-    const home = recurringProject([task("yearly")], T);
-    expect(home.id).toBe(RECURRING_PROJECT_ID);
-    expect(isRecurringProject(home)).toBe(true);
-    expect(isRecurringProject(project())).toBe(false);
+describe("the General tasks project", () => {
+  it("holds standalone tasks without counting as a project", () => {
+    const general = { ...generalProject(TODAY), tasks: [task({ id: "g1", dueOn: "2026-10-01" })] };
+    expect(isGeneral(general)).toBe(true);
+    expect(general.id).toBe(GENERAL_PROJECT_ID);
+    const before = summarize(sampleProjects(TODAY), TODAY);
+    const after = summarize([...sampleProjects(TODAY), general], TODAY);
+    expect(after.activeProjects).toBe(before.activeProjects);
+    expect(after.openTasks).toBe(before.openTasks + 1);
+    expect(taskList([general], TODAY).map((i) => i.task.id)).toEqual(["g1"]);
   });
 });

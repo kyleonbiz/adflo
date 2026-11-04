@@ -14,7 +14,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 async function loadNotifications() {
   const today = dayInZone((await headers()).get("x-vercel-ip-timezone"));
   const data = buildDashboard(await loadDashboardSources(), today);
-  return { items: data.items, queue: data.queue, today };
+  return { items: data.items, today };
 }
 
 function Frame({ topRight, children }: { topRight: React.ReactNode; children: React.ReactNode }) {

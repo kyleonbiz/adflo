@@ -11,7 +11,7 @@ export type FollowUpState = "none" | "waiting" | "due" | "ghosted";
 
 /** Required documents the vendor still owes: missing, expired or about to expire. Inactive and rejected vendors owe nothing. */
 export function owed(v: Vendor, today: string): VendorDocument[] {
-  if (v.status === "inactive" || v.status === "rejected") return [];
+  if (v.status === "inactive") return [];
   return v.documents.filter((d) => d.required && docState(d, today) !== "valid");
 }
 

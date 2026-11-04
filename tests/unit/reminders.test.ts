@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MAX_REMINDERS, clearReminder, dueReminders, parseReminders, reminderId, reminderItems, setReminder, type Reminder } from "@/lib/reminders/logic";
 
 const T = "2026-10-26";
-const base = { id: reminderId("request", "r1"), text: "Order toner", area: "Admin" as const, href: "/app/admin" };
+const base = { id: reminderId("request", "r1"), text: "Order toner", area: "Tasks" as const, href: "/app/projects" };
 
 describe("reminders", () => {
   it("sets a day, moves it when asked again, and clears it", () => {
@@ -15,9 +15,9 @@ describe("reminders", () => {
   });
 
   it("is due from its day onward, oldest first, and becomes a feed item", () => {
-    const list: Reminder[] = [{ ...base, on: "2026-10-26" }, { ...base, id: "rem-task-t1", text: "Send W-9", area: "Projects", href: "/app/projects", on: "2026-10-20" }, { ...base, id: "rem-request-r2", on: "2026-10-30" }];
+    const list: Reminder[] = [{ ...base, on: "2026-10-26" }, { ...base, id: "rem-task-t1", text: "Send W-9", area: "Tasks", href: "/app/projects", on: "2026-10-20" }, { ...base, id: "rem-request-r2", on: "2026-10-30" }];
     expect(dueReminders(list, T).map((r) => r.id)).toEqual(["rem-task-t1", base.id]);
-    expect(reminderItems(list, T)[0]).toMatchObject({ id: "rem-task-t1", area: "Projects", label: "Reminder", severity: "warning", href: "/app/projects" });
+    expect(reminderItems(list, T)[0]).toMatchObject({ id: "rem-task-t1", area: "Tasks", label: "Reminder", severity: "warning", href: "/app/projects" });
   });
 
   it("keeps the list bounded and reads saved reminders defensively", () => {

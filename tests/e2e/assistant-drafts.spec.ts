@@ -18,13 +18,10 @@ test.describe("assistant drafts", () => {
     await expect(dialog.getByLabel("Phone")).toHaveValue("");
   });
 
-  test("a vendor draft never carries a tax ID, and requests, projects and licenses open prefilled", async ({ page }) => {
+  test("a vendor draft never carries a tax ID, and projects and licenses open prefilled", async ({ page }) => {
     await page.goto("/app/vendors?new=1&name=Blue%20Ridge&email=orders%40blueridge.example&taxId=12-3456789");
     await expect(page.getByRole("dialog").getByLabel("Vendor name")).toHaveValue("Blue Ridge");
     await expect(page.getByRole("dialog").getByLabel(/Tax ID/)).toHaveValue("");
-
-    await page.goto("/app/admin?new=1&title=Order%20toner&priority=low");
-    await expect(page.getByRole("dialog").getByLabel("Title")).toHaveValue("Order toner");
 
     await page.goto("/app/projects?new=1&name=Spring%20cleanup&client=Acme");
     await expect(page.getByRole("dialog").getByLabel("Project name")).toHaveValue("Spring cleanup");

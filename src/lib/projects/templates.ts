@@ -61,9 +61,9 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   },
   {
     id: "vendor-onboarding",
-    name: "Vendor onboarding",
-    summary: "Approve a new vendor with the right paperwork on file.",
-    description: "Collect compliance documents and approve the vendor before the first payment.",
+    name: "Vendor Onboarding",
+    summary: "Onboard a new vendor with the right paperwork on file.",
+    description: "Collect compliance documents and activate the vendor before the first payment.",
     durationDays: 14,
     tasks: [
       { title: "Collect W-9 and contact details", offsetDays: 2 },
@@ -71,7 +71,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
       { title: "Collect business license copy", offsetDays: 5 },
       { title: "Review contract and payment terms", offsetDays: 7 },
       { title: "Check for duplicate vendor records", offsetDays: 8 },
-      { title: "Approve vendor and add to payment system", offsetDays: 10 },
+      { title: "Activate vendor and add to payment system", offsetDays: 10 },
       { title: "File documents and set expiry reminders", offsetDays: 14 },
     ],
   },

@@ -9,7 +9,6 @@ export function applyPrefs(items: AttentionItem[], prefs: NotificationPrefs): At
   return items.filter((i) => {
     if (i.area === "Licenses") return prefs.enabled.renewals;
     if (i.area === "Invoices") return prefs.enabled.overdueInvoices;
-    if (i.area === "Admin" && i.text.includes("waiting for approval")) return prefs.enabled.approvals;
     return true;
   });
 }

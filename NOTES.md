@@ -25,7 +25,7 @@ Working notes for tests: run `npm run typecheck` before every push (the Vercel b
 - [x] **Settings page** — renamed; tabs: Business profile, Team, Notifications, Appearance, Guided setup (`/app/setup?tab=...`).
 - [ ] **Admin research** — what else can an admin do?
 - [x] **Rename "Data Entry & Reporting" → "Reporting"** — already done (commit 87dacd6); verify no leftover labels.
-- [x] **Requests (was Admin Support)** — renamed. Recurring tasks now live in Projects (a Recurring work project); approvals stay in Requests.
+- [x] **Requests (was Admin Support)** — removed: it wasn't useful. Recurring work lives in Tasks (was Projects); approvals live in Forms and Vendors.
 - [x] **File reset** — now a one-time "Tidy up files" tool: out of the sidebar, linked from Documents and Guided setup.
 - [x] **Day/Night view switch** — done, in Settings › Appearance (Day, Night, Match my device).
 
@@ -34,3 +34,10 @@ Working notes for tests: run `npm run typecheck` before every push (the Vercel b
 - A project can be linked to a contact or a vendor, so you can jump from the work to the person.
 - Recurring tasks moved out of Requests into a Recurring work project; Requests keeps requests and approvals.
 - Everything is kept in the browser, like the rest of the app, until the database is added.
+
+## Merge of revision-part-1 into main (Nov 4)
+`main` had moved: another session removed Requests and approvals, renamed Projects to Tasks, redesigned Home and added form sending. Where the two disagreed, `main` won:
+- Not carried over: approval chains (Settings > Approvals), the Requests page and its reminders and recurring-task dialog, the "Waiting on you" queue, the "Where to begin" home cards, and vendor approval states.
+- Kept from revision-part-1: Contacts name with Vendors as a tab, icon-only sidebar minimize, licenses templates and compliance, OCR, vendor follow-ups and extras, paperwork picker with print/PDF, signing, onboarding packets, the Contacts and Forms bridge, industry setup, assistant guardrails and drafts, Reporting dropdown, notifications, and project owner, milestones, updates log and contact or vendor link.
+- Task reminders ("Remind me") still show in the bell and the home feed.
+

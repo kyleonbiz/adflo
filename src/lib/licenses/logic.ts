@@ -1,4 +1,4 @@
-import type { CalendarEvent } from "@/lib/admin/ics";
+import type { CalendarEvent } from "@/lib/ics";
 import { addDays, addMonths, daysBetween, isDay } from "@/lib/dates";
 import type { License, LicenseAlert, LicenseStatus, RenewalTask } from "./types";
 

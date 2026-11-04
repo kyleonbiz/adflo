@@ -229,7 +229,7 @@ describe("compliance", () => {
 });
 
 import { licenseCalendarEvents } from "@/lib/licenses/logic";
-import { toIcs } from "@/lib/admin/ics";
+import { toIcs } from "@/lib/ics";
 
 describe("renewal calendar", () => {
   it("lists each expiry and its upcoming reminder days, leaving out reminders already past", () => {

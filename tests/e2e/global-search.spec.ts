@@ -4,9 +4,9 @@ test("the top bar search jumps to a service and fills in its own search", async 
   await page.goto("/app/overview");
   const box = page.getByRole("combobox", { name: "Search Adflo" });
   await box.fill("projects");
-  await page.getByRole("option", { name: /Search projects for/ }).click();
+  await page.getByRole("option", { name: /Search tasks and projects for/ }).click();
   await expect(page).toHaveURL(/\/app\/projects\?q=projects/);
-  await expect(page.getByRole("textbox", { name: "Search projects" })).toHaveValue("projects");
+  await expect(page.getByRole("textbox", { name: "Search tasks" })).toHaveValue("projects");
 });
 
 test("the filter menu limits the search to one service", async ({ page }) => {

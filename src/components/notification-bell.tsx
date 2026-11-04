@@ -8,7 +8,7 @@ import { applyPrefs, rememberSeen, unseen } from "@/lib/dashboard/prefs";
 import { saveSeen, useSeen } from "@/lib/dashboard/seen-storage";
 import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
-import type { AttentionItem, QueueItem, Severity } from "@/lib/dashboard/logic";
+import type { AttentionItem, Severity } from "@/lib/dashboard/logic";
 import { clearReminder, reminderItems } from "@/lib/reminders/logic";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { useSettings } from "@/lib/settings/storage";
@@ -21,7 +21,7 @@ const SHOWN = 8;
  * The bell in the top bar: the same "needs your attention" items as the dashboard (already computed on
  * the server), minus the ones snoozed in this browser. Opens a short list; each row goes to its service.
  */
-export function NotificationBell({ items, queue = [], serverToday, overviewHref = "/app/overview" }: { items: AttentionItem[]; queue?: QueueItem[]; serverToday: string; overviewHref?: string }) {
+export function NotificationBell({ items, serverToday, overviewHref = "/app/overview" }: { items: AttentionItem[]; serverToday: string; overviewHref?: string }) {
   const today = useToday(serverToday) ?? serverToday;
   const snoozed = useSnoozed();
   const settings = useSettings();
@@ -51,23 +51,6 @@ export function NotificationBell({ items, queue = [], serverToday, overviewHref 
             <p className="text-sm font-semibold">Notifications</p>
             {live.length > 0 && <p className="text-xs text-muted-foreground">{overdue > 0 ? `${overdue} overdue` : "Nothing overdue"}{fresh.size > 0 ? ` · ${fresh.size} new` : ""}</p>}
           </div>
-          {queue.length > 0 && (
-            <div className="border-b px-3 pb-2" data-testid="bell-queue">
-              <p className="text-xs font-medium text-muted-foreground">Waiting on you</p>
-              <ul>
-                {queue.slice(0, 3).map((q) => (
-                  <li key={q.id}>
-                    <PopoverPrimitive.Close asChild>
-                      <Link href={q.href} className="flex items-center justify-between gap-2 rounded-md py-1 text-sm outline-none hover:underline focus-visible:underline">
-                        <span className="min-w-0 truncate">{q.kind} · {q.title}</span>
-                        <span className={cn("shrink-0 text-xs", q.stale ? "font-medium text-amber-700" : "text-muted-foreground")}>{q.waitingDays === 0 ? "today" : `${q.waitingDays}d`}</span>
-                      </Link>
-                    </PopoverPrimitive.Close>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
           {live.length === 0 ? (
             <p className="px-3 pb-3 text-sm text-muted-foreground">{items.length > live.length ? "Nothing else needs you. Some items are snoozed or switched off in Settings." : "You're all caught up."}</p>
           ) : (

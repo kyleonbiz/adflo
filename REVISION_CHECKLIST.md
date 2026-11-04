@@ -3,7 +3,7 @@
 Kyle's list, in the order it was given. `[x]` done, `[~]` partly done, `[ ]` not started.
 Databases go last. Update this file in the same commit as the work.
 
-- [x] Task / request reminders so admin work doesn't fall through cracks ("Remind me" on requests and project tasks puts them in the bell and home feed from the chosen day; stuck approvals are flagged too)
+- [x] Task reminders so admin work doesn't fall through cracks ("Remind me" on project tasks puts them in the bell and the home feed; Requests no longer exists on main)
 - [x] "+" under Projects to add your own project types (in the new-project template dropdown; saved in this browser)
 - [x] Sidebar minimizes to icons only
 - [x] Home screen: more innovative (queue, day summary, where-to-begin cards while empty)
@@ -22,7 +22,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Forms & Paperwork: pick paperwork by business type (28 forms, repeating ones flagged; print, PDF or download after filling in)
 - [x] Reporting: dropdown with Reports, Scheduled reports, Materials (scheduled: due banner, print or PDF, no email yet; materials: summary plus per-service PDF and CSV)
 - [x] Remove anything that looks AI-coded (Title Case labels now sentence case, blue-to-violet gradients and gradient buttons gone, flat navy sign-in)
-- [x] Approval chain (set in Settings > Approvals; up to 6 ordered approvers for requests and for form submissions; a decline stops it; vendors still use one approver)
+- [ ] Approval chain (built, then removed: main dropped approvals from Forms and Vendors, so it was not carried over)
 - [~] Fix for invisible admin bottlenecks (approvals unanswered for 5 days and unstarted work with no due date now flagged in the digest, bell and home feed; escalating to a named owner needs team data)
 - [x] Document signing (in Forms: typed-name signatures with an explicit agreement, several signers, SHA-256 fingerprint and signed-copy PDF; not a certified e-signature service)
 - [x] "Needs your attention" feed

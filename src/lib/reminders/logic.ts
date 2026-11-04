@@ -9,7 +9,7 @@ export interface Reminder {
   /** Stable per thing, so asking again moves the date instead of adding a second one. */
   id: string;
   text: string;
-  area: "Admin" | "Projects";
+  area: "Tasks";
   href: string;
   /** The first day it shows, `YYYY-MM-DD`. */
   on: string;
@@ -47,7 +47,7 @@ export function parseReminders(raw: string): Reminder[] {
     if (!Array.isArray(data)) return [];
     return data
       .filter((r): r is Reminder =>
-        !!r && typeof r.id === "string" && r.id.startsWith(REMINDER_PREFIX) && typeof r.text === "string" && (r.area === "Admin" || r.area === "Projects") &&
+        !!r && typeof r.id === "string" && r.id.startsWith(REMINDER_PREFIX) && typeof r.text === "string" && r.area === "Tasks" &&
         typeof r.href === "string" && r.href.startsWith("/app/") && typeof r.on === "string" && isDay(r.on))
       .slice(0, MAX_REMINDERS);
   } catch { return []; }

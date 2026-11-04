@@ -24,15 +24,14 @@ export interface FormTemplate {
   name: string;
   description: string;
   fields: FormField[];
-  requiresApproval: boolean;
-  approver: string;
+  /** How many times this form has been sent (a link copied or an email opened). */
+  sentCount: number;
   /** Text with `{{Field label}}` placeholders. Empty means the default layout. */
   documentTemplate: string;
 }
 
-import type { ApprovalProgress } from "@/lib/approvals/chain";
-
-export type SubmissionStatus = "received" | "pending" | "approved" | "rejected";
+/** A response is "new" until someone has dealt with it, then "done". */
+export type SubmissionStatus = "new" | "done";
 
 export interface Submission {
   id: string;
@@ -42,9 +41,4 @@ export interface Submission {
   /** Field id -> text. Checkboxes are "true" or "false". */
   values: Record<string, string>;
   status: SubmissionStatus;
-  decidedBy: string | null;
-  decidedOn: string | null;
-  comment: string;
-  /** Set when an approval chain applies: who signs off, in order, and who already has. */
-  approval?: ApprovalProgress;
 }

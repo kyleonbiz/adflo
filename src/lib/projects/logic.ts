@@ -1,6 +1,13 @@
 import { addDays, addMonths, advanceDay, daysBetween, formatDayLong, isDay } from "@/lib/dates";
 import type { Milestone, Project, ProjectHealth, Task, TaskRepeat, TaskState } from "./types";
 
+/** Tasks that belong to no project live in this built-in project. It is created on first use and never listed as a project. */
+export const GENERAL_PROJECT_ID = "general";
+export const isGeneral = (p: Project) => p.id === GENERAL_PROJECT_ID;
+export function generalProject(today: string): Project {
+  return { id: GENERAL_PROJECT_ID, name: "General tasks", client: "", description: "", status: "active", startOn: today, dueOn: addMonths(today, 120), tasks: [] };
+}
+
 /** An open task due within this many days is "due soon". */
 export const DUE_SOON_DAYS = 3;
 
@@ -113,6 +120,29 @@ export function taskAlerts(projects: Project[], today: string): TaskAlert[] {
   return out.sort((a, b) => rank[a.state] - rank[b.state] || a.daysLeft - b.daysLeft);
 }
 
+export interface TaskItem { project: Project; task: Task; state: TaskState }
+
+const URGENCY: Record<TaskState, number> = { overdue: 0, due_today: 1, due_soon: 2, open: 3, unscheduled: 4, done: 5 };
+
+/**
+ * Every task across all projects as one flat list. Open tasks come first, most urgent first (tasks in a
+ * completed or on-hold project are left out, as in the summary); with `includeDone`, finished tasks follow, newest first.
+ */
+export function taskList(projects: Project[], today: string, includeDone = false): TaskItem[] {
+  const open: TaskItem[] = [];
+  const done: TaskItem[] = [];
+  for (const project of projects) {
+    const live = project.status !== "completed" && project.status !== "on_hold";
+    for (const task of project.tasks) {
+      if (task.done) { if (includeDone) done.push({ project, task, state: "done" }); }
+      else if (live) open.push({ project, task, state: taskState(task, today) });
+    }
+  }
+  open.sort((a, b) => URGENCY[a.state] - URGENCY[b.state] || (a.task.dueOn ?? "").localeCompare(b.task.dueOn ?? "") || a.task.title.localeCompare(b.task.title));
+  done.sort((a, b) => (b.task.doneOn ?? "").localeCompare(a.task.doneOn ?? "") || a.task.title.localeCompare(b.task.title));
+  return [...open, ...done];
+}
+
 export interface PortfolioSummary {
   activeProjects: number;
   openTasks: number;
@@ -124,7 +154,7 @@ export function summarize(projects: Project[], today: string): PortfolioSummary 
   const month = today.slice(0, 7);
   const s: PortfolioSummary = { activeProjects: 0, openTasks: 0, overdueTasks: 0, completedThisMonth: 0 };
   for (const p of projects) {
-    if (p.status === "active") s.activeProjects++;
+    if (p.status === "active" && !isGeneral(p)) s.activeProjects++;
     for (const t of p.tasks) {
       if (t.done && t.doneOn?.startsWith(month)) s.completedThisMonth++;
       if (p.status === "completed" || p.status === "on_hold") continue;

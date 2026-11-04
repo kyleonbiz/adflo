@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Download, FolderKanban, ListTodo, Plus, Repeat, Search, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Download, FolderKanban, ListTodo, Plus, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -12,10 +12,7 @@ import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { RECURRING_PROJECT_ID, addMilestone, addUpdate, completeTask, overdueTasks, projectsReport, recurringProject, removeMilestone, reopenTask, sortProjects, summarize, taskAlerts, toggleMilestone, type ProjectSort } from "@/lib/projects/logic";
-import { installedRecurringTasks } from "@/lib/setup/templates";
-import { useSetupConfig } from "@/lib/setup/storage";
-import { RecurringTaskDialog } from "./recurring-task-dialog";
+import { GENERAL_PROJECT_ID, addMilestone, addUpdate, completeTask, generalProject, isGeneral, overdueTasks, projectsReport, removeMilestone, reopenTask, sortProjects, summarize, taskAlerts, toggleMilestone, type ProjectSort } from "@/lib/projects/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { buildTasks, type TemplateTask } from "@/lib/projects/templates";
 import { PROJECT_STATUSES, type Project, type ProjectStatus, type Task } from "@/lib/projects/types";
@@ -23,6 +20,9 @@ import type { ProjectFormValues, TaskFormValues } from "@/lib/projects/validatio
 import { ProjectCard, type ProjectActions } from "./project-card";
 import { ProjectFormDialog, type ProjectDraft } from "./project-form-dialog";
 import { STATUS_LABEL, TASK_BADGE } from "./status";
+import { TasksView, type TaskFilter } from "./tasks-view";
+import { cn } from "@/lib/utils";
+import { titleCase } from "@/lib/text";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -53,7 +53,9 @@ const isLive = (p: Project) => p.status !== "completed" && p.status !== "on_hold
  * Project administration. Projects and tasks live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
-export function ProjectsPage({ preview, initialQuery = "", startNew, draft }: { preview?: string; initialQuery?: string; startNew?: boolean; draft?: ProjectDraft }) {
+export type ProjectsViewName = "tasks" | "projects";
+
+export function ProjectsPage({ preview, initialQuery = "", initialView = "tasks", startNew, draft }: { preview?: string; initialQuery?: string; initialView?: ProjectsViewName; startNew?: boolean; draft?: ProjectDraft }) {
   const today = useToday();
   if (!today) {
     return (
@@ -64,22 +66,19 @@ export function ProjectsPage({ preview, initialQuery = "", startNew, draft }: { 
       </div>
     );
   }
-  return <ProjectsView today={today} preview={preview} initialQuery={initialQuery} startNew={startNew} draft={draft} />;
+  return <ProjectsView today={today} preview={preview} initialQuery={initialQuery} initialView={initialView} startNew={startNew} draft={draft} />;
 }
 
-function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today: string; preview?: string; initialQuery: string; startNew?: boolean; draft?: ProjectDraft }) {
-  const setup = useSetupConfig();
-  const [projects, setProjects] = useState<Project[]>(() => {
-    // Repeating tasks installed by setup (once it is finished) start the Recurring work project.
-    const tasks = installedRecurringTasks(setup?.completedOn ? setup.templates : [], today);
-    return [...(e2eSeed<Project>("projects") ?? []), ...(tasks.length > 0 ? [recurringProject(tasks, today)] : [])];
-  });
-  const [addingRecurring, setAddingRecurring] = useState(false);
+function ProjectsView({ today, preview, initialQuery, initialView, startNew, draft }: { today: string; preview?: string; initialQuery: string; initialView: ProjectsViewName; startNew?: boolean; draft?: ProjectDraft }) {
+  const [projects, setProjects] = useState<Project[]>(() => e2eSeed<Project>("projects") ?? []);
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       (e2eSeed<Project>("projects") ?? []).filter((p) => isLive(p) && overdueTasks(p, today).length > 0).slice(0, AUTO_OPEN).map((p) => [p.id, true]),
     ),
   );
+  const [view, setView] = useState<ProjectsViewName>(initialView);
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
+  const [showDone, setShowDone] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<"all" | ProjectStatus>("all");
   const [overdueOnly, setOverdueOnly] = useState(false);
@@ -117,6 +116,15 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
     setNotice(`${p.name} is now ${STATUS_LABEL[status].toLowerCase()}.`);
   };
 
+  /** Appends a task to a project; the built-in "General tasks" project is created the first time it is needed. */
+  const addTaskTo = (projectId: string, v: TaskFormValues) => {
+    const task: Task = { id: rid("t"), title: v.title, assignee: v.assignee, dueOn: v.dueOn || null, repeat: v.repeat as Task["repeat"], done: false, doneOn: null, followUpId: null };
+    setProjects((all) => {
+      const base = projectId === GENERAL_PROJECT_ID && !all.some(isGeneral) ? [...all, generalProject(today)] : all;
+      return base.map((p) => (p.id === projectId ? { ...p, tasks: [...p.tasks, task] } : p));
+    });
+  };
+
   const actions: ProjectActions = {
     onEdit: (p) => setFormFor(p),
     onDelete: (p) => setDeleting(p),
@@ -137,13 +145,7 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
       setNotice(tasks.length > p.tasks.length ? `"${t.title}" done. The next one is scheduled.` : `"${t.title}" done.`);
     },
     onAddTask: (p, v: TaskFormValues) => {
-      patch(p.id, (x) => ({
-        ...x,
-        tasks: [...x.tasks, {
-          id: rid("t"), title: v.title, assignee: v.assignee, dueOn: v.dueOn || null,
-          repeat: v.repeat as Task["repeat"], done: false, doneOn: null, followUpId: null,
-        }],
-      }));
+      addTaskTo(p.id, v);
       setNotice(`"${v.title}" added to ${p.name}.`);
     },
     onEditTask: (p, t, v) => {
@@ -191,38 +193,31 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
     }
   };
 
-  const addRecurring = (v: TaskFormValues) => {
-    const task: Task = { id: rid("t"), title: v.title, assignee: v.assignee, dueOn: v.dueOn, repeat: v.repeat as Task["repeat"], done: false, doneOn: null, followUpId: null };
-    setProjects((all) => all.some((p) => p.id === RECURRING_PROJECT_ID)
-      ? all.map((p) => (p.id === RECURRING_PROJECT_ID ? { ...p, tasks: [...p.tasks, task] } : p))
-      : [...all, recurringProject([task], today)]);
-    setOpen((o) => ({ ...o, [RECURRING_PROJECT_ID]: true }));
-    setNotice(`"${v.title}" will come round ${v.repeat === "daily" ? "every day" : v.repeat === "weekly" ? "every week" : v.repeat === "monthly" ? "every month" : v.repeat === "quarterly" ? "every quarter" : "every year"}.`);
-  };
-
   const deleteProject = (p: Project) => {
     const index = projects.findIndex((x) => x.id === p.id);
     setProjects((all) => all.filter((x) => x.id !== p.id));
     setNotice(`${p.name} deleted.`, () => setProjects((all) => restoreAt(all, p, index)));
   };
 
+  const realProjects = useMemo(() => projects.filter((p) => !isGeneral(p)), [projects]);
   const summary = useMemo(() => summarize(projects, today), [projects, today]);
-  const alerts = useMemo(() => taskAlerts(projects, today), [projects, today]);
+  const alerts = useMemo(() => taskAlerts(realProjects, today), [realProjects, today]);
   const q = query.trim().toLowerCase();
   const filtered = statusFilter !== "all" || overdueOnly || q !== "";
   const clearFilters = () => { setQuery(""); setStatusFilter("all"); setOverdueOnly(false); };
   const visible = useMemo(
     () =>
-      sortProjects(projects, sort, today)
+      sortProjects(realProjects, sort, today)
         .filter((p) => statusFilter === "all" || p.status === statusFilter)
         .filter((p) => !overdueOnly || (isLive(p) && overdueTasks(p, today).length > 0))
         .filter((p) => !q || [p.name, p.client, p.description].some((f) => f.toLowerCase().includes(q))),
-    [projects, sort, today, statusFilter, overdueOnly, q],
+    [realProjects, sort, today, statusFilter, overdueOnly, q],
   );
 
   const showProject = (id: string) => {
     // The card might be filtered out; clear filters so it can be found, then open its tasks.
     clearFilters();
+    setView("projects");
     setOpen((o) => ({ ...o, [id]: true }));
     setFocus((f) => ({ id, n: (f?.n ?? 0) + 1 }));
   };
@@ -234,21 +229,37 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
-          <p className="text-sm text-muted-foreground">Plan projects, assign tasks, repeat routine work and see what is slipping.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
+          <p className="text-sm text-muted-foreground">Everything on your plate, including repeating chores. Group work into projects when it needs steps and a deadline.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={() => downloadText(projectsReport(visible, today), `status-report-${today}.txt`)}
-            disabled={visible.length === 0}
-            title={filtered ? "Only the projects matching your filters are included" : undefined}
+        <div className="flex gap-2">
+          {view === "projects" && (
+            <Button
+              variant="outline"
+              onClick={() => downloadText(projectsReport(visible, today), `status-report-${today}.txt`)}
+              disabled={visible.length === 0}
+              title={filtered ? "Only the projects matching your filters are included" : undefined}
+            >
+              <Download /> {filtered ? `Report for ${plural(visible.length, "project")}` : "Status report"}
+            </Button>
+          )}
+          <Button variant={view === "tasks" ? "outline" : "default"} onClick={() => setFormFor("new")}><Plus /> New project</Button>
+        </div>
+      </div>
+
+      <div role="tablist" aria-label="Tasks and projects" className="flex gap-1.5">
+        {([["tasks", "Tasks"], ["projects", "Projects"]] as const).map(([id, name]) => (
+          <button
+            key={id} type="button" role="tab" id={`tasks-tab-${id}`} aria-selected={view === id} aria-controls="tasks-panel"
+            onClick={() => setView(id)}
+            className={cn(
+              "rounded-full border px-3.5 py-1.5 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+              view === id ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted",
+            )}
           >
-            <Download /> {filtered ? `Report for ${plural(visible.length, "project")}` : "Status report"}
-          </Button>
-          <Button variant="outline" onClick={() => setAddingRecurring(true)}><Repeat /> Add recurring task</Button>
-          <Button onClick={() => setFormFor("new")}><Plus /> New project</Button>
-        </div>
+            {name}
+          </button>
+        ))}
       </div>
 
       {preview && (
@@ -275,14 +286,39 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
       </div>
 
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryTile icon={FolderKanban} label="Active projects" value={summary.activeProjects} tone="text-primary" pressed={statusFilter === "active"}
-          onClick={() => { setOverdueOnly(false); setStatusFilter("active"); }} />
-        <SummaryTile icon={ListTodo} label="Open tasks" value={summary.openTasks} tone="text-sky-600" onClick={clearFilters} />
-        <SummaryTile icon={AlertTriangle} label="Overdue tasks" value={summary.overdueTasks} tone="text-red-600" pressed={overdueOnly}
-          onClick={() => { setStatusFilter("all"); setOverdueOnly(true); }} />
+        <SummaryTile icon={FolderKanban} label="Active projects" value={summary.activeProjects} tone="text-primary" pressed={view === "projects" && statusFilter === "active"}
+          onClick={() => { setView("projects"); setOverdueOnly(false); setStatusFilter("active"); }} />
+        <SummaryTile icon={ListTodo} label="Open tasks" value={summary.openTasks} tone="text-sky-600" onClick={() => { setTaskFilter("all"); clearFilters(); }} />
+        <SummaryTile icon={AlertTriangle} label="Overdue tasks" value={summary.overdueTasks} tone="text-red-600" pressed={view === "tasks" ? taskFilter === "overdue" : overdueOnly}
+          onClick={() => { if (view === "tasks") setTaskFilter("overdue"); else { setStatusFilter("all"); setOverdueOnly(true); } }} />
         <SummaryTile icon={CheckCircle2} label="Done this month" value={summary.completedThisMonth} tone="text-emerald-600" />
       </section>
 
+      <div role="tabpanel" id="tasks-panel" aria-labelledby={`tasks-tab-${view}`} className="space-y-5">
+      {view === "tasks" ? (
+        <>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search task, assignee or project" aria-label="Search tasks" className="px-9" />
+            {query && (
+              <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <X className="size-4" aria-hidden />
+              </button>
+            )}
+          </div>
+          <TasksView
+            projects={projects} today={today} query={q} filter={taskFilter} onFilter={setTaskFilter} showDone={showDone} onShowDone={setShowDone}
+            actions={actions}
+            onAdd={(v, projectId) => {
+              addTaskTo(projectId ?? GENERAL_PROJECT_ID, v);
+              const name = projectId ? projects.find((p) => p.id === projectId)?.name : null;
+              setNotice(name ? `"${v.title}" added to ${name}.` : `"${v.title}" added.`);
+            }}
+            onOpenProject={showProject}
+          />
+        </>
+      ) : (
+      <>
       <section aria-labelledby="slipping-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
         <h2 id="slipping-heading" className="flex items-center gap-2 text-base font-semibold"><AlertTriangle className="size-4 text-amber-600" aria-hidden /> Needs attention</h2>
         {alerts.length === 0 ? (
@@ -326,7 +362,7 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
 
       <section aria-labelledby="all-projects-heading" className="space-y-3">
         <h2 id="all-projects-heading" className="text-base font-semibold">
-          {filtered ? `Projects (${visible.length} of ${projects.length})` : `Projects (${projects.length})`}
+          {filtered ? `Projects (${visible.length} of ${realProjects.length})` : `Projects (${realProjects.length})`}
         </h2>
         <div className="flex flex-col gap-2 sm:flex-row">
           <div className="relative flex-1">
@@ -342,7 +378,7 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
             <Select value={sort} onValueChange={(v) => setSort(v as ProjectSort)}>
               <SelectTrigger aria-label="Sort projects"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(Object.keys(SORT_LABEL) as ProjectSort[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
+                {(Object.keys(SORT_LABEL) as ProjectSort[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -351,7 +387,7 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{titleCase(s.label)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -361,8 +397,8 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
         )}
 
         {visible.length === 0 ? (
-          projects.length === 0 ? (
-            <EmptyState icon={FolderKanban} title="Start your first project" description="Group the tasks for a piece of work, give it a due date, and see at a glance whether it is on track." points={["Start from a checklist, or add your own project type", "Repeating tasks that come back on schedule", "A status report you can download"]}>
+          realProjects.length === 0 ? (
+            <EmptyState icon={FolderKanban} title="Start your first project" description="Group the tasks for a bigger piece of work, give it a due date, and see at a glance whether it is on track." points={["Start from a checklist, or add your own project type", "An owner, milestones and a log of updates", "A status report you can download"]}>
               <Button onClick={() => setFormFor("new")}><Plus /> Create your first project</Button>
             </EmptyState>
           ) : (
@@ -387,12 +423,14 @@ function ProjectsView({ today, preview, initialQuery, startNew, draft }: { today
         )}
       </section>
 
-      <RecurringTaskDialog open={addingRecurring} today={today} onOpenChange={setAddingRecurring} onSave={addRecurring} />
+      </>
+      )}
+      </div>
 
       <ProjectFormDialog
         open={formFor !== null}
-        project={formFor && formFor !== "new" ? formFor : undefined}
         draft={draft}
+        project={formFor && formFor !== "new" ? formFor : undefined}
         today={today}
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}

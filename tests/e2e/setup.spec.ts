@@ -16,9 +16,9 @@ async function completeSetup(page: Page) {
   await page.goto("/app/setup?tab=setup");
   await fillProfile(page);
   await next(page).click();
+  await moduleBox(page, "Tasks").uncheck();
   await moduleBox(page, "Vendors").check();
   await next(page).click();
-  await page.getByLabel("Reconcile bank statements").uncheck();
   await next(page).click();
   await page.getByLabel("Contacts data is done").check();
   await next(page).click();
@@ -40,8 +40,8 @@ test.describe("back office setup module", () => {
     await fillProfile(page);
     await next(page).click();
     const list = page.getByTestId("module-choices");
-    await expect(list.getByText("Recommended", { exact: true })).toHaveCount(7);
-    for (const name of ["Documents", "Invoices", "Requests", "Projects", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) {
+    await expect(list.getByText("Recommended", { exact: true })).toHaveCount(6);
+    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) {
       await expect(moduleBox(page, name)).toBeChecked();
     }
     for (const name of ["Vendors", "Reporting"]) await expect(moduleBox(page, name)).not.toBeChecked();
@@ -51,7 +51,7 @@ test.describe("back office setup module", () => {
     await page.getByRole("button", { name: "Use recommended" }).click();
     await expect(moduleBox(page, "Documents")).toBeChecked();
 
-    for (const name of ["Documents", "Invoices", "Requests", "Projects", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) await moduleBox(page, name).uncheck();
+    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) await moduleBox(page, name).uncheck();
     await expect(next(page)).toBeDisabled();
   });
 
@@ -62,11 +62,9 @@ test.describe("back office setup module", () => {
     await next(page).click();
     const groups = page.getByTestId("template-group");
     await expect(groups.filter({ hasText: "Forms & Paperwork" })).toContainText("New employee details");
-    await expect(groups.filter({ hasText: "Projects" })).toContainText("Reconcile bank statements");
     await expect(groups.filter({ hasText: "Licenses & Renewals" })).toContainText("Common small-business licenses");
     await expect(groups.filter({ hasText: "Contacts" })).toContainText("Nothing to install");
     await expect(page.getByLabel("New employee details")).toBeChecked();
-    await expect(page.getByLabel("Weekly team agenda").or(page.getByLabel("Send the weekly team agenda"))).toBeChecked();
   });
 
   test("the review shows live checks, links each problem to its step, and blocks an unusable setup", async ({ page }) => {
@@ -86,33 +84,23 @@ test.describe("back office setup module", () => {
     await expect(done).toContainText("Acme Studio is set up");
     const installed = page.getByTestId("installed-list");
     await expect(installed).toContainText("New employee details (Form, in Forms & Paperwork)");
-    await expect(installed).toContainText("Send the weekly team agenda (Recurring task, in Projects)");
     await expect(installed).toContainText("Common small-business licenses (License records, in Licenses & Renewals)");
-    await expect(installed).not.toContainText("Reconcile bank statements");
     await expect(done.getByRole("link", { name: "Vendors" })).toBeVisible();
-    await expect(done.getByRole("link", { name: "Projects" })).toBeVisible();
+    await expect(done.getByRole("link", { name: "Tasks" })).toHaveCount(0);
 
-    // Forms: 3 samples + 3 installed + 3 for the industry (professional services).
+    // Forms: 3 samples + 3 installed + 3 that come with the industry.
     await page.goto("/app/forms");
     await expect(page.getByTestId("form-card")).toHaveCount(9);
     await expect(page.getByRole("heading", { name: "Expense reimbursement" })).toBeVisible();
-    await expect(page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" })).toContainText("Approval: Finance manager");
+    await expect(page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" })).toContainText("sent 0 times");
 
-    // Projects: the recurring templates became repeating tasks in a "Recurring work" project (bank reconciliation was unticked).
-    await page.goto("/app/projects");
-    const recurring = page.getByTestId("project-card").filter({ hasText: "Recurring work" });
-    await recurring.getByRole("button", { name: /^Tasks/ }).click().catch(() => {});
-    await expect(recurring).toContainText("3 tasks");
-    await expect(recurring.getByRole("checkbox", { name: /Follow up on overdue invoices/ })).toBeVisible();
-    await expect(recurring.getByRole("checkbox", { name: /Reconcile bank statements/ })).toHaveCount(0);
-
-    // Licenses: 5 samples + 4 starter records + 5 for the industry (its sixth, general liability, is already a starter record).
+    // Licenses: 5 samples + 4 starter records + 5 that come with the industry.
     await page.goto("/app/licenses");
     await expect(page.getByTestId("license-card")).toHaveCount(14);
     await expect(page.getByTestId("license-card").filter({ hasText: "Local business permit" })).toBeVisible();
   });
 
-  test("an installed form can be filled in and routes to its approver", async ({ page }) => {
+  test("an installed form can be filled in", async ({ page }) => {
     await completeSetup(page);
     await page.goto("/app/forms");
     const card = page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" });
@@ -127,8 +115,7 @@ test.describe("back office setup module", () => {
     await dialog.getByLabel(/What was it for/).fill("Train ticket");
     await dialog.getByLabel(/Receipt attached/).check();
     await dialog.getByRole("button", { name: "Submit" }).click();
-    await page.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByRole("status")).toContainText("Waiting for Finance manager to approve");
+    await expect(page.getByRole("status")).toContainText("Response added");
   });
 
   test("a setup that is not finished installs nothing", async ({ page }) => {

@@ -1,30 +1,19 @@
-import { addDays, addMonths } from "@/lib/dates";
-import type { Every } from "@/lib/admin/types";
-import type { Category } from "@/lib/admin/types";
+import { addMonths } from "@/lib/dates";
 import type { FormField, FormTemplate } from "@/lib/forms/types";
 import type { License } from "@/lib/licenses/types";
-import type { Task } from "@/lib/projects/types";
 
 interface Base { id: string; module: string; name: string; description: string }
 
 export interface FormTpl extends Base {
   kind: "form";
-  approver: string;
   fields: Omit<FormField, "id">[];
   documentTemplate: string;
-}
-export interface RoutineTpl extends Base {
-  kind: "routine";
-  category: Category;
-  every: Every;
-  /** The first run is this many days from the day it is installed. */
-  startInDays: number;
 }
 export interface LicenseTpl extends Base {
   kind: "license";
   items: { name: string; category: License["category"]; issuer: string; termMonths: number; reminderDays: number[]; documents: string[] }[];
 }
-export type Template = FormTpl | RoutineTpl | LicenseTpl;
+export type Template = FormTpl | LicenseTpl;
 
 const f = (label: string, type: FormField["type"], required = true, options: string[] = []): Omit<FormField, "id"> => ({ label, type, required, options });
 
@@ -32,37 +21,21 @@ const f = (label: string, type: FormField["type"], required = true, options: str
 export const TEMPLATES: Template[] = [
   {
     id: "form-employee-onboarding", module: "forms", kind: "form", name: "New employee details",
-    description: "Collect what you need on a new hire's first day.", approver: "",
+    description: "Collect what you need on a new hire's first day.",
     fields: [f("Full name", "text"), f("Personal email", "email"), f("Phone", "text", false), f("Start date", "date"), f("Role", "text"), f("Emergency contact", "text", false), f("W-4 completed", "checkbox", false)],
     documentTemplate: "New employee: {{Full name}}\nRole: {{Role}}\nStart date: {{Start date}}\nEmail: {{Personal email}}\nEmergency contact: {{Emergency contact}}\nW-4 completed: {{W-4 completed}}",
   },
   {
     id: "form-expense-claim", module: "forms", kind: "form", name: "Expense reimbursement",
-    description: "Staff claim back money they spent, and a manager approves it.", approver: "Finance manager",
+    description: "Staff claim back money they spent on the business.",
     fields: [f("Employee name", "text"), f("Expense date", "date"), f("Amount", "number"), f("Category", "select", true, ["Travel", "Meals", "Supplies", "Software", "Other"]), f("What was it for?", "longtext"), f("Receipt attached", "checkbox")],
     documentTemplate: "Expense claim from {{Employee name}}\nDate: {{Expense date}}\nAmount: {{Amount}}\nCategory: {{Category}}\nPurpose: {{What was it for?}}\nReceipt attached: {{Receipt attached}}",
   },
   {
     id: "form-client-intake", module: "forms", kind: "form", name: "New client intake",
-    description: "The basics for every new client, before work starts.", approver: "",
+    description: "The basics for every new client, before work starts.",
     fields: [f("Client name", "text"), f("Contact email", "email"), f("Phone", "text", false), f("Service needed", "select", true, ["Bookkeeping", "Admin support", "Document prep", "Project work", "Other"]), f("Anything we should know?", "longtext", false)],
     documentTemplate: "",
-  },
-  {
-    id: "routine-bank-reconciliation", module: "projects", kind: "routine", name: "Reconcile bank statements",
-    description: "Match last month's statements to the ledger.", category: "Finance & payments", every: "monthly", startInDays: 5,
-  },
-  {
-    id: "routine-team-agenda", module: "projects", kind: "routine", name: "Send the weekly team agenda",
-    description: "Share priorities for the week ahead.", category: "Scheduling", every: "weekly", startInDays: 3,
-  },
-  {
-    id: "routine-subscription-review", module: "projects", kind: "routine", name: "Review software subscriptions",
-    description: "Cancel or renew anything that is unused.", category: "Vendors & purchasing", every: "quarterly", startInDays: 30,
-  },
-  {
-    id: "routine-invoice-followup", module: "projects", kind: "routine", name: "Follow up on overdue invoices",
-    description: "Chase every invoice past its due date.", category: "Finance & payments", every: "weekly", startInDays: 2,
   },
   {
     id: "licenses-small-business", module: "licenses", kind: "license", name: "Common small-business licenses",
@@ -87,24 +60,9 @@ export function installedForms(ids: readonly string[]): FormTemplate[] {
   return TEMPLATES.flatMap((t) =>
     t.kind === "form" && ids.includes(t.id)
       ? [{
-          id: `tpl-${t.id}`, name: t.name, description: t.description, requiresApproval: t.approver !== "", approver: t.approver,
+          id: `tpl-${t.id}`, name: t.name, description: t.description, sentCount: 0,
           documentTemplate: t.documentTemplate, fields: t.fields.map((fld, i) => ({ ...fld, id: `${t.id}-f${i + 1}` })),
         }]
-      : [],
-  );
-}
-
-/**
- * Recurring tasks live in Projects now (the "Recurring work" project), so the routine templates install
- * as repeating tasks. Completing one schedules the next, at the same pace.
- */
-export function installedRecurringTasks(ids: readonly string[], today: string): Task[] {
-  return TEMPLATES.flatMap((t) =>
-    t.kind === "routine" && ids.includes(t.id)
-      ? [{
-          id: `tpl-${t.id}`, title: t.name, assignee: "", dueOn: addDays(today, t.startInDays), repeat: t.every as Task["repeat"],
-          done: false, doneOn: null, followUpId: null,
-        } satisfies Task]
       : [],
   );
 }

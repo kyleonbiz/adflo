@@ -36,7 +36,7 @@ function paper(
   return {
     industry, use, repeats: opts.repeats,
     form: {
-      id: `pw-${id}`, name, description: use, fields, requiresApproval: !!opts.approver, approver: opts.approver ?? "",
+      id: `pw-${id}`, name, description: use, fields, sentCount: 0,
       documentTemplate: opts.doc ?? "",
     },
   };
