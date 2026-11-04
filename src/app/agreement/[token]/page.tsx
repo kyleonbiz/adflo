@@ -19,16 +19,24 @@ export default async function AgreementPage({ params }: PageProps<"/agreement/[t
     view = ((data ?? []) as View[])[0] ?? null;
   }
   return (
-    <div className="hero-gradient min-h-dvh px-4 py-10">
-      <div className="mx-auto max-w-2xl space-y-5">
-        <Brand wordmark light className="w-44" />
-        <main className="space-y-5 rounded-2xl bg-card p-6 shadow-float sm:p-8">
-          {!view ? (
-            <><h1 className="text-xl font-semibold tracking-tight">This link is not valid</h1><p className="text-sm text-muted-foreground">Check that you opened the whole link, or ask AdFlo to send you a new one.</p></>
-          ) : (
-            <>
-              <div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Prepared for {view.client_name}</p><h1 className="mt-1 text-2xl font-semibold tracking-tight">{view.title}</h1><p className="text-xs text-muted-foreground">Version {view.version}</p></div>
-              <article className="max-h-[28rem] overflow-y-auto whitespace-pre-wrap rounded-xl border bg-background p-4 text-sm leading-relaxed" tabIndex={0} aria-label="Agreement text">{view.body}</article>
+    <div className="min-h-dvh">
+      <header className="border-b bg-card">
+        <div className="mx-auto flex h-14 max-w-3xl items-center justify-between gap-3 px-4 sm:px-6">
+          <Brand wordmark className="w-36" />
+          <span className="text-sm font-medium text-muted-foreground">Terms and agreements</span>
+        </div>
+      </header>
+      <main className="page-rise mx-auto max-w-3xl space-y-5 px-3 py-6 sm:px-6">
+        {!view ? (
+          <section className="rounded-2xl border bg-card p-5 shadow-panel"><h1 className="text-xl font-semibold tracking-tight">This link is not valid</h1><p className="mt-1 text-sm text-muted-foreground">Check that you opened the whole link, or ask AdFlo to send you a new one.</p></section>
+        ) : (
+          <>
+            <div><p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prepared for {view.client_name}</p><h1 className="mt-1 text-2xl font-semibold tracking-tight">{view.title}</h1><p className="text-sm text-muted-foreground">Version {view.version}</p></div>
+            <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Agreement text">
+              <article className="max-h-[32rem] overflow-y-auto whitespace-pre-wrap rounded-xl bg-muted p-4 text-sm leading-relaxed outline-none focus-visible:ring-2 focus-visible:ring-ring" tabIndex={0}>{view.body}</article>
+            </section>
+            <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Acceptance">
+              <h2 className="mb-3 font-semibold">Your acceptance</h2>
               {view.accepted_at ? (
                 <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">Accepted by {view.accepted_name} on {new Date(view.accepted_at).toLocaleDateString("en-US", { dateStyle: "long", timeZone: "UTC" })}.</p>
               ) : view.expired ? (
@@ -36,10 +44,10 @@ export default async function AgreementPage({ params }: PageProps<"/agreement/[t
               ) : (
                 <AcceptForm token={token} />
               )}
-            </>
-          )}
-        </main>
-      </div>
+            </section>
+          </>
+        )}
+      </main>
     </div>
   );
 }
