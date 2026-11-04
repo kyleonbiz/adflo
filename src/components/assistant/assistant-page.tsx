@@ -69,7 +69,7 @@ function Chat({ today }: { today: string }) {
   const last = turns[turns.length - 1];
 
   return (
-    <section aria-label="Assistant conversation" className="flex flex-col rounded-2xl border bg-card shadow-panel">
+    <section aria-label="Conversation with Addy" className="flex flex-col rounded-2xl border bg-card shadow-panel">
       <ol className="max-h-[60vh] min-h-72 space-y-3 overflow-y-auto p-4" data-testid="assistant-log">
         {turns.map((t, i) => (
           <li key={i} className={cn("flex", t.role === "user" && "justify-end")}>
@@ -93,7 +93,7 @@ function Chat({ today }: { today: string }) {
           </ul>
         )}
         <form onSubmit={(e) => { e.preventDefault(); void send(text); }} className="flex gap-2">
-          <Input aria-label="Message the assistant" value={text} maxLength={200} onChange={(e) => setText(e.target.value)} placeholder="Type a message" />
+          <Input aria-label="Message Addy" value={text} maxLength={200} onChange={(e) => setText(e.target.value)} placeholder="Type a message" />
           <Button type="submit" disabled={!text.trim() || busy}><Send /> <span className="sr-only sm:not-sr-only">Send</span></Button>
         </form>
       </div>
@@ -107,8 +107,8 @@ export function AssistantPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Sparkles className="size-6 text-primary" aria-hidden /> AI Assistant</h1>
-        <p className="text-sm text-muted-foreground">Tell it about your business and it deploys the right services and templates for you.</p>
+        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Sparkles className="size-6 text-primary" aria-hidden /> Addy</h1>
+        <p className="text-sm text-muted-foreground">Addy is your back-office assistant. Tell Addy about your business and it sets up the right services and templates for you.</p>
       </div>
       {today ? <Chat today={today} /> : <Skeleton className="h-96 rounded-2xl" aria-busy="true" />}
     </div>

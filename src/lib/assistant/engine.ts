@@ -28,7 +28,7 @@ export function greeting(config: SetupConfig): Turn {
   }
   return {
     role: "assistant",
-    text: "Hi, I am the AdFlo assistant. I can set up your business: ask a few questions, pick the right services, install their starter templates and check the result. Where do you want to start?",
+    text: "Hi, I am Addy, the AdFlo assistant. I can set up your business: ask a few questions, pick the right services, install their starter templates and check the result. Where do you want to start?",
     chips: MAIN_CHIPS,
   };
 }

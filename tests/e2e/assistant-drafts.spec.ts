@@ -33,7 +33,7 @@ test.describe("assistant drafts", () => {
 
   test("without the AI model, asking for a new invoice opens the blank form and refuses deleting", async ({ page }) => {
     await page.goto("/app/assistant");
-    const box = page.getByLabel("Message the assistant");
+    const box = page.getByLabel("Message Addy");
     await box.fill("create a new invoice");
     await box.press("Enter");
     const link = page.getByRole("link", { name: "Open a draft invoice" });

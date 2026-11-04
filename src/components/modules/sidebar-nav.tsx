@@ -36,7 +36,7 @@ function NavLink({ item, active, onNavigate, collapsed }: { item: Item; active: 
   );
 }
 
-/** The vertical module menu: Home, the AI assistant and the working modules, then Settings apart at the bottom. */
+/** The vertical module menu: Home, Addy (the assistant) and the working modules, then Settings apart at the bottom. */
 export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/app"; onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const modules: Item[] = MODULES.flatMap((m) => {
@@ -46,7 +46,7 @@ export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/ap
   const setup = MODULES.find((m) => m.id === "setup");
   const setupHref = setup ? moduleHref(setup, base) : null;
   const overview: Item = { id: "overview", label: "Home", href: `${base}/overview` };
-  const assistant: Item = { id: "assistant", label: "AI Assistant", href: `${base}/assistant` };
+  const assistant: Item = { id: "assistant", label: "Addy", href: `${base}/assistant` };
 
   return (
     <div className={cn("flex h-full flex-col gap-4 bg-brand-navy p-4", collapsed && "items-center px-2")}>
