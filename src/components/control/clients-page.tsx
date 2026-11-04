@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CLIENT_STATUSES, STATUS_LABEL, effectivePriceCents, formatMoney, type ClientRecord, type ClientStatus, type Plan } from "@/lib/control/types";
+import { CLIENT_STATUSES, STATUS_LABEL, effectivePriceCents, formatMoney, isQuiet, type ClientRecord, type ClientStatus, type Plan } from "@/lib/control/types";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "./status-badge";
 
@@ -141,9 +141,9 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border bg-card shadow-panel">
-          <table className="w-full min-w-[46rem] text-left text-sm">
+          <table className="w-full min-w-[56rem] text-left text-sm">
             <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-              <tr><th className="px-4 py-3 font-medium">Client</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Plan</th><th className="px-4 py-3 text-right font-medium">Seats</th><th className="px-4 py-3 text-right font-medium">Price / mo</th><th className="px-4 py-3 font-medium">Owner</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr>
+              <tr><th className="px-4 py-3 font-medium">Client</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Plan</th><th className="px-4 py-3 text-right font-medium">Seats</th><th className="px-4 py-3 text-right font-medium">Price / mo</th><th className="px-4 py-3 font-medium">Last sign-in</th><th className="px-4 py-3 font-medium">Owner</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr>
             </thead>
             <tbody className="divide-y">
               {rows.map((c) => (
@@ -153,6 +153,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }
                   <td className="px-4 py-3 capitalize">{c.plan}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{c.seatsUsed ?? "—"} / {c.seatsLimit}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{(() => { const p = effectivePriceCents(c, plans); return p == null ? "—" : formatMoney(p); })()}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{c.lastActive ? new Date(c.lastActive).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "—"}{isQuiet(c) && <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">Quiet</span>}</td>
                   <td className="px-4 py-3"><div>{c.ownerName || "—"}</div><div className="text-xs text-muted-foreground">{c.ownerEmail}</div></td>
                   <td className="px-4 py-3 text-right">{canEdit && <Button variant="outline" size="sm" onClick={() => setDialog(c)} aria-label={`Edit ${c.name}`}>Edit</Button>}</td>
                 </tr>

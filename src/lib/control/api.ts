@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { findStaff, type Staff } from "./gate";
+import { logAppError } from "./errors";
 import { sameOrigin } from "@/lib/dms/server/respond";
 import { canEditClients, type StaffRole } from "./types";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -21,7 +22,8 @@ export async function staffRoute(req: Request, handler: (ctx: { supabase: Supaba
   if (minRole === "owner" ? staff.role !== "owner" : !canEditClients(staff.role)) return fail(403, "read_only", minRole === "owner" ? "Only the Owner can do this." : "Your role can look but not change clients.");
   try {
     return await handler({ supabase, staff });
-  } catch {
+  } catch (e) {
+    await logAppError(`${req.method} ${new URL(req.url).pathname.replace(/[0-9a-f-]{36}/g, ":id")}`, e, { status: 500 });
     return fail(500, "server_error", "Something went wrong. Try again.");
   }
 }

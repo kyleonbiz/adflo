@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agreementState } from "@/lib/control/types";
+import { isQuiet, agreementState } from "@/lib/control/types";
 import { parseAcceptInput, parseAgreementInput, parseSendInput, isAgreementToken, describeAudit, isUuid, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
 import { effectivePriceCents, formatMoney } from "@/lib/control/types";
 
@@ -126,5 +126,19 @@ describe("agreements", () => {
     expect(agreementState({ acceptedAt: "2026-11-01T00:00:00Z", expiresAt: "2026-10-01T00:00:00Z" }, now)).toBe("accepted");
     expect(agreementState({ acceptedAt: null, expiresAt: "2026-10-01T00:00:00Z" }, now)).toBe("expired");
     expect(agreementState({ acceptedAt: null, expiresAt: "2026-12-01T00:00:00Z" }, now)).toBe("waiting");
+  });
+});
+
+describe("quiet clients", () => {
+  const now = Date.parse("2026-11-04T00:00:00Z");
+  it("flags active clients with no recent sign-in", () => {
+    expect(isQuiet({ status: "active", workspaceId: "w", lastActive: "2026-09-01T00:00:00Z" }, now)).toBe(true);
+    expect(isQuiet({ status: "active", workspaceId: "w", lastActive: null }, now)).toBe(true);
+    expect(isQuiet({ status: "active", workspaceId: "w", lastActive: "2026-10-30T00:00:00Z" }, now)).toBe(false);
+  });
+  it("leaves out trials, suspended clients and clients without a workspace yet", () => {
+    expect(isQuiet({ status: "trial", workspaceId: "w", lastActive: null }, now)).toBe(false);
+    expect(isQuiet({ status: "suspended", workspaceId: "w", lastActive: null }, now)).toBe(false);
+    expect(isQuiet({ status: "active", workspaceId: null, lastActive: null }, now)).toBe(false);
   });
 });

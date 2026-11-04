@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AuditEntry, ClientRecord, ClientStatus, DirectoryEntry, Plan, StaffMember, StaffRole, Ticket, TicketNote, TimelineEvent, AgreementTemplate, SentAgreement } from "./types";
+import type { AuditEntry, ClientRecord, ClientStatus, DirectoryEntry, Plan, StaffMember, StaffRole, Ticket, TicketNote, TimelineEvent, AgreementTemplate, SentAgreement, AppError } from "./types";
 
 interface ClientRow {
   id: string; name: string; status: ClientStatus; plan: string; seats_limit: number; owner_name: string;
@@ -119,4 +119,21 @@ export async function loadSent(supabase: SupabaseClient, clientId?: string): Pro
     id: r.id, clientId: r.client_id, clientName: one(r.clients)?.name ?? "", title: one(r.agreement_templates)?.title ?? "", version: one(r.agreement_templates)?.version ?? 0,
     sentAt: r.sent_at, expiresAt: r.expires_at, acceptedAt: r.accepted_at, acceptedName: r.accepted_name,
   }));
+}
+
+export async function loadErrors(supabase: SupabaseClient, limit = 100): Promise<AppError[]> {
+  const { data, error } = await supabase.from("app_errors").select("id, at, source, kind, status, client_id, resolved_at, clients(name)").order("at", { ascending: false }).limit(limit);
+  if (error) throw new Error("Could not load errors.");
+  return ((data ?? []) as unknown as { id: number; at: string; source: string; kind: string; status: number | null; client_id: string | null; resolved_at: string | null; clients: { name: string } | { name: string }[] | null }[]).map((r) => ({
+    id: r.id, at: r.at, source: r.source, kind: r.kind, status: r.status, clientId: r.client_id, clientName: (Array.isArray(r.clients) ? r.clients[0]?.name : r.clients?.name) ?? "", resolvedAt: r.resolved_at,
+  }));
+}
+
+/** Failed document indexing and recent open errors, keyed by client id. */
+export async function loadClientProblems(supabase: SupabaseClient): Promise<{ failedDocs: Map<string, number>; errors: Map<string, number> }> {
+  const [docs, errs] = await Promise.all([supabase.rpc("control_failed_documents"), supabase.rpc("control_error_counts")]);
+  return {
+    failedDocs: new Map(((docs.data ?? []) as { client_id: string; failed: number }[]).map((r) => [r.client_id, Number(r.failed)])),
+    errors: new Map(((errs.data ?? []) as { client_id: string; errors: number }[]).map((r) => [r.client_id, Number(r.errors)])),
+  };
 }

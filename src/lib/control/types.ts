@@ -89,3 +89,14 @@ export function agreementState(a: Pick<SentAgreement, "acceptedAt" | "expiresAt"
   if (a.acceptedAt) return "accepted";
   return Date.parse(a.expiresAt) < now ? "expired" : "waiting";
 }
+
+export interface AppError { id: number; at: string; source: string; kind: string; status: number | null; clientId: string | null; clientName: string; resolvedAt: string | null }
+export type HealthLevel = "ok" | "warn" | "down";
+export interface HealthCheck { name: string; level: HealthLevel; detail: string }
+
+/** A client is quiet when nobody has signed in for this many days. */
+export const QUIET_DAYS = 30;
+export function isQuiet(c: Pick<ClientRecord, "status" | "lastActive" | "workspaceId">, now = Date.now()): boolean {
+  if (c.status !== "active" || !c.workspaceId) return false;
+  return !c.lastActive || now - Date.parse(c.lastActive) > QUIET_DAYS * 86_400_000;
+}

@@ -1,6 +1,7 @@
 import "server-only";
 import { toDmsError } from "../errors";
 import { getDms, type Dms } from "./context";
+import { logAppError } from "@/lib/control/errors";
 import { MUTATION_RATE, checkRate, type RateRule } from "./rate-limit";
 
 const NO_STORE = { "cache-control": "no-store" };
@@ -55,9 +56,11 @@ export async function route<T>(
   fn: (dms: Dms) => Promise<T>,
   opts: { rate?: RateRule } = {},
 ): Promise<Response> {
+  let userId: string | undefined;
   try {
     if (!sameOrigin(req)) return json({ ok: false, error: { code: "forbidden", message: "Cross-origin request blocked." } }, 403);
     const dms = await getDms();
+    userId = dms.userId;
     if (req.method !== "GET" && req.method !== "HEAD") {
       for (const rule of [MUTATION_RATE, opts.rate]) {
         if (!rule) continue;
@@ -76,7 +79,10 @@ export async function route<T>(
   } catch (e) {
     const err = toDmsError(e);
     // Log the error class only: messages can contain file names or row data.
-    if (err.code === "internal") console.error("[dms] unhandled error:", e instanceof Error ? e.name : typeof e);
+    if (err.code === "internal") {
+      console.error("[dms] unhandled error:", e instanceof Error ? e.name : typeof e);
+      await logAppError(`${req.method} ${new URL(req.url).pathname.replace(/[0-9a-f-]{36}/g, ":id")}`, e, { status: err.status, userId });
+    }
     return json({ ok: false, error: { code: err.code, message: err.message } }, err.status);
   }
 }

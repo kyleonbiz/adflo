@@ -52,7 +52,12 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
   their own email). The client opens `/agreement/<secret>`, types their name and email and accepts; the acceptance, who
   and when, is recorded and shown on the client's timeline. Sending also ticks the onboarding step.
 
-Planned next: monitoring. Billing is deliberately later.
+* **Monitoring**: health checks (database answers, error logging, cron secret, assistant key, dev mode), a log of server
+  errors, and which clients have documents that could not be indexed or recent errors. The log stores only the error
+  class and route, never messages or client data, and needs `SUPABASE_SERVICE_ROLE_KEY` on the server to record anything.
+  Clients also show last sign-in, and "Quiet" when an active client has not signed in for 30 days.
+
+Billing is deliberately later: the Control Center tracks plan and price only, with no invoicing or card payments.
 
 ## Platform modules
 

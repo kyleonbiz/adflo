@@ -2,13 +2,17 @@ import { expect, test } from "@playwright/test";
 
 // Without a database the Control Center opens as a read-only preview with labelled sample clients.
 test("control center preview: overview, clients and audit log open", async ({ page }) => {
+  test.setTimeout(180_000); // a cold dev server compiles each of these pages on first visit
   await page.goto("/control");
   await expect(page.getByRole("heading", { name: "Control Center" })).toBeVisible();
   await expect(page.getByText("Preview", { exact: true })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Control Center" })).toBeVisible();
 
-  await page.getByRole("link", { name: "Clients" }).first().click();
-  await expect(page).toHaveURL(/\/control\/clients$/, { timeout: 30_000 }); // the first visit compiles the page in dev
+  // A cold dev server can drop a click that lands before hydration, so retry the first click until it navigates.
+  await expect(async () => {
+    await page.getByRole("link", { name: "Clients" }).first().click();
+    await expect(page).toHaveURL(/\/control\/clients$/, { timeout: 4_000 });
+  }).toPass({ timeout: 60_000 });
   await expect(page.getByRole("cell", { name: "Sample: Acme Roofing" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add client" })).toHaveCount(0); // the preview cannot change anything
 
@@ -34,6 +38,11 @@ test("control center preview: overview, clients and audit log open", async ({ pa
   await expect(page.getByText("Sample Owner")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("button", { name: "Add to team" })).toHaveCount(0);
 
+  await page.getByRole("link", { name: "Monitoring" }).first().click();
+  await expect(page.getByRole("heading", { name: "Monitoring" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Answered in 42 ms.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Mark resolved" })).toHaveCount(0);
+
   await page.getByRole("link", { name: "Audit log" }).first().click();
   await expect(page.getByText("Nothing to show in the preview")).toBeVisible({ timeout: 30_000 });
 });
@@ -49,6 +58,7 @@ test("control center API refuses plan, team and checklist writes without a datab
   expect((await request.post("/api/control/password-reset", { data: { email: "a@b.co" } })).status()).toBe(503);
   expect((await request.post("/api/control/agreements", { data: { title: "x", body: "y" } })).status()).toBe(503);
   expect((await request.post("/api/control/agreements/send", { data: {} })).status()).toBe(503);
+  expect((await request.patch("/api/control/errors/1", { data: { resolved: true } })).status()).toBe(503);
   expect((await request.post("/api/control/staff", { data: { email: "a@b.co", role: "support" } })).status()).toBe(503);
   expect((await request.post("/api/control/clients/00000000-0000-4000-8000-000000000000/checklist", { data: { step: "workspace", done: true } })).status()).toBe(503);
 });
