@@ -25,7 +25,7 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
   const isApi = path.startsWith("/api/dms") || path.startsWith("/api/control");
-  const isPrivate = path === "/app" || path.startsWith("/app/") || path === "/control" || path.startsWith("/control/") || isApi;
+  const isPrivate = path === "/app" || path.startsWith("/app/") || ((path === "/control" || path.startsWith("/control/")) && process.env.CONTROL_DEMO !== "true") || isApi;
 
   if (!data.user && isPrivate) {
     if (isApi) {

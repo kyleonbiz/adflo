@@ -1,6 +1,6 @@
 import { AppTopBar } from "@/components/app-header";
 import { AppFrame } from "@/components/modules/app-frame";
-import { requireStaff, type Staff } from "./gate";
+import { controlDemoEnabled, requireStaff, type Staff } from "./gate";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type ControlContext = { mode: "live"; staff: Staff; supabase: SupabaseClient } | { mode: "preview" };
@@ -11,6 +11,6 @@ export async function renderControlShell(nextPath: string, content: (ctx: Contro
   const body = await content(access);
   const topRight = access.mode === "live"
     ? <AppTopBar userLabel={access.staff.name} workspaceName={`Staff · ${access.staff.role}`} />
-    : <AppTopBar badge="Preview" />;
+    : <AppTopBar badge={controlDemoEnabled() ? "Demo · sample data, nothing saved" : "Preview"} />;
   return <AppFrame base="/control" variant="control" topRight={topRight}>{body}</AppFrame>;
 }

@@ -17,6 +17,13 @@ export async function findStaff(supabase: SupabaseClient): Promise<Staff | null>
   return { userId: auth.user.id, name: (data.display_name as string) || email.split("@")[0], email, role: data.role as StaffRole };
 }
 
+/**
+ * Demo switch for trying the screens before the database is set up: set CONTROL_DEMO=true on the server (e.g. in Vercel).
+ * Off unless set. When on, /control opens without sign-in and shows only the built-in sample data; it never reads or
+ * writes the database, and every change request is refused. Turn it off (remove the variable) before real clients use the app.
+ */
+export const controlDemoEnabled = () => process.env.CONTROL_DEMO === "true";
+
 export type ControlAccess = { mode: "live"; staff: Staff; supabase: SupabaseClient } | { mode: "preview" };
 
 /**
@@ -25,6 +32,7 @@ export type ControlAccess = { mode: "live"; staff: Staff; supabase: SupabaseClie
  * development; a production build without a database shows nothing.
  */
 export async function requireStaff(nextPath: string, opts: { allowPasswordOnly?: boolean } = {}): Promise<ControlAccess> {
+  if (controlDemoEnabled()) return { mode: "preview" };
   if (getSupabaseEnv()) {
     const supabase = await createServerSupabase();
     const { data } = await supabase.auth.getUser();

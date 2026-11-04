@@ -418,3 +418,7 @@ abandoned uploads · per-user and per-address rate limiting.
 ## Security
 
 See [SECURITY_REVIEW.md](SECURITY_REVIEW.md) for the pre-release review: fixed findings, open items and the deployment requirements it depends on (notably: keep Supabase Auth "Confirm email" on, set `CRON_SECRET`, apply migration `…0006_dms_security_hardening.sql`).
+
+**Demo switch.** To click through the screens before the database is set up, set `CONTROL_DEMO=true` on the server (Vercel →
+Settings → Environment Variables, then redeploy). `/control` then opens without sign-in and shows only built-in sample data;
+it never reads or writes the database and refuses every change. Remove the variable before real clients use the app.
