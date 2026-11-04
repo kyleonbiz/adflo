@@ -69,22 +69,12 @@ test("agreement link with an unknown secret shows a plain not-valid page, and pu
   expect((await request.post("/api/agreement/accept", { data: { token: "x" } })).status()).toBe(503);
 });
 
-test("control center starts in Day and has an Appearance tab to switch views", async ({ page }) => {
-  await page.goto("/control");
-  await expect(page.locator("html")).not.toHaveClass(/dark/);
-  await page.getByRole("link", { name: "Appearance" }).first().click();
-  await expect(page).toHaveURL(/\/control\/appearance$/);
-  await page.getByRole("radio", { name: "Night" }).click();
-  await expect(page.locator("html")).toHaveClass(/dark/);
-  await page.getByRole("radio", { name: "Day" }).click();
-  await expect(page.locator("html")).not.toHaveClass(/dark/);
-});
-
 test.describe("on a device set to dark mode", () => {
   test.use({ colorScheme: "dark" });
-  test("control center still opens in Day", async ({ page }) => {
+  test("control center is always Day and has no Appearance switch", async ({ page }) => {
     await page.goto("/control");
     await expect(page.getByRole("heading", { name: "Control Center" })).toBeVisible();
     await expect(page.locator("html")).not.toHaveClass(/dark/);
+    await expect(page.getByRole("link", { name: "Appearance" })).toHaveCount(0);
   });
 });

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Building2, FileSignature, Home, LifeBuoy, Palette, ScrollText, Tag, UsersRound } from "lucide-react";
+import { Activity, Building2, FileSignature, Home, LifeBuoy, ScrollText, Tag, UsersRound } from "lucide-react";
 import { AdFloMark, Brand } from "@/components/brand";
 import { NavLink, isActive, type NavItem } from "@/components/modules/sidebar-nav";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,6 @@ const ITEMS: NavItem[] = [
   { id: "team", label: "Team", href: "/control/team", icon: UsersRound },
   { id: "monitoring", label: "Monitoring", href: "/control/monitoring", icon: Activity },
   { id: "audit", label: "Audit log", href: "/control/audit", icon: ScrollText },
-  { id: "appearance", label: "Appearance", href: "/control/appearance", icon: Palette },
 ];
 
 /** Same navy sidebar as the app, with the staff menu. */
