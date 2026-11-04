@@ -26,13 +26,13 @@ describe("Dashboard", () => {
     show();
     expect(screen.getByRole("link", { name: /Outstanding invoices/ }).getAttribute("href")).toBe("/app/invoices");
     expect(screen.getByRole("link", { name: /Open tasks/ }).getAttribute("href")).toBe("/app/projects");
-    expect(screen.getByRole("img", { name: /^Open work by service/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /^Open work by area/ })).toBeTruthy();
     expect(screen.getByRole("img", { name: /^Due in the next 7 days/ })).toBeTruthy();
     expect(screen.getByRole("img", { name: /Today's tasks done: 0%/ })).toBeTruthy();
     expect(screen.getByText("NEEDS ATTENTION")).toBeTruthy();
   });
 
-  it("shows five attention items, expands to all, and filters by service", async () => {
+  it("shows five attention items, expands to all, and filters by area", async () => {
     const user = userEvent.setup();
     show();
     expect(rows()).toHaveLength(5);

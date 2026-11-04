@@ -47,7 +47,7 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="attention-heading" className="text-base font-semibold">Needs your attention</h2>
         {live.length > 0 && (
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by service">
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter by area">
             {(["all", ...AREAS] as const).filter((a) => a === "all" || counts(a) > 0).map((a) => (
               <button
                 key={a}
@@ -126,7 +126,7 @@ function KpiCard({ kpi, bars }: { kpi: Kpi; bars: number[] }) {
         {icon ? (
           <span className={cn("grid size-12 shrink-0 place-items-center rounded-xl text-white shadow-sm", icon.box)}><icon.Icon className="size-6" aria-hidden /></span>
         ) : (
-          <MiniBars values={bars} label="Needs attention by service" />
+          <MiniBars values={bars} label="Needs attention by area" />
         )}
       </div>
     </Link>
@@ -179,7 +179,7 @@ export function Dashboard({ data, serverToday }: { base?: "/app"; data: Dashboar
         <div className="min-w-0 space-y-5">
           <section aria-labelledby="workload-heading" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="workload">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 id="workload-heading" className="text-base font-semibold">Open work by service</h2>
+              <h2 id="workload-heading" className="text-base font-semibold">Open work by area</h2>
               <p className="flex items-center gap-4 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-brand-sky" aria-hidden /> Open</span>
                 <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-brand-purple-deep" aria-hidden /> Needs attention</span>

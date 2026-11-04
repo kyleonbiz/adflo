@@ -10,7 +10,7 @@ function niceMax(n: number): number {
 
 const stop = (v: string, o = 1) => ({ stopColor: `var(${v})`, stopOpacity: o });
 
-/** Two bars per service: open work, and the part of it that needs attention. */
+/** Two bars per area: open work, and the part of it that needs attention. */
 export function WorkloadChart({ rows }: { rows: WorkloadRow[] }) {
   const id = useId();
   const W = 640, H = 260, L = 12, R = 44, T = 16, B = 38;
@@ -21,7 +21,7 @@ export function WorkloadChart({ rows }: { rows: WorkloadRow[] }) {
   const summary = rows.map((r) => `${r.label}: ${r.open} open, ${r.attention} needing attention`).join("; ");
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Open work by service. ${summary}`} className="h-auto w-full">
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Open work by area. ${summary}`} className="h-auto w-full">
       <defs>
         <linearGradient id={`${id}-open`} x1="0" x2="0" y1="0" y2="1"><stop offset="0" style={stop("--brand-sky")} /><stop offset="1" style={stop("--brand-blue")} /></linearGradient>
         <linearGradient id={`${id}-att`} x1="0" x2="0" y1="0" y2="1"><stop offset="0" style={stop("--brand-purple-deep")} /><stop offset="1" style={stop("--brand-indigo")} /></linearGradient>
