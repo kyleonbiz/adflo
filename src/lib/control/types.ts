@@ -25,6 +25,34 @@ export interface ClientRecord {
   workspaceId: string | null;
   startedOn: string | null;
   createdAt: string;
+  /** The Owner's own price for this client, in cents; null means the plan price applies. */
+  priceOverrideCents: number | null;
+  priceNote: string;
+  /** Filled from the usage function; null in the preview or when the client has no workspace yet. */
+  seatsUsed: number | null;
+  lastActive: string | null;
+  /** Onboarding steps that are done. */
+  checklist: string[];
+}
+
+export const CHECKLIST_STEPS = [
+  { key: "workspace", label: "Workspace created" },
+  { key: "owner_invited", label: "Owner invited" },
+  { key: "agreement_sent", label: "Terms and agreement sent" },
+  { key: "plan_set", label: "Plan and seats confirmed" },
+  { key: "first_login", label: "First sign-in completed" },
+] as const;
+export type ChecklistStep = (typeof CHECKLIST_STEPS)[number]["key"];
+
+export interface Plan { id: string; name: string; priceCents: number; seatsIncluded: number; active: boolean }
+export interface StaffMember { userId: string; role: StaffRole; displayName: string; email: string; active: boolean }
+
+export const formatMoney = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
+
+/** What a client pays per month: their own price when set, otherwise the plan's. */
+export function effectivePriceCents(c: Pick<ClientRecord, "plan" | "priceOverrideCents">, plans: Plan[]): number | null {
+  if (c.priceOverrideCents != null) return c.priceOverrideCents;
+  return plans.find((p) => p.name.toLowerCase() === c.plan.toLowerCase())?.priceCents ?? null;
 }
 
 export interface AuditEntry {

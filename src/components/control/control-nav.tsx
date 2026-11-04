@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, Home, ScrollText } from "lucide-react";
+import { Building2, Home, ScrollText, Tag, UsersRound } from "lucide-react";
 import { AdFloMark, Brand } from "@/components/brand";
 import { NavLink, isActive, type NavItem } from "@/components/modules/sidebar-nav";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 const ITEMS: NavItem[] = [
   { id: "overview", label: "Overview", href: "/control", icon: Home },
   { id: "clients", label: "Clients", href: "/control/clients", icon: Building2 },
+  { id: "plans", label: "Plans & pricing", href: "/control/plans", icon: Tag },
+  { id: "team", label: "Team", href: "/control/team", icon: UsersRound },
   { id: "audit", label: "Audit log", href: "/control/audit", icon: ScrollText },
 ];
 

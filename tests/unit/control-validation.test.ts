@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { describeAudit, parseClientInput } from "@/lib/control/validation";
+import { describeAudit, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
+import { effectivePriceCents, formatMoney } from "@/lib/control/types";
 
 describe("parseClientInput", () => {
   it("accepts a minimal client and fills defaults", () => {
     const r = parseClientInput({ name: "  Acme Roofing " });
-    expect(r).toEqual({ ok: true, value: { name: "Acme Roofing", status: "trial", plan: "standard", seatsLimit: 3, ownerName: "", ownerEmail: "", notes: "" } });
+    expect(r).toEqual({ ok: true, value: { name: "Acme Roofing", status: "trial", plan: "standard", seatsLimit: 3, ownerName: "", ownerEmail: "", notes: "", priceOverrideCents: null, priceNote: "" } });
   });
   it("rejects short names, bad status, negative or fractional seats and bad email", () => {
     const r = parseClientInput({ name: "A", status: "gone", seatsLimit: -1, ownerEmail: "nope" });
@@ -30,5 +31,49 @@ describe("parseClientInput", () => {
 describe("describeAudit", () => {
   it("reads a status change", () => {
     expect(describeAudit("client.status_changed", { status: ["trial", "active"] })).toBe("Status: trial → active");
+  });
+});
+
+describe("money", () => {
+  it("parses dollars into cents and refuses everything else", () => {
+    expect(parseDollars("79")).toBe(7900);
+    expect(parseDollars("79.5")).toBe(7950);
+    expect(parseDollars("$1,200.05")).toBe(120005);
+    for (const bad of ["-5", "1.234", "abc", "", "1e3"]) expect(parseDollars(bad)).toBeNull();
+  });
+  it("formats cents", () => {
+    expect(formatMoney(4900)).toBe("$49");
+    expect(formatMoney(4950)).toBe("$49.50");
+  });
+  it("uses the client's own price before the plan's", () => {
+    const plans = [{ id: "1", name: "Standard", priceCents: 9900, seatsIncluded: 3, active: true }];
+    expect(effectivePriceCents({ plan: "standard", priceOverrideCents: null }, plans)).toBe(9900);
+    expect(effectivePriceCents({ plan: "standard", priceOverrideCents: 0 }, plans)).toBe(0);
+    expect(effectivePriceCents({ plan: "gone", priceOverrideCents: null }, plans)).toBeNull();
+  });
+  it("reads a client price from the form", () => {
+    const r = parseClientInput({ name: "Ok Co", priceOverrideCents: "79.50" });
+    expect(r.ok && r.value.priceOverrideCents).toBe(7950);
+    expect(parseClientInput({ name: "Ok Co", priceOverrideCents: "free" }).ok).toBe(false);
+  });
+});
+
+describe("plans, staff and checklist input", () => {
+  it("checks a plan", () => {
+    expect(parsePlanInput({ name: "Pro", price: "99", seatsIncluded: "10" })).toEqual({ ok: true, value: { name: "Pro", priceCents: 9900, seatsIncluded: 10 } });
+    expect(parsePlanInput({ name: "", price: "x" }).ok).toBe(false);
+    expect(parsePlanInput({ active: false }, true)).toEqual({ ok: true, value: { active: false } });
+  });
+  it("checks a teammate", () => {
+    expect(parseStaffInput({ email: "A@B.co", role: "support", name: "Al" })).toEqual({ ok: true, value: { email: "a@b.co", role: "support", name: "Al" } });
+    expect(parseStaffInput({ email: "nope", role: "admin" }).ok).toBe(false);
+  });
+  it("checks a checklist step", () => {
+    expect(parseChecklistInput({ step: "workspace", done: true }).ok).toBe(true);
+    expect(parseChecklistInput({ step: "bogus", done: true }).ok).toBe(false);
+    expect(parseChecklistInput({ step: "workspace", done: "yes" }).ok).toBe(false);
+  });
+  it("describes a plan or team change in words", () => {
+    expect(describeAudit("staff.insert", { email: "a@b.co", role: "support", active: true })).toContain("Staff added");
   });
 });

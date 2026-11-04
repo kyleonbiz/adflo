@@ -1,4 +1,4 @@
-import { CLIENT_STATUSES, type ClientStatus } from "./types";
+import { CHECKLIST_STEPS, CLIENT_STATUSES, STAFF_ROLES, type ChecklistStep, type ClientStatus, type StaffRole } from "./types";
 
 export interface ClientInput {
   name: string;
@@ -8,6 +8,8 @@ export interface ClientInput {
   ownerName: string;
   ownerEmail: string;
   notes: string;
+  priceOverrideCents: number | null;
+  priceNote: string;
 }
 
 export type ParsedClient =
@@ -63,17 +65,88 @@ export function parseClientInput(raw: unknown, partial = false): ParsedClient {
     if (v.length > 4000) errors.notes = "Keep notes under 4,000 characters.";
     else out.notes = v;
   }
+  if (has("priceOverrideCents")) {
+    const raw_ = r.priceOverrideCents;
+    if (raw_ === undefined || raw_ === null || raw_ === "") out.priceOverrideCents = null;
+    else {
+      const cents = parseDollars(raw_);
+      if (cents === null) errors.priceOverrideCents = "Enter a price like 79 or 79.50.";
+      else out.priceOverrideCents = cents;
+    }
+  }
+  if (has("priceNote")) {
+    const v = clean(r.priceNote);
+    if (v.length > 200) errors.priceNote = "Keep the note under 200 characters.";
+    else out.priceNote = v;
+  }
   if (Object.keys(errors).length) return { ok: false, errors };
   return { ok: true, value: out };
+}
+
+/** "79", "79.5", "$1,200.00" → cents; anything else (negative, 3 decimals, text) → null. */
+export function parseDollars(v: unknown): number | null {
+  if (typeof v === "number") return Number.isFinite(v) && v >= 0 && v <= 1_000_000 ? Math.round(v * 100) : null;
+  if (typeof v !== "string") return null;
+  const m = /^\$?\s*(\d{1,7}(?:,\d{3})*|\d+)(?:\.(\d{1,2}))?$/.exec(v.trim());
+  if (!m) return null;
+  const cents = Number(m[1].replace(/,/g, "")) * 100 + Number((m[2] ?? "").padEnd(2, "0") || 0);
+  return cents <= 100_000_000 ? cents : null;
+}
+
+export type Parsed<T> = { ok: true; value: T } | { ok: false; errors: Record<string, string> };
+
+export function parsePlanInput(raw: unknown, partial = false): Parsed<{ name?: string; priceCents?: number; seatsIncluded?: number; active?: boolean }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const errors: Record<string, string> = {};
+  const out: { name?: string; priceCents?: number; seatsIncluded?: number; active?: boolean } = {};
+  if (!partial || "name" in r) { const n = clean(r.name); if (n.length < 1 || n.length > 40) errors.name = "Enter a plan name (up to 40 characters)."; else out.name = n; }
+  if (!partial || "price" in r) { const c = parseDollars(r.price ?? 0); if (c === null) errors.price = "Enter a monthly price like 49 or 49.50."; else out.priceCents = c; }
+  if (!partial || "seatsIncluded" in r) {
+    const n = typeof r.seatsIncluded === "string" && r.seatsIncluded.trim() !== "" ? Number(r.seatsIncluded) : r.seatsIncluded ?? 3;
+    if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > 10000) errors.seatsIncluded = "Seats must be a whole number from 0 to 10,000."; else out.seatsIncluded = n;
+  }
+  if ("active" in r) { if (typeof r.active !== "boolean") errors.active = "Active must be on or off."; else out.active = r.active; }
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: out };
+}
+
+export function parseStaffInput(raw: unknown): Parsed<{ email: string; role: StaffRole; name: string }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const errors: Record<string, string> = {};
+  const email = clean(r.email).toLowerCase();
+  if (!EMAIL.test(email) || email.length > 254) errors.email = "Enter a valid email address.";
+  if (!STAFF_ROLES.includes(r.role as StaffRole)) errors.role = "Choose Owner, Support or Billing.";
+  const name = clean(r.name);
+  if (name.length > 80) errors.name = "Keep the name under 80 characters.";
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { email, role: r.role as StaffRole, name } };
+}
+
+export function parseChecklistInput(raw: unknown): Parsed<{ step: ChecklistStep; done: boolean }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const step = CHECKLIST_STEPS.find((s) => s.key === r.step)?.key;
+  if (!step || typeof r.done !== "boolean") return { ok: false, errors: { step: "Unknown step." } };
+  return { ok: true, value: { step, done: r.done } };
 }
 
 /** One readable line for an audit entry, e.g. "Status: trial → active". */
 export function describeAudit(action: string, detail: Record<string, unknown>): string {
   if (action === "client.created") return `Created ${String(detail.name ?? "a client")} (${String(detail.plan ?? "")}, ${String(detail.seats_limit ?? "")} seats)`;
   if (action === "client.deleted") return `Deleted ${String(detail.name ?? "a client")}`;
-  const parts = Object.entries(detail).map(([k, v]) => {
+  if (!action.startsWith("client.")) return describeGeneric(action, detail);
+  const parts = Object.entries(detail).filter(([k]) => k !== "client_id").map(([k, v]) => {
     const label = k === "seats_limit" ? "Seats" : k === "owner_email" ? "Owner email" : k.charAt(0).toUpperCase() + k.slice(1);
     return Array.isArray(v) ? `${label}: ${String(v[0])} → ${String(v[1])}` : `${label} ${String(v)}`;
   });
   return parts.join(" · ") || "Updated";
+}
+
+const VERB: Record<string, string> = { insert: "added", update: "changed", delete: "removed" };
+
+function describeGeneric(action: string, detail: Record<string, unknown>): string {
+  const [entity, op] = action.split(".");
+  const subject = String(detail.name ?? detail.email ?? detail.subject ?? detail.step ?? "");
+  const rest = Object.entries(detail)
+    .filter(([k]) => !["id", "user_id", "client_id", "name", "email", "subject", "step"].includes(k))
+    .map(([k, v]) => `${k.replace(/_/g, " ")} ${String(v)}`).join(" · ");
+  const head = `${entity.charAt(0).toUpperCase()}${entity.slice(1)} ${VERB[op] ?? op}`;
+  return `${head}${subject ? ` ${subject}` : ""}${rest ? ` (${rest})` : ""}`;
 }

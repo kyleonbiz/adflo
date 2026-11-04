@@ -43,7 +43,7 @@ select t.affected('billing cannot edit a client', $$update public.clients set pl
 select t.fails('billing cannot create a client', $$insert into public.clients (name) values ('Other Co')$$);
 
 select t.as_staff(:sam::uuid);
-select t.ok('owner reads the audit log', t.count('select 1 from public.staff_audit_log') = 2);
+select t.ok('owner reads the audit log', t.count($$select 1 from public.staff_audit_log where entity = 'client'$$) = 2);
 select t.ok('audit records who suspended', t.count($$select 1 from public.staff_audit_log where action = 'client.status_changed' and staff_email = 'sue@staff.test'$$) = 1);
 select t.fails('nobody writes the audit log directly', $$insert into public.staff_audit_log (action, entity) values ('x', 'y')$$);
 select t.ok('owner sees all staff', t.count('select 1 from public.staff_members') = 3);

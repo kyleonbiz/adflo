@@ -8,7 +8,7 @@ test("control center preview: overview, clients and audit log open", async ({ pa
   await expect(page.getByRole("navigation", { name: "Control Center" })).toBeVisible();
 
   await page.getByRole("link", { name: "Clients" }).first().click();
-  await expect(page).toHaveURL(/\/control\/clients$/);
+  await expect(page).toHaveURL(/\/control\/clients$/, { timeout: 30_000 }); // the first visit compiles the page in dev
   await expect(page.getByRole("cell", { name: "Sample: Acme Roofing" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add client" })).toHaveCount(0); // the preview cannot change anything
 
@@ -16,11 +16,26 @@ test("control center preview: overview, clients and audit log open", async ({ pa
   await expect(page.getByRole("cell", { name: "Sample: Acme Roofing" })).toHaveCount(0);
   await expect(page.getByRole("cell", { name: "Sample: Birch & Co" })).toBeVisible();
 
+  await page.getByRole("link", { name: "Plans & pricing" }).first().click();
+  await expect(page.getByRole("heading", { name: "Plans & pricing" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("cell", { name: "pro" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add plan" })).toHaveCount(0);
+
+  await page.getByRole("link", { name: "Team" }).first().click();
+  await expect(page.getByText("Sample Owner")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: "Add to team" })).toHaveCount(0);
+
   await page.getByRole("link", { name: "Audit log" }).first().click();
-  await expect(page.getByText("Nothing to show in the preview")).toBeVisible();
+  await expect(page.getByText("Nothing to show in the preview")).toBeVisible({ timeout: 30_000 });
 });
 
 test("control center API refuses writes without a database", async ({ request }) => {
   const res = await request.post("/api/control/clients", { data: { name: "Nope Co" } });
   expect(res.status()).toBe(503);
+});
+
+test("control center API refuses plan, team and checklist writes without a database", async ({ request }) => {
+  expect((await request.post("/api/control/plans", { data: { name: "x" } })).status()).toBe(503);
+  expect((await request.post("/api/control/staff", { data: { email: "a@b.co", role: "support" } })).status()).toBe(503);
+  expect((await request.post("/api/control/clients/00000000-0000-4000-8000-000000000000/checklist", { data: { step: "workspace", done: true } })).status()).toBe(503);
 });

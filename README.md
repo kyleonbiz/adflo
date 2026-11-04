@@ -32,8 +32,16 @@ insert into public.staff_members (user_id, role, display_name, email)
 select id, 'owner', 'Your Name', email from auth.users where email = 'you@example.com';
 ```
 
-Planned next: onboarding checklist, seat usage, pricing, team accounts, support queue, password resets, agreements,
-monitoring and required two-factor sign-in. Billing is deliberately later.
+Two-factor (an authenticator app) is required for staff and enforced in the database: a password-only session sees no
+staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
+
+* **Clients**: status, plan, seats in use (counted by a database function that exposes only counts and last sign-in),
+  price, and a detail page with the onboarding checklist.
+* **Plans & pricing**: the Owner sets plan prices and seats; only the Owner can give a client their own price.
+* **Team**: the Owner adds people (who must already have an AdFlo account), changes roles, and turns access off. There is
+  always at least one active Owner.
+
+Planned next: support queue, password resets, agreements, monitoring. Billing is deliberately later.
 
 ## Platform modules
 

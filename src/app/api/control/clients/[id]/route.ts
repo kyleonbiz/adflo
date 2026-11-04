@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export function PATCH(req: Request, ctx: RouteContext<"/api/control/clients/[id]">) {
-  return staffRoute(async ({ supabase }) => {
+  return staffRoute(req, async ({ supabase }) => {
     const { id } = await ctx.params;
     if (!UUID.test(id)) return fail(404, "not_found", "Client not found.");
     const body = await req.json().catch(() => null);
@@ -23,9 +23,12 @@ export function PATCH(req: Request, ctx: RouteContext<"/api/control/clients/[id]
     if (v.ownerName !== undefined) patch.owner_name = v.ownerName;
     if (v.ownerEmail !== undefined) patch.owner_email = v.ownerEmail;
     if (v.notes !== undefined) patch.notes = v.notes;
+    if (v.priceOverrideCents !== undefined) patch.price_override_cents = v.priceOverrideCents;
+    if (v.priceNote !== undefined) patch.price_note = v.priceNote;
     if (!Object.keys(patch).length) return fail(400, "empty", "Nothing to change.");
     const { data, error } = await supabase.from("clients").update(patch).eq("id", id).select(CLIENT_COLUMNS).maybeSingle();
     if (error) {
+      if (error.code === "42501") return fail(403, "owner_only", "Only the Owner can set a client's own price.");
       if (error.code === "23505") return fail(409, "duplicate", "A client with that name already exists.");
       throw error;
     }

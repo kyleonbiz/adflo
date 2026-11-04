@@ -1,19 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CLIENT_STATUSES, STATUS_LABEL, type ClientRecord, type ClientStatus } from "@/lib/control/types";
+import { CLIENT_STATUSES, STATUS_LABEL, effectivePriceCents, formatMoney, type ClientRecord, type ClientStatus, type Plan } from "@/lib/control/types";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "./status-badge";
 
-interface FormState { name: string; status: ClientStatus; plan: string; seatsLimit: string; ownerName: string; ownerEmail: string; notes: string }
-const EMPTY: FormState = { name: "", status: "trial", plan: "standard", seatsLimit: "3", ownerName: "", ownerEmail: "", notes: "" };
-const fromClient = (c: ClientRecord): FormState => ({ name: c.name, status: c.status, plan: c.plan, seatsLimit: String(c.seatsLimit), ownerName: c.ownerName, ownerEmail: c.ownerEmail, notes: c.notes });
+interface FormState { name: string; status: ClientStatus; plan: string; seatsLimit: string; ownerName: string; ownerEmail: string; notes: string; priceOverrideCents: string; priceNote: string }
+const EMPTY: FormState = { name: "", status: "trial", plan: "standard", seatsLimit: "3", ownerName: "", ownerEmail: "", notes: "", priceOverrideCents: "", priceNote: "" };
+const fromClient = (c: ClientRecord): FormState => ({ name: c.name, status: c.status, plan: c.plan, seatsLimit: String(c.seatsLimit), ownerName: c.ownerName, ownerEmail: c.ownerEmail, notes: c.notes, priceOverrideCents: c.priceOverrideCents == null ? "" : String(c.priceOverrideCents / 100), priceNote: c.priceNote });
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
 
@@ -27,7 +28,7 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
   );
 }
 
-function ClientDialog({ client, onClose, onSaved }: { client: ClientRecord | null; onClose: () => void; onSaved: () => void }) {
+export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { client: ClientRecord | null; plans: Plan[]; isOwner: boolean; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState<FormState>(client ? fromClient(client) : EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -41,7 +42,8 @@ function ClientDialog({ client, onClose, onSaved }: { client: ClientRecord | nul
       const res = await fetch(client ? `/api/control/clients/${client.id}` : "/api/control/clients", {
         method: client ? "PATCH" : "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(form),
+        // Only the Owner may send a price; everyone else's request leaves it out so the database rule is never tripped.
+        body: JSON.stringify(isOwner ? form : { ...form, priceOverrideCents: undefined, priceNote: undefined }),
       });
       const json = await res.json().catch(() => null);
       if (res.ok && json?.ok) { onSaved(); return; }
@@ -63,13 +65,23 @@ function ClientDialog({ client, onClose, onSaved }: { client: ClientRecord | nul
             <Field id="c-status" label="Status" error={errors.status}>
               <select id="c-status" value={form.status} onChange={set("status")} className={SELECT}>{CLIENT_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}</select>
             </Field>
-            <Field id="c-plan" label="Plan" error={errors.plan}><Input id="c-plan" value={form.plan} onChange={set("plan")} /></Field>
+            <Field id="c-plan" label="Plan" error={errors.plan}>
+              <select id="c-plan" value={form.plan} onChange={set("plan")} className={SELECT}>
+                {[...new Set([form.plan, ...plans.filter((p) => p.active).map((p) => p.name)])].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </Field>
             <Field id="c-seats" label="Seats allowed" error={errors.seatsLimit}><Input id="c-seats" inputMode="numeric" value={form.seatsLimit} onChange={set("seatsLimit")} /></Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field id="c-owner" label="Owner's name" error={errors.ownerName}><Input id="c-owner" value={form.ownerName} onChange={set("ownerName")} /></Field>
             <Field id="c-email" label="Owner's email" error={errors.ownerEmail}><Input id="c-email" type="email" value={form.ownerEmail} onChange={set("ownerEmail")} /></Field>
           </div>
+          {isOwner && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field id="c-price" label="Own monthly price ($)" error={errors.priceOverrideCents}><Input id="c-price" inputMode="decimal" placeholder="Plan price" value={form.priceOverrideCents} onChange={set("priceOverrideCents")} /></Field>
+              <Field id="c-price-note" label="Why (optional)" error={errors.priceNote}><Input id="c-price-note" value={form.priceNote} onChange={set("priceNote")} /></Field>
+            </div>
+          )}
           <Field id="c-notes" label="Internal notes" error={errors.notes}>
             <textarea id="c-notes" rows={3} value={form.notes} onChange={set("notes")} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />
           </Field>
@@ -86,7 +98,7 @@ function ClientDialog({ client, onClose, onSaved }: { client: ClientRecord | nul
 }
 
 /** The client directory: search, filter by status, add and edit. `canEdit` is false for read-only staff and in the preview. */
-export function ClientsPage({ clients, canEdit, sample }: { clients: ClientRecord[]; canEdit: boolean; sample?: boolean }) {
+export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }: { clients: ClientRecord[]; plans: Plan[]; canEdit: boolean; isOwner?: boolean; sample?: boolean }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<ClientStatus | "all">("all");
@@ -129,17 +141,18 @@ export function ClientsPage({ clients, canEdit, sample }: { clients: ClientRecor
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border bg-card shadow-panel">
-          <table className="w-full min-w-[40rem] text-left text-sm">
+          <table className="w-full min-w-[46rem] text-left text-sm">
             <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-              <tr><th className="px-4 py-3 font-medium">Client</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Plan</th><th className="px-4 py-3 text-right font-medium">Seats</th><th className="px-4 py-3 font-medium">Owner</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr>
+              <tr><th className="px-4 py-3 font-medium">Client</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Plan</th><th className="px-4 py-3 text-right font-medium">Seats</th><th className="px-4 py-3 text-right font-medium">Price / mo</th><th className="px-4 py-3 font-medium">Owner</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr>
             </thead>
             <tbody className="divide-y">
               {rows.map((c) => (
                 <tr key={c.id}>
-                  <td className="px-4 py-3 font-medium">{c.name}</td>
+                  <td className="px-4 py-3 font-medium">{c.id.startsWith("sample-") ? c.name : <Link href={`/control/clients/${c.id}`} className="rounded outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">{c.name}</Link>}</td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                   <td className="px-4 py-3 capitalize">{c.plan}</td>
-                  <td className="px-4 py-3 text-right tabular-nums">{c.seatsLimit}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{c.seatsUsed ?? "—"} / {c.seatsLimit}</td>
+                  <td className="px-4 py-3 text-right tabular-nums">{(() => { const p = effectivePriceCents(c, plans); return p == null ? "—" : formatMoney(p); })()}</td>
                   <td className="px-4 py-3"><div>{c.ownerName || "—"}</div><div className="text-xs text-muted-foreground">{c.ownerEmail}</div></td>
                   <td className="px-4 py-3 text-right">{canEdit && <Button variant="outline" size="sm" onClick={() => setDialog(c)} aria-label={`Edit ${c.name}`}>Edit</Button>}</td>
                 </tr>
@@ -149,7 +162,7 @@ export function ClientsPage({ clients, canEdit, sample }: { clients: ClientRecor
         </div>
       )}
 
-      {dialog && <ClientDialog client={dialog === "new" ? null : dialog} onClose={() => setDialog(null)} onSaved={() => { setDialog(null); router.refresh(); }} />}
+      {dialog && <ClientDialog client={dialog === "new" ? null : dialog} plans={plans} isOwner={isOwner} onClose={() => setDialog(null)} onSaved={() => { setDialog(null); router.refresh(); }} />}
     </div>
   );
 }
