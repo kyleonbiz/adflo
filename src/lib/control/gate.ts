@@ -24,13 +24,18 @@ export type ControlAccess = { mode: "live"; staff: Staff; supabase: SupabaseClie
  * not exist (404, so its presence is not revealed). Without a database it opens as an empty preview, but only in
  * development; a production build without a database shows nothing.
  */
-export async function requireStaff(nextPath: string): Promise<ControlAccess> {
+export async function requireStaff(nextPath: string, opts: { allowPasswordOnly?: boolean } = {}): Promise<ControlAccess> {
   if (getSupabaseEnv()) {
     const supabase = await createServerSupabase();
     const { data } = await supabase.auth.getUser();
     if (!data.user) redirect(`/login?next=${nextPath}`);
     const staff = await findStaff(supabase);
     if (!staff) notFound();
+    if (!opts.allowPasswordOnly) {
+      // Staff data needs a second factor (the database enforces it too). No factor yet: set one up. Has one: enter the code.
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.currentLevel !== "aal2") redirect(aal?.nextLevel === "aal2" ? `/control/verify?next=${encodeURIComponent(nextPath)}` : "/control/security");
+    }
     return { mode: "live", staff, supabase };
   }
   if (devModeAllowed()) return { mode: "preview" };

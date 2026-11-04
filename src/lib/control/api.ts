@@ -14,6 +14,8 @@ export async function staffRoute(handler: (ctx: { supabase: SupabaseClient; staf
   const supabase = await createServerSupabase();
   const staff = await findStaff(supabase);
   if (!staff) return fail(403, "forbidden", "This area is for AdFlo staff.");
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (aal?.currentLevel !== "aal2") return fail(403, "mfa_required", "Enter your two-factor code first.");
   if (!canEditClients(staff.role)) return fail(403, "read_only", "Your role can look but not change clients.");
   try {
     return await handler({ supabase, staff });
