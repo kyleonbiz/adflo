@@ -22,17 +22,20 @@ async function importExpenses(page: Page) {
 }
 
 test.describe("reporting module", () => {
-  test("overview: shows what needs attention and a card for every service", async ({ page }) => {
+  test("overview: headline numbers, what needs attention, and a row for every service", async ({ page }) => {
     await page.goto("/app/reporting");
     await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByTestId("overview-summary")).toContainText("Records tracked");
+    await expect(page.getByTestId("overview-summary")).toContainText("of 7"); // services in use
     await expect(page.getByTestId("attention-count")).toContainText("item");
     expect(await page.getByTestId("attention-item").count()).toBeGreaterThan(0);
-    const cards = page.getByTestId("module-card");
-    const card = (name: string) => cards.filter({ has: page.getByRole("heading", { name, exact: true }) });
-    await expect(cards).toHaveCount(7);
-    await expect(card("Invoices")).toContainText("Outstanding");
-    await expect(card("Contacts")).toContainText("Contacts");
-    await expect(card("Documents")).toContainText("No records yet"); // documents are not seeded
+    await expect(page.getByRole("region", { name: "Records by service" }).getByTestId("breakdown-row").first()).toBeVisible();
+    const rows = page.getByTestId("service-row");
+    const row = (name: string) => rows.filter({ has: page.getByRole("rowheader", { name, exact: true }) });
+    await expect(rows).toHaveCount(7);
+    await expect(row("Invoices")).toContainText("Outstanding");
+    await expect(row("Contacts")).toContainText("Contacts");
+    await expect(row("Documents")).toContainText("No records yet"); // documents are not seeded
   });
 
   test("every service has a report, opened from the card or the tab, with a shareable address", async ({ page }) => {
