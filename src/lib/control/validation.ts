@@ -1,4 +1,4 @@
-import { CHECKLIST_STEPS, CLIENT_STATUSES, STAFF_ROLES, type ChecklistStep, type ClientStatus, type StaffRole } from "./types";
+import { CHECKLIST_STEPS, CLIENT_STATUSES, STAFF_ROLES, TICKET_PRIORITIES, TICKET_STATUSES, type ChecklistStep, type ClientStatus, type StaffRole, type TicketPriority, type TicketStatus } from "./types";
 
 export interface ClientInput {
   name: string;
@@ -149,4 +149,46 @@ function describeGeneric(action: string, detail: Record<string, unknown>): strin
     .map(([k, v]) => `${k.replace(/_/g, " ")} ${String(v)}`).join(" · ");
   const head = `${entity.charAt(0).toUpperCase()}${entity.slice(1)} ${VERB[op] ?? op}`;
   return `${head}${subject ? ` ${subject}` : ""}${rest ? ` (${rest})` : ""}`;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const isUuid = (v: unknown): v is string => typeof v === "string" && UUID_RE.test(v);
+
+const body_ = (v: unknown) => (typeof v === "string" ? v.replace(CONTROL, "").trim() : "");
+
+export function parseTicketInput(raw: unknown): Parsed<{ subject: string; body: string; clientId: string | null; priority: TicketPriority }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const errors: Record<string, string> = {};
+  const subject = clean(r.subject);
+  if (subject.length < 1 || subject.length > 200) errors.subject = "Enter a subject (up to 200 characters).";
+  const body = body_(r.body);
+  if (body.length > 5000) errors.body = "Keep the details under 5,000 characters.";
+  const clientId = r.clientId === undefined || r.clientId === null || r.clientId === "" ? null : r.clientId;
+  if (clientId !== null && !isUuid(clientId)) errors.clientId = "Choose a client from the list.";
+  const priority = r.priority === undefined ? "normal" : r.priority;
+  if (!TICKET_PRIORITIES.includes(priority as TicketPriority)) errors.priority = "Choose low, normal or high.";
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { subject, body, clientId: clientId as string | null, priority: priority as TicketPriority } };
+}
+
+export function parseTicketPatch(raw: unknown): Parsed<{ status?: TicketStatus; priority?: TicketPriority; assignee?: string | null }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const errors: Record<string, string> = {};
+  const out: { status?: TicketStatus; priority?: TicketPriority; assignee?: string | null } = {};
+  if ("status" in r) { if (!TICKET_STATUSES.includes(r.status as TicketStatus)) errors.status = "Unknown status."; else out.status = r.status as TicketStatus; }
+  if ("priority" in r) { if (!TICKET_PRIORITIES.includes(r.priority as TicketPriority)) errors.priority = "Unknown priority."; else out.priority = r.priority as TicketPriority; }
+  if ("assignee" in r) { if (r.assignee === null || r.assignee === "") out.assignee = null; else if (isUuid(r.assignee)) out.assignee = r.assignee; else errors.assignee = "Choose a teammate."; }
+  if (!Object.keys(out).length && !Object.keys(errors).length) errors.status = "Nothing to change.";
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: out };
+}
+
+export function parseNote(raw: unknown): Parsed<{ body: string }> {
+  const body = body_((raw as { body?: unknown } | null)?.body);
+  if (!body) return { ok: false, errors: { body: "Write a note first." } };
+  if (body.length > 5000) return { ok: false, errors: { body: "Keep notes under 5,000 characters." } };
+  return { ok: true, value: { body } };
+}
+
+export function parseResetEmail(raw: unknown): Parsed<{ email: string }> {
+  const email = clean((raw as { email?: unknown } | null)?.email).toLowerCase();
+  return EMAIL.test(email) && email.length <= 254 ? { ok: true, value: { email } } : { ok: false, errors: { email: "Enter a valid email address." } };
 }

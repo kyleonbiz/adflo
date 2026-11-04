@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AuditEntry, ClientRecord, ClientStatus, Plan, StaffMember, StaffRole } from "./types";
+import type { AuditEntry, ClientRecord, ClientStatus, DirectoryEntry, Plan, StaffMember, StaffRole, Ticket, TicketNote, TimelineEvent } from "./types";
 
 interface ClientRow {
   id: string; name: string; status: ClientStatus; plan: string; seats_limit: number; owner_name: string;
@@ -61,4 +61,44 @@ export const SAMPLE_CLIENTS: ClientRecord[] = [
 export const SAMPLE_PLANS: Plan[] = [
   { id: "plan-1", name: "standard", priceCents: 9900, seatsIncluded: 3, active: true },
   { id: "plan-2", name: "pro", priceCents: 24900, seatsIncluded: 10, active: true },
+];
+
+interface TicketRow { id: string; client_id: string | null; subject: string; body: string; status: Ticket["status"]; priority: Ticket["priority"]; assignee: string | null; created_at: string; updated_at: string; clients: { name: string } | { name: string }[] | null }
+const TICKET_COLUMNS = "id, client_id, subject, body, status, priority, assignee, created_at, updated_at, clients(name)";
+const toTicket = (r: TicketRow): Ticket => ({
+  id: r.id, clientId: r.client_id, clientName: (Array.isArray(r.clients) ? r.clients[0]?.name : r.clients?.name) ?? "", subject: r.subject, body: r.body,
+  status: r.status, priority: r.priority, assignee: r.assignee, createdAt: r.created_at, updatedAt: r.updated_at,
+});
+
+/** Newest first, open ones before closed. Pass `clientId` for one client's tickets. */
+export async function loadTickets(supabase: SupabaseClient, clientId?: string): Promise<Ticket[]> {
+  let q = supabase.from("support_tickets").select(TICKET_COLUMNS).order("created_at", { ascending: false }).limit(300);
+  if (clientId) q = q.eq("client_id", clientId);
+  const { data, error } = await q;
+  if (error) throw new Error("Could not load tickets.");
+  const rank = { open: 0, pending: 1, closed: 2 } as const;
+  return (data as unknown as TicketRow[]).map(toTicket).sort((a, b) => rank[a.status] - rank[b.status]);
+}
+
+export async function loadTicket(supabase: SupabaseClient, id: string): Promise<{ ticket: Ticket; notes: TicketNote[] } | null> {
+  const { data, error } = await supabase.from("support_tickets").select(TICKET_COLUMNS).eq("id", id).maybeSingle();
+  if (error) throw new Error("Could not load the ticket.");
+  if (!data) return null;
+  const { data: notes } = await supabase.from("ticket_notes").select("id, author_email, body, created_at").eq("ticket_id", id).order("created_at");
+  return { ticket: toTicket(data as unknown as TicketRow), notes: (notes ?? []).map((n) => ({ id: n.id as string, authorEmail: n.author_email as string, body: n.body as string, createdAt: n.created_at as string })) };
+}
+
+export async function loadDirectory(supabase: SupabaseClient): Promise<DirectoryEntry[]> {
+  const { data } = await supabase.rpc("control_staff_directory");
+  return ((data ?? []) as { user_id: string; display_name: string; role: StaffRole }[]).map((d) => ({ userId: d.user_id, displayName: d.display_name, role: d.role }));
+}
+
+export async function loadTimeline(supabase: SupabaseClient, clientId: string): Promise<TimelineEvent[]> {
+  const { data } = await supabase.rpc("control_client_timeline", { p_client: clientId });
+  return ((data ?? []) as { at: string; staff_email: string; action: string; detail: Record<string, unknown> }[]).map((e) => ({ at: e.at, staffEmail: e.staff_email, action: e.action, detail: e.detail ?? {} }));
+}
+
+export const SAMPLE_TICKETS: Ticket[] = [
+  { id: "sample-t1", clientId: "sample-1", clientName: "Sample: Acme Roofing", subject: "Cannot upload a PDF", body: "", status: "open", priority: "high", assignee: null, createdAt: "2026-11-03T14:00:00Z", updatedAt: "2026-11-03T14:00:00Z" },
+  { id: "sample-t2", clientId: "sample-2", clientName: "Sample: Birch & Co", subject: "Add a seat for a new hire", body: "", status: "pending", priority: "normal", assignee: null, createdAt: "2026-11-02T10:00:00Z", updatedAt: "2026-11-02T10:00:00Z" },
 ];

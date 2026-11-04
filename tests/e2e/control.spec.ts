@@ -16,6 +16,10 @@ test("control center preview: overview, clients and audit log open", async ({ pa
   await expect(page.getByRole("cell", { name: "Sample: Acme Roofing" })).toHaveCount(0);
   await expect(page.getByRole("cell", { name: "Sample: Birch & Co" })).toBeVisible();
 
+  await page.getByRole("link", { name: "Support" }).first().click();
+  await expect(page.getByText("Cannot upload a PDF")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: "New ticket" })).toHaveCount(0);
+
   await page.getByRole("link", { name: "Plans & pricing" }).first().click();
   await expect(page.getByRole("heading", { name: "Plans & pricing" })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("cell", { name: "pro" })).toBeVisible();
@@ -36,6 +40,8 @@ test("control center API refuses writes without a database", async ({ request })
 
 test("control center API refuses plan, team and checklist writes without a database", async ({ request }) => {
   expect((await request.post("/api/control/plans", { data: { name: "x" } })).status()).toBe(503);
+  expect((await request.post("/api/control/tickets", { data: { subject: "x" } })).status()).toBe(503);
+  expect((await request.post("/api/control/password-reset", { data: { email: "a@b.co" } })).status()).toBe(503);
   expect((await request.post("/api/control/staff", { data: { email: "a@b.co", role: "support" } })).status()).toBe(503);
   expect((await request.post("/api/control/clients/00000000-0000-4000-8000-000000000000/checklist", { data: { step: "workspace", done: true } })).status()).toBe(503);
 });

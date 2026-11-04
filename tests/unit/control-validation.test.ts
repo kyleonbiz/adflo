@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeAudit, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
+import { describeAudit, isUuid, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
 import { effectivePriceCents, formatMoney } from "@/lib/control/types";
 
 describe("parseClientInput", () => {
@@ -75,5 +75,28 @@ describe("plans, staff and checklist input", () => {
   });
   it("describes a plan or team change in words", () => {
     expect(describeAudit("staff.insert", { email: "a@b.co", role: "support", active: true })).toContain("Staff added");
+  });
+});
+
+describe("support input", () => {
+  const id = "00000000-0000-4000-8000-000000000001";
+  it("checks a new ticket", () => {
+    expect(parseTicketInput({ subject: " Upload fails ", clientId: id })).toEqual({ ok: true, value: { subject: "Upload fails", body: "", clientId: id, priority: "normal" } });
+    expect(parseTicketInput({ subject: "", clientId: "nope", priority: "urgent" }).ok).toBe(false);
+    expect(parseTicketInput({ subject: "No client" })).toMatchObject({ ok: true, value: { clientId: null } });
+  });
+  it("checks a ticket change", () => {
+    expect(parseTicketPatch({ status: "closed" })).toEqual({ ok: true, value: { status: "closed" } });
+    expect(parseTicketPatch({ assignee: "" })).toEqual({ ok: true, value: { assignee: null } });
+    expect(parseTicketPatch({ assignee: "bob" }).ok).toBe(false);
+    expect(parseTicketPatch({}).ok).toBe(false);
+  });
+  it("checks notes and reset emails", () => {
+    expect(parseNote({ body: "  hi " })).toEqual({ ok: true, value: { body: "hi" } });
+    expect(parseNote({ body: "   " }).ok).toBe(false);
+    expect(parseResetEmail({ email: "Pat@X.com" })).toEqual({ ok: true, value: { email: "pat@x.com" } });
+    expect(parseResetEmail({ email: "x" }).ok).toBe(false);
+    expect(isUuid(id)).toBe(true);
+    expect(isUuid("1; drop table")).toBe(false);
   });
 });

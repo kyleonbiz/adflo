@@ -64,3 +64,17 @@ export interface AuditEntry {
   detail: Record<string, unknown>;
   createdAt: string;
 }
+
+export const TICKET_STATUSES = ["open", "pending", "closed"] as const;
+export type TicketStatus = (typeof TICKET_STATUSES)[number];
+export const TICKET_PRIORITIES = ["low", "normal", "high"] as const;
+export type TicketPriority = (typeof TICKET_PRIORITIES)[number];
+export const TICKET_STATUS_LABEL: Record<TicketStatus, string> = { open: "Open", pending: "Waiting on client", closed: "Closed" };
+
+export interface Ticket {
+  id: string; clientId: string | null; clientName: string; subject: string; body: string;
+  status: TicketStatus; priority: TicketPriority; assignee: string | null; createdAt: string; updatedAt: string;
+}
+export interface TicketNote { id: string; authorEmail: string; body: string; createdAt: string }
+export interface DirectoryEntry { userId: string; displayName: string; role: StaffRole }
+export interface TimelineEvent { at: string; staffEmail: string; action: string; detail: Record<string, unknown> }

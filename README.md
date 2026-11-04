@@ -41,7 +41,13 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
 * **Team**: the Owner adds people (who must already have an AdFlo account), changes roles, and turns access off. There is
   always at least one active Owner.
 
-Planned next: support queue, password resets, agreements, monitoring. Billing is deliberately later.
+* **Support**: a ticket queue (open, waiting on client, closed; priority; assigned teammate) with permanent internal notes,
+  and each client's page shows its tickets and a timeline of every logged change.
+* **Password resets**: staff send a client's owner or member a reset email (never the password or the link). The address
+  must belong to a client, every send is audit logged, and the link lands on `/reset-password`. Set the Supabase auth
+  Site URL and allowed redirect URLs so `/reset-password` on your domain is permitted.
+
+Planned next: agreements, monitoring. Billing is deliberately later.
 
 ## Platform modules
 
