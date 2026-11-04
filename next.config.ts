@@ -18,9 +18,15 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The text reader for photos and scans runs worker threads and reads its language data from disk.
   serverExternalPackages: ["tesseract.js"],
-  outputFileTracingIncludes: {
-    "/api/licenses/parse": ["./node_modules/tesseract.js/**/*", "./node_modules/tesseract.js-core/**/*", "./node_modules/@tesseract.js-data/eng/4.0.0/**/*"],
-  },
+  // Only a production build needs the files copied next to the route; listing them in development makes the dev server
+  // rebuild and reload the page over and over.
+  ...(process.env.NODE_ENV === "production"
+    ? {
+        outputFileTracingIncludes: {
+          "/api/licenses/parse": ["./node_modules/tesseract.js/**/*", "./node_modules/tesseract.js-core/**/*", "./node_modules/@tesseract.js-data/eng/4.0.0/**/*"],
+        },
+      }
+    : {}),
   // Old shared links to the public demo still work: they now open the same screen inside the app.
   async redirects() {
     return [
