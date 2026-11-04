@@ -78,3 +78,40 @@ test.describe("on a device set to dark mode", () => {
     await expect(page.getByRole("link", { name: "Appearance" })).toHaveCount(0);
   });
 });
+
+test("billing: create, send and pay an invoice by hand, saved in this browser, export CSV", async ({ page }) => {
+  await page.goto("/control/billing");
+  await expect(page.getByRole("heading", { name: "Billing" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "AF-0003", exact: true })).toBeVisible(); // labelled examples on first visit
+
+  // The overdue example is counted and flagged.
+  await page.getByRole("button", { name: /^Overdue/ }).click();
+  await expect(page.getByRole("cell", { name: "AF-0003", exact: true })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "AF-0002", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: /^All/ }).click();
+
+  // A bad form is refused with reasons.
+  await page.getByRole("button", { name: "New invoice" }).click();
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page.getByText("Describe what this is for")).toBeVisible();
+  await expect(page.getByText("Enter an amount above $0")).toBeVisible();
+
+  // A good one becomes the next number, as a draft.
+  await page.getByLabel("What it is for").fill("Custom setup day");
+  await page.getByLabel("Amount ($)").fill("1,200.50");
+  await page.getByRole("button", { name: "Save draft" }).click();
+  await expect(page.getByRole("cell", { name: "AF-0004", exact: true })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "$1,200.50", exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Mark AF-0004 sent" }).click();
+  await page.getByRole("button", { name: "Mark AF-0004 paid" }).click();
+  await page.getByRole("button", { name: "Mark paid", exact: true }).click();
+  await expect(page.getByRole("row", { name: /AF-0004/ })).toContainText("Paid");
+
+  // It is still there after a reload (and the examples did not come back over it).
+  await page.reload();
+  await expect(page.getByRole("row", { name: /AF-0004/ })).toContainText("Paid");
+
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Export CSV" }).click()]);
+  expect(download.suggestedFilename()).toMatch(/^adflo-invoices-\d{4}-\d{2}-\d{2}\.csv$/);
+});
