@@ -192,3 +192,33 @@ export function parseResetEmail(raw: unknown): Parsed<{ email: string }> {
   const email = clean((raw as { email?: unknown } | null)?.email).toLowerCase();
   return EMAIL.test(email) && email.length <= 254 ? { ok: true, value: { email } } : { ok: false, errors: { email: "Enter a valid email address." } };
 }
+
+export function parseAgreementInput(raw: unknown): Parsed<{ title: string; body: string }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const errors: Record<string, string> = {};
+  const title = clean(r.title);
+  if (title.length < 1 || title.length > 120) errors.title = "Enter a title (up to 120 characters).";
+  const body = body_(r.body);
+  if (body.length < 1 || body.length > 60000) errors.body = "Enter the agreement text (up to 60,000 characters).";
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { title, body } };
+}
+
+export function parseSendInput(raw: unknown): Parsed<{ clientId: string; templateId: string }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  if (!isUuid(r.clientId) || !isUuid(r.templateId)) return { ok: false, errors: { templateId: "Choose a client and an agreement." } };
+  return { ok: true, value: { clientId: r.clientId, templateId: r.templateId } };
+}
+
+export const isAgreementToken = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9_-]{43}$/.test(v);
+
+export function parseAcceptInput(raw: unknown): Parsed<{ token: string; name: string; email: string }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const errors: Record<string, string> = {};
+  if (!isAgreementToken(r.token)) errors.token = "This link is not valid.";
+  const name = clean(r.name);
+  if (name.length < 2 || name.length > 120) errors.name = "Enter your full name.";
+  const email = clean(r.email).toLowerCase();
+  if (!EMAIL.test(email) || email.length > 254) errors.email = "Enter a valid email address.";
+  if (r.agree !== true) errors.agree = "Tick the box to confirm you agree.";
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { token: r.token as string, name, email } };
+}

@@ -1,6 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AuditEntry, ClientRecord, ClientStatus, DirectoryEntry, Plan, StaffMember, StaffRole, Ticket, TicketNote, TimelineEvent } from "./types";
+import type { AuditEntry, ClientRecord, ClientStatus, DirectoryEntry, Plan, StaffMember, StaffRole, Ticket, TicketNote, TimelineEvent, AgreementTemplate, SentAgreement } from "./types";
 
 interface ClientRow {
   id: string; name: string; status: ClientStatus; plan: string; seats_limit: number; owner_name: string;
@@ -102,3 +102,21 @@ export const SAMPLE_TICKETS: Ticket[] = [
   { id: "sample-t1", clientId: "sample-1", clientName: "Sample: Acme Roofing", subject: "Cannot upload a PDF", body: "", status: "open", priority: "high", assignee: null, createdAt: "2026-11-03T14:00:00Z", updatedAt: "2026-11-03T14:00:00Z" },
   { id: "sample-t2", clientId: "sample-2", clientName: "Sample: Birch & Co", subject: "Add a seat for a new hire", body: "", status: "pending", priority: "normal", assignee: null, createdAt: "2026-11-02T10:00:00Z", updatedAt: "2026-11-02T10:00:00Z" },
 ];
+
+export async function loadTemplates(supabase: SupabaseClient): Promise<AgreementTemplate[]> {
+  const { data, error } = await supabase.from("agreement_templates").select("id, title, version, body, created_at").order("title").order("version", { ascending: false });
+  if (error) throw new Error("Could not load agreements.");
+  return (data ?? []).map((t) => ({ id: t.id as string, title: t.title as string, version: t.version as number, body: t.body as string, createdAt: t.created_at as string }));
+}
+
+export async function loadSent(supabase: SupabaseClient, clientId?: string): Promise<SentAgreement[]> {
+  let q = supabase.from("agreements_sent").select("id, client_id, sent_at, expires_at, accepted_at, accepted_name, agreement_templates(title, version), clients(name)").order("sent_at", { ascending: false }).limit(200);
+  if (clientId) q = q.eq("client_id", clientId);
+  const { data, error } = await q;
+  if (error) throw new Error("Could not load sent agreements.");
+  const one = <T,>(v: T | T[] | null): T | undefined => (Array.isArray(v) ? v[0] : v ?? undefined);
+  return ((data ?? []) as unknown as { id: string; client_id: string; sent_at: string; expires_at: string; accepted_at: string | null; accepted_name: string | null; agreement_templates: { title: string; version: number } | { title: string; version: number }[] | null; clients: { name: string } | { name: string }[] | null }[]).map((r) => ({
+    id: r.id, clientId: r.client_id, clientName: one(r.clients)?.name ?? "", title: one(r.agreement_templates)?.title ?? "", version: one(r.agreement_templates)?.version ?? 0,
+    sentAt: r.sent_at, expiresAt: r.expires_at, acceptedAt: r.accepted_at, acceptedName: r.accepted_name,
+  }));
+}

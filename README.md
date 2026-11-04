@@ -47,7 +47,12 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
   must belong to a client, every send is audit logged, and the link lands on `/reset-password`. Set the Supabase auth
   Site URL and allowed redirect URLs so `/reset-password` on your domain is permitted.
 
-Planned next: agreements, monitoring. Billing is deliberately later.
+* **Agreements**: the Owner publishes terms as versioned, never-edited text; staff create a one-time link for a client
+  (shown once; only its hash is stored; valid 30 days; AdFlo does not send email itself yet, so staff paste the link into
+  their own email). The client opens `/agreement/<secret>`, types their name and email and accepts; the acceptance, who
+  and when, is recorded and shown on the client's timeline. Sending also ticks the onboarding step.
+
+Planned next: monitoring. Billing is deliberately later.
 
 ## Platform modules
 

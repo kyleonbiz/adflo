@@ -78,3 +78,14 @@ export interface Ticket {
 export interface TicketNote { id: string; authorEmail: string; body: string; createdAt: string }
 export interface DirectoryEntry { userId: string; displayName: string; role: StaffRole }
 export interface TimelineEvent { at: string; staffEmail: string; action: string; detail: Record<string, unknown> }
+
+export interface AgreementTemplate { id: string; title: string; version: number; body: string; createdAt: string }
+export interface SentAgreement {
+  id: string; clientId: string; clientName: string; title: string; version: number;
+  sentAt: string; expiresAt: string; acceptedAt: string | null; acceptedName: string | null;
+}
+/** Where a sent agreement stands. */
+export function agreementState(a: Pick<SentAgreement, "acceptedAt" | "expiresAt">, now = Date.now()): "accepted" | "expired" | "waiting" {
+  if (a.acceptedAt) return "accepted";
+  return Date.parse(a.expiresAt) < now ? "expired" : "waiting";
+}

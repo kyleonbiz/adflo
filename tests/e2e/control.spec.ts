@@ -20,6 +20,11 @@ test("control center preview: overview, clients and audit log open", async ({ pa
   await expect(page.getByText("Cannot upload a PDF")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("button", { name: "New ticket" })).toHaveCount(0);
 
+  await page.getByRole("link", { name: "Agreements" }).first().click();
+  await expect(page.getByRole("heading", { name: "Agreements" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Terms of Service")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Publish" })).toHaveCount(0);
+
   await page.getByRole("link", { name: "Plans & pricing" }).first().click();
   await expect(page.getByRole("heading", { name: "Plans & pricing" })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("cell", { name: "pro" })).toBeVisible();
@@ -42,6 +47,14 @@ test("control center API refuses plan, team and checklist writes without a datab
   expect((await request.post("/api/control/plans", { data: { name: "x" } })).status()).toBe(503);
   expect((await request.post("/api/control/tickets", { data: { subject: "x" } })).status()).toBe(503);
   expect((await request.post("/api/control/password-reset", { data: { email: "a@b.co" } })).status()).toBe(503);
+  expect((await request.post("/api/control/agreements", { data: { title: "x", body: "y" } })).status()).toBe(503);
+  expect((await request.post("/api/control/agreements/send", { data: {} })).status()).toBe(503);
   expect((await request.post("/api/control/staff", { data: { email: "a@b.co", role: "support" } })).status()).toBe(503);
   expect((await request.post("/api/control/clients/00000000-0000-4000-8000-000000000000/checklist", { data: { step: "workspace", done: true } })).status()).toBe(503);
+});
+
+test("agreement link with an unknown secret shows a plain not-valid page, and public accept refuses bad input", async ({ page, request }) => {
+  await page.goto(`/agreement/${"A".repeat(43)}`);
+  await expect(page.getByRole("heading", { name: "This link is not valid" })).toBeVisible({ timeout: 30_000 });
+  expect((await request.post("/api/agreement/accept", { data: { token: "x" } })).status()).toBe(503);
 });

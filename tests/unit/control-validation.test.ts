@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { describeAudit, isUuid, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
+import { agreementState } from "@/lib/control/types";
+import { parseAcceptInput, parseAgreementInput, parseSendInput, isAgreementToken, describeAudit, isUuid, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
 import { effectivePriceCents, formatMoney } from "@/lib/control/types";
 
 describe("parseClientInput", () => {
@@ -98,5 +99,32 @@ describe("support input", () => {
     expect(parseResetEmail({ email: "x" }).ok).toBe(false);
     expect(isUuid(id)).toBe(true);
     expect(isUuid("1; drop table")).toBe(false);
+  });
+});
+
+describe("agreements", () => {
+  const id = "00000000-0000-4000-8000-000000000001";
+  const token = "A".repeat(43);
+  it("checks a published agreement and a send request", () => {
+    expect(parseAgreementInput({ title: " Terms ", body: "Text" })).toEqual({ ok: true, value: { title: "Terms", body: "Text" } });
+    expect(parseAgreementInput({ title: "", body: "" }).ok).toBe(false);
+    expect(parseSendInput({ clientId: id, templateId: id }).ok).toBe(true);
+    expect(parseSendInput({ clientId: id }).ok).toBe(false);
+  });
+  it("accepts only a well-formed link secret", () => {
+    expect(isAgreementToken(token)).toBe(true);
+    expect(isAgreementToken("short")).toBe(false);
+    expect(isAgreementToken(`${token}/..`)).toBe(false);
+  });
+  it("requires a name, an email and the tick box to accept", () => {
+    expect(parseAcceptInput({ token, name: "Pat Lee", email: "PAT@e.co", agree: true })).toEqual({ ok: true, value: { token, name: "Pat Lee", email: "pat@e.co" } });
+    const bad = parseAcceptInput({ token: "x", name: "P", email: "no", agree: false });
+    expect(!bad.ok && Object.keys(bad.errors).sort()).toEqual(["agree", "email", "name", "token"]);
+  });
+  it("reports where a sent agreement stands", () => {
+    const now = Date.parse("2026-11-04T00:00:00Z");
+    expect(agreementState({ acceptedAt: "2026-11-01T00:00:00Z", expiresAt: "2026-10-01T00:00:00Z" }, now)).toBe("accepted");
+    expect(agreementState({ acceptedAt: null, expiresAt: "2026-10-01T00:00:00Z" }, now)).toBe("expired");
+    expect(agreementState({ acceptedAt: null, expiresAt: "2026-12-01T00:00:00Z" }, now)).toBe("waiting");
   });
 });
