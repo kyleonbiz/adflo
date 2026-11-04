@@ -5,6 +5,8 @@ import { Menu, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Brand } from "@/components/brand";
 import { GlobalSearch } from "./global-search";
+import { RoleGate } from "./role-gate";
+import { RoleSwitcher } from "./role-switcher";
 import { SidebarNav } from "./sidebar-nav";
 
 /**
@@ -46,11 +48,11 @@ export function AppFrame({ base, topRight, children }: { base: "/app"; topRight?
               <Brand href={`${base}/overview`} className="min-w-0" compact />
             </div>
             <div className="hidden min-w-0 flex-1 sm:block"><GlobalSearch /></div>
-            <div className="ml-auto flex min-w-0 items-center gap-3">{topRight}</div>
+            <div className="ml-auto flex min-w-0 items-center gap-3"><RoleSwitcher />{topRight}</div>
           </div>
           <div className="px-4 pb-3 sm:hidden"><GlobalSearch /></div>
         </header>
-        <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-3 py-6 outline-none sm:px-6">{children}</main>
+        <main id="main-content" tabIndex={-1} className="mx-auto max-w-6xl px-3 py-6 outline-none sm:px-6"><RoleGate base={base}>{children}</RoleGate></main>
       </div>
     </div>
   );

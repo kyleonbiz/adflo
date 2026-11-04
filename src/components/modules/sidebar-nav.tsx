@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { FileText } from "lucide-react";
 import { Brand } from "@/components/brand";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
+import { canOpenModule, useViewAs } from "@/lib/roles";
 import { MODULE_ICONS } from "./module-icons";
 import { cn } from "@/lib/utils";
 
@@ -35,9 +36,10 @@ function NavLink({ item, active, onNavigate }: { item: Item; active: boolean; on
 /** The vertical module menu: Home, the AI assistant and the working modules, then Settings apart at the bottom. */
 export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const role = useViewAs();
   const modules: Item[] = MODULES.flatMap((m) => {
     const href = moduleHref(m, base);
-    return href && m.id !== "setup" && !m.hidden ? [{ id: m.id, label: m.name, href }] : [];
+    return href && m.id !== "setup" && !m.hidden && canOpenModule(role, m.id) ? [{ id: m.id, label: m.name, href }] : [];
   });
   const setup = MODULES.find((m) => m.id === "setup");
   const setupHref = setup ? moduleHref(setup, base) : null;
@@ -49,11 +51,11 @@ export function SidebarNav({ base, onNavigate }: { base: "/app"; onNavigate?: ()
       <Brand wordmark light href={`${base}/overview`} className="w-44 px-1" />
       <nav aria-label="Services" className="flex flex-1 flex-col">
         <ul className="space-y-1">
-          {[overview, assistant, ...modules].map((item) => (
+          {[overview, ...(canOpenModule(role, "assistant") ? [assistant] : []), ...modules].map((item) => (
             <li key={item.id}><NavLink item={item} active={isActive(pathname, item.href, base)} onNavigate={onNavigate} /></li>
           ))}
         </ul>
-        {setup && setupHref && (
+        {setup && setupHref && canOpenModule(role, "setup") && role !== "contributor" && (
           <ul className="mt-auto space-y-1 border-t border-white/10 pt-3">
             <li><NavLink item={{ id: "setup", label: setup.name, href: setupHref }} active={isActive(pathname, setupHref, base)} onNavigate={onNavigate} /></li>
           </ul>
