@@ -26,14 +26,28 @@ export interface NotificationPrefs {
 }
 export const LEAD_DAYS = [7, 14, 30, 60] as const;
 
+export const VARIANCE_OPTIONS = [10, 25, 50] as const;
+
+/** Optional checks run when an invoice is saved. All are off until switched on. */
+export interface InvoiceChecks {
+  /** Warn when a client already has an invoice for the same total issued within a few days. */
+  duplicates: boolean;
+  /** Warn when the total is far from the client's recent average. */
+  unusualAmount: boolean;
+  /** How far from the average, in percent, counts as unusual. */
+  variancePct: (typeof VARIANCE_OPTIONS)[number];
+}
+
 export interface AppSettings {
   version: 1;
   details: BusinessDetails;
   notifications: NotificationPrefs;
+  invoiceChecks: InvoiceChecks;
 }
 
 export const defaultSettings = (): AppSettings => ({
   version: 1,
   details: { email: "", phone: "", address: "", timezone: "America/New_York" },
   notifications: { enabled: { renewals: true, overdueInvoices: true, approvals: true, weeklyDigest: false }, leadDays: 30 },
+  invoiceChecks: { duplicates: false, unusualAmount: false, variancePct: 25 },
 });

@@ -22,6 +22,7 @@ import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
 import { titleCase } from "@/lib/text";
+import { useSettings } from "@/lib/settings/storage";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
 type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
@@ -47,6 +48,7 @@ function downloadCsv(text: string, name: string) {
  */
 export function InvoicesPage({ preview, startNew, initialQuery = "" }: { preview?: string; startNew?: boolean; initialQuery?: string }) {
   const today = useToday();
+  const { invoiceChecks } = useSettings();
   const [edited, setEdited] = useState<Invoice[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
@@ -212,6 +214,7 @@ export function InvoicesPage({ preview, startNew, initialQuery = "" }: { preview
         invoice={formFor && formFor !== "new" ? formFor : undefined}
         existing={invoices}
         today={today}
+        checks={invoiceChecks}
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
       />
