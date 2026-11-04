@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
+import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -48,6 +49,7 @@ const linkClass = "rounded underline-offset-2 hover:text-foreground hover:underl
  */
 export function ContactsPage({ preview, initialQuery = "", initialAdd }: { preview?: string; initialQuery?: string; initialAdd?: Partial<Person> }) {
   const today = useToday();
+  const audit = useAudit();
   const [edited, setEdited] = useState<Contact[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<"all" | ContactCategory>("all");
@@ -120,18 +122,22 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
   const saveContact = (value: ContactInput) => {
     if (formFor && formFor !== "new") {
       const id = formFor.id;
+      audit("edited", `the contact ${value.name}`, "Contacts", "/app/contacts");
       commit(contacts.map((c) => (c.id === id ? { ...c, ...value } : c)), `${value.name} updated.`);
     } else {
+      audit("added", `the contact ${value.name}`, "Contacts", "/app/contacts");
       commit([...contacts, { ...value, id: rid(), createdOn: today }], `${value.name} added.`);
     }
   };
 
   const runApply = (outcome: ImportOutcome<ContactInput>, mode: "skip" | "update") => {
     const r = applyImport(contacts, outcome, mode, today, rid);
+    audit("imported", `${r.added + r.updated} contacts from a file`, "Contacts", "/app/contacts");
     commit(r.contacts, `Imported: ${r.added} added, ${r.updated} updated, ${r.skipped} skipped, ${outcome.rejected.length} need fixing.`);
   };
 
   const doMerge = (keep: Contact, merged: Contact, dropped: Contact) => {
+    audit("merged", `${dropped.name} into ${keep.name}`, "Contacts", "/app/contacts");
     commit(contacts.filter((c) => c.id !== dropped.id).map((c) => (c.id === keep.id ? merged : c)), `Merged ${dropped.name} into ${keep.name}.`);
     setSelected(new Set());
   };
@@ -374,6 +380,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
               onClick={() => {
                 if (deleting) {
                   const ids = new Set(deleting.map((c) => c.id));
+                  audit("deleted", deleting.length === 1 ? `the contact ${deleting[0].name}` : `${deleting.length} contacts`, "Contacts", "/app/contacts");
                   commit(contacts.filter((c) => !ids.has(c.id)), deleting.length === 1 ? `${deleting[0].name} deleted.` : `${deleting.length} contacts deleted.`);
                   setSelected(new Set());
                 }

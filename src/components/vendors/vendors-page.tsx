@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, BellRing, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, Store, X } from "lucide-react";
+import { useAudit } from "@/components/audit/use-audit";
+import { useCurrentUserName } from "@/components/current-user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -68,6 +70,8 @@ function downloadCsv(text: string, name: string) {
  */
 export function VendorsPage({ preview, startNew, draft }: { preview?: string; startNew?: boolean; draft?: VendorDraft }) {
   const today = useToday();
+  const audit = useAudit();
+  const me = useCurrentUserName();
   const [edited, setEdited] = useState<Vendor[] | null>(null);
   const [initial] = useState(readFilters);
   const [query, setQuery] = useState(initial.q);
@@ -130,7 +134,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
   const actions: VendorActions = {
     onEdit: (v) => setFormFor(v),
     onDelete: (v) => setDeleting(v),
-    onActivate: (v) => { patch(v.id, (x) => activate(x, today)); say(`${v.name} is now active.`); },
+    onActivate: (v) => { patch(v.id, (x) => activate(x, today)); audit("activated", `the vendor ${v.name}`, "Vendors", "/app/vendors"); say(`${v.name} is now active.`); },
     onActive: (v, active) => { patch(v.id, (x) => setActive(x, active)); say(`${v.name} ${active ? "reactivated" : "deactivated"}.`); },
     onSetDocument: (v, d, dates) => {
       if (dates.receivedOn && dates.expiresOn && dates.expiresOn < dates.receivedOn) {
@@ -143,10 +147,11 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
       }
       patch(v.id, (x) => ({ ...x, documents: x.documents.map((y) => (y.id === d.id ? { ...y, ...dates } : y)) }));
     },
-    onNote: (v, kind, text) => { patch(v.id, (x) => addNote(x, { id: rid("vn"), on: today, kind, text, by: "You" })); say(kind === "reply" ? `Logged: ${v.name} replied.` : "Note added."); },
+    onNote: (v, kind, text) => { patch(v.id, (x) => addNote(x, { id: rid("vn"), on: today, kind, text, by: me })); audit(kind === "reply" ? "logged a reply from" : "added a note on", `the vendor ${v.name}`, "Vendors", "/app/vendors"); say(kind === "reply" ? `Logged: ${v.name} replied.` : "Note added."); },
     onRemind: (v) => {
       const mail = reminderEmail(v, today);
-      patch(v.id, (x) => logReminder(x, today, rid("vn"), "You"));
+      patch(v.id, (x) => logReminder(x, today, rid("vn"), me));
+      audit("sent a reminder to", `the vendor ${v.name}`, "Vendors", "/app/vendors");
       say(`Reminder logged for ${v.name}. Your email app opens with the message ready to send.`);
       const a = document.createElement("a");
       a.href = mailtoLink(mail);
@@ -168,6 +173,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
         ...x,
         documents: x.documents.map((y) => (y.id === d.id ? { ...y, file: { name: file.name, size: file.size, url }, receivedOn: y.receivedOn ?? today } : y)),
       }));
+      audit("uploaded", `${file.name} for ${v.name}`, "Vendors", "/app/vendors");
       say(`${file.name} attached to ${d.type}${d.receivedOn ? "" : ", marked received today"}.`);
       // Photos, scans and PDFs are read for an expiry date, which fills in only when none is set yet.
       if (!d.expiresOn && /\.(pdf|docx|png|jpe?g)$/i.test(file.name)) {
@@ -195,6 +201,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
         .filter((r) => !have.has(r.type))
         .map((r) => ({ id: rid("vd"), type: r.type, required: true, receivedOn: null, expiresOn: null }));
       patch(current.id, (x) => ({ ...x, ...values, documents: [...x.documents, ...extra] }));
+      audit("edited", `the vendor ${values.name}`, "Vendors", "/app/vendors");
       say(extra.length > 0 ? `${values.name} updated. ${extra.length} required document${extra.length === 1 ? "" : "s"} added for ${values.category}.` : `${values.name} updated.`);
       return;
     }
@@ -205,6 +212,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
     update((all) => [...all, {
       ...values, id: rid("v"), status: "onboarding", createdOn: today, documents,
     }]);
+    audit("added", `the vendor ${values.name}`, "Vendors", "/app/vendors");
     say(`${values.name} added. Collect its ${documents.length} required documents, then activate it.`);
   };
 
@@ -425,6 +433,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
                   const { keep, drop } = merging;
                   const before = vendors;
                   update((all) => all.filter((v) => v.id !== drop.id).map((v) => (v.id === keep.id ? mergeVendors(keep, drop) : v)));
+                  audit("merged", `${drop.name} into ${keep.name}`, "Vendors", "/app/vendors");
                   say(`${drop.name} merged into ${keep.name}.`, before);
                 }
                 setMerging(null);
@@ -448,6 +457,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
                 if (deleting) {
                   const before = vendors;
                   update((all) => all.filter((v) => v.id !== deleting.id));
+                  audit("deleted", `the vendor ${deleting.name}`, "Vendors", "/app/vendors");
                   say(`${deleting.name} deleted.`, before);
                 }
                 setDeleting(null);

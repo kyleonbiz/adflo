@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2, Download, Plus, Receipt, Search } from "lucide-react";
+import { useAudit } from "@/components/audit/use-audit";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ function downloadCsv(text: string, name: string) {
  */
 export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { preview?: string; startNew?: boolean; draft?: InvoiceDraft; initialQuery?: string }) {
   const today = useToday();
+  const audit = useAudit();
   const [edited, setEdited] = useState<Invoice[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
@@ -77,7 +79,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
     onView: (i) => setViewing(i),
     onEdit: (i) => setFormFor(i),
     onDelete: (i) => setDeleting(i),
-    onSend: (i) => { patch(i.id, markSent); setNotice(`${i.number} marked as sent.`); },
+    onSend: (i) => { patch(i.id, markSent); audit("marked as sent", `invoice ${i.number}`, "Invoices", "/app/invoices"); setNotice(`${i.number} marked as sent.`); },
     onPay: (i) => { setPayDate(today); setPaying(i); },
     onVoid: (i) => setVoiding(i),
     onReopen: (i) => {
@@ -87,6 +89,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
     onEmail: (i) => {
       window.location.href = invoiceMailto(i, window.location.origin);
       if (i.status === "draft") patch(i.id, markSent);
+      audit("emailed", `invoice ${i.number}`, "Invoices", "/app/invoices");
       setNotice(`Opened your email app for ${i.number}${i.clientEmail ? ` to ${i.clientEmail}` : ""}${i.status === "draft" ? "; marked as sent." : "."}`);
     },
     onCopyLink: async (i) => {
@@ -99,6 +102,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
       const next = nextRecurringInvoice(i, invoices, newId());
       if (!next) return;
       update((all) => [...all, next]);
+      audit("created", `invoice ${next.number} as the next in the series`, "Invoices", "/app/invoices");
       setNotice(`Draft ${next.number} created for ${formatDayLong(next.issuedOn)}.`);
     },
   };
@@ -115,11 +119,13 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
     if (formFor && formFor !== "new") {
       const updated = { ...formFor, ...fields };
       patch(formFor.id, () => updated);
+      audit("edited", `invoice ${values.number}`, "Invoices", "/app/invoices");
       setNotice(`${values.number} updated.`);
     } else {
       const created: Invoice = { ...fields, id: newId(), status: "draft", paidOn: null };
       update((all) => [...all, created]);
       setViewing(created);
+      audit("created", `invoice ${values.number}`, "Invoices", "/app/invoices");
       setNotice(`${values.number} created as a draft.`);
     }
   };
@@ -236,6 +242,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
               onClick={() => {
                 if (voiding) {
                   patch(voiding.id, voidInvoice);
+                  audit("voided", `invoice ${voiding.number}`, "Invoices", "/app/invoices");
                   setNotice(`${voiding.number} voided.`);
                 }
                 setVoiding(null);
@@ -270,6 +277,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
               onClick={() => {
                 if (paying && !payError) {
                   patch(paying.id, (x) => markPaid(x, payDate));
+                  audit("marked as paid", `invoice ${paying.number}`, "Invoices", "/app/invoices");
                   setNotice(`${paying.number} marked as paid.`);
                   setPaying(null);
                 }
@@ -294,6 +302,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
               onClick={() => {
                 if (deleting) {
                   update((all) => all.filter((i) => i.id !== deleting.id));
+                  audit("deleted", `invoice ${deleting.number}`, "Invoices", "/app/invoices");
                   setNotice(`${deleting.number} deleted.`);
                 }
                 setDeleting(null);

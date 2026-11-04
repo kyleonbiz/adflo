@@ -39,7 +39,7 @@ Databases go last. Update this file in the same commit as the work.
 ## Round 2 (your newer list, plus what did not survive the merge)
 
 - [x] Licenses & Renewals gets its own tab on the dashboard (counts by state, what expires next, good-standing percent)
-- [ ] Audit trail: who did what and when (created, uploaded, edited), per record and in one log
+- [x] Audit trail: who did what and when (new Activity page: the person's name, what they did, the time; filter by area; saved in this browser)
 - [ ] Calendar page in the navigation menu (due dates from every service)
 - [ ] Fix the Reporting page: it is just a bunch of boxes
 - [ ] Dropdowns on service tabs where they make sense

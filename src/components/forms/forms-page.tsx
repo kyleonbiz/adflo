@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2, FileInput, Inbox, Plus, Search, Send } from "lucide-react";
+import { useAudit } from "@/components/audit/use-audit";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -50,6 +51,7 @@ function download(text: string | Uint8Array, name: string, type: string) {
  */
 export function FormsPage({ preview, initialQuery = "", initialFill }: { preview?: string; initialQuery?: string; initialFill?: { formId: string; person: Partial<Person> } }) {
   const today = useToday();
+  const audit = useAudit();
   const [editedForms, setEditedForms] = useState<FormTemplate[] | null>(null);
   const [editedSubs, setEditedSubs] = useState<Submission[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
@@ -92,6 +94,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
     onDelete: (f) => setDeleting(f),
     onMarkDone: (_f, s, done) => {
       setEditedSubs(subs.map((x) => (x.id === s.id ? markDone(x, done) : x)));
+      audit(done ? "marked done a response to" : "reopened a response to", _f.name, "Forms", "/app/forms");
       setNotice(`Response by ${s.submittedBy} ${done ? "marked done" : "reopened"}.`);
     },
     onDocument: (f, s) => download(generateDocument(f, s), fileName(f, s, "txt"), "text/plain"),
@@ -99,6 +102,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
     onPrint: (f, s) => printText(f.name, generateDocument(f, s)),
     onExport: (f, list) => download(submissionsToCsv(f, list), `${slug(f.name)}-submissions-${today}.csv`, "text/csv"),
     onDeleteSubmission: (_f, s) => {
+      audit("deleted a response to", _f.name, "Forms", "/app/forms");
       setEditedSubs(subs.filter((x) => x.id !== s.id));
       setNotice(`Response by ${s.submittedBy} deleted.`);
     },
@@ -110,9 +114,11 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
     if (builderFor && builderFor !== "new") {
       const id = builderFor.id;
       setEditedForms(forms.map((f) => (f.id === id ? { ...f, ...next } : f)));
+      audit("edited the form", v.name, "Forms", "/app/forms");
       setNotice(`${v.name} updated.`);
     } else {
       setEditedForms([...forms, { ...next, id: rid("form"), sentCount: 0 }]);
+      audit("created the form", v.name, "Forms", "/app/forms");
       setNotice(`${v.name} created.`);
     }
   };
@@ -221,6 +227,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
           const s = createSubmission(filling, values, by, today, rid("s"));
           setEditedSubs([...subs, s]);
           setReady({ form: filling, sub: s });
+          audit("filled in", filling.name, "Forms", "/app/forms");
           setNotice("Response added.");
         }}
       />
@@ -230,6 +237,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
         onOpenChange={(o) => !o && setSending(null)}
         onSent={(f, count) => {
           setEditedForms(forms.map((x) => (x.id === f.id ? { ...x, sentCount: x.sentCount + count } : x)));
+          audit("sent", `${f.name} to ${count} ${count === 1 ? "person" : "people"}`, "Forms", "/app/forms");
           setNotice(`${f.name} sent.`);
         }}
       />
@@ -262,6 +270,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
                 if (deleting) {
                   setEditedForms(forms.filter((f) => f.id !== deleting.id));
                   setEditedSubs(subs.filter((s) => s.formId !== deleting.id));
+                  audit("deleted the form", deleting.name, "Forms", "/app/forms");
                   setNotice(`${deleting.name} deleted.`);
                 }
                 setDeleting(null);

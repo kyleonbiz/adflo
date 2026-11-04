@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FolderKanban, ListTodo, Plus, Search, X } from "lucide-react";
+import { useAudit } from "@/components/audit/use-audit";
+import { useCurrentUserName } from "@/components/current-user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -70,6 +72,8 @@ export function ProjectsPage({ preview, initialQuery = "", initialView = "tasks"
 }
 
 function ProjectsView({ today, preview, initialQuery, initialView, startNew, draft }: { today: string; preview?: string; initialQuery: string; initialView: ProjectsViewName; startNew?: boolean; draft?: ProjectDraft }) {
+  const audit = useAudit();
+  const me = useCurrentUserName();
   const [projects, setProjects] = useState<Project[]>(() => e2eSeed<Project>("projects") ?? []);
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
@@ -113,6 +117,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
       status,
       tasks: finishTasks ? x.tasks.map((t) => (t.done ? t : { ...t, done: true, doneOn: today })) : x.tasks,
     }));
+    audit(`set the project to ${STATUS_LABEL[status].toLowerCase()}:`, p.name, "Tasks", "/app/projects?view=projects");
     setNotice(`${p.name} is now ${STATUS_LABEL[status].toLowerCase()}.`);
   };
 
@@ -137,15 +142,18 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
     onToggleTask: (p, t: Task) => {
       if (t.done) {
         patch(p.id, (x) => ({ ...x, tasks: reopenTask(x.tasks, t.id) }));
+        audit("reopened the task", t.title, "Tasks", "/app/projects");
         setNotice(`"${t.title}" reopened.`);
         return;
       }
       const tasks = completeTask(p.tasks, t.id, today, rid("t"));
       patch(p.id, (x) => ({ ...x, tasks }));
+      audit("completed the task", t.title, "Tasks", "/app/projects");
       setNotice(tasks.length > p.tasks.length ? `"${t.title}" done. The next one is scheduled.` : `"${t.title}" done.`);
     },
     onAddTask: (p, v: TaskFormValues) => {
       addTaskTo(p.id, v);
+      audit("added the task", `${v.title} to ${p.name}`, "Tasks", "/app/projects");
       setNotice(`"${v.title}" added to ${p.name}.`);
     },
     onEditTask: (p, t, v) => {
@@ -161,13 +169,15 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
       const r = addMilestone(p, { title, dueOn }, rid("m"));
       if ("error" in r) return r.error;
       patch(p.id, () => r.project);
+      audit("added the milestone", `${title.trim()} to ${p.name}`, "Tasks", "/app/projects?view=projects");
       setNotice(`Milestone "${title.trim()}" added to ${p.name}.`);
       return null;
     },
     onToggleMilestone: (p, id) => patch(p.id, (x) => toggleMilestone(x, id, today)),
     onRemoveMilestone: (p, id) => patch(p.id, (x) => removeMilestone(x, id)),
     onAddUpdate: (p, text) => {
-      patch(p.id, (x) => addUpdate(x, { text, by: x.owner || "You", on: today }, rid("u")));
+      patch(p.id, (x) => addUpdate(x, { text, by: me, on: today }, rid("u")));
+      audit("posted an update on", p.name, "Tasks", "/app/projects?view=projects");
       setNotice(`Update posted to ${p.name}.`);
     },
     onRemoveTask: (p, t) => {
@@ -183,12 +193,14 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
     const status = values.status as ProjectStatus;
     if (formFor && formFor !== "new") {
       patch(formFor.id, (x) => ({ ...x, ...values, status }));
+      audit("edited the project", values.name, "Tasks", "/app/projects?view=projects");
       setNotice(`${values.name} updated.`);
     } else {
       const id = rid("p");
       const tasks = buildTasks(templateTasks, values.startOn, () => rid("t"));
       setProjects((all) => [...all, { ...values, status, id, tasks }]);
       if (tasks.length > 0) setOpen((o) => ({ ...o, [id]: true }));
+      audit("created the project", values.name, "Tasks", "/app/projects?view=projects");
       setNotice(tasks.length > 0 ? `${values.name} created with ${plural(tasks.length, "task")}.` : `${values.name} created.`);
     }
   };
@@ -196,6 +208,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
   const deleteProject = (p: Project) => {
     const index = projects.findIndex((x) => x.id === p.id);
     setProjects((all) => all.filter((x) => x.id !== p.id));
+    audit("deleted the project", p.name, "Tasks", "/app/projects?view=projects");
     setNotice(`${p.name} deleted.`, () => setProjects((all) => restoreAt(all, p, index)));
   };
 
@@ -312,6 +325,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
             onAdd={(v, projectId) => {
               addTaskTo(projectId ?? GENERAL_PROJECT_ID, v);
               const name = projectId ? projects.find((p) => p.id === projectId)?.name : null;
+              audit("added the task", name ? `${v.title} to ${name}` : v.title, "Tasks", "/app/projects");
               setNotice(name ? `"${v.title}" added to ${name}.` : `"${v.title}" added.`);
             }}
             onOpenProject={showProject}

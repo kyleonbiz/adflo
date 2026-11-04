@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CalendarPlus, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
+import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -41,6 +42,7 @@ const NOTICE_MS = 8000;
  */
 export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { preview?: string; initialQuery?: string; startNew?: boolean; draft?: LicenseDraft }) {
   const today = useToday();
+  const audit = useAudit();
   const [edited, setEdited] = useState<License[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<Filter>("all");
@@ -105,6 +107,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const confirmRenewal = (l: License, input: Required<RenewalInput>) => {
     const renewed = renewLicense(l, today, input);
     commit(licenses.map((x) => (x.id === l.id ? renewed : x)), `${l.name} renewed. New expiry ${formatDayLong(renewed.expiresOn)}.`);
+    audit("renewed", `${l.name}`, "Licenses", "/app/licenses");
     setRenewing(null);
   };
 
@@ -128,11 +131,13 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
     const category = values.category as License["category"];
     if (formFor && formFor !== "new") {
       patch(formFor.id, (x) => ({ ...x, ...fields, category, verifiedOn: today }));
+      audit("edited", `${values.name}`, "Licenses", "/app/licenses");
       say(`${values.name} updated.`);
     } else {
       const id = newId();
       const requiredDocuments = documents.map((label, i) => ({ id: `${id}-d${i}`, label, received: false }));
       setEdited([...licenses, { ...fields, category, id, stage: "not_started", requiredDocuments, verifiedOn: today }]);
+      audit("added", `${values.name}`, "Licenses", "/app/licenses");
       say(`${values.name} added.`);
     }
   };
@@ -354,6 +359,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
               variant="destructive"
               onClick={() => {
                 if (deleting) {
+                  audit("deleted", `${deleting.name}`, "Licenses", "/app/licenses");
                   commit(licenses.filter((l) => l.id !== deleting.id), `${deleting.name} deleted.`);
                 }
                 setDeleting(null);

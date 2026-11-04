@@ -48,6 +48,7 @@ export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/ap
   const setupHref = setup ? moduleHref(setup, base) : null;
   const overview: Item = { id: "overview", label: "Home", href: `${base}/overview` };
   const assistant: Item = { id: "assistant", label: "Addy", href: `${base}/assistant` };
+  const activity: Item = { id: "activity", label: "Activity", href: `${base}/activity` };
 
   return (
     <div className={cn("flex h-full flex-col gap-4 bg-brand-navy p-4", collapsed && "items-center px-2")}>
@@ -60,7 +61,7 @@ export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/ap
       )}
       <nav aria-label="Services" className="flex w-full flex-1 flex-col">
         <ul className="space-y-1">
-          {[overview, assistant, ...modules].map((item) => (
+          {[overview, assistant, ...modules, activity].map((item) => (
             <li key={item.id}><NavLink item={item} active={isActive(pathname, item.href, base) || (item.id === "crm" && isActive(pathname, `${base}/vendors`, base))} onNavigate={onNavigate} collapsed={collapsed} /></li>
           ))}
         </ul>

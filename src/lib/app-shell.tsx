@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppTopBar } from "@/components/app-header";
+import { CurrentUserProvider } from "@/components/current-user";
 import { AuthCard } from "@/components/auth/auth-card";
 import { OnboardingForm } from "@/components/auth/onboarding-form";
 import { AppFrame } from "@/components/modules/app-frame";
@@ -17,8 +18,8 @@ async function loadNotifications() {
   return { items: data.items, today };
 }
 
-function Frame({ topRight, children }: { topRight: React.ReactNode; children: React.ReactNode }) {
-  return <AppFrame base="/app" topRight={topRight}>{children}</AppFrame>;
+function Frame({ topRight, userName, children }: { topRight: React.ReactNode; userName?: string; children: React.ReactNode }) {
+  return <AppFrame base="/app" topRight={topRight}><CurrentUserProvider name={userName}>{children}</CurrentUserProvider></AppFrame>;
 }
 
 /**
@@ -47,7 +48,7 @@ export async function renderAppShell(
     }
     const { data: ws } = await supabase.from("workspaces").select("name").eq("id", membership.workspaceId).maybeSingle();
     return (
-      <Frame topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} />}>
+      <Frame userName={fullName} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} />}>
         {content("live", { name: fullName })}
       </Frame>
     );

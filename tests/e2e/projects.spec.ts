@@ -316,7 +316,7 @@ test.describe("projects view", () => {
 
     await card.getByLabel("Add an update to Office move").fill("Movers booked for the 14th");
     await card.getByRole("button", { name: "Post" }).click();
-    await expect(card.getByTestId("update").first()).toContainText("Priya Shah");
+    await expect(card.getByTestId("update").first()).toContainText("You"); // posted by the signed-in person; preview mode says "You"
     await expect(card.getByTestId("update").first()).toContainText("Movers booked for the 14th");
   });
 
