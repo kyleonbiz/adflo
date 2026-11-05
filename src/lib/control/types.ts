@@ -44,7 +44,9 @@ export const CHECKLIST_STEPS = [
 ] as const;
 export type ChecklistStep = (typeof CHECKLIST_STEPS)[number]["key"];
 
-export interface Plan { id: string; name: string; priceCents: number; seatsIncluded: number; active: boolean }
+export interface Plan { id: string; name: string; priceCents: number; seatsIncluded: number; active: boolean;
+  /** Feature keys the plan includes (see tiers.ts); null means everything. */
+  features?: string[] | null }
 export interface StaffMember { userId: string; role: StaffRole; displayName: string; email: string; active: boolean }
 
 export const formatMoney = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;

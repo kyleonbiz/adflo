@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney, type Plan } from "@/lib/control/types";
+import { FEATURES, TIERS } from "@/lib/control/tiers";
 
 /** Plans and what they cost. Only the Owner can change them; everyone else sees the list. */
 export function PlansPage({ plans, canEdit, sample }: { plans: Plan[]; canEdit: boolean; sample?: boolean }) {
@@ -49,6 +50,17 @@ export function PlansPage({ plans, canEdit, sample }: { plans: Plan[]; canEdit: 
         </table>
       </div>
       {message && <p role="alert" className="text-sm text-destructive">{message}</p>}
+      <div className="space-y-3">
+        <div>
+          <h2 className="font-semibold">What each plan includes</h2>
+          <p className="text-sm text-muted-foreground">Tick what a plan offers. A plan with nothing recorded (such as the older &ldquo;standard&rdquo;) includes everything.</p>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {plans.map((p) => (
+            <FeaturePicker key={p.id} plan={p} blurb={TIERS.find((t) => t.name === p.name)?.blurb} canEdit={canEdit && !sample} busy={busy} onSave={(features) => call(`/api/control/plans/${p.id}`, "PATCH", { features })} />
+          ))}
+        </div>
+      </div>
       {canEdit && !sample && (
         <form onSubmit={add} className="space-y-3 rounded-2xl border bg-card p-5 shadow-panel" noValidate>
           <h2 className="font-semibold">Add a plan</h2>
@@ -83,5 +95,33 @@ function PlanRow({ plan, canEdit, busy, onSave }: { plan: Plan; canEdit: boolean
         </div>
       </td>
     </tr>
+  );
+}
+
+function FeaturePicker({ plan, blurb, canEdit, busy, onSave }: { plan: Plan; blurb?: string; canEdit: boolean; busy: boolean; onSave: (features: string[]) => Promise<boolean> }) {
+  const everything = plan.features == null;
+  const saved = plan.features ?? FEATURES.map((f) => f.key as string);
+  const [picked, setPicked] = useState<string[]>(saved);
+  const dirty = picked.length !== saved.length || picked.some((k) => !saved.includes(k));
+  const toggle = (k: string) => setPicked((cur) => (cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]));
+  return (
+    <section className="space-y-3 rounded-2xl border bg-card p-5 shadow-panel" aria-label={`${plan.name} features`}>
+      <div>
+        <h3 className="font-medium capitalize">{plan.name} <span className="text-xs font-normal text-muted-foreground">{everything ? "· everything (no list set)" : `· ${saved.length} of ${FEATURES.length}`}</span></h3>
+        {blurb && <p className="text-xs text-muted-foreground">{blurb}</p>}
+      </div>
+      {(["Modules", "Extras"] as const).map((group) => (
+        <fieldset key={group} className="space-y-1.5">
+          <legend className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{group}</legend>
+          {FEATURES.filter((f) => f.group === group).map((f) => (
+            <label key={f.key} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" className="size-4 accent-[var(--brand-blue)]" checked={picked.includes(f.key)} disabled={!canEdit} onChange={() => toggle(f.key)} />
+              {f.label}
+            </label>
+          ))}
+        </fieldset>
+      ))}
+      {canEdit && dirty && <Button size="sm" disabled={busy} onClick={() => onSave(picked)}>Save {plan.name}</Button>}
+    </section>
   );
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { TIERS } from "./tiers";
 import type { AuditEntry, ClientRecord, ClientStatus, DirectoryEntry, Plan, StaffMember, StaffRole, Ticket, TicketNote, TimelineEvent, AgreementTemplate, SentAgreement, AppError } from "./types";
 
 interface ClientRow {
@@ -33,9 +34,9 @@ export async function loadClients(supabase: SupabaseClient): Promise<ClientRecor
 }
 
 export async function loadPlans(supabase: SupabaseClient): Promise<Plan[]> {
-  const { data, error } = await supabase.from("plans").select("id, name, price_cents, seats_included, active").order("price_cents");
+  const { data, error } = await supabase.from("plans").select("id, name, price_cents, seats_included, active, features").order("price_cents");
   if (error) throw new Error("Could not load plans.");
-  return (data ?? []).map((p) => ({ id: p.id as string, name: p.name as string, priceCents: p.price_cents as number, seatsIncluded: p.seats_included as number, active: p.active as boolean }));
+  return (data ?? []).map((p) => ({ id: p.id as string, name: p.name as string, priceCents: p.price_cents as number, seatsIncluded: p.seats_included as number, active: p.active as boolean, features: (p.features as string[] | null) ?? null }));
 }
 
 /** Owner only: other staff see just their own row. */
@@ -59,8 +60,8 @@ export const SAMPLE_CLIENTS: ClientRecord[] = [
 ];
 
 export const SAMPLE_PLANS: Plan[] = [
-  { id: "plan-1", name: "standard", priceCents: 9900, seatsIncluded: 3, active: true },
-  { id: "plan-2", name: "pro", priceCents: 24900, seatsIncluded: 10, active: true },
+  ...TIERS.map((t, i) => ({ id: `plan-${i + 1}`, name: t.name, priceCents: 0, seatsIncluded: t.seatsIncluded, active: true, features: [...t.features] as string[] })),
+  { id: "plan-0", name: "standard", priceCents: 9900, seatsIncluded: 3, active: true, features: null },
 ];
 
 interface TicketRow { id: string; client_id: string | null; subject: string; body: string; status: Ticket["status"]; priority: Ticket["priority"]; assignee: string | null; created_at: string; updated_at: string; clients: { name: string } | { name: string }[] | null }

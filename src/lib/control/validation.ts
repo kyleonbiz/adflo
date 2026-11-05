@@ -1,3 +1,4 @@
+import { cleanFeatures, type FeatureKey } from "./tiers";
 import { CHECKLIST_STEPS, CLIENT_STATUSES, STAFF_ROLES, TICKET_PRIORITIES, TICKET_STATUSES, type ChecklistStep, type ClientStatus, type StaffRole, type TicketPriority, type TicketStatus } from "./types";
 
 export interface ClientInput {
@@ -95,10 +96,10 @@ export function parseDollars(v: unknown): number | null {
 
 export type Parsed<T> = { ok: true; value: T } | { ok: false; errors: Record<string, string> };
 
-export function parsePlanInput(raw: unknown, partial = false): Parsed<{ name?: string; priceCents?: number; seatsIncluded?: number; active?: boolean }> {
+export function parsePlanInput(raw: unknown, partial = false): Parsed<{ name?: string; priceCents?: number; seatsIncluded?: number; active?: boolean; features?: FeatureKey[] }> {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const errors: Record<string, string> = {};
-  const out: { name?: string; priceCents?: number; seatsIncluded?: number; active?: boolean } = {};
+  const out: { name?: string; priceCents?: number; seatsIncluded?: number; active?: boolean; features?: FeatureKey[] } = {};
   if (!partial || "name" in r) { const n = clean(r.name); if (n.length < 1 || n.length > 40) errors.name = "Enter a plan name (up to 40 characters)."; else out.name = n; }
   if (!partial || "price" in r) { const c = parseDollars(r.price ?? 0); if (c === null) errors.price = "Enter a monthly price like 49 or 49.50."; else out.priceCents = c; }
   if (!partial || "seatsIncluded" in r) {
@@ -106,6 +107,7 @@ export function parsePlanInput(raw: unknown, partial = false): Parsed<{ name?: s
     if (typeof n !== "number" || !Number.isInteger(n) || n < 0 || n > 10000) errors.seatsIncluded = "Seats must be a whole number from 0 to 10,000."; else out.seatsIncluded = n;
   }
   if ("active" in r) { if (typeof r.active !== "boolean") errors.active = "Active must be on or off."; else out.active = r.active; }
+  if ("features" in r) { if (!Array.isArray(r.features)) errors.features = "Features must be a list."; else out.features = cleanFeatures(r.features); }
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: out };
 }
 

@@ -17,6 +17,7 @@ export function PATCH(req: Request, ctx: RouteContext<"/api/control/plans/[id]">
     if (v.priceCents !== undefined) patch.price_cents = v.priceCents;
     if (v.seatsIncluded !== undefined) patch.seats_included = v.seatsIncluded;
     if (v.active !== undefined) patch.active = v.active;
+    if (v.features !== undefined) patch.features = v.features;
     if (!Object.keys(patch).length) return fail(400, "empty", "Nothing to change.");
     const { data, error } = await supabase.from("plans").update(patch).eq("id", id).select("id").maybeSingle();
     if (error) {

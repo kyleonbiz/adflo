@@ -8,6 +8,8 @@ import { MODULES, moduleHref } from "@/lib/modules/registry";
 import { AddEntryMenu } from "./add-entry-menu";
 import { MODULE_ICONS } from "./module-icons";
 import { cn } from "@/lib/utils";
+import { itemAllowed } from "@/lib/control/gating";
+import { usePlanFeatures } from "@/components/plan-features";
 
 export interface NavItem { id: string; label: string; href: string; icon?: LucideIcon }
 type Item = NavItem;
@@ -40,9 +42,10 @@ export function NavLink({ item, active, onNavigate, collapsed }: { item: Item; a
 /** The vertical module menu: Home, Addy (the assistant) and the working modules, then Settings apart at the bottom. */
 export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/app"; onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
+  const features = usePlanFeatures();
   const modules: Item[] = MODULES.flatMap((m) => {
     const href = moduleHref(m, base);
-    return href && m.id !== "setup" && m.id !== "vendors" && !m.hidden ? [{ id: m.id, label: m.name, href }] : [];
+    return href && m.id !== "setup" && m.id !== "vendors" && !m.hidden && itemAllowed(features, m.id) ? [{ id: m.id, label: m.name, href }] : [];
   });
   const setup = MODULES.find((m) => m.id === "setup");
   const setupHref = setup ? moduleHref(setup, base) : null;
@@ -62,7 +65,7 @@ export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/ap
       )}
       <nav aria-label="Services" className="flex w-full flex-1 flex-col">
         <ul className="space-y-1">
-          {[overview, assistant, ...modules, calendar, activity].map((item) => (
+          {[overview, assistant, ...modules, calendar, activity].filter((item) => itemAllowed(features, item.id)).map((item) => (
             <li key={item.id}><NavLink item={item} active={isActive(pathname, item.href, base) || (item.id === "crm" && isActive(pathname, `${base}/vendors`, base))} onNavigate={onNavigate} collapsed={collapsed} /></li>
           ))}
         </ul>
