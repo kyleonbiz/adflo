@@ -34,7 +34,7 @@ export function AcceptForm({ token }: { token: string }) {
         <label className="flex items-start gap-2.5 text-sm"><input type="checkbox" className="mt-0.5 size-4 accent-[var(--primary)]" checked={f.read} onChange={(e) => setF({ ...f, read: e.target.checked })} /> <span>I have read and understood this agreement.</span></label>
         <label className="flex items-start gap-2.5 text-sm"><input type="checkbox" className="mt-0.5 size-4 accent-[var(--primary)]" checked={f.authorized} onChange={(e) => setF({ ...f, authorized: e.target.checked })} /> <span>I am authorized to accept it on behalf of my company, and I agree to it.</span></label>
       </div>
-      {(errors.agree || (!f.read || !f.authorized) && message) && <p role="alert" className="text-xs text-destructive">{errors.agree ?? "Tick both boxes to continue."}</p>}
+      {errors.agree && <p role="alert" className="text-xs text-destructive">Tick both boxes to continue.</p>}
       {message && <p role="alert" className="text-sm text-destructive">{message}</p>}
       <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Accept agreement"}</Button>
     </form>

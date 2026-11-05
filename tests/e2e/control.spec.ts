@@ -74,6 +74,42 @@ test("agreements page shows a published agreement with headings and lists", asyn
   await expect(published.locator("ol").getByRole("listitem")).toHaveText(["Read the terms", "Tick both boxes and accept"]);
 });
 
+const FAKE_LINK = `/agreement/${"FAKE".repeat(10)}FAK`;
+
+test("client agreement page: formatted text, both boxes required, then accepted once", async ({ page, request }) => {
+  await request.post("/api/agreement/accept", { data: { token: "FAKE".repeat(10) + "FAK", reset: true } });
+  await page.goto(FAKE_LINK);
+  await expect(page.getByRole("heading", { name: "Terms of Service", level: 1 })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("Prepared for Sample: Acme Roofing")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What you agree to" })).toBeVisible();
+  await expect(page.locator("ul").getByRole("listitem")).toHaveText(["Pay invoices when they are due", "Keep your account details up to date"]);
+  await expect(page.locator("ol").getByRole("listitem")).toHaveText(["Read the terms", "Tick both boxes and accept"]);
+
+  // Nothing filled in: every problem is named.
+  await page.getByRole("button", { name: "Accept agreement" }).click();
+  await expect(page.getByText("Enter your full name.")).toBeVisible();
+  await expect(page.getByText("Enter a valid email address.")).toBeVisible();
+  await expect(page.getByText("Tick both boxes to continue.")).toBeVisible();
+
+  // One box is not enough.
+  await page.getByLabel("Your full name").fill("Pat Lee");
+  await page.getByLabel("Your email").fill("pat@example.com");
+  await page.getByLabel("I have read and understood this agreement.").check();
+  await page.getByRole("button", { name: "Accept agreement" }).click();
+  await expect(page.getByText("Tick both boxes to continue.")).toBeVisible();
+
+  await page.getByLabel(/I am authorized to accept it/).check();
+  await page.getByRole("button", { name: "Accept agreement" }).click();
+  await expect(page.getByText("Thank you. Your acceptance is recorded.")).toBeVisible();
+
+  // The link now shows who accepted, with no form; a second accept is refused.
+  await page.reload();
+  await expect(page.getByRole("status")).toContainText("Accepted by Pat Lee");
+  await expect(page.getByRole("button", { name: "Accept agreement" })).toHaveCount(0);
+  const again = await request.post("/api/agreement/accept", { data: { token: "FAKE".repeat(10) + "FAK", name: "Sam Roe", email: "sam@example.com", agree: true } });
+  expect(again.status()).toBe(409);
+});
+
 test("agreement link with an unknown secret shows a plain not-valid page, and public accept refuses bad input", async ({ page, request }) => {
   await page.goto(`/agreement/${"A".repeat(43)}`);
   await expect(page.getByRole("heading", { name: "This link is not valid" })).toBeVisible({ timeout: 30_000 });

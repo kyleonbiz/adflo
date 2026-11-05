@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Brand } from "@/components/brand";
 import { AgreementText } from "@/components/control/agreement-text";
 import { AcceptForm } from "@/components/control/agreement-accept";
+import { fakeAgreementView, isFakeAgreement } from "@/lib/control/fake-agreement";
 import { hashToken } from "@/lib/control/token";
 import { isAgreementToken } from "@/lib/control/validation";
 import { getSupabaseEnv } from "@/lib/supabase/env";
@@ -15,7 +16,8 @@ interface View { title: string; version: number; body: string; client_name: stri
 export default async function AgreementPage({ params }: PageProps<"/agreement/[token]">) {
   const { token } = await params;
   let view: View | null = null;
-  if (getSupabaseEnv() && isAgreementToken(token)) {
+  if (isFakeAgreement(token)) view = fakeAgreementView();
+  else if (getSupabaseEnv() && isAgreementToken(token)) {
     const { data } = await (await createServerSupabase()).rpc("agreement_public_view", { p_token_hash: hashToken(token) });
     view = ((data ?? []) as View[])[0] ?? null;
   }
