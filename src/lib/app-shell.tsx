@@ -1,9 +1,12 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { AppTopBar } from "@/components/app-header";
+import { PlanFeaturesProvider } from "@/components/plan-features";
+import { CurrentUserProvider } from "@/components/current-user";
 import { AuthCard } from "@/components/auth/auth-card";
 import { OnboardingForm } from "@/components/auth/onboarding-form";
 import { AppFrame } from "@/components/modules/app-frame";
+import { pathAllowed } from "@/lib/control/gating";
 import { loadDashboardSources } from "@/lib/dashboard/data";
 import { buildDashboard, dayInZone } from "@/lib/dashboard/logic";
 import { acceptPendingInvites, findMembership } from "@/lib/dms/server/context";
@@ -13,11 +16,21 @@ import { createServerSupabase } from "@/lib/supabase/server";
 /** The same attention list as the dashboard, for the bell in the top bar. */
 async function loadNotifications() {
   const today = dayInZone((await headers()).get("x-vercel-ip-timezone"));
-  return { items: buildDashboard(await loadDashboardSources(), today).items, today };
+  const data = buildDashboard(await loadDashboardSources(), today);
+  return { items: data.items, today };
 }
 
-function Frame({ topRight, children }: { topRight: React.ReactNode; children: React.ReactNode }) {
-  return <AppFrame base="/app" topRight={topRight}>{children}</AppFrame>;
+function Frame({ topRight, userName, features = null, children }: { topRight: React.ReactNode; userName?: string; features?: string[] | null; children: React.ReactNode }) {
+  return <PlanFeaturesProvider features={features}><AppFrame base="/app" topRight={topRight}><CurrentUserProvider name={userName}>{children}</CurrentUserProvider></AppFrame></PlanFeaturesProvider>;
+}
+
+function NotInPlan() {
+  return (
+    <div className="mx-auto max-w-lg rounded-2xl border bg-card p-8 text-center shadow-panel">
+      <h1 className="text-xl font-semibold tracking-tight">Not part of your plan</h1>
+      <p className="mt-2 text-sm text-muted-foreground">This service is not included in your current plan. Contact Aurum Ventura to add it.</p>
+    </div>
+  );
 }
 
 /**
@@ -45,9 +58,12 @@ export async function renderAppShell(
       );
     }
     const { data: ws } = await supabase.from("workspaces").select("name").eq("id", membership.workspaceId).maybeSingle();
+    // Plan features: a failed lookup leaves everything available rather than locking a client out.
+    const { data: planFeatures } = await supabase.rpc("workspace_features", { p_workspace: membership.workspaceId });
+    const features = Array.isArray(planFeatures) ? (planFeatures as string[]) : null;
     return (
-      <Frame topRight={<AppTopBar workspaceName={ws?.name} userLabel={email} notifications={await loadNotifications()} />}>
-        {content("live", { name: fullName })}
+      <Frame userName={fullName} features={features} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} />}>
+        {pathAllowed(features, nextPath) ? content("live", { name: fullName }) : <NotInPlan />}
       </Frame>
     );
   }

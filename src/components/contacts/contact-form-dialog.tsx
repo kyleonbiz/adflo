@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { findMatches, validateContact, type ContactField } from "@/lib/contacts/logic";
 import { CONTACT_CATEGORIES, type Contact, type ContactInput } from "@/lib/contacts/types";
-import { titleCase } from "@/lib/text";
 
 const FIELD_ORDER: ContactField[] = ["name", "company", "email", "phone", "category", "lastContacted", "notes"];
 
@@ -26,8 +25,8 @@ function Body({
   contact, prefill, existing, today, onClose, onSave,
 }: { contact?: Contact; prefill?: Partial<ContactInput>; existing: Contact[]; today: string; onClose: () => void; onSave: (value: ContactInput) => void }) {
   const [v, setV] = useState<Record<string, string>>({
-    name: contact?.name ?? prefill?.name ?? "", email: contact?.email ?? prefill?.email ?? "", phone: contact?.phone ?? "",
-    company: contact?.company ?? "", category: contact?.category ?? prefill?.category ?? "Other", notes: contact?.notes ?? "",
+    name: contact?.name ?? prefill?.name ?? "", email: contact?.email ?? prefill?.email ?? "", phone: contact?.phone ?? prefill?.phone ?? "",
+    company: contact?.company ?? prefill?.company ?? "", category: contact?.category ?? "Other", notes: contact?.notes ?? "",
     lastContacted: contact?.lastContacted ?? "",
   });
   const [errors, setErrors] = useState<Partial<Record<ContactField, string>>>({});
@@ -73,7 +72,7 @@ function Body({
           <Field id="contact-category" label="Category" error={errors.category}>
             <Select value={v.category} onValueChange={(c) => setV((s) => ({ ...s, category: c }))}>
               <SelectTrigger id="contact-category"><SelectValue /></SelectTrigger>
-              <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}</SelectContent>
+              <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
           <Field id="contact-lastContacted" label="Last Contacted" error={errors.lastContacted}>
@@ -112,7 +111,7 @@ export function ContactFormDialog({
 }: {
   open: boolean;
   contact?: Contact;
-  /** Starting values for a new contact. */
+  /** Details to start a new contact with, such as a name and email taken from a filled-in form. */
   prefill?: Partial<ContactInput>;
   existing: Contact[];
   today: string;

@@ -1,5 +1,12 @@
-import { addDays, addMonths, advanceDay, daysBetween, formatDayLong } from "@/lib/dates";
-import type { Project, ProjectHealth, Task, TaskRepeat, TaskState } from "./types";
+import { addDays, addMonths, advanceDay, daysBetween, formatDayLong, isDay } from "@/lib/dates";
+import type { Milestone, Project, ProjectHealth, Task, TaskRepeat, TaskState } from "./types";
+
+/** Tasks that belong to no project live in this built-in project. It is created on first use and never listed as a project. */
+export const GENERAL_PROJECT_ID = "general";
+export const isGeneral = (p: Project) => p.id === GENERAL_PROJECT_ID;
+export function generalProject(today: string): Project {
+  return { id: GENERAL_PROJECT_ID, name: "General tasks", client: "", description: "", status: "active", startOn: today, dueOn: addMonths(today, 120), tasks: [] };
+}
 
 /** An open task due within this many days is "due soon". */
 export const DUE_SOON_DAYS = 3;
@@ -113,6 +120,29 @@ export function taskAlerts(projects: Project[], today: string): TaskAlert[] {
   return out.sort((a, b) => rank[a.state] - rank[b.state] || a.daysLeft - b.daysLeft);
 }
 
+export interface TaskItem { project: Project; task: Task; state: TaskState }
+
+const URGENCY: Record<TaskState, number> = { overdue: 0, due_today: 1, due_soon: 2, open: 3, unscheduled: 4, done: 5 };
+
+/**
+ * Every task across all projects as one flat list. Open tasks come first, most urgent first (tasks in a
+ * completed or on-hold project are left out, as in the summary); with `includeDone`, finished tasks follow, newest first.
+ */
+export function taskList(projects: Project[], today: string, includeDone = false): TaskItem[] {
+  const open: TaskItem[] = [];
+  const done: TaskItem[] = [];
+  for (const project of projects) {
+    const live = project.status !== "completed" && project.status !== "on_hold";
+    for (const task of project.tasks) {
+      if (task.done) { if (includeDone) done.push({ project, task, state: "done" }); }
+      else if (live) open.push({ project, task, state: taskState(task, today) });
+    }
+  }
+  open.sort((a, b) => URGENCY[a.state] - URGENCY[b.state] || (a.task.dueOn ?? "").localeCompare(b.task.dueOn ?? "") || a.task.title.localeCompare(b.task.title));
+  done.sort((a, b) => (b.task.doneOn ?? "").localeCompare(a.task.doneOn ?? "") || a.task.title.localeCompare(b.task.title));
+  return [...open, ...done];
+}
+
 export interface PortfolioSummary {
   activeProjects: number;
   openTasks: number;
@@ -124,7 +154,7 @@ export function summarize(projects: Project[], today: string): PortfolioSummary 
   const month = today.slice(0, 7);
   const s: PortfolioSummary = { activeProjects: 0, openTasks: 0, overdueTasks: 0, completedThisMonth: 0 };
   for (const p of projects) {
-    if (p.status === "active") s.activeProjects++;
+    if (p.status === "active" && !isGeneral(p)) s.activeProjects++;
     for (const t of p.tasks) {
       if (t.done && t.doneOn?.startsWith(month)) s.completedThisMonth++;
       if (p.status === "completed" || p.status === "on_hold") continue;
@@ -175,3 +205,53 @@ export function projectsReport(projects: Project[], today: string): string {
   });
   return [header, "", ...sections.map((s) => s.trimEnd()).flatMap((s) => [s, "", "-----", ""])].join("\n").trimEnd() + "\n";
 }
+
+// ---- milestones, updates and the recurring-work project
+
+export const MAX_MILESTONES = 20;
+export const MAX_UPDATES = 200;
+
+export const milestonesOf = (p: Project): Milestone[] => [...(p.milestones ?? [])].sort((a, b) => a.dueOn.localeCompare(b.dueOn));
+export const updatesOf = (p: Project) => p.updates ?? [];
+
+export function addMilestone(p: Project, m: { title: string; dueOn: string }, id: string): { project: Project } | { error: string } {
+  const title = m.title.trim();
+  if (!title) return { error: "Enter a name for the milestone." };
+  if (title.length > 120) return { error: "Keep the name under 120 characters." };
+  if (!isDay(m.dueOn)) return { error: "Choose a date for the milestone." };
+  if ((p.milestones ?? []).length >= MAX_MILESTONES) return { error: `A project can have at most ${MAX_MILESTONES} milestones.` };
+  return { project: { ...p, milestones: [...(p.milestones ?? []), { id, title, dueOn: m.dueOn, doneOn: null }] } };
+}
+
+export const toggleMilestone = (p: Project, id: string, today: string): Project => ({
+  ...p, milestones: (p.milestones ?? []).map((m) => (m.id === id ? { ...m, doneOn: m.doneOn ? null : today } : m)),
+});
+
+export const removeMilestone = (p: Project, id: string): Project => ({ ...p, milestones: (p.milestones ?? []).filter((m) => m.id !== id) });
+
+export function milestoneSummary(p: Project, today: string): { done: number; total: number; overdue: number; next: Milestone | null } {
+  const all = milestonesOf(p);
+  const open = all.filter((m) => !m.doneOn);
+  return { done: all.length - open.length, total: all.length, overdue: open.filter((m) => m.dueOn < today).length, next: open[0] ?? null };
+}
+
+/** Adds a dated note to the project's log. Blank notes are refused. */
+export function addUpdate(p: Project, u: { text: string; by: string; on: string }, id: string): Project {
+  const text = u.text.trim().slice(0, 1000);
+  if (!text) return p;
+  return { ...p, updates: [...(p.updates ?? []), { id, on: u.on, by: u.by.trim().slice(0, 80) || "You", text }].slice(-MAX_UPDATES) };
+}
+
+/** The one project where repeating work lives. Every repeating task added from the project page or installed by setup goes here. */
+export const RECURRING_PROJECT_ID = "recurring-work";
+export const RECURRING_PROJECT_NAME = "Recurring work";
+
+export function recurringProject(tasks: Task[], today: string): Project {
+  return {
+    id: RECURRING_PROJECT_ID, name: RECURRING_PROJECT_NAME, client: "", status: "active", startOn: today, dueOn: addDays(today, 365),
+    description: "Work that comes round again: monthly reconciliations, weekly agendas, quarterly reviews. Completing a task schedules the next one.",
+    tasks,
+  };
+}
+
+export const isRecurringProject = (p: Project) => p.id === RECURRING_PROJECT_ID;

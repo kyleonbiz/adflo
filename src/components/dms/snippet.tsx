@@ -40,10 +40,10 @@ export function contentStatusLabel(status: ContentStatus, reason: string | null)
     case "indexed":
       return reason === "truncated" ? "Searchable (first part of the text only)" : "Searchable";
     case "pending":
-      return "Not indexed yet — searchable by name only";
+      return "Not indexed yet: searchable by name only";
     case "unsupported":
-      return `Not searchable by text — ${(REASON_LABELS[reason ?? ""] ?? "no text could be read.").replace(/\.$/, "")}`;
+      return `Not searchable by text: ${(REASON_LABELS[reason ?? ""] ?? "no text could be read.").replace(/\.$/, "")}`;
     default:
-      return `Not indexed — ${(REASON_LABELS[reason ?? ""] ?? "indexing failed").replace(/\.$/, "")}`;
+      return `Not indexed: ${(REASON_LABELS[reason ?? ""] ?? "indexing failed").replace(/\.$/, "")}`;
   }
 }

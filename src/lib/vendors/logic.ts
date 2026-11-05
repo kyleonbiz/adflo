@@ -1,13 +1,12 @@
 import { toCsv } from "@/lib/csv";
-import { daysBetween, formatDayLong } from "@/lib/dates";
+import { daysBetween, formatDayLong, isDay } from "@/lib/dates";
 import type { DocState, Vendor, VendorAlert, VendorCategory, VendorDocument, VendorStatus } from "./types";
 
 /** A document within this many days of expiry is "expiring". */
 export const EXPIRING_DAYS = 30;
-export const VENDOR_APPROVER = "Operations manager";
 
 export const STATUS_LABEL: Record<VendorStatus, string> = {
-  onboarding: "Onboarding", pending_approval: "Awaiting approval", approved: "Approved", rejected: "Rejected", inactive: "Inactive",
+  onboarding: "Onboarding", active: "Active", inactive: "Inactive",
 };
 
 /** Attached files: types and size the document upload accepts. */
@@ -70,52 +69,62 @@ export function onboardingProgress(v: Vendor, today: string): { done: number; to
   return { done: required.filter((d) => satisfied(d, today)).length, total: required.length };
 }
 
-export function approvalBlockers(v: Vendor, today: string): string[] {
+/** What still stops a vendor from being activated: required documents that are missing or expired. */
+export function activationBlockers(v: Vendor, today: string): string[] {
   return v.documents
     .filter((d) => d.required && !satisfied(d, today))
     .map((d) => (docState(d, today) === "expired" ? `${d.type} has expired` : `${d.type} is missing`));
 }
 
 /**
- * Why an approved vendor is out of compliance: a required document (such as the certificate of
- * insurance) has expired or is missing. Empty means compliant. Vendors that are not approved are
- * still being onboarded or are switched off, so this does not apply to them.
+ * Why an active vendor is out of compliance: a required document (such as the certificate of
+ * insurance) has expired or is missing. Empty means compliant. Vendors still onboarding or switched
+ * off are not judged here.
  */
 export function complianceIssues(v: Vendor, today: string): string[] {
-  return v.status === "approved" ? approvalBlockers(v, today) : [];
+  return v.status === "active" ? activationBlockers(v, today) : [];
 }
 
 export const isNonCompliant = (v: Vendor, today: string) => complianceIssues(v, today).length > 0;
 
-/** Moves an onboarding vendor to approval, but only when every required document is in. */
-export function submitForApproval(v: Vendor, today: string): Vendor {
-  if (v.status !== "onboarding" || approvalBlockers(v, today).length > 0) return v;
-  return { ...v, status: "pending_approval", decidedBy: null, decidedOn: null, comment: "" };
+/** Moves an onboarding vendor to active, but only when every required document is in. */
+export function activate(v: Vendor, today: string): Vendor {
+  if (v.status !== "onboarding" || activationBlockers(v, today).length > 0) return v;
+  return { ...v, status: "active" };
 }
 
-/** Approve or reject a vendor awaiting approval. Anything else is returned unchanged. */
-export function decide(v: Vendor, decision: "approved" | "rejected", by: string, today: string, comment = ""): Vendor {
-  if (v.status !== "pending_approval") return v;
-  return { ...v, status: decision, decidedBy: by, decidedOn: today, comment: comment.trim() };
-}
-
-/** A rejected vendor goes back to onboarding to fix problems and resubmit. */
-export function reopen(v: Vendor): Vendor {
-  return v.status === "rejected" ? { ...v, status: "onboarding" } : v;
-}
-
-/** Approved vendors can be switched off and on; others are unchanged. */
+/** Active vendors can be switched off, and inactive ones back on; onboarding vendors are unchanged. */
 export function setActive(v: Vendor, active: boolean): Vendor {
-  if (active && v.status === "inactive") return { ...v, status: "approved" };
-  if (!active && v.status === "approved") return { ...v, status: "inactive" };
+  if (active && v.status === "inactive") return { ...v, status: "active" };
+  if (!active && v.status === "active") return { ...v, status: "inactive" };
   return v;
+}
+
+/** A contract this close to its end is flagged, early enough to renegotiate or give notice. */
+export const CONTRACT_NOTICE_DAYS = 60;
+/** The IRS asks for a 1099 once you pay a contractor this much in a year. */
+export const FORM_1099_DOLLARS = 600;
+
+/** Alerts from the business side of a vendor: contract dates, and tax paperwork once spending passes the 1099 line. */
+export function relationshipAlerts(v: Vendor, today: string): VendorAlert[] {
+  const out: VendorAlert[] = [];
+  if (v.contractEndsOn && isDay(v.contractEndsOn)) {
+    const left = daysBetween(today, v.contractEndsOn);
+    if (left < 0) out.push({ severity: "warning", message: `Contract ended ${formatDayLong(v.contractEndsOn)}.` });
+    else if (left <= CONTRACT_NOTICE_DAYS) out.push({ severity: v.riskTier === "critical" ? "warning" : "info", message: `Contract ends in ${plural(left, "day")}.` });
+  }
+  const w9 = v.documents.find((d) => /w-?9/i.test(d.type));
+  if ((v.annualSpend ?? 0) >= FORM_1099_DOLLARS && (!w9 || !w9.receivedOn)) {
+    out.push({ severity: "warning", message: "Spend passes the 1099 line and no W-9 is on file." });
+  }
+  return out;
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-/** Alerts that apply today, most severe first. Inactive and rejected vendors raise none. */
+/** Alerts that apply today, most severe first. Inactive vendors raise none. */
 export function vendorAlerts(v: Vendor, today: string): VendorAlert[] {
-  if (v.status === "inactive" || v.status === "rejected") return [];
+  if (v.status === "inactive") return [];
   const alerts: VendorAlert[] = [];
   let outstanding = 0;
   for (const d of v.documents) {
@@ -129,8 +138,8 @@ export function vendorAlerts(v: Vendor, today: string): VendorAlert[] {
       outstanding++;
     }
   }
+  for (const a of relationshipAlerts(v, today)) alerts.push(a);
   if (outstanding > 0 && v.status === "onboarding") alerts.push({ severity: "info", message: `${plural(outstanding, "required document")} outstanding.` });
-  if (v.status === "pending_approval") alerts.push({ severity: "info", message: "Awaiting approval." });
   const order = { critical: 0, warning: 1, info: 2 } as const;
   return alerts.sort((a, b) => order[a.severity] - order[b.severity]);
 }
@@ -230,19 +239,19 @@ export function duplicatePairs(vendors: Vendor[]): DuplicatePair[] {
 
 export interface VendorSummary {
   vendors: number;
-  approved: number;
-  pendingApproval: number;
+  active: number;
+  onboarding: number;
   documentIssues: number;
   nonCompliant: number;
   duplicatePairs: number;
 }
 
 export function summarize(vendors: Vendor[], today: string): VendorSummary {
-  const live = vendors.filter((v) => v.status !== "inactive" && v.status !== "rejected");
+  const live = vendors.filter((v) => v.status !== "inactive");
   return {
     vendors: vendors.length,
-    approved: vendors.filter((v) => v.status === "approved").length,
-    pendingApproval: vendors.filter((v) => v.status === "pending_approval").length,
+    active: vendors.filter((v) => v.status === "active").length,
+    onboarding: vendors.filter((v) => v.status === "onboarding").length,
     documentIssues: live.reduce((n, v) => n + v.documents.filter((d) => ["expiring", "expired"].includes(docState(d, today))).length, 0),
     nonCompliant: vendors.filter((v) => isNonCompliant(v, today)).length,
     duplicatePairs: duplicatePairs(vendors).length,
@@ -263,16 +272,16 @@ export function needsAttention(vendors: Vendor[], today: string): { vendor: Vend
 
 /** Vendors with at least one expiring or expired document. */
 export function hasDocumentIssues(v: Vendor, today: string): boolean {
-  return v.status !== "inactive" && v.status !== "rejected" && v.documents.some((d) => ["expiring", "expired"].includes(docState(d, today)));
+  return v.status !== "inactive" && v.documents.some((d) => ["expiring", "expired"].includes(docState(d, today)));
 }
 
 export function vendorsToCsv(vendors: Vendor[], today: string): string {
   return toCsv([
-    ["Name", "Category", "Status", "Contact", "Email", "Phone", "Tax ID", "Required docs in", "Required docs total", "Document issues", "Notes"],
+    ["Name", "Category", "Status", "Contact", "Email", "Phone", "Tax ID", "Required docs in", "Required docs total", "Document issues", "Notes", "Risk tier", "Payment terms", "Contract ends", "Annual spend", "Rating"],
     ...vendors.map((v) => {
       const p = onboardingProgress(v, today);
       const issues = v.documents.filter((d) => ["expiring", "expired"].includes(docState(d, today))).map((d) => `${d.type} (${docState(d, today)})`);
-      return [v.name, v.category, STATUS_LABEL[v.status], v.contactName, v.email, v.phone, v.taxId, p.done, p.total, issues.join("; "), v.notes];
+      return [v.name, v.category, STATUS_LABEL[v.status], v.contactName, v.email, v.phone, v.taxId, p.done, p.total, issues.join("; "), v.notes, v.riskTier === "critical" ? "Critical" : "Standard", v.paymentTerms ?? "", v.contractEndsOn ?? "", v.annualSpend ?? "", v.rating ?? ""];
     }),
   ]);
 }

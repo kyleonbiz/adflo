@@ -22,17 +22,20 @@ async function importExpenses(page: Page) {
 }
 
 test.describe("reporting module", () => {
-  test("overview: shows what needs attention and a card for every service", async ({ page }) => {
+  test("overview: headline numbers, what needs attention, and a row for every service", async ({ page }) => {
     await page.goto("/app/reporting");
     await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByTestId("overview-summary")).toContainText("Records tracked");
+    await expect(page.getByTestId("overview-summary")).toContainText("of 7"); // services in use
     await expect(page.getByTestId("attention-count")).toContainText("item");
     expect(await page.getByTestId("attention-item").count()).toBeGreaterThan(0);
-    const cards = page.getByTestId("module-card");
-    const card = (name: string) => cards.filter({ has: page.getByRole("heading", { name, exact: true }) });
-    await expect(cards).toHaveCount(8);
-    await expect(card("Invoices")).toContainText("Outstanding");
-    await expect(card("CRM & Data")).toContainText("Contacts");
-    await expect(card("Documents")).toContainText("No records yet"); // documents are not seeded
+    await expect(page.getByRole("region", { name: "Records by service" }).getByTestId("breakdown-row").first()).toBeVisible();
+    const rows = page.getByTestId("service-row");
+    const row = (name: string) => rows.filter({ has: page.getByRole("rowheader", { name, exact: true }) });
+    await expect(rows).toHaveCount(7);
+    await expect(row("Invoices")).toContainText("Outstanding");
+    await expect(row("Contacts")).toContainText("Contacts");
+    await expect(row("Documents")).toContainText("No records yet"); // documents are not seeded
   });
 
   test("every service has a report, opened from the card or the tab, with a shareable address", async ({ page }) => {
@@ -46,13 +49,13 @@ test.describe("reporting module", () => {
     await expect(report).toContainText("Billed by client");
     expect(await page.getByTestId("report-record").count()).toBeGreaterThan(0);
 
-    for (const name of ["Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork", "Requests"]) {
+    for (const name of ["Licenses & Renewals", "Vendors", "Contacts", "Tasks", "Forms & Paperwork"]) {
       await page.getByRole("tab", { name }).click();
       await expect(page.getByTestId("module-report")).toContainText(name);
       expect(await page.getByTestId("report-metric").count()).toBe(4);
     }
     await page.goto("/app/reporting?view=projects");
-    await expect(page.getByRole("tab", { name: "Projects" })).toHaveAttribute("aria-selected", "true");
+    await expect(page.getByRole("tab", { name: "Tasks" })).toHaveAttribute("aria-selected", "true");
     await page.getByRole("tab", { name: "Overview" }).click();
     await expect(page).not.toHaveURL(/view=/);
   });
@@ -60,14 +63,16 @@ test.describe("reporting module", () => {
   test("a service report exports its records as CSV and Excel, and a service with no records says so", async ({ page }) => {
     await page.goto("/app/reporting?view=vendors");
     let download = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Export CSV" }).click();
+    await page.getByRole("button", { name: "Export" }).click();
+    await page.getByRole("menuitem", { name: "CSV" }).click();
     let file = await download;
     expect(file.suggestedFilename()).toMatch(/^vendors-report-\d{4}-\d{2}-\d{2}\.csv$/);
     const lines = (await readDownload(file)).toString("utf8").trimEnd().split("\r\n");
     expect(lines[0]).toBe("Name,Category,Status,Contact,Email,Required documents received,Required documents");
     expect(lines.length).toBeGreaterThan(1);
     download = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Export Excel" }).click();
+    await page.getByRole("button", { name: "Export" }).click();
+    await page.getByRole("menuitem", { name: "Excel" }).click();
     file = await download;
     expect(file.suggestedFilename()).toMatch(/\.xlsx$/);
     expect((await readDownload(file)).subarray(0, 2).toString()).toBe("PK");
@@ -317,5 +322,37 @@ test.describe("reporting module", () => {
     await page.goto("/app/reporting");
     await expect(page.getByRole("heading", { level: 1, name: "Reporting" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Reporting", exact: true })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("the section dropdown opens scheduled reports and materials", async ({ page }) => {
+    await page.goto("/app/reporting");
+    const section = page.getByRole("combobox", { name: "Reporting section" });
+    await section.click();
+    await page.getByRole("option", { name: "Materials" }).click();
+    await expect(page.getByTestId("materials")).toContainText("Business summary");
+    await expect(page.getByTestId("material-row")).toHaveCount(7);
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Invoices spreadsheet" }).click();
+    expect((await download).suggestedFilename()).toMatch(/^invoices-.*\.csv$/);
+
+    await section.click();
+    await page.getByRole("option", { name: "Scheduled reports" }).click();
+    await expect(page.getByText("No reports scheduled")).toBeVisible();
+    await page.getByLabel("Send to (optional)").fill("nope");
+    await page.getByRole("button", { name: "Schedule report" }).click();
+    await expect(page.getByText("These are not email addresses: nope")).toBeVisible();
+    await page.getByLabel("Send to (optional)").fill("owner@example.com");
+    await page.getByRole("button", { name: "Schedule report" }).click();
+    const row = page.getByTestId("scheduled-report");
+    await expect(row).toHaveCount(1);
+    await expect(row).toContainText("Business summary");
+    await expect(row).toContainText("owner@example.com");
+    await expect(page.getByTestId("due-banner")).toContainText("1 report is due");
+    const pdf = page.waitForEvent("download");
+    await row.getByRole("button", { name: /^Download PDF/ }).click();
+    expect((await pdf).suggestedFilename()).toMatch(/\.pdf$/);
+    await expect(page.getByTestId("due-banner")).toHaveCount(0); // delivered: moved to its next date
+    await page.reload();
+    await expect(page.getByRole("combobox", { name: "Reporting section" })).toBeVisible();
   });
 });

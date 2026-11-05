@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, ChevronDown, Download, FileText, Pencil, Play, Trash2, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, Download, FileText, Inbox, Pencil, Play, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { formatDayLong } from "@/lib/dates";
 import { displayValue } from "@/lib/forms/logic";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
@@ -12,17 +11,20 @@ import { cn } from "@/lib/utils";
 import { SUBMISSION_BADGE, SUBMISSION_LABEL } from "./status";
 
 export interface FormActions {
+  onSend: (form: FormTemplate) => void;
   onFill: (form: FormTemplate) => void;
   onEdit: (form: FormTemplate) => void;
   onDelete: (form: FormTemplate) => void;
-  onDecide: (form: FormTemplate, s: Submission, decision: "approved" | "rejected", comment: string) => void;
+  onAddResponses: (form: FormTemplate) => void;
+  onMarkDone: (form: FormTemplate, s: Submission, done: boolean) => void;
   onDocument: (form: FormTemplate, s: Submission) => void;
+  onPdf: (form: FormTemplate, s: Submission) => void;
+  onPrint: (form: FormTemplate, s: Submission) => void;
   onExport: (form: FormTemplate, subs: Submission[]) => void;
   onDeleteSubmission: (form: FormTemplate, s: Submission) => void;
 }
 
-function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission; actions: FormActions }) {
-  const [comment, setComment] = useState("");
+function ResponseRow({ form, s, actions }: { form: FormTemplate; s: Submission; actions: FormActions }) {
   const summary = form.fields.slice(0, 3).map((f) => displayValue(f, s.values[f.id])).filter(Boolean).join(" · ");
   return (
     <li className="space-y-2 rounded-xl border p-3 text-sm" data-testid="submission-row">
@@ -33,21 +35,16 @@ function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission
         </div>
         <Badge variant={SUBMISSION_BADGE[s.status]}>{SUBMISSION_LABEL[s.status]}</Badge>
       </div>
-      {s.decidedBy && s.decidedOn && (
-        <p className="text-xs text-muted-foreground">
-          {s.status === "approved" ? "Approved" : "Rejected"} by {s.decidedBy} on {formatDayLong(s.decidedOn)}{s.comment && `: ${s.comment}`}
-        </p>
-      )}
       <div className="flex flex-wrap items-center gap-2">
-        {s.status === "pending" && (
-          <>
-            <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (optional)" aria-label={`Comment on submission by ${s.submittedBy}`} className="h-8 max-w-56 text-xs" maxLength={200} />
-            <Button size="sm" variant="outline" aria-label={`Approve submission by ${s.submittedBy}`} onClick={() => actions.onDecide(form, s, "approved", comment)}><CheckCircle2 /> Approve</Button>
-            <Button size="sm" variant="outline" aria-label={`Reject submission by ${s.submittedBy}`} onClick={() => actions.onDecide(form, s, "rejected", comment)}><XCircle /> Reject</Button>
-          </>
+        {s.status === "new" ? (
+          <Button size="sm" variant="outline" aria-label={`Mark response by ${s.submittedBy} done`} onClick={() => actions.onMarkDone(form, s, true)}><CheckCircle2 /> Mark done</Button>
+        ) : (
+          <Button size="sm" variant="ghost" aria-label={`Reopen response by ${s.submittedBy}`} onClick={() => actions.onMarkDone(form, s, false)}><Undo2 /> Reopen</Button>
         )}
-        <Button size="sm" variant="ghost" aria-label={`Document for submission by ${s.submittedBy}`} onClick={() => actions.onDocument(form, s)}><FileText /> Document</Button>
-        <Button size="icon-sm" variant="ghost" aria-label={`Delete submission by ${s.submittedBy}`} onClick={() => actions.onDeleteSubmission(form, s)}><Trash2 /></Button>
+        <Button size="sm" variant="ghost" aria-label={`Document for response by ${s.submittedBy}`} onClick={() => actions.onDocument(form, s)}><FileText /> Document</Button>
+        <Button size="sm" variant="ghost" aria-label={`PDF for response by ${s.submittedBy}`} onClick={() => actions.onPdf(form, s)}><Download /> PDF</Button>
+        <Button size="sm" variant="ghost" aria-label={`Print response by ${s.submittedBy}`} onClick={() => actions.onPrint(form, s)}><Printer /> Print</Button>
+        <Button size="icon-sm" variant="ghost" aria-label={`Delete response by ${s.submittedBy}`} onClick={() => actions.onDeleteSubmission(form, s)}><Trash2 /></Button>
       </div>
     </li>
   );
@@ -55,7 +52,7 @@ function SubmissionRow({ form, s, actions }: { form: FormTemplate; s: Submission
 
 export function FormCard({ form, submissions, actions }: { form: FormTemplate; submissions: Submission[]; actions: FormActions }) {
   const [open, setOpen] = useState(false);
-  const pending = submissions.filter((s) => s.status === "pending").length;
+  const unread = submissions.filter((s) => s.status === "new").length;
   const panelId = `form-subs-${form.id}`;
 
   return (
@@ -64,14 +61,16 @@ export function FormCard({ form, submissions, actions }: { form: FormTemplate; s
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-semibold">{form.name}</h3>
-            {form.requiresApproval && <Badge variant="muted">Approval: {form.approver}</Badge>}
-            {pending > 0 && <Badge variant="warning">{pending} awaiting approval</Badge>}
+            {unread > 0 && <Badge variant="default">{unread} new</Badge>}
           </div>
           {form.description && <p className="text-sm text-muted-foreground">{form.description}</p>}
-          <p className="text-xs text-muted-foreground">{form.fields.length} field{form.fields.length === 1 ? "" : "s"} · {submissions.length} submission{submissions.length === 1 ? "" : "s"}</p>
+          <p className="text-xs text-muted-foreground">
+            {form.fields.length} field{form.fields.length === 1 ? "" : "s"} · sent {form.sentCount} time{form.sentCount === 1 ? "" : "s"} · {submissions.length} response{submissions.length === 1 ? "" : "s"}
+          </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          <Button size="sm" onClick={() => actions.onFill(form)}><Play /> Fill out</Button>
+          <Button size="sm" onClick={() => actions.onSend(form)}><Send /> Send</Button>
+          <Button size="sm" variant="outline" onClick={() => actions.onFill(form)}><Play /> Fill out</Button>
           <Button size="icon-sm" variant="ghost" aria-label={`Edit ${form.name}`} onClick={() => actions.onEdit(form)}><Pencil /></Button>
           <Button size="icon-sm" variant="ghost" aria-label={`Delete ${form.name}`} onClick={() => actions.onDelete(form)}><Trash2 /></Button>
         </div>
@@ -84,24 +83,23 @@ export function FormCard({ form, submissions, actions }: { form: FormTemplate; s
           onClick={() => setOpen((o) => !o)}
           className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-sm font-medium hover:bg-muted/50"
         >
-          <span>Submissions <span className="font-normal text-muted-foreground">{submissions.length}</span></span>
+          <span>Responses <span className="font-normal text-muted-foreground">{submissions.length}</span></span>
           <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden />
         </button>
         {open && (
           <div id={panelId} className="space-y-3 px-4 pb-4">
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button size="sm" variant="outline" aria-label={`Add responses to ${form.name}`} onClick={() => actions.onAddResponses(form)}><Inbox /> Add responses</Button>
+              {submissions.length > 0 && <Button size="sm" variant="outline" onClick={() => actions.onExport(form, submissions)}><Download /> Export CSV</Button>}
+            </div>
             {submissions.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No submissions yet.</p>
+              <p className="text-sm text-muted-foreground">No responses yet. Send the form, then add the answers people email back.</p>
             ) : (
-              <>
-                <div className="flex justify-end">
-                  <Button size="sm" variant="outline" onClick={() => actions.onExport(form, submissions)}><Download /> Export CSV</Button>
-                </div>
-                <ul className="space-y-2">
-                  {[...submissions].sort((a, b) => (a.submittedOn < b.submittedOn ? 1 : -1)).map((s) => (
-                    <SubmissionRow key={s.id} form={form} s={s} actions={actions} />
-                  ))}
-                </ul>
-              </>
+              <ul className="space-y-2">
+                {[...submissions].sort((a, b) => (a.submittedOn < b.submittedOn ? 1 : -1)).map((s) => (
+                  <ResponseRow key={s.id} form={form} s={s} actions={actions} />
+                ))}
+              </ul>
             )}
           </div>
         )}

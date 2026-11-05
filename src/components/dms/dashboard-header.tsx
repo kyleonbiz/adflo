@@ -39,7 +39,7 @@ export function DashboardHeader({
           </Button>
         )}
         <Button
-          variant="gradient"
+         
           onClick={onUpload}
           disabled={!canUpload}
           title={canUpload ? undefined : "Your role cannot upload documents"}

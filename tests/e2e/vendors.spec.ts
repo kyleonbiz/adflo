@@ -20,17 +20,17 @@ test.describe("vendors module", () => {
     await expect(duplicates).toContainText("Similar name, Same email domain");
 
     await page.getByRole("combobox", { name: "Filter by status" }).click();
-    await page.getByRole("option", { name: "Awaiting approval" }).click();
-    await expect(page.getByTestId("vendor-card")).toHaveCount(1);
+    await page.getByRole("option", { name: "Onboarding" }).click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(3);
     await expect(card(page, "Hooli Logistics")).toBeVisible();
   });
 
-  test("onboarding: collect documents, submit for approval, approve", async ({ page }) => {
+  test("onboarding: collect documents, then activate", async ({ page }) => {
     await page.goto("/app/vendors");
     const initech = card(page, "Initech Staffing LLC");
-    const submit = initech.getByRole("button", { name: "Submit for approval" });
-    await expect(submit).toBeDisabled();
-    await expect(initech).toContainText("Before approval: W-9 is missing, Certificate of insurance is missing");
+    const activate = initech.getByRole("button", { name: "Activate" });
+    await expect(activate).toBeDisabled();
+    await expect(initech).toContainText("To activate: W-9 is missing, Certificate of insurance is missing");
     await expect(initech).toContainText("2 of 4 required documents in");
 
     // Onboarding vendors open with their documents showing.
@@ -39,18 +39,15 @@ test.describe("vendors module", () => {
     await expect(initech).toContainText("3 of 4");
     await initech.getByLabel("Certificate of insurance received on").fill("2026-10-20");
     await expect(initech).toContainText("4 of 4 required documents in");
-    await expect(submit).toBeEnabled();
-    await submit.click();
-    await expect(initech.getByText("Awaiting approval", { exact: true }).first()).toBeVisible();
-
-    await initech.getByLabel("Comment on Initech Staffing LLC").fill("Welcome aboard");
-    await initech.getByRole("button", { name: "Approve Initech Staffing LLC" }).click();
-    await expect(page.getByRole("dialog")).toContainText("Welcome aboard");
-    await page.getByRole("dialog").getByRole("button", { name: "Approve", exact: true }).click();
-    await expect(initech).toContainText("Approved by Operations manager");
-    await expect(initech).toContainText("Welcome aboard");
+    await expect(activate).toBeEnabled();
+    await activate.click(); // nobody has to sign off: it is simply active
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(initech.getByText("Active", { exact: true }).first()).toBeVisible();
+    await expect(initech).not.toContainText("pproval");
     await initech.getByRole("button", { name: "Deactivate" }).click();
     await expect(initech.getByText("Inactive", { exact: true })).toBeVisible();
+    await initech.getByRole("button", { name: "Reactivate" }).click();
+    await expect(initech.getByText("Active", { exact: true }).first()).toBeVisible();
   });
 
   test("an expiry before the received date is refused", async ({ page }) => {
@@ -65,8 +62,8 @@ test.describe("vendors module", () => {
 
   test("summary tiles and attention rows act on the list", async ({ page }) => {
     await page.goto("/app/vendors");
-    await page.getByRole("button", { name: /Awaiting approval/ }).first().click();
-    await expect(page.getByTestId("vendor-card")).toHaveCount(1);
+    await page.getByRole("button", { name: /^Onboarding/ }).first().click();
+    await expect(page.getByTestId("vendor-card")).toHaveCount(3);
     await page.getByRole("button", { name: /^Document issues/ }).click();
     await expect(page.getByText("Showing vendors with expiring or expired documents")).toBeVisible();
     await page.getByRole("button", { name: /^Vendors/ }).first().click();
@@ -74,14 +71,6 @@ test.describe("vendors module", () => {
 
     await page.getByRole("button", { name: "Open Globex Software documents" }).click();
     await expect(card(page, "Globex Software").getByRole("button", { name: /^Documents/ })).toHaveAttribute("aria-expanded", "true");
-  });
-
-  test("cancelling the approval dialog leaves the vendor awaiting approval", async ({ page }) => {
-    await page.goto("/app/vendors");
-    const hooli = card(page, "Hooli Logistics");
-    await hooli.getByRole("button", { name: "Approve Hooli Logistics" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
-    await expect(hooli.getByText("Awaiting approval", { exact: true }).first()).toBeVisible();
   });
 
   test("removing a document and deleting a vendor can be undone", async ({ page }) => {
@@ -154,22 +143,12 @@ test.describe("vendors module", () => {
   });
 
   test("filters are kept in the address bar", async ({ page }) => {
-    await page.goto("/app/vendors?status=pending_approval&sort=newest");
-    await expect(page.getByTestId("vendor-card")).toHaveCount(1);
+    await page.goto("/app/vendors?status=onboarding&sort=newest");
+    await expect(page.getByTestId("vendor-card")).toHaveCount(3);
     await page.getByRole("button", { name: /^Document issues/ }).click();
     await expect(page).toHaveURL(/issues=1/);
     await page.getByRole("button", { name: /^Vendors/ }).first().click();
     await expect(page).not.toHaveURL(/status=|issues=/);
-  });
-
-  test("rejecting then reopening a vendor", async ({ page }) => {
-    await page.goto("/app/vendors");
-    const hooli = card(page, "Hooli Logistics");
-    await hooli.getByRole("button", { name: "Reject Hooli Logistics" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Reject", exact: true }).click();
-    await expect(hooli.getByText("Rejected", { exact: true }).first()).toBeVisible();
-    await hooli.getByRole("button", { name: "Reopen" }).click();
-    await expect(hooli.getByText("Onboarding", { exact: true })).toBeVisible();
   });
 
   test("adding a vendor validates, warns about duplicates and creates required documents", async ({ page }) => {
@@ -229,8 +208,8 @@ test.describe("vendors module", () => {
     expect(file.suggestedFilename()).toMatch(/^vendors-\d{4}-\d{2}-\d{2}\.csv$/);
     let text = "";
     for await (const chunk of await file.createReadStream()) text += chunk;
-    expect(text.split("\r\n")[0]).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes");
-    expect(text).toContain("Awaiting approval");
+    expect(text.split("\r\n")[0]).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes,Risk tier,Payment terms,Contract ends,Annual spend,Rating");
+    expect(text).toContain("Onboarding");
     expect(text).toContain("Certificate of insurance (expired)");
   });
 
@@ -245,6 +224,60 @@ test.describe("vendors module", () => {
   test("is available in the signed-in app too", async ({ page }) => {
     await page.goto("/app/vendors");
     await expect(page.getByRole("heading", { level: 1, name: "Vendors" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Vendors", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("navigation", { name: "Contacts" }).getByRole("link", { name: "Vendors", exact: true })).toHaveAttribute("aria-current", "page");
+  });
+
+  test("follow up today: remind a vendor who owes documents, then keep notes on them", async ({ page }) => {
+    await page.goto("/app/vendors");
+    const panel = page.getByTestId("followups");
+    const row = panel.getByTestId("followup-row").filter({ hasText: "Initech Staffing LLC" });
+    await expect(row).toContainText("Not chased yet");
+    await row.getByRole("button", { name: "Send reminder to Initech Staffing LLC" }).click();
+    await expect(page.getByRole("status")).toContainText("Reminder logged for Initech Staffing LLC");
+    await expect(panel.getByTestId("followup-row").filter({ hasText: "Initech Staffing LLC" })).toHaveCount(0); // waiting a week now
+
+    const card = page.getByTestId("vendor-card").filter({ hasText: "Initech Staffing LLC" });
+    await expect(card).toContainText("Reminder sent, waiting for a reply");
+    await expect(card.getByTestId("vendor-note").first()).toContainText("Reminder 1 sent for: W-9, Certificate of insurance");
+    await card.getByLabel("Add a note for Initech Staffing LLC").fill("Peter says insurance comes Friday");
+    await card.getByRole("button", { name: "Add note" }).click();
+    await expect(card.getByTestId("vendor-note").first()).toContainText("Peter says insurance comes Friday");
+    await card.getByLabel("Add a note for Initech Staffing LLC").fill("Called back");
+    await card.getByRole("button", { name: "They replied" }).click();
+    await expect(card.getByTestId("vendor-note").first()).toContainText("Replied");
+  });
+
+  test("attaching a photo of a certificate reads its expiry date", async ({ page }) => {
+    await page.goto("/app/vendors");
+    const initech = card(page, "Initech Staffing LLC");
+    await initech.getByLabel("Certificate of insurance file").setInputFiles("tests/support/license-scan.png");
+    await expect(page.getByRole("status")).toContainText("Read license-scan.png: expires", { timeout: 20_000 });
+    await expect(initech.getByLabel("Certificate of insurance expires on")).toHaveValue("2027-01-15");
+  });
+
+  test("business terms: contract end, spend, rating and the alerts they raise", async ({ page }) => {
+    await page.goto("/app/vendors");
+    await page.getByRole("button", { name: "Add vendor" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Vendor name").fill("Blue Ridge Printing");
+    await dialog.getByLabel("Contact email").fill("orders@blueridge.example");
+    await dialog.getByRole("combobox", { name: "How much you rely on them" }).click();
+    await page.getByRole("option", { name: "Critical to the business" }).click();
+    await dialog.getByRole("combobox", { name: "Payment terms" }).click();
+    await page.getByRole("option", { name: "Net 45" }).click();
+    await dialog.getByLabel("Spend per year in dollars (optional)").fill("12.5");
+    await dialog.getByRole("button", { name: "Add vendor" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("Whole dollars only");
+    await dialog.getByLabel("Spend per year in dollars (optional)").fill("24000");
+    await dialog.getByLabel("Contract ends (optional)").fill("2099-01-01");
+    await dialog.getByRole("combobox", { name: "Your rating" }).click();
+    await page.getByRole("option", { name: "4 of 5" }).click();
+    await dialog.getByRole("button", { name: "Add vendor" }).click();
+
+    const added = card(page, "Blue Ridge Printing");
+    await expect(added.getByTestId("vendor-terms")).toContainText("Critical");
+    await expect(added.getByTestId("vendor-terms")).toContainText("Net 45 · contract ends");
+    await expect(added.getByTestId("vendor-terms")).toContainText("$24,000 a year · rated 4 of 5");
+    await expect(added.getByRole("list", { name: "Alerts" })).toContainText("Spend passes the 1099 line and no W-9 is on file.");
   });
 });

@@ -6,7 +6,6 @@ import { CATEGORIES, CATEGORY_LABELS, type DocumentQuery, type DocumentSort, typ
 import { FILE_TYPE_GROUPS } from "@/lib/dms/validation";
 import { cn } from "@/lib/utils";
 import { DocumentSearch } from "./document-search";
-import { titleCase } from "@/lib/text";
 
 const VIEWS: { id: DocumentView; label: string; Icon: LucideIcon }[] = [
   { id: "all", label: "All", Icon: FileStack },
@@ -83,7 +82,7 @@ export function DocumentToolbar({
             <SelectItem value={ANY}>All Categories</SelectItem>
             {CATEGORIES.map((c) => (
               <SelectItem key={c} value={c}>
-                {titleCase(CATEGORY_LABELS[c])}
+                {CATEGORY_LABELS[c]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -96,7 +95,7 @@ export function DocumentToolbar({
             <SelectItem value={ANY}>All File Types</SelectItem>
             {FILE_TYPE_GROUPS.map((g) => (
               <SelectItem key={g.id} value={g.id}>
-                {titleCase(g.label)}
+                {g.label}
               </SelectItem>
             ))}
             <SelectItem value="other">Other</SelectItem>
@@ -122,7 +121,7 @@ export function DocumentToolbar({
           <SelectContent>
             {(query.search.trim() ? [RELEVANCE, ...SORTS] : SORTS).map((s) => (
               <SelectItem key={s.id} value={s.id}>
-                {titleCase(s.label)}
+                {s.label}
               </SelectItem>
             ))}
           </SelectContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToday } from "@/components/modules/use-today";
 import { buildDashboard } from "@/lib/dashboard/logic";
@@ -10,14 +11,15 @@ import type { Contact } from "@/lib/contacts/types";
 import type { Invoice } from "@/lib/invoices/types";
 import type { License } from "@/lib/licenses/types";
 import type { Project } from "@/lib/projects/types";
-import type { AdminRequest, Routine } from "@/lib/admin/types";
 import type { Submission } from "@/lib/forms/types";
 import type { Vendor } from "@/lib/vendors/types";
 import { buildReports, type ReportSources } from "@/lib/reporting/logic";
 import { cn } from "@/lib/utils";
 import { CustomDataReport } from "./custom-data-report";
 import { ModuleReportView } from "./module-report-view";
+import { Materials } from "./materials";
 import { Overview } from "./overview";
+import { ScheduledReports } from "./scheduled-reports";
 
 const OVERVIEW = "overview";
 export const CUSTOM = "custom";
@@ -31,14 +33,19 @@ function withSeeds(src: ReportSources): ReportSources {
     projects: e2eSeed<Project>("projects") ?? src.projects,
     vendors: e2eSeed<Vendor>("vendors") ?? src.vendors,
     contacts: e2eSeed<Contact>("contacts") ?? src.contacts,
-    requests: e2eSeed<AdminRequest>("requests") ?? src.requests,
-    routines: e2eSeed<Routine>("routines") ?? src.routines,
     submissions: e2eSeed<Submission>("submissions") ?? src.submissions,
     forms: src.forms.length > 0 ? src.forms : starterForms(),
   };
 }
 
-function Body({ sources, today, view, onView }: { sources: ReportSources; today: string; view: string; onView: (v: string) => void }) {
+const SECTIONS = [
+  { id: "reports", label: "Reports" },
+  { id: "scheduled", label: "Scheduled reports" },
+  { id: "materials", label: "Materials" },
+] as const;
+type Section = (typeof SECTIONS)[number]["id"];
+
+function Body({ sources, today, view, onView, section, onSection }: { sources: ReportSources; today: string; view: string; onView: (v: string) => void; section: Section; onSection: (s: Section) => void }) {
   const seeded = useMemo(() => withSeeds(sources), [sources]);
   const reports = useMemo(() => buildReports(seeded, today), [seeded, today]);
   const attention = useMemo(() => buildDashboard(seeded, today).items, [seeded, today]);
@@ -46,8 +53,20 @@ function Body({ sources, today, view, onView }: { sources: ReportSources; today:
   const tabs = [{ id: OVERVIEW, name: "Overview" }, ...reports.map((r) => ({ id: r.id, name: r.name })), { id: CUSTOM, name: "Custom Data" }];
   const active = view === CUSTOM || current ? view : OVERVIEW;
 
+  const picker = (
+    <div className="max-w-56">
+      <Select value={section} onValueChange={(v) => onSection(v as Section)}>
+        <SelectTrigger aria-label="Reporting section"><SelectValue /></SelectTrigger>
+        <SelectContent>{SECTIONS.map((x) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}</SelectContent>
+      </Select>
+    </div>
+  );
+  if (section === "scheduled") return <div className="space-y-5">{picker}<ScheduledReports reports={reports} today={today} /></div>;
+  if (section === "materials") return <div className="space-y-5">{picker}<Materials reports={reports} today={today} /></div>;
+
   return (
     <div className="space-y-5">
+      {picker}
       <div role="tablist" aria-label="Reports" className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
         {tabs.map((t) => (
           <button
@@ -78,6 +97,7 @@ function Body({ sources, today, view, onView }: { sources: ReportSources; today:
 export function ReportingPage({ sources, initialView, preview }: { sources: ReportSources; initialView?: string; preview?: string }) {
   const today = useToday();
   const [view, setView] = useState(initialView || OVERVIEW);
+  const [section, setSection] = useState<Section>("reports");
   const change = useCallback((v: string) => {
     setView(v);
     try { window.history.replaceState(null, "", v === OVERVIEW ? window.location.pathname : `?view=${encodeURIComponent(v)}`); } catch { /* the address bar is a convenience */ }
@@ -91,7 +111,7 @@ export function ReportingPage({ sources, initialView, preview }: { sources: Repo
       </div>
       {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
       {today ? (
-        <Body sources={sources} today={today} view={view} onView={change} />
+        <Body sources={sources} today={today} view={view} onView={change} section={section} onSection={setSection} />
       ) : (
         <div className="space-y-4" aria-busy="true">
           <Skeleton className="h-10 w-full" />

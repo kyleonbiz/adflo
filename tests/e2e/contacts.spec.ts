@@ -14,11 +14,12 @@ const CSV = [
 
 async function openImport(page: Page) {
   await page.goto("/app/contacts");
-  await page.getByRole("button", { name: "Import CSV" }).click();
+  await page.getByRole("button", { name: "More ways to bring in contacts" }).click();
+  await page.getByRole("menuitem", { name: "Import CSV" }).click();
   return page.getByRole("dialog");
 }
 
-test.describe("CRM & data module", () => {
+test.describe("Contacts module", () => {
   test("summary, duplicates, search and filter", async ({ page }) => {
     await page.goto("/app/contacts");
     await expect(page.getByRole("note")).toContainText("never leave your browser");
@@ -255,7 +256,8 @@ test.describe("CRM & data module", () => {
     await expect(dialog.getByTestId("count-accepted")).toHaveText("1");
     await dialog.getByRole("button", { name: "Cancel" }).click();
 
-    await page.getByRole("button", { name: "Import CSV" }).click();
+    await page.getByRole("button", { name: "More ways to bring in contacts" }).click();
+    await page.getByRole("menuitem", { name: "Import CSV" }).click();
     await page.getByRole("dialog").getByLabel("Or paste CSV text").fill('Name,Email\n"Unclosed,x@y.co');
     await page.getByRole("dialog").getByRole("button", { name: "Next" }).click();
     await expect(page.getByRole("dialog").getByRole("alert")).toContainText("starting on line 2 is never closed");
@@ -291,7 +293,8 @@ test.describe("CRM & data module", () => {
     await page.goto("/app/contacts");
     await expect(page.getByTestId("contact-row").first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
-    await page.getByRole("button", { name: "Import CSV" }).click();
+    await page.getByRole("button", { name: "More ways to bring in contacts" }).click();
+    await page.getByRole("menuitem", { name: "Import CSV" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Or paste CSV text").fill(CSV);
     await dialog.getByRole("button", { name: "Next" }).click();
@@ -302,7 +305,7 @@ test.describe("CRM & data module", () => {
 
   test("is available in the signed-in app too", async ({ page }) => {
     await page.goto("/app/contacts");
-    await expect(page.getByRole("heading", { level: 1, name: "CRM & Data" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "CRM & Data", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1, name: "Contacts" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Contacts", exact: true })).toHaveAttribute("aria-current", "page");
   });
 });

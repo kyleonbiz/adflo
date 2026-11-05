@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Clock, Download, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
+import { Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
+import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SplitButton } from "@/components/ui/split-button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { downloadText } from "@/components/import/csv-source";
@@ -16,10 +19,12 @@ import { applyImport, contactDuplicates, contactsToCsv, isStale, STALE_DAYS, sum
 import { e2eSeed } from "@/lib/e2e-seed";
 import { CONTACT_CATEGORIES, type Contact, type ContactCategory, type ContactInput } from "@/lib/contacts/types";
 import type { ImportOutcome } from "@/lib/import/run";
+import type { Person } from "@/lib/bridge";
+import { SendFormDialog } from "./send-form-dialog";
+import { ContactsTabs } from "./contacts-tabs";
 import { ContactFormDialog } from "./contact-form-dialog";
 import { ImportDialog } from "./import-dialog";
 import { MergeDialog } from "./merge-dialog";
-import { titleCase } from "@/lib/text";
 
 const rid = () => `c-${Math.random().toString(36).slice(2, 10)}`;
 const CATEGORY_BADGE: Record<ContactCategory, "success" | "default" | "warning" | "muted" | "outline"> = {
@@ -40,11 +45,12 @@ const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2)
 const linkClass = "rounded underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
- * CRM & Data. Contacts live in this component's state (starting empty) until the database is
+ * Contacts. Contacts live in this component's state (starting empty) until the database is
  * connected, so nothing here is saved between visits. Imports are read in the browser and never uploaded.
  */
-export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?: string; initialQuery?: string; prefill?: Partial<ContactInput> }) {
+export function ContactsPage({ preview, initialQuery = "", initialAdd }: { preview?: string; initialQuery?: string; initialAdd?: Partial<Person> }) {
   const today = useToday();
+  const audit = useAudit();
   const [edited, setEdited] = useState<Contact[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<"all" | ContactCategory>("all");
@@ -53,9 +59,8 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
   const [shown, setShown] = useState(PAGE);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [allPairs, setAllPairs] = useState(false);
-  const [formFor, setFormFor] = useState<Contact | "new" | null>(prefill ? "new" : null);
-  // The starting values apply to the first new contact only, not to ones added later.
-  const [pendingPrefill, setPendingPrefill] = useState(prefill);
+  const [formFor, setFormFor] = useState<Contact | "new" | null>(initialAdd ? "new" : null);
+  const [sendingTo, setSendingTo] = useState<Contact | null>(null);
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState<Contact[] | null>(null);
   const [merging, setMerging] = useState<[Contact, Contact] | null>(null);
@@ -118,18 +123,22 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
   const saveContact = (value: ContactInput) => {
     if (formFor && formFor !== "new") {
       const id = formFor.id;
+      audit("edited", `the contact ${value.name}`, "Contacts", "/app/contacts");
       commit(contacts.map((c) => (c.id === id ? { ...c, ...value } : c)), `${value.name} updated.`);
     } else {
+      audit("added", `the contact ${value.name}`, "Contacts", "/app/contacts");
       commit([...contacts, { ...value, id: rid(), createdOn: today }], `${value.name} added.`);
     }
   };
 
   const runApply = (outcome: ImportOutcome<ContactInput>, mode: "skip" | "update") => {
     const r = applyImport(contacts, outcome, mode, today, rid);
+    audit("imported", `${r.added + r.updated} contacts from a file`, "Contacts", "/app/contacts");
     commit(r.contacts, `Imported: ${r.added} added, ${r.updated} updated, ${r.skipped} skipped, ${outcome.rejected.length} need fixing.`);
   };
 
   const doMerge = (keep: Contact, merged: Contact, dropped: Contact) => {
+    audit("merged", `${dropped.name} into ${keep.name}`, "Contacts", "/app/contacts");
     commit(contacts.filter((c) => c.id !== dropped.id).map((c) => (c.id === keep.id ? merged : c)), `Merged ${dropped.name} into ${keep.name}.`);
     setSelected(new Set());
   };
@@ -149,17 +158,23 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
 
   return (
     <div className="space-y-5">
+      <ContactsTabs current="people" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">CRM &amp; Data</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Contacts</h1>
           <p className="text-sm text-muted-foreground">Keep your contacts in one place: import lists, clean them up, merge duplicates, track who needs a follow-up and export tidy data.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setImporting(true)}><Upload /> Import CSV</Button>
           <Button variant="outline" disabled={visible.length === 0} onClick={exportCsv}>
             <Download /> Export CSV{filtered && visible.length > 0 ? ` (${visible.length} shown)` : ""}
           </Button>
-          <Button onClick={() => setFormFor("new")}><Plus /> Add contact</Button>
+          <SplitButton
+            onClick={() => setFormFor("new")}
+            menuLabel="More ways to bring in contacts"
+            actions={[{ label: "Import CSV", icon: <Upload />, onSelect: () => setImporting(true) }]}
+          >
+            <Plus /> Add contact
+          </SplitButton>
         </div>
       </div>
 
@@ -230,7 +245,7 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
                 <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}
+                  {CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -238,7 +253,7 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
               <Select value={quick} onValueChange={(v) => { setQuick(v as Quick); setShown(PAGE); }}>
                 <SelectTrigger aria-label="Filter by data quality"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(QUICK_LABEL) as Quick[]).map((k) => <SelectItem key={k} value={k}>{titleCase(QUICK_LABEL[k])}</SelectItem>)}
+                  {(Object.keys(QUICK_LABEL) as Quick[]).map((k) => <SelectItem key={k} value={k}>{QUICK_LABEL[k]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -246,7 +261,7 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
               <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
                 <SelectTrigger aria-label="Sort contacts"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
+                  {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -262,7 +277,7 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
                 setSelected(new Set());
               }}>
                 <SelectTrigger aria-label="Set category for selected" className="h-8"><SelectValue placeholder="Set category…" /></SelectTrigger>
-                <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}</SelectContent>
+                <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             {selectedContacts.length === 2 && (
@@ -279,12 +294,17 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
         )}
 
         {visible.length === 0 ? (
-          <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            <p>{contacts.length === 0 ? "No contacts yet. Add one or import a CSV." : "No contacts match these filters."}</p>
-            {contacts.length === 0
-              ? <div className="flex justify-center gap-2"><Button onClick={() => setFormFor("new")}><Plus /> Add your first contact</Button><Button variant="outline" onClick={() => setImporting(true)}><Upload /> Import CSV</Button></div>
-              : <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
-          </div>
+          contacts.length === 0 ? (
+            <EmptyState icon={Users} title="Build your contact list" description="Customers, leads and partners in one place, cleaned up and ready to use." points={["Import a spreadsheet and map its columns", "Duplicates found and merged for you", "A reminder when nobody has talked to someone in a while"]}>
+              <Button onClick={() => setFormFor("new")}><Plus /> Add your first contact</Button>
+              <Button variant="outline" onClick={() => setImporting(true)}><Upload /> Import CSV</Button>
+            </EmptyState>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
+              <p>No contacts match these filters.</p>
+              <Button variant="outline" onClick={clearFilters}>Clear filters</Button>
+            </div>
+          )
         ) : (
           <div className="overflow-hidden rounded-2xl border bg-card shadow-panel">
             <div aria-hidden className="hidden grid-cols-[1.5rem_minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,1.6fr)_7rem_7.5rem_5.5rem] items-center gap-3 border-b bg-muted/40 px-4 py-2 text-xs font-medium text-muted-foreground md:grid">
@@ -311,6 +331,7 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center md:order-last">
+                      <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Fill out a form for ${c.name}`} title="Fill out a form for this contact" onClick={() => setSendingTo(c)}><FileText /></Button>
                       <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Edit ${c.name}`} onClick={() => setFormFor(c)}><Pencil /></Button>
                       <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Delete ${c.name}`} onClick={() => setDeleting([c])}><Trash2 /></Button>
                     </div>
@@ -347,7 +368,8 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
         )}
       </section>
 
-      <ContactFormDialog open={formFor !== null} contact={formFor && formFor !== "new" ? formFor : undefined} prefill={pendingPrefill} existing={contacts} today={today} onOpenChange={(o) => { if (!o) { setFormFor(null); setPendingPrefill(undefined); } }} onSave={saveContact} />
+      <SendFormDialog person={sendingTo} onOpenChange={(o) => !o && setSendingTo(null)} />
+      <ContactFormDialog open={formFor !== null} contact={formFor && formFor !== "new" ? formFor : undefined} prefill={initialAdd} existing={contacts} today={today} onOpenChange={(o) => !o && setFormFor(null)} onSave={saveContact} />
       <ImportDialog open={importing} existing={contacts} onOpenChange={setImporting} onImport={runApply} />
       <MergeDialog pair={merging} onOpenChange={(o) => !o && setMerging(null)} onMerge={doMerge} />
 
@@ -364,6 +386,7 @@ export function ContactsPage({ preview, initialQuery = "", prefill }: { preview?
               onClick={() => {
                 if (deleting) {
                   const ids = new Set(deleting.map((c) => c.id));
+                  audit("deleted", deleting.length === 1 ? `the contact ${deleting[0].name}` : `${deleting.length} contacts`, "Contacts", "/app/contacts");
                   commit(contacts.filter((c) => !ids.has(c.id)), deleting.length === 1 ? `${deleting[0].name} deleted.` : `${deleting.length} contacts deleted.`);
                   setSelected(new Set());
                 }

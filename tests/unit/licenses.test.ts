@@ -229,3 +229,77 @@ describe("risk tiers and dependencies", () => {
     expect(riskTier(permit, TODAY, [insurance, permit])).toBe("safe");
   });
 });
+
+import { BUSINESS_TYPES, LICENSE_TEMPLATES, templatesFor } from "@/lib/licenses/templates";
+import { compliance } from "@/lib/licenses/logic";
+import { LICENSE_CATEGORIES as CATS } from "@/lib/licenses/types";
+import { sampleLicenses as samples } from "../support/licenses-sample-data";
+
+describe("license templates", () => {
+  it("covers each business type, with unique ids and valid categories and terms", () => {
+    expect(new Set(LICENSE_TEMPLATES.map((t) => t.id)).size).toBe(LICENSE_TEMPLATES.length);
+    for (const b of BUSINESS_TYPES) expect(templatesFor(b.id).length).toBeGreaterThan(0);
+    for (const t of LICENSE_TEMPLATES) {
+      expect(CATS.map((c) => c.value)).toContain(t.category);
+      expect(t.termMonths).toBeGreaterThanOrEqual(1);
+      expect(t.reminderDays.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("includes car registration, tags and insurance for vehicles", () => {
+    const names = templatesFor("vehicle").map((t) => t.name.toLowerCase()).join("|");
+    expect(names).toContain("registration");
+    expect(names).toContain("tags");
+    expect(names).toContain("insurance");
+  });
+});
+
+describe("compliance", () => {
+  it("is 100% with nothing tracked and counts expired or missing-document items against you", () => {
+    expect(compliance([], "2026-10-26").percent).toBe(100);
+    const list = samples("2026-10-26");
+    const c = compliance(list, "2026-10-26");
+    expect(c.total).toBe(list.length);
+    expect(c.inGoodStanding).toBeLessThanOrEqual(c.total);
+    expect(c.percent).toBe(Math.round((c.inGoodStanding / c.total) * 100));
+  });
+});
+
+import { licenseCalendarEvents } from "@/lib/licenses/logic";
+import { toIcs } from "@/lib/ics";
+
+describe("renewal calendar", () => {
+  it("lists each expiry and its upcoming reminder days, leaving out reminders already past", () => {
+    const today = "2026-10-26";
+    const l = { ...sampleLicenses(today)[0], id: "x1", name: "City permit", expiresOn: "2026-11-20", reminderDays: [60, 30, 7] };
+    const events = licenseCalendarEvents([l], today);
+    // 60 and 30 days before 20 Nov are already past; only the 7-day reminder and the expiry remain.
+    expect(events.map((e) => [e.day, e.summary])).toEqual([
+      ["2026-11-13", "Renew City permit (7 days left)"],
+      ["2026-11-20", "City permit expires"],
+    ]);
+    const ics = toIcs(events, today);
+    expect(ics).toContain("SUMMARY:City permit expires");
+    expect(ics).toContain("BEGIN:VEVENT");
+  });
+});
+
+import { renewalSpend } from "@/lib/licenses/logic";
+
+describe("renewal spend", () => {
+  const today = "2026-10-26";
+  const mk = (id: string, expiresOn: string, renewalCost?: number | null) => ({ ...sampleLicenses(today)[0], id, expiresOn, renewalCost });
+
+  it("adds up fees for licenses due within 90 days, expired ones included, and counts those without a fee", () => {
+    const list = [mk("a", "2026-11-10", 250), mk("b", "2026-10-01", 100), mk("c", "2026-12-01"), mk("d", "2027-06-01", 900)];
+    expect(renewalSpend(list, today)).toEqual({ dollars: 350, count: 3, unknown: 1 });
+    expect(renewalSpend([], today)).toEqual({ dollars: 0, count: 0, unknown: 0 });
+  });
+
+  it("reads the fee from the form as whole dollars or leaves it empty", () => {
+    const base = { name: "Permit", category: "permit", issuer: "", number: "", holder: "", issuedOn: "2026-01-01", expiresOn: "2027-01-01", renewalTermMonths: "12", reminderDays: "30", notes: "", documents: "", reviewed: true };
+    expect(licenseFormSchema.parse({ ...base, renewalCost: "250" }).renewalCost).toBe(250);
+    expect(licenseFormSchema.parse(base).renewalCost).toBeNull();
+    expect(licenseFormSchema.safeParse({ ...base, renewalCost: "12.50" }).success).toBe(false);
+  });
+});

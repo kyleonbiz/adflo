@@ -1,4 +1,4 @@
-import { Appearance } from "./appearance";
+import { ApprovalsSection } from "./approvals-section";
 import { SettingsNav, SettingsTabGate } from "./settings-access";
 import { InvoiceChecksSection } from "./invoice-checks-section";
 import { NotificationsSection } from "./notifications-section";
@@ -11,7 +11,7 @@ export const SETTINGS_TABS = [
   { id: "team", label: "Team", blurb: "Who can open this workspace, and what they can do." },
   { id: "notifications", label: "Notifications", blurb: "Which reminders you want, and how early." },
   { id: "invoice-checks", label: "Invoice options", blurb: "Optional invoice checks and shortcuts. Everything here is off until you switch it on." },
-  { id: "appearance", label: "Appearance", blurb: "Choose a bright Day view or a darker Night view." },
+  { id: "approvals", label: "Approvals", blurb: "Who signs off, in what order, before a request or form goes ahead." },
   { id: "setup", label: "Guided setup", blurb: "Five short steps to get your services, templates and checks in place." },
 ] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
@@ -32,8 +32,8 @@ export function SettingsPage({ tab, mode, base, preview }: { tab: SettingsTab; m
         {tab === "profile" && <ProfileSection />}
         {tab === "team" && <TeamSection mode={mode} />}
         {tab === "notifications" && <NotificationsSection />}
+        {tab === "approvals" && <ApprovalsSection />}
         {tab === "invoice-checks" && <InvoiceChecksSection />}
-        {tab === "appearance" && <Appearance />}
         {tab === "setup" && <SetupPage base={base} preview={preview} />}
       </SettingsTabGate>
     </div>

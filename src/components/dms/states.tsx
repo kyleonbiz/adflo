@@ -36,7 +36,7 @@ export function EmptyState({
           </Button>
         )}
         {(variant === "all" || variant === "folder") && onUpload && (
-          <Button variant="gradient" onClick={onUpload}>
+          <Button onClick={onUpload}>
             <Upload /> Upload documents
           </Button>
         )}

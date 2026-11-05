@@ -13,7 +13,6 @@ import { addDays } from "@/lib/dates";
 import { formatMoney, generateInvoiceNumber, invoiceTotals, invoiceWarnings } from "@/lib/invoices/logic";
 import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
 import { invoiceFormSchema, parseDollars, type InvoiceFormInput, type InvoiceFormValues } from "@/lib/invoices/validation";
-import { titleCase } from "@/lib/text";
 import type { InvoiceChecks } from "@/lib/settings/types";
 
 const SENDER_KEY = "adflo.invoice.sender";
@@ -42,7 +41,10 @@ function remembered(existing: Invoice[]): Remembered {
   return { fromName: "", fromAddress: "", fromPhone: "", fromEmail: "", paymentMethods: "" };
 }
 
-function defaults(invoice: Invoice | undefined, today: string, existing: Invoice[]): InvoiceFormInput {
+/** Details an assistant draft can start a new invoice with. */
+export interface InvoiceDraft { client?: string; clientEmail?: string; description?: string; amount?: string; dueOn?: string; recurrence?: string }
+
+function defaults(invoice: Invoice | undefined, today: string, existing: Invoice[], draft?: InvoiceDraft): InvoiceFormInput {
   if (invoice) {
     return {
       number: invoice.number,
@@ -58,8 +60,10 @@ function defaults(invoice: Invoice | undefined, today: string, existing: Invoice
   return {
     number: generateInvoiceNumber(today, existing.map((i) => i.number)),
     ...remembered(existing),
-    client: "", clientEmail: "", items: [{ ...emptyItem }], taxRate: "", issuedOn: today, dueOn: addDays(today, 30),
-    recurrence: "none", reminderDays: "7, 1", notes: "Thank you for choosing our services! If you have any questions about this invoice, please contact us.",
+    client: draft?.client ?? "", clientEmail: draft?.clientEmail ?? "",
+    items: [{ ...emptyItem, ...(draft?.description ? { description: draft.description } : {}), ...(draft?.amount ? { qty: "1", rate: draft.amount } : {}) }],
+    taxRate: "", issuedOn: today, dueOn: draft?.dueOn ?? addDays(today, 30),
+    recurrence: (draft?.recurrence as InvoiceFormInput["recurrence"]) ?? "none", reminderDays: "7, 1", notes: "Thank you for choosing our services! If you have any questions about this invoice, please contact us.",
   };
 }
 
@@ -82,10 +86,11 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 /** Create or edit an invoice. `invoice` present means edit. */
 export function InvoiceFormDialog({
-  open, invoice, existing, today, checks, onOpenChange, onSubmit,
+  open, invoice, draft, existing, today, checks, onOpenChange, onSubmit,
 }: {
   open: boolean;
   invoice?: Invoice;
+  draft?: InvoiceDraft;
   existing: Invoice[];
   today: string;
   /** Optional checks from Settings; omitted or all off means nothing extra happens on save. */
@@ -95,7 +100,7 @@ export function InvoiceFormDialog({
 }) {
   const { register, control, handleSubmit, reset, setError, formState } = useForm<InvoiceFormInput, unknown, InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
-    defaultValues: defaults(invoice, today, existing),
+    defaultValues: defaults(invoice, today, existing, draft),
   });
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const { errors } = formState;
@@ -105,7 +110,7 @@ export function InvoiceFormDialog({
   const watched = useWatch({ control, name: ["items", "taxRate"] });
 
   useEffect(() => {
-    if (open) reset(defaults(invoice, today, existing));
+    if (open) reset(defaults(invoice, today, existing, draft));
     // `existing` only seeds the suggested number and sender when the dialog opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, invoice, today, reset]);
@@ -236,7 +241,7 @@ export function InvoiceFormDialog({
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger id="inv-recurrence"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {RECURRENCES.map((r) => <SelectItem key={r.value} value={r.value}>{titleCase(r.label)}</SelectItem>)}
+                        {RECURRENCES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   )}

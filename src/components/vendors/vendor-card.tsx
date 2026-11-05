@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, ChevronDown, Paperclip, Pencil, Plus, Power, RotateCcw, Send, Trash2, X, XCircle } from "lucide-react";
+import { BellRing, CheckCircle2, ChevronDown, Paperclip, Pencil, Plus, Power, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDayLong } from "@/lib/dates";
-import { FILE_EXTENSIONS, approvalBlockers, docState, isNonCompliant, onboardingProgress, vendorAlerts } from "@/lib/vendors/logic";
+import { FILE_EXTENSIONS, activationBlockers, docState, isNonCompliant, onboardingProgress, vendorAlerts } from "@/lib/vendors/logic";
+import { GHOSTED_AFTER, followUpState, notesOf, owed, unansweredReminders } from "@/lib/vendors/follow-up";
 import type { Vendor, VendorDocument } from "@/lib/vendors/types";
 import { cn } from "@/lib/utils";
 import { DOC_BADGE, DOC_LABEL, SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
@@ -14,15 +15,15 @@ import { DOC_BADGE, DOC_LABEL, SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL } from
 export interface VendorActions {
   onEdit: (v: Vendor) => void;
   onDelete: (v: Vendor) => void;
-  onSubmit: (v: Vendor) => void;
-  onDecide: (v: Vendor, decision: "approved" | "rejected", comment: string) => void;
-  onReopen: (v: Vendor) => void;
+  onActivate: (v: Vendor) => void;
   onActive: (v: Vendor, active: boolean) => void;
   onSetDocument: (v: Vendor, d: VendorDocument, dates: { receivedOn: string | null; expiresOn: string | null }) => void;
   onAddDocument: (v: Vendor, type: string, required: boolean) => void;
   onRemoveDocument: (v: Vendor, d: VendorDocument) => void;
   onAttachFile: (v: Vendor, d: VendorDocument, file: File) => void;
   onClearFile: (v: Vendor, d: VendorDocument) => void;
+  onNote: (v: Vendor, kind: "note" | "reply", text: string) => void;
+  onRemind: (v: Vendor) => void;
 }
 
 const fileSize = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1)} MB`);
@@ -81,7 +82,7 @@ function DocumentRow({ vendor, d, today, actions }: { vendor: Vendor; d: VendorD
 /** `focusKey` changes whenever the page wants this card shown: it opens the documents and scrolls to the card. */
 export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendor; today: string; actions: VendorActions; focusKey?: number }) {
   // Onboarding is mostly collecting documents, so start with them in view.
-  const [open, setOpen] = useState(() => vendor.status === "onboarding" && approvalBlockers(vendor, today).length > 0);
+  const [open, setOpen] = useState(() => vendor.status === "onboarding" && activationBlockers(vendor, today).length > 0);
   const ref = useRef<HTMLLIElement>(null);
   const [seenFocus, setSeenFocus] = useState(focusKey);
   if (focusKey !== seenFocus) {
@@ -91,12 +92,15 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
   useEffect(() => {
     if (focusKey !== undefined) ref.current?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [focusKey]);
-  const [comment, setComment] = useState("");
   const [newDoc, setNewDoc] = useState("");
   const [newRequired, setNewRequired] = useState(true);
+  const [noteText, setNoteText] = useState("");
+  const follow = followUpState(vendor, today);
+  const sentCount = unansweredReminders(vendor).length;
+  const log = notesOf(vendor);
   const alerts = vendorAlerts(vendor, today);
   const { done, total } = onboardingProgress(vendor, today);
-  const blockers = approvalBlockers(vendor, today);
+  const blockers = activationBlockers(vendor, today);
   const panelId = `vendor-docs-${vendor.id}`;
 
   return (
@@ -112,38 +116,38 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
           <p className="text-sm text-muted-foreground">
             {[vendor.contactName, vendor.email, vendor.phone].filter(Boolean).join(" · ")}
           </p>
+          {(vendor.paymentTerms || vendor.riskTier === "critical" || vendor.contractEndsOn || vendor.annualSpend || vendor.rating) && (
+            <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground" data-testid="vendor-terms">
+              {vendor.riskTier === "critical" && <Badge variant="warning">Critical</Badge>}
+              {[
+                vendor.paymentTerms,
+                vendor.contractEndsOn ? `contract ends ${formatDayLong(vendor.contractEndsOn)}` : "",
+                vendor.annualSpend ? `$${vendor.annualSpend.toLocaleString("en-US")} a year` : "",
+                vendor.rating ? `rated ${vendor.rating} of 5` : "",
+              ].filter(Boolean).join(" · ")}
+            </p>
+          )}
           <p className="text-sm">{total === 0 ? "No required documents" : `${done} of ${total} required documents in`}</p>
           {alerts.length > 0 && (
             <ul className="flex flex-wrap gap-1.5" aria-label="Alerts">
               {alerts.map((a) => <li key={a.message}><Badge variant={SEVERITY_BADGE[a.severity]}>{a.message}</Badge></li>)}
             </ul>
           )}
-          {vendor.decidedBy && vendor.decidedOn && (vendor.status === "approved" || vendor.status === "rejected") && (
-            <p className="text-xs text-muted-foreground">
-              {vendor.status === "approved" ? "Approved" : "Rejected"} by {vendor.decidedBy} on {formatDayLong(vendor.decidedOn)}{vendor.comment && `: ${vendor.comment}`}
-            </p>
-          )}
+          {follow === "ghosted" && <Badge variant="danger">No reply after {sentCount} reminders</Badge>}
+          {follow === "waiting" && <Badge variant="muted">Reminder sent, waiting for a reply</Badge>}
         </div>
         <div className="flex shrink-0 flex-col gap-2 lg:items-end">
           <div className="flex flex-wrap items-center gap-2 lg:justify-end">
             {vendor.status === "onboarding" && (
-              <Button size="sm" variant="outline" disabled={blockers.length > 0} onClick={() => actions.onSubmit(vendor)}><Send /> Submit for approval</Button>
+              <Button size="sm" variant="outline" disabled={blockers.length > 0} onClick={() => actions.onActivate(vendor)}><CheckCircle2 /> Activate</Button>
             )}
-            {vendor.status === "pending_approval" && (
-              <>
-                <Input value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Comment (optional)" aria-label={`Comment on ${vendor.name}`} className="h-8 w-44 text-xs" maxLength={200} />
-                <Button size="sm" variant="outline" aria-label={`Approve ${vendor.name}`} onClick={() => { actions.onDecide(vendor, "approved", comment); setComment(""); }}><CheckCircle2 /> Approve</Button>
-                <Button size="sm" variant="outline" aria-label={`Reject ${vendor.name}`} onClick={() => { actions.onDecide(vendor, "rejected", comment); setComment(""); }}><XCircle /> Reject</Button>
-              </>
-            )}
-            {vendor.status === "rejected" && <Button size="sm" variant="outline" onClick={() => actions.onReopen(vendor)}><RotateCcw /> Reopen</Button>}
-            {vendor.status === "approved" && <Button size="sm" variant="outline" onClick={() => actions.onActive(vendor, false)}><Power /> Deactivate</Button>}
+            {vendor.status === "active" && <Button size="sm" variant="outline" onClick={() => actions.onActive(vendor, false)}><Power /> Deactivate</Button>}
             {vendor.status === "inactive" && <Button size="sm" variant="outline" onClick={() => actions.onActive(vendor, true)}><Power /> Reactivate</Button>}
             <Button size="icon-sm" variant="ghost" className="size-10 sm:size-8" aria-label={`Edit ${vendor.name}`} onClick={() => actions.onEdit(vendor)}><Pencil /></Button>
             <Button size="icon-sm" variant="ghost" className="size-10 sm:size-8" aria-label={`Delete ${vendor.name}`} onClick={() => actions.onDelete(vendor)}><Trash2 /></Button>
           </div>
           {vendor.status === "onboarding" && blockers.length > 0 && (
-            <p className="max-w-sm text-xs text-muted-foreground lg:text-right">Before approval: {blockers.join(", ")}.</p>
+            <p className="max-w-sm text-xs text-muted-foreground lg:text-right">To activate: {blockers.join(", ")}.</p>
           )}
         </div>
       </div>
@@ -183,6 +187,38 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
               </label>
               <Button type="submit" size="sm" variant="outline" disabled={!newDoc.trim()}><Plus /> Add</Button>
             </form>
+            <section aria-label={`Activity for ${vendor.name}`} className="space-y-2 rounded-xl border p-3" data-testid="vendor-activity">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-sm font-medium">Activity</h4>
+                {owed(vendor, today).length > 0 && vendor.email && (
+                  <Button size="sm" variant="outline" aria-label={`Send reminder to ${vendor.name}`} onClick={() => actions.onRemind(vendor)}>
+                    <BellRing /> Send reminder{sentCount >= GHOSTED_AFTER ? " (again)" : ""}
+                  </Button>
+                )}
+              </div>
+              {log.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Nothing logged yet. Notes and reminders you add here stay with this vendor.</p>
+              ) : (
+                <ol className="space-y-1.5">
+                  {[...log].reverse().map((n) => (
+                    <li key={n.id} data-testid="vendor-note" className="flex flex-wrap items-baseline gap-x-2 text-sm">
+                      <span className="text-xs text-muted-foreground">{formatDayLong(n.on)}</span>
+                      <Badge variant={n.kind === "reminder" ? "warning" : n.kind === "reply" ? "success" : "muted"}>{n.kind === "reminder" ? "Reminder" : n.kind === "reply" ? "Replied" : "Note"}</Badge>
+                      <span className="min-w-0 flex-1 break-words">{n.text}</span>
+                      <span className="text-xs text-muted-foreground">{n.by}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+              <form
+                className="flex flex-wrap items-center gap-2"
+                onSubmit={(e) => { e.preventDefault(); if (!noteText.trim()) return; actions.onNote(vendor, "note", noteText); setNoteText(""); }}
+              >
+                <Input value={noteText} onChange={(e) => setNoteText(e.target.value)} maxLength={500} placeholder="Add a note: who you spoke to, what was promised" aria-label={`Add a note for ${vendor.name}`} className="h-9 min-w-48 flex-1" />
+                <Button type="submit" size="sm" variant="outline" disabled={!noteText.trim()}>Add note</Button>
+                <Button type="button" size="sm" variant="ghost" disabled={!noteText.trim()} onClick={() => { actions.onNote(vendor, "reply", noteText); setNoteText(""); }}>They replied</Button>
+              </form>
+            </section>
             {vendor.notes && <p className="whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">{vendor.notes}</p>}
           </div>
         )}

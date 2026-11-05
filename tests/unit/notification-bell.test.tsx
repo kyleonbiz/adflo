@@ -1,13 +1,17 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { NotificationBell } from "@/components/notification-bell";
 import type { AttentionItem } from "@/lib/dashboard/logic";
+import { applyPrefs, parseSeen, rememberSeen, unseen } from "@/lib/dashboard/prefs";
+import { defaultSettings } from "@/lib/settings/types";
 
 const item = (id: string, severity: AttentionItem["severity"]): AttentionItem => ({
   id, area: "Invoices", severity, label: severity === "critical" ? "Overdue" : "Due soon", text: `Invoice ${id}`, href: "/app/invoices",
 });
+
+beforeEach(() => window.localStorage.clear());
 
 describe("NotificationBell", () => {
   it("says everything is handled when there is nothing to do", async () => {
@@ -32,5 +36,44 @@ describe("NotificationBell", () => {
     await userEvent.click(screen.getByRole("button", { name: /Notifications, 12/ }));
     expect(screen.getAllByRole("link", { name: /Invoice n/ })).toHaveLength(8);
     expect(screen.getByRole("link", { name: "View all 12 on the dashboard" })).toBeInTheDocument();
+  });
+
+  it("marks what is new until the bell has been opened and closed", async () => {
+    const { rerender } = render(<NotificationBell items={[item("a", "critical")]} serverToday="2026-10-26" />);
+    await userEvent.click(screen.getByRole("button", { name: /Notifications, 1/ }));
+    expect(screen.getByTestId("bell-new")).toBeInTheDocument();
+    expect(screen.getByText("1 overdue · 1 new")).toBeInTheDocument();
+    await userEvent.keyboard("{Escape}");
+    rerender(<NotificationBell items={[item("a", "critical"), item("b", "warning")]} serverToday="2026-10-26" />);
+    await userEvent.click(screen.getByRole("button", { name: /Notifications, 2/ }));
+    expect(screen.getAllByTestId("bell-new")).toHaveLength(1); // only b is new
+  });
+
+  it("snoozes one item from the bell", async () => {
+    render(<NotificationBell items={[item("a", "critical"), item("b", "warning")]} serverToday="2026-10-26" />);
+    await userEvent.click(screen.getByRole("button", { name: /Notifications, 2/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Snooze until tomorrow: Invoice a" }));
+    expect(screen.queryByRole("link", { name: /Invoice a/ })).toBeNull();
+    expect(screen.getByRole("link", { name: /Invoice b/ })).toBeInTheDocument();
+  });
+
+});
+
+describe("notification choices", () => {
+  const mk = (id: string, area: AttentionItem["area"], text = "x"): AttentionItem => ({ id, area, severity: "warning", label: "L", text, href: "/app" });
+  const all = [mk("inv-1", "Invoices"), mk("lic-1", "Licenses"), mk("task-1", "Tasks"), mk("task-2", "Tasks", "Toner is 3 days overdue.")];
+
+  it("hides kinds switched off in Settings and keeps the rest", () => {
+    const prefs = defaultSettings().notifications;
+    expect(applyPrefs(all, prefs)).toHaveLength(4);
+    const off = { ...prefs, enabled: { ...prefs.enabled, renewals: false, overdueInvoices: false } };
+    expect(applyPrefs(all, off).map((i) => i.id)).toEqual(["task-1", "task-2"]);
+  });
+
+  it("works out what is new and reads the saved list defensively", () => {
+    expect([...unseen([{ id: "a" }, { id: "b" }], ["a"])]).toEqual(["b"]);
+    expect(rememberSeen([{ id: "a" }])).toEqual(["a"]);
+    expect(parseSeen("nope")).toEqual([]);
+    expect(parseSeen(JSON.stringify(["a", 3]))).toEqual(["a"]);
   });
 });

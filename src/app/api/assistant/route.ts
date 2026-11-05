@@ -1,4 +1,5 @@
 import { assistantConfigured, runAssistant, type ChatMessage } from "@/lib/assistant/llm";
+import { planIncludes } from "@/lib/control/plan-server";
 import { getDms } from "@/lib/dms/server/context";
 import { checkRate } from "@/lib/dms/server/rate-limit";
 import { json, readJson, sameOrigin } from "@/lib/dms/server/respond";
@@ -29,6 +30,8 @@ export async function POST(req: Request) {
   if (!sameOrigin(req)) return json({ ok: false, error: { code: "forbidden", message: "Cross-origin request blocked." } }, 403);
   // Without a key the page keeps using its built-in rules, so say so plainly instead of failing.
   if (!assistantConfigured()) return json({ ok: false, error: { code: "not_configured", message: "The AI model is not connected." } }, 501);
+  // Core uses the built-in rules (the page treats 501 as "no AI model"); only Core + is answered by Claude.
+  if (!(await planIncludes("assistant_ai"))) return json({ ok: false, error: { code: "not_in_plan", message: "The Claude assistant is part of Core +." } }, 501);
   try {
     const dms = await getDms();
     const rate = checkRate(dms.userId, { name: "assistant", max: 20, windowMs: 60_000 });

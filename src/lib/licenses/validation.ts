@@ -26,6 +26,9 @@ export const licenseFormSchema = z
     /** Licenses this one relies on, by id. */
     dependsOn: z.array(z.string()).max(20).default([]),
     notes: z.string().trim().max(1000, "Keep notes under 1000 characters"),
+    renewalCost: z.string().trim().default("")
+      .refine((v) => v === "" || /^\d{1,7}$/.test(v), "Whole dollars only, like 250")
+      .transform((v) => (v === "" ? null : Number(v))),
     /** Every license is checked against the real document before it is saved. */
     reviewed: z.boolean().refine((v) => v, "Confirm you have checked these details against the license"),
     /** One required document per line. Only used when adding; existing licenses manage theirs on the card. */

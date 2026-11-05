@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  approvalBlockers, complianceIssues, isNonCompliant, decide, defaultRequirements, docState, duplicatePairs, editDistance, findDuplicates,
-  needsAttention, normalizeName, onboardingProgress, reopen, setActive, submitForApproval, summarize,
+  activate, activationBlockers, complianceIssues, isNonCompliant, defaultRequirements, docState, duplicatePairs, editDistance, findDuplicates,
+  needsAttention, normalizeName, onboardingProgress, setActive, summarize,
   vendorAlerts, vendorsToCsv, mergeVendors, pairKey, fileProblem,
 } from "@/lib/vendors/logic";
 import { sampleVendors } from "../support/vendors-sample-data";
@@ -16,7 +16,7 @@ const byId = (id: string) => all.find((v) => v.id === id)!;
 const doc = (over: Partial<VendorDocument> = {}): VendorDocument => ({ id: "d", type: "W-9", required: true, receivedOn: null, expiresOn: null, ...over });
 const vendor = (over: Partial<Vendor> = {}): Vendor => ({
   id: "x", name: "Test Co", category: "Supplies", contactName: "", email: "a@test.example", phone: "", taxId: "", notes: "",
-  status: "onboarding", createdOn: TODAY, documents: [], decidedBy: null, decidedOn: null, comment: "", ...over,
+  status: "onboarding", createdOn: TODAY, documents: [], ...over,
 });
 
 describe("docState", () => {
@@ -51,31 +51,27 @@ describe("requirements and progress", () => {
   });
 });
 
-describe("approval flow", () => {
-  it("lists blockers, and refuses to submit until they are cleared", () => {
-    expect(approvalBlockers(byId("v-3"), TODAY)).toEqual(["W-9 is missing", "Certificate of insurance is missing"]);
-    expect(approvalBlockers(byId("v-2"), TODAY)).toEqual(["Certificate of insurance has expired"]);
+describe("activating a vendor", () => {
+  it("lists what is still missing, and refuses to activate until it is cleared", () => {
+    expect(activationBlockers(byId("v-3"), TODAY)).toEqual(["W-9 is missing", "Certificate of insurance is missing"]);
+    expect(activationBlockers(byId("v-2"), TODAY)).toEqual(["Certificate of insurance has expired"]);
     const v = byId("v-3");
-    expect(submitForApproval(v, TODAY)).toBe(v);
+    expect(activate(v, TODAY)).toBe(v);
   });
-  it("submits a complete onboarding vendor, then approves once", () => {
+  it("activates a complete onboarding vendor, with nobody to sign off", () => {
     const ready = vendor({ documents: [doc({ receivedOn: "2026-10-01" })] });
-    const pending = submitForApproval(ready, TODAY);
-    expect(pending.status).toBe("pending_approval");
-    const approved = decide(pending, "approved", "Boss", TODAY, " ok ");
-    expect(approved).toMatchObject({ status: "approved", decidedBy: "Boss", decidedOn: TODAY, comment: "ok" });
-    expect(decide(approved, "rejected", "Other", TODAY)).toBe(approved);
-    expect(decide(ready, "approved", "Boss", TODAY)).toBe(ready);
+    const active = activate(ready, TODAY);
+    expect(active.status).toBe("active");
+    expect(Object.keys(active)).not.toContain("decidedBy");
+    expect(activate(active, TODAY)).toBe(active);
   });
-  it("only submits from onboarding", () => {
-    const v = vendor({ status: "approved" });
-    expect(submitForApproval(v, TODAY)).toBe(v);
+  it("only activates from onboarding", () => {
+    const v = vendor({ status: "inactive" });
+    expect(activate(v, TODAY)).toBe(v);
   });
-  it("a rejected vendor can reopen, an approved one can be switched off and on", () => {
-    expect(reopen(vendor({ status: "rejected" })).status).toBe("onboarding");
-    expect(reopen(vendor({ status: "approved" })).status).toBe("approved");
-    expect(setActive(vendor({ status: "approved" }), false).status).toBe("inactive");
-    expect(setActive(vendor({ status: "inactive" }), true).status).toBe("approved");
+  it("an active vendor can be switched off and on again", () => {
+    expect(setActive(vendor({ status: "active" }), false).status).toBe("inactive");
+    expect(setActive(vendor({ status: "inactive" }), true).status).toBe("active");
     expect(setActive(vendor({ status: "onboarding" }), false).status).toBe("onboarding");
   });
 });
@@ -86,9 +82,9 @@ describe("vendorAlerts", () => {
     expect(vendorAlerts(byId("v-2"), TODAY)[0].message).toMatch(/^Certificate of insurance expired /);
     expect(vendorAlerts(byId("v-1"), TODAY)).toEqual([{ severity: "warning", message: "Certificate of insurance expires in 15 days." }]);
   });
-  it("shows outstanding documents and pending approval as info, and nothing for inactive vendors", () => {
+  it("shows outstanding documents as info, and nothing for inactive vendors", () => {
     expect(vendorAlerts(byId("v-3"), TODAY).map((a) => a.message)).toEqual(["2 required documents outstanding."]);
-    expect(vendorAlerts(byId("v-4"), TODAY)).toEqual([{ severity: "info", message: "Awaiting approval." }]);
+    expect(vendorAlerts(byId("v-4"), TODAY)).toEqual([]); // onboarding, but every required document is in
     expect(vendorAlerts(byId("v-6"), TODAY)).toEqual([]);
   });
   it("treats an optional expired document as a warning only", () => {
@@ -133,7 +129,7 @@ describe("duplicate detection", () => {
 
 describe("summary, attention and csv", () => {
   it("summarizes the sample vendors", () => {
-    expect(summarize(all, TODAY)).toEqual({ vendors: 6, approved: 2, pendingApproval: 1, documentIssues: 2, nonCompliant: 1, duplicatePairs: 1 });
+    expect(summarize(all, TODAY)).toEqual({ vendors: 6, active: 2, onboarding: 3, documentIssues: 2, nonCompliant: 1, duplicatePairs: 1 });
   });
   it("ranks critical alerts before warnings", () => {
     expect(needsAttention(all, TODAY).map((n) => [n.vendor.id, n.alert.severity])).toEqual([["v-2", "critical"], ["v-1", "warning"]]);
@@ -141,9 +137,9 @@ describe("summary, attention and csv", () => {
   it("exports one row per vendor with document issues and neutralised formulas", () => {
     const csv = vendorsToCsv([{ ...byId("v-2"), name: "=EVIL()" }], TODAY);
     const [header, row] = csv.trimEnd().split("\r\n");
-    expect(header).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes");
+    expect(header).toBe("Name,Category,Status,Contact,Email,Phone,Tax ID,Required docs in,Required docs total,Document issues,Notes,Risk tier,Payment terms,Contract ends,Annual spend,Rating");
     expect(row).toContain("'=EVIL()");
-    expect(row).toContain("Approved");
+    expect(row).toContain("Active");
     expect(row).toContain("Certificate of insurance (expired)");
   });
 });
@@ -203,23 +199,58 @@ describe("vendor compliance", () => {
   const coi = (over: Partial<VendorDocument> = {}) => doc({ id: "c", type: "Certificate of insurance", receivedOn: "2026-01-01", expiresOn: addDays(TODAY, 200), ...over });
 
   it("is compliant while required documents are in date", () => {
-    expect(isNonCompliant(vendor({ status: "approved", documents: [coi()] }), TODAY)).toBe(false);
+    expect(isNonCompliant(vendor({ status: "active", documents: [coi()] }), TODAY)).toBe(false);
   });
-  it("turns an approved vendor non-compliant when a required document expires", () => {
-    const v = vendor({ status: "approved", documents: [coi({ expiresOn: addDays(TODAY, -1) })] });
+  it("turns an active vendor non-compliant when a required document expires", () => {
+    const v = vendor({ status: "active", documents: [coi({ expiresOn: addDays(TODAY, -1) })] });
     expect(isNonCompliant(v, TODAY)).toBe(true);
     expect(complianceIssues(v, TODAY)).toEqual(["Certificate of insurance has expired"]);
     expect(summarize([v], TODAY).nonCompliant).toBe(1);
   });
-  it("does not apply to optional documents or to vendors that are not approved", () => {
+  it("does not apply to optional documents or to vendors that are not active", () => {
     const expired = coi({ expiresOn: addDays(TODAY, -1) });
-    expect(isNonCompliant(vendor({ status: "approved", documents: [{ ...expired, required: false }] }), TODAY)).toBe(false);
-    for (const status of ["onboarding", "pending_approval", "inactive", "rejected"] as const) {
+    expect(isNonCompliant(vendor({ status: "active", documents: [{ ...expired, required: false }] }), TODAY)).toBe(false);
+    for (const status of ["onboarding", "inactive"] as const) {
       expect(isNonCompliant(vendor({ status, documents: [expired] }), TODAY)).toBe(false);
     }
   });
   it("recovers when the document is renewed", () => {
-    const v = vendor({ status: "approved", documents: [coi({ expiresOn: addDays(TODAY, -1) })] });
+    const v = vendor({ status: "active", documents: [coi({ expiresOn: addDays(TODAY, -1) })] });
     expect(isNonCompliant({ ...v, documents: [coi()] }, TODAY)).toBe(false);
+  });
+});
+
+import { CONTRACT_NOTICE_DAYS, FORM_1099_DOLLARS, relationshipAlerts } from "@/lib/vendors/logic";
+
+describe("vendor relationship", () => {
+  const base = () => sampleVendors(TODAY).find((v) => v.id === "v-1")!;
+
+  it("raises nothing for a vendor with no contract, spend or rating on record", () => {
+    expect(relationshipAlerts(base(), TODAY)).toEqual([]);
+  });
+
+  it("flags a contract that is ending soon or already over", () => {
+    const soon = relationshipAlerts({ ...base(), contractEndsOn: addDays(TODAY, CONTRACT_NOTICE_DAYS) }, TODAY);
+    expect(soon[0]).toMatchObject({ severity: "info", message: `Contract ends in ${CONTRACT_NOTICE_DAYS} days.` });
+    const critical = relationshipAlerts({ ...base(), contractEndsOn: addDays(TODAY, 10), riskTier: "critical" }, TODAY);
+    expect(critical[0].severity).toBe("warning");
+    expect(relationshipAlerts({ ...base(), contractEndsOn: addDays(TODAY, CONTRACT_NOTICE_DAYS + 1) }, TODAY)).toEqual([]);
+    expect(relationshipAlerts({ ...base(), contractEndsOn: addDays(TODAY, -3) }, TODAY)[0].message).toMatch(/^Contract ended/);
+  });
+
+  it("asks for a W-9 once spend passes the 1099 line", () => {
+    const noW9 = { ...base(), annualSpend: FORM_1099_DOLLARS, documents: [] };
+    expect(relationshipAlerts(noW9, TODAY)[0].message).toContain("1099");
+    expect(relationshipAlerts({ ...noW9, annualSpend: FORM_1099_DOLLARS - 1 }, TODAY)).toEqual([]);
+    expect(relationshipAlerts({ ...base(), annualSpend: 5000 }, TODAY)).toEqual([]); // has a received W-9
+  });
+
+  it("reads the new fields from the form, with sensible defaults", () => {
+    const ok = vendorFormSchema.parse({ name: "Acme", category: "Supplies", contactName: "", email: "a@b.co", phone: "", taxId: "", notes: "" });
+    expect(ok).toMatchObject({ riskTier: "standard", paymentTerms: "Net 30", contractEndsOn: null, annualSpend: null, rating: null });
+    const full = vendorFormSchema.parse({ name: "Acme", category: "Supplies", contactName: "", email: "a@b.co", phone: "", taxId: "", notes: "", riskTier: "critical", paymentTerms: "Net 60", contractEndsOn: "2027-01-15", annualSpend: "24000", rating: "4" });
+    expect(full).toMatchObject({ riskTier: "critical", paymentTerms: "Net 60", contractEndsOn: "2027-01-15", annualSpend: 24000, rating: 4 });
+    expect(vendorFormSchema.safeParse({ name: "Acme", category: "Supplies", contactName: "", email: "a@b.co", phone: "", taxId: "", notes: "", annualSpend: "12.5" }).success).toBe(false);
+    expect(vendorFormSchema.safeParse({ name: "Acme", category: "Supplies", contactName: "", email: "a@b.co", phone: "", taxId: "", notes: "", rating: "9" }).success).toBe(false);
   });
 });

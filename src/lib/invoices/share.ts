@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { addContactLink } from "@/lib/bridge";
 import { isDay } from "@/lib/dates";
 import { formatMoney, invoiceTotals, lineCents } from "./logic";
 import type { Invoice } from "./types";
@@ -24,9 +25,7 @@ const sharedSchema = z.object({
 });
 /** A link that opens Contacts with a new contact started from the invoice's client. */
 export function addContactPath(invoice: Pick<Invoice, "client" | "clientEmail">): string {
-  const params = new URLSearchParams({ new: "1", name: invoice.client.trim() });
-  if (invoice.clientEmail.trim()) params.set("email", invoice.clientEmail.trim());
-  return `/app/contacts?${params}`;
+  return addContactLink({ name: invoice.client.trim(), email: invoice.clientEmail.trim() });
 }
 
 export type SharedInvoice = z.infer<typeof sharedSchema>;

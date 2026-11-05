@@ -16,17 +16,59 @@ AdFlo is software, not a website: opening the site address goes straight into th
   development only and is refused in production unless `DMS_ALLOW_DEV_MODE=true`.
 * **Old demo links** – `/demo/...` redirects to the same page under `/app/...`.
 
+## Control Center (staff console)
+
+`/control` is Aurum Ventura's own back office, separate from the client app: a client directory (status, plan, seats,
+owner, notes) and an audit log of every staff change. It uses the same look as the app. Staff are rows in
+`staff_members` (roles `owner`, `support`, `billing`); clients are never staff and cannot see these tables. Anyone who is
+not active staff gets a 404. Every change to a client is written to `staff_audit_log` by a database trigger, and only the
+Owner can read the log. Billing is read-only; Owner and Support can edit clients. Without a database it opens as a
+development-only preview with labelled sample clients (a production build without a database shows nothing).
+
+**Create the first Owner** (once, in the Supabase SQL editor, after signing up through `/signup`):
+
+```sql
+insert into public.staff_members (user_id, role, display_name, email)
+select id, 'owner', 'Your Name', email from auth.users where email = 'you@example.com';
+```
+
+Two-factor (an authenticator app) is required for staff and enforced in the database: a password-only session sees no
+staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
+
+* **Clients**: status, plan, seats in use (counted by a database function that exposes only counts and last sign-in),
+  price, and a detail page with the onboarding checklist.
+* **Plans & pricing**: the Owner sets plan prices and seats; only the Owner can give a client their own price.
+* **Team**: the Owner adds people (who must already have an AdFlo account), changes roles, and turns access off. There is
+  always at least one active Owner.
+
+* **Support**: a ticket queue (open, waiting on client, closed; priority; assigned teammate) with permanent internal notes,
+  and each client's page shows its tickets and a timeline of every logged change.
+* **Password resets**: staff send a client's owner or member a reset email (never the password or the link). The address
+  must belong to a client, every send is audit logged, and the link lands on `/reset-password`. Set the Supabase auth
+  Site URL and allowed redirect URLs so `/reset-password` on your domain is permitted.
+
+* **Agreements**: the Owner publishes terms as versioned, never-edited text; staff create a one-time link for a client
+  (shown once; only its hash is stored; valid 30 days; AdFlo does not send email itself yet, so staff paste the link into
+  their own email). The client opens `/agreement/<secret>`, types their name and email and accepts; the acceptance, who
+  and when, is recorded and shown on the client's timeline. Sending also ticks the onboarding step.
+
+* **Monitoring**: health checks (database answers, error logging, cron secret, assistant key, dev mode), a log of server
+  errors, and which clients have documents that could not be indexed or recent errors. The log stores only the error
+  class and route, never messages or client data, and needs `SUPABASE_SERVICE_ROLE_KEY` on the server to record anything.
+  Clients also show last sign-in, and "Quiet" when an active client has not signed in for 30 days.
+
+Billing is deliberately later: the Control Center tracks plan and price only, with no invoicing or card payments.
+
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
-(`src/lib/modules/registry.ts`). All eleven exist: **01 Documents**, **02 Invoices**
+(`src/lib/modules/registry.ts`). All ten exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
-**05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Projects**
+**05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Tasks**
 (`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
-(`src/lib/datasets/`, `src/components/reporting/`) and **09 Requests** (`src/lib/admin/`,
-`src/components/admin/`) **10 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **11 Settings**
+(`src/lib/datasets/`, `src/components/reporting/`), **09 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **10 Settings**
 (`src/lib/setup/`, `src/components/setup/`). Every service starts empty and keeps its records in the browser until the database is
 connected (see the limits below).
 
@@ -39,11 +81,11 @@ browser and never uploaded.
 
 * **Navigation:** a left sidebar on wide screens (logo, one icon per module, the current module highlighted,
   Settings apart at the bottom) and a menu button that opens the same list as a drawer on a phone.
-* **Pages:** `/app/overview` (Home), `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/admin`, `/app/file-reset`, `/app/setup`. With a database they sit behind sign-in; without one they open as a preview.
-* **Invoices, licenses, vendors, contacts, projects, forms and report data, requests and recurring tasks are not persisted yet.** They start empty and are held in component state; there is no
+* **Pages:** `/app/overview` (Home), `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/file-reset`, `/app/setup`. With a database they sit behind sign-in; without one they open as a preview.
+* **Invoices, licenses, vendors, contacts, projects, forms and report data are not persisted yet.** They start empty and are held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
   renewal tasks, overdue notices) but no email is sent yet. Licenses can be pre-filled from an uploaded PDF, Word, text or CSV file (`/api/licenses/parse` reads the number, issuer, holder and dates next to their labels; photos and scans are not read, and the file itself is not stored). Vendors get required documents by category, can only be
-  submitted for approval once every required document is in and unexpired, and are checked for
+  activated once every required document is in and unexpired (there is no approval step: anyone on the team can act), and are checked for
   duplicates (normalized name, similar name, tax ID, contact email, shared company email domain) when
   added and across the list. CRM & Data imports in three steps (choose or paste a
   file, map columns, review) and shows every rejected row by file line before anything changes; matching
@@ -53,12 +95,7 @@ browser and never uploaded.
   break the rules with the file line and reason, drops exact repeats, then builds grouped reports (dates by
   month) and exports CSV or a real `.xlsx` workbook (written with `fflate`; text is stored as plain text, so
   `=CMD()` can never run as a formula). Scheduled summaries show the next send date and a preview but nothing
-  is emailed until there is a backend. Requests suggests a category and priority
-  from fixed keyword rules (**not an AI service**, and it shows which words matched), holds anything that moves
-  money, changes access, deletes or commits the business until a person approves it, fills a request from a
-  pasted email (subject, sender, body; quoted replies dropped), creates one request per due recurring task
-  (never a pile after missed runs), shows a daily digest on screen, and exports an `.ics` calendar of due dates.
-  No email is sent or read and no calendar is connected: those need a backend. Tidy up files reads a folder chosen in the browser,
+  is emailed until there is a backend. Tidy up files reads a folder chosen in the browser,
   hashes every file there (SHA-256, files up to 50 MB, 500 MB in total) so identical files are found without
   uploading anything, and builds a plan: standardized names, duplicates moved to a review folder (never
   deleted), misplaced files moved to the right folder, and optionally everything sorted into suggested
@@ -72,13 +109,19 @@ browser and never uploaded.
   modules with industry and team-size recommendations, templates, existing data, automatic checks). Progress
   is saved in the browser after every change (`localStorage`, validated and cleaned on load, so damaged or
   hand-edited data is ignored). Finishing installs the chosen templates for real: forms appear in Forms &
-  Paperwork, recurring tasks in Requests and starter records in Licenses & Renewals. An unfinished or
+  Paperwork and starter records in Licenses & Renewals. An unfinished or
   edited setup installs nothing. Choices are per browser, not per account, until the database is connected.
-  Forms are built in the app, validated on submit,
-  routed to a named approver when required, and turned into a text document by filling `{{Field label}}`
-  placeholders in a single pass (submitted text is never re-expanded); submissions export to CSV.
-  Projects flag overdue tasks and repeating tasks
-  schedule their next occurrence when completed, with a plain-text status report. Invoices support recurring series ("Create
+  Forms are built in the app and **sent** to anyone: Send gives a link (`/form/<token>`, which carries the whole form, so
+  nothing is looked up or stored) and a ready-written email. The recipient fills it in on a plain public page and
+  emails their answers back; the answers include one `ADFLO-RESPONSE:` line, and **Add responses** reads any number of
+  pasted emails into the form's responses (repeats are skipped, answers for another or since-edited form are refused).
+  Responses are marked new or done. There are no approvals. A response can be turned into a text document by filling
+  `{{Field label}}` placeholders in a single pass (submitted text is never re-expanded); responses export to CSV. Until
+  records are stored in the database, answers return by email rather than appearing on their own.
+  Tasks opens on one list of every task, most urgent first, with a quick-add form; a task can stand alone
+  (kept in a built-in "General tasks" project that is never listed as a project) or belong to a project, and the Projects tab
+  groups bigger jobs. Overdue tasks are flagged and repeating tasks
+  schedule their next occurrence when completed, with a plain-text status report per project. Invoices support recurring series ("Create
   next" drafts the following invoice) and a CSV report whose cells are neutralised against spreadsheet formulas.
 
 ## Contents
@@ -375,3 +418,7 @@ abandoned uploads · per-user and per-address rate limiting.
 ## Security
 
 See [SECURITY_REVIEW.md](SECURITY_REVIEW.md) for the pre-release review: fixed findings, open items and the deployment requirements it depends on (notably: keep Supabase Auth "Confirm email" on, set `CRON_SECRET`, apply migration `…0006_dms_security_hardening.sql`).
+
+**Demo switch.** To click through the screens before the database is set up, set `CONTROL_DEMO=true` on the server (Vercel →
+Settings → Environment Variables, then redeploy). `/control` then opens without sign-in and shows only built-in sample data;
+it never reads or writes the database and refuses every change. Remove the variable before real clients use the app.

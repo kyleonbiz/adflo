@@ -12,7 +12,11 @@ export const projectFormSchema = z
     status: z.enum(PROJECT_STATUSES.map((s) => s.value) as [string, ...string[]]),
     startOn: day,
     dueOn: day,
+    owner: z.string().trim().max(80, "Keep it under 80 characters").default(""),
+    linkKind: z.enum(["none", "contact", "vendor"]).default("none"),
+    linkName: z.string().trim().max(120, "Keep it under 120 characters").default(""),
   })
+  .refine((v) => v.linkKind === "none" || v.linkName !== "", { path: ["linkName"], message: "Enter who it is for" })
   .refine((v) => v.dueOn >= v.startOn, { path: ["dueOn"], message: "Due date cannot be before the start date" });
 
 export type ProjectFormInput = z.input<typeof projectFormSchema>;

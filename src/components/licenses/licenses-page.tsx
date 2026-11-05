@@ -1,18 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CalendarClock, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, CalendarClock, CalendarPlus, FileText, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
+import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SplitButton } from "@/components/ui/split-button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { expiryText, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, riskTier, summarize, TIER_RANK, type RenewalInput } from "@/lib/licenses/logic";
+import { toIcs } from "@/lib/ics";
+import { downloadText } from "@/components/import/csv-source";
+import { compliance, expiryText, riskTier, TIER_RANK, licenseCalendarEvents, renewalSpend, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
+import { industryLicenses } from "@/lib/setup/industries";
+import { TemplateDialog } from "./template-dialog";
+import { draftTemplate, type LicenseDraft, type LicenseTemplate } from "@/lib/licenses/templates";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
 import type { LicenseFormValues } from "@/lib/licenses/validation";
 import { useSetupConfig } from "@/lib/setup/storage";
@@ -22,7 +30,6 @@ import { LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { LicenseFormDialog } from "./license-form-dialog";
 import { RenewDialog } from "./renew-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
-import { titleCase } from "@/lib/text";
 
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -34,15 +41,19 @@ const NOTICE_MS = 8000;
  * Licenses & Renewals. Records live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits.
  */
-export function LicensesPage({ preview, initialQuery = "" }: { preview?: string; initialQuery?: string }) {
+export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { preview?: string; initialQuery?: string; startNew?: boolean; draft?: LicenseDraft }) {
   const today = useToday();
+  const audit = useAudit();
+  const uploadInput = useRef<HTMLInputElement>(null);
   const [edited, setEdited] = useState<License[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("expiry");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [formFor, setFormFor] = useState<License | "new" | null>(null);
+  const [formFor, setFormFor] = useState<License | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<License | null>(null);
+  const [picking, setPicking] = useState(false);
+  const [template, setTemplate] = useState<LicenseTemplate | undefined>(() => (draft ? draftTemplate(draft) : undefined));
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [formSession, setFormSession] = useState(0); // new key per opening, so notes from a previous upload never linger
   const [renewing, setRenewing] = useState<License | null>(null);
@@ -52,7 +63,14 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
   const setup = useSetupConfig();
   // Starter records installed by Settings (only once setup is finished) sit alongside your own records.
   const licenses = useMemo(
-    () => edited ?? (today ? [...(e2eSeed<License>("licenses") ?? []), ...installedLicenses(setup?.completedOn ? setup.templates : [], today)] : []),
+    () => {
+      if (edited) return edited;
+      if (!today) return [];
+      const starters = installedLicenses(setup?.completedOn ? setup.templates : [], today);
+      // The industry's records skip any a starter template already brought in under the same name.
+      const industry = industryLicenses(setup, today).filter((l) => !starters.some((s) => s.name.toLowerCase() === l.name.toLowerCase()));
+      return [...(e2eSeed<License>("licenses") ?? []), ...starters, ...industry];
+    },
     [edited, today, setup],
   );
 
@@ -74,8 +92,9 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
     );
   }
 
-  const openForm = (target: License | "new", file: File | null = null) => {
+  const openForm = (target: License | "new", file: File | null = null, tpl?: LicenseTemplate) => {
     setUploadFile(file);
+    setTemplate(tpl);
     setFormSession((n) => n + 1);
     setFormFor(target);
   };
@@ -90,6 +109,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
   const confirmRenewal = (l: License, input: Required<RenewalInput>) => {
     const renewed = renewLicense(l, today, input);
     commit(licenses.map((x) => (x.id === l.id ? renewed : x)), `${l.name} renewed. New expiry ${formatDayLong(renewed.expiresOn)}.`);
+    audit("renewed", `${l.name}`, "Licenses", "/app/licenses");
     setRenewing(null);
   };
 
@@ -113,11 +133,13 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
     const category = values.category as License["category"];
     if (formFor && formFor !== "new") {
       patch(formFor.id, (x) => ({ ...x, ...fields, category, verifiedOn: today }));
+      audit("edited", `${values.name}`, "Licenses", "/app/licenses");
       say(`${values.name} updated.`);
     } else {
       const id = newId();
       const requiredDocuments = documents.map((label, i) => ({ id: `${id}-d${i}`, label, received: false }));
       setEdited([...licenses, { ...fields, category, id, stage: "not_started", requiredDocuments, verifiedOn: today }]);
+      audit("added", `${values.name}`, "Licenses", "/app/licenses");
       say(`${values.name} added.`);
     }
   };
@@ -130,6 +152,8 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
   const toggleFilter = (f: Filter) => setStatusFilter((cur) => (cur === f ? "all" : f));
 
   const summary = summarize(licenses, today);
+  const standing = compliance(licenses, today);
+  const spend = renewalSpend(licenses, today);
   const tasks = renewalTasks(licenses, today);
   const q = query.trim().toLowerCase();
   const matchesFilter = (l: License) => {
@@ -155,23 +179,30 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
           <p className="text-sm text-muted-foreground">Track expiry dates, collect required documents and stay ahead of every renewal.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
-            <label className="cursor-pointer">
-              <Upload /> Upload license
-              <input
-                type="file"
-                accept={LICENSE_UPLOAD_ACCEPT}
-                className="sr-only"
-                aria-label="Upload a license file to add"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (f) openForm("new", f);
-                }}
-              />
-            </label>
-          </Button>
-          <Button onClick={() => openForm("new")}><Plus /> Add license</Button>
+          <Button variant="outline" disabled={licenses.length === 0} onClick={() => downloadText(toIcs(licenseCalendarEvents(licenses, today), today), `renewals-${today}.ics`, "text/calendar")}><CalendarPlus /> Add to calendar</Button>
+          <input
+            ref={uploadInput}
+            type="file"
+            accept={LICENSE_UPLOAD_ACCEPT}
+            className="sr-only"
+            aria-label="Upload a license file to add"
+            tabIndex={-1}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) openForm("new", f);
+            }}
+          />
+          <SplitButton
+            onClick={() => openForm("new")}
+            menuLabel="More ways to add a license"
+            actions={[
+              { label: "From a template", icon: <FileText />, onSelect: () => setPicking(true) },
+              { label: "From a photo or scan", icon: <Upload />, onSelect: () => uploadInput.current?.click() },
+            ]}
+          >
+            <Plus /> Add license
+          </SplitButton>
         </div>
       </div>
 
@@ -210,6 +241,13 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
         <SummaryTile icon={AlertTriangle} label="Expired" value={summary.expired} tone="text-red-600" pressed={statusFilter === "expired"} onClick={() => toggleFilter("expired")} />
         <SummaryTile icon={FileWarning} label="Documents missing" value={summary.missingDocuments} tone="text-primary" pressed={statusFilter === "missing_docs"} onClick={() => toggleFilter("missing_docs")} />
       </section>
+
+      {licenses.length > 0 && (
+        <p className="text-sm text-muted-foreground" data-testid="compliance">
+          <span className="font-medium text-foreground">Compliance {standing.percent}%</span> · {standing.inGoodStanding} of {standing.total} in date with every document on file
+          {spend.count > 0 && <span data-testid="renewal-spend"> · {spend.count} to renew in 90 days{spend.dollars > 0 ? `, about $${spend.dollars.toLocaleString("en-US")}` : ""}{spend.unknown > 0 ? ` (${spend.unknown} without a fee entered)` : ""}</span>}
+        </p>
+      )}
 
       <section aria-labelledby="tasks-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
         <h2 id="tasks-heading" className="text-base font-semibold">Renewal tasks</h2>
@@ -263,7 +301,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
                 <SelectItem value="tier_critical">Critical Risk</SelectItem>
                 <SelectItem value="tier_warning">Warning Risk</SelectItem>
                 <SelectItem value="tier_safe">Safe</SelectItem>
-                {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
+                {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -272,7 +310,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
               <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{titleCase(c.label)}</SelectItem>)}
+                {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -288,14 +326,17 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
         </div>
 
         {visible.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            {licenses.length === 0 ? "No licenses yet. Add your first one to start tracking renewals." : (
-              <>
-                No licenses match these filters.{" "}
-                <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setQuery(""); setStatusFilter("all"); setCategoryFilter("all"); }}>Clear filters</button>
-              </>
-            )}
-          </div>
+          licenses.length === 0 ? (
+            <EmptyState icon={ShieldCheck} title="Track your first license" description="Add a license, permit, insurance policy or certification with its expiry date, and renewals are tracked for you." points={["Start from a template for your kind of business", "Reminders 60, 30 and 7 days out", "A checklist of documents each renewal needs"]}>
+              <Button onClick={() => setPicking(true)}>Start from a template</Button>
+              <Button variant="outline" onClick={() => openForm("new")}><Plus /> Add license</Button>
+            </EmptyState>
+          ) : (
+            <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
+              No licenses match these filters.{" "}
+              <button type="button" className="font-medium text-primary hover:underline" onClick={() => { setQuery(""); setStatusFilter("all"); setCategoryFilter("all"); }}>Clear filters</button>
+            </div>
+          )
         ) : (
           <ul className="space-y-3">
             {visible.map((l) => <LicenseCard key={l.id} license={l} all={licenses} today={today} actions={actions} focusToken={focus.id === l.id ? focus.token : 0} />)}
@@ -308,11 +349,14 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
         open={formFor !== null}
         license={formFor && formFor !== "new" ? formFor : undefined}
         others={licenses.filter((l) => !formFor || formFor === "new" || l.id !== formFor.id)}
+        template={template}
         today={today}
         initialFile={uploadFile}
         onOpenChange={(o) => { if (!o) { setFormFor(null); setUploadFile(null); } }}
         onSubmit={saveForm}
       />
+
+      <TemplateDialog open={picking} onOpenChange={setPicking} onPick={(tpl) => { setPicking(false); openForm("new", null, tpl); }} />
 
       <RenewDialog license={renewing} today={today} onCancel={() => setRenewing(null)} onConfirm={confirmRenewal} />
 
@@ -328,6 +372,7 @@ export function LicensesPage({ preview, initialQuery = "" }: { preview?: string;
               variant="destructive"
               onClick={() => {
                 if (deleting) {
+                  audit("deleted", `${deleting.name}`, "Licenses", "/app/licenses");
                   commit(licenses.filter((l) => l.id !== deleting.id).map((l) => (l.dependsOn?.includes(deleting.id) ? { ...l, dependsOn: l.dependsOn.filter((d) => d !== deleting.id) } : l)), `${deleting.name} deleted.`);
                 }
                 setDeleting(null);

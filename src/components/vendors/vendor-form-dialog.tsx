@@ -10,15 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { findDuplicates } from "@/lib/vendors/logic";
-import { VENDOR_CATEGORIES, type Vendor } from "@/lib/vendors/types";
+import { PAYMENT_TERMS, RISK_TIERS, VENDOR_CATEGORIES, type Vendor } from "@/lib/vendors/types";
 import { vendorFormSchema, type VendorFormInput, type VendorFormValues } from "@/lib/vendors/validation";
-import { titleCase } from "@/lib/text";
 
-function defaults(vendor?: Vendor): VendorFormInput {
-  if (!vendor) return { name: "", category: "Supplies", contactName: "", email: "", phone: "", taxId: "", notes: "" };
+/** Details an assistant draft can start a vendor with. Never a tax ID. */
+export interface VendorDraft { name?: string; contactName?: string; email?: string; phone?: string; category?: string }
+
+function defaults(vendor?: Vendor, draft?: VendorDraft): VendorFormInput {
+  if (!vendor) return { name: draft?.name ?? "", category: (draft?.category as VendorFormInput["category"]) ?? "Supplies", contactName: draft?.contactName ?? "", email: draft?.email ?? "", phone: draft?.phone ?? "", taxId: "", notes: "", riskTier: "standard", paymentTerms: "Net 30", contractEndsOn: "", annualSpend: "", rating: "" };
   return {
     name: vendor.name, category: vendor.category, contactName: vendor.contactName, email: vendor.email,
     phone: vendor.phone, taxId: vendor.taxId, notes: vendor.notes,
+    riskTier: vendor.riskTier ?? "standard", paymentTerms: vendor.paymentTerms ?? "Net 30", contractEndsOn: vendor.contractEndsOn ?? "",
+    annualSpend: vendor.annualSpend == null ? "" : String(vendor.annualSpend), rating: vendor.rating == null ? "" : String(vendor.rating),
   };
 }
 
@@ -33,16 +37,17 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
 }
 
 function VendorFormBody({
-  vendor, existing, onOpenChange, onSubmit,
+  vendor, draft, existing, onOpenChange, onSubmit,
 }: {
   vendor?: Vendor;
+  draft?: VendorDraft;
   existing: Vendor[];
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: VendorFormValues) => void;
 }) {
   const { register, control, handleSubmit, formState } = useForm<VendorFormInput, unknown, VendorFormValues>({
     resolver: zodResolver(vendorFormSchema),
-    defaultValues: defaults(vendor),
+    defaultValues: defaults(vendor, draft),
   });
   const { errors } = formState;
   const [matches, setMatches] = useState<ReturnType<typeof findDuplicates>>([]);
@@ -87,7 +92,7 @@ function VendorFormBody({
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="vendor-category"><SelectValue /></SelectTrigger>
-                    <SelectContent>{VENDOR_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{titleCase(c)}</SelectItem>)}</SelectContent>
+                    <SelectContent>{VENDOR_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 )}
               />
@@ -103,6 +108,39 @@ function VendorFormBody({
             </Field>
             <Field id="vendor-taxId" label="Tax ID (EIN, Optional)" error={errors.taxId?.message}>
               <Input id="vendor-taxId" autoComplete="off" placeholder="12-3456789" {...invalid("taxId")} {...register("taxId", { onChange: () => setMatches([]) })} />
+            </Field>
+            <Field id="vendor-riskTier" label="How much you rely on them" error={errors.riskTier?.message}>
+              <Controller control={control} name="riskTier" render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="vendor-riskTier" aria-label="How much you rely on them"><SelectValue /></SelectTrigger>
+                  <SelectContent>{RISK_TIERS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
+                </Select>
+              )} />
+            </Field>
+            <Field id="vendor-paymentTerms" label="Payment terms" error={errors.paymentTerms?.message}>
+              <Controller control={control} name="paymentTerms" render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="vendor-paymentTerms" aria-label="Payment terms"><SelectValue /></SelectTrigger>
+                  <SelectContent>{PAYMENT_TERMS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                </Select>
+              )} />
+            </Field>
+            <Field id="vendor-contractEndsOn" label="Contract ends (optional)" error={errors.contractEndsOn?.message}>
+              <Input id="vendor-contractEndsOn" type="date" {...invalid("contractEndsOn")} {...register("contractEndsOn")} />
+            </Field>
+            <Field id="vendor-annualSpend" label="Spend per year in dollars (optional)" error={errors.annualSpend?.message}>
+              <Input id="vendor-annualSpend" inputMode="numeric" autoComplete="off" placeholder="24000" {...invalid("annualSpend")} {...register("annualSpend")} />
+            </Field>
+            <Field id="vendor-rating" label="Your rating (optional)" error={errors.rating?.message}>
+              <Controller control={control} name="rating" render={({ field }) => (
+                <Select value={field.value || "none"} onValueChange={(v) => field.onChange(v === "none" ? "" : v)}>
+                  <SelectTrigger id="vendor-rating" aria-label="Your rating"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Not rated</SelectItem>
+                    {[5, 4, 3, 2, 1].map((n) => <SelectItem key={n} value={String(n)}>{n} of 5</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )} />
             </Field>
             <div className="sm:col-span-2">
               <Field id="vendor-notes" label="Notes" error={errors.notes?.message}>
@@ -135,10 +173,11 @@ function VendorFormBody({
 
 /** Vendor intake form. Matching vendors are shown before saving; the user can still save anyway. */
 export function VendorFormDialog({
-  open, vendor, existing, onOpenChange, onSubmit,
+  open, vendor, draft, existing, onOpenChange, onSubmit,
 }: {
   open: boolean;
   vendor?: Vendor;
+  draft?: VendorDraft;
   existing: Vendor[];
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: VendorFormValues) => void;
@@ -146,7 +185,7 @@ export function VendorFormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
-        {open && <VendorFormBody vendor={vendor} existing={existing} onOpenChange={onOpenChange} onSubmit={onSubmit} />}
+        {open && <VendorFormBody vendor={vendor} draft={draft} existing={existing} onOpenChange={onOpenChange} onSubmit={onSubmit} />}
       </DialogContent>
     </Dialog>
   );

@@ -10,29 +10,36 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addMonths, isDay } from "@/lib/dates";
+import type { LicenseTemplate } from "@/lib/licenses/templates";
 import { needsReview } from "@/lib/licenses/logic";
 import { DEFAULT_DOCUMENTS, LICENSE_CATEGORIES, type License, type LicenseCategory } from "@/lib/licenses/types";
 import { readLicenseFile, LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { cn } from "@/lib/utils";
 import { licenseFormSchema, type LicenseFormInput, type LicenseFormValues } from "@/lib/licenses/validation";
-import { titleCase } from "@/lib/text";
 
 const REMINDER_PRESETS = [90, 60, 30, 14, 7];
 
 const parseDays = (value: string) => value.split(",").map((p) => p.trim()).filter(Boolean).map(Number);
 
-function defaults(license: License | undefined, today: string): LicenseFormInput {
+function defaults(license: License | undefined, today: string, template?: LicenseTemplate): LicenseFormInput {
   if (license) {
     return {
       name: license.name, category: license.category, issuer: license.issuer, number: license.number,
       holder: license.holder, issuedOn: license.issuedOn, expiresOn: license.expiresOn,
-      renewalTermMonths: String(license.renewalTermMonths), reminderDays: license.reminderDays.join(", "),
+      renewalTermMonths: String(license.renewalTermMonths), renewalCost: license.renewalCost == null ? "" : String(license.renewalCost), reminderDays: license.reminderDays.join(", "),
       notes: license.notes, documents: "", reviewed: false, dependsOn: license.dependsOn ?? [],
+    };
+  }
+  if (template) {
+    return {
+      name: template.name, category: template.category, issuer: template.issuer, number: "", holder: "", issuedOn: today,
+      expiresOn: addMonths(today, template.termMonths), renewalTermMonths: String(template.termMonths), renewalCost: "",
+      reminderDays: template.reminderDays.join(", "), notes: template.notes, documents: template.documents.join("\n"), reviewed: false,
     };
   }
   return {
     name: "", category: "business", issuer: "", number: "", holder: "", issuedOn: today,
-    expiresOn: addMonths(today, 12), renewalTermMonths: "12", reminderDays: "60, 30, 7", notes: "",
+    expiresOn: addMonths(today, 12), renewalTermMonths: "12", renewalCost: "", reminderDays: "60, 30, 7", notes: "",
     documents: DEFAULT_DOCUMENTS.business.join("\n"), reviewed: false, dependsOn: [],
   };
 }
@@ -49,10 +56,12 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
 
 /** Add or edit a license. `license` present means edit. */
 export function LicenseFormDialog({
-  open, license, others = [], today, initialFile, onOpenChange, onSubmit,
+  open, license, template, others = [], today, initialFile, onOpenChange, onSubmit,
 }: {
   open: boolean;
   license?: License;
+  /** Adding from a template: its details prefill the form. */
+  template?: LicenseTemplate;
   /** The other licenses this one could depend on. */
   others?: License[];
   /** A file chosen before the dialog opened; it is read as soon as the dialog shows. */
@@ -63,14 +72,14 @@ export function LicenseFormDialog({
 }) {
   const { register, control, handleSubmit, reset, formState, setValue } = useForm<LicenseFormInput, unknown, LicenseFormValues>({
     resolver: zodResolver(licenseFormSchema),
-    defaultValues: defaults(license, today),
+    defaultValues: defaults(license, today, template),
   });
   const { errors, dirtyFields } = formState;
   const [issuedOn, term, category, reminderDays] = useWatch({ control, name: ["issuedOn", "renewalTermMonths", "category", "reminderDays"] });
 
   useEffect(() => {
-    if (open) { reset(defaults(license, today)); }
-  }, [open, license, today, reset]);
+    if (open) { reset(defaults(license, today, template)); }
+  }, [open, license, template, today, reset]);
 
   // Adding: until the user types their own expiry, keep it one renewal term after the issue date.
   useEffect(() => {
@@ -81,9 +90,9 @@ export function LicenseFormDialog({
 
   // Adding: suggest the documents this kind of license usually needs, until the user edits the list.
   useEffect(() => {
-    if (!open || license || dirtyFields.documents) return;
+    if (!open || license || template || dirtyFields.documents) return;
     setValue("documents", DEFAULT_DOCUMENTS[category as LicenseCategory]?.join("\n") ?? "");
-  }, [open, license, category, dirtyFields.documents, setValue]);
+  }, [open, license, template, category, dirtyFields.documents, setValue]);
 
   const chosen = new Set(parseDays(reminderDays ?? ""));
   const toggleReminder = (days: number) => {
@@ -185,7 +194,7 @@ export function LicenseFormDialog({
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger id="lic-category"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{titleCase(c.label)}</SelectItem>)}
+                      {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 )}
@@ -205,6 +214,9 @@ export function LicenseFormDialog({
             </Field>
             <Field id="lic-expiresOn" label="Expires On" error={errors.expiresOn?.message}>
               <Input id="lic-expiresOn" type="date" {...invalid("expiresOn")} {...register("expiresOn")} />
+            </Field>
+            <Field id="lic-renewalCost" label="Renewal fee in dollars (optional)" error={errors.renewalCost?.message}>
+              <Input id="lic-renewalCost" inputMode="numeric" placeholder="250" {...invalid("renewalCost")} {...register("renewalCost")} />
             </Field>
             <Field id="lic-renewalTermMonths" label="Renewal Term (Months)" error={errors.renewalTermMonths?.message}>
               <Input id="lic-renewalTermMonths" inputMode="numeric" {...invalid("renewalTermMonths")} {...register("renewalTermMonths")} />

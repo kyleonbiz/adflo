@@ -1,15 +1,20 @@
 import { ExtractError } from "./errors";
 import type { ExtractLimits } from "./limits";
+import { ocrImage } from "./ocr";
+
+/** Scanned PDFs are read page by page, so only the first few are tried. */
+const MAX_OCR_PAGES = 3;
 
 /**
- * Text layer only: there is no OCR, so scanned PDFs yield no text and are
- * reported as such. PDF.js is loaded lazily and run with script evaluation,
+ * Reads the text layer. A scan has none, so with `ocr` on its first pages are
+ * drawn and read like photos; with it off the file is reported as having no text. PDF.js is loaded lazily and run with script evaluation,
  * XFA forms and font loading switched off.
  */
 export async function extractPdf(
   bytes: Uint8Array,
   limits: ExtractLimits,
   check: () => void,
+  ocr = false,
 ): Promise<{ text: string; truncatedPages: boolean }> {
   const { getDocumentProxy } = await import("unpdf");
   let pdf: Awaited<ReturnType<typeof getDocumentProxy>>;
@@ -39,6 +44,18 @@ export async function extractPdf(
       out += "\n";
       page.cleanup();
       if (out.length > limits.maxTextChars * 2) break;
+    }
+    if (ocr && !/[\p{L}\p{N}]/u.test(out)) {
+      // No text layer: this is a scan. Draw the first pages and read them like photos.
+      const { renderPageAsImage } = await import("unpdf");
+      const scanned = Math.min(pdf.numPages, MAX_OCR_PAGES);
+      let read = "";
+      for (let i = 1; i <= scanned; i++) {
+        check();
+        const png = await renderPageAsImage(pdf, i, { canvasImport: () => import("@napi-rs/canvas"), scale: 2 });
+        read += (await ocrImage(new Uint8Array(png), check)) + "\n";
+      }
+      return { text: read, truncatedPages: pdf.numPages > scanned };
     }
     return { text: out, truncatedPages: pdf.numPages > pages };
   } catch (e) {

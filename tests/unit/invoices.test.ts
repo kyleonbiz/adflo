@@ -303,7 +303,7 @@ describe("invoice check settings", () => {
     expect(parseSettings(raw).invoiceChecks).toEqual({ duplicates: true, unusualAmount: false, variancePct: 25, addToContacts: false });
   });
   it("builds a link that starts a contact from the client", () => {
-    expect(addContactPath({ client: " Acme & Sons ", clientEmail: "bill@acme.com" })).toBe("/app/contacts?new=1&name=Acme+%26+Sons&email=bill%40acme.com");
-    expect(addContactPath({ client: "Acme", clientEmail: "" })).toBe("/app/contacts?new=1&name=Acme");
+    expect(addContactPath({ client: " Acme & Sons ", clientEmail: "bill@acme.com" })).toBe("/app/contacts?add=1&name=Acme+%26+Sons&email=bill%40acme.com");
+    expect(addContactPath({ client: "Acme", clientEmail: "" })).toBe("/app/contacts?add=1&name=Acme");
   });
 });

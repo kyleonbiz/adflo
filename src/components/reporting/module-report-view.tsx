@@ -3,15 +3,16 @@
 import Link from "next/link";
 import { Download, FileSpreadsheet, SearchX } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
+import { IconSquare } from "@/components/modules/icon-square";
 import { MODULE_ICONS } from "@/components/modules/module-icons";
-import { SummaryTile } from "@/components/modules/summary-tile";
 import { Button } from "@/components/ui/button";
+import { ExportMenu } from "@/components/ui/split-button";
 import { toCsv } from "@/lib/csv";
 import { datasetToXlsx } from "@/lib/datasets/xlsx";
 import type { ModuleReport, ReportTone } from "@/lib/reporting/logic";
 import { ReportBars } from "./report-bars";
 
-const TONE: Record<ReportTone, string> = { neutral: "text-primary", warning: "text-amber-600", danger: "text-red-600" };
+const TONE: Record<ReportTone, string> = { neutral: "", warning: "text-amber-600", danger: "text-red-600" };
 const PREVIEW_ROWS = 50;
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -48,23 +49,28 @@ export function ModuleReportView({ report, today }: { report: ModuleReport; toda
     <div className="space-y-5" data-testid="module-report">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
-          {Icon && <Icon className="size-5 text-primary" aria-hidden />} {report.name}
+          {Icon && <IconSquare icon={Icon} size="sm" />} {report.name}
           <span className="text-sm font-normal text-muted-foreground">{report.count} {report.noun}</span>
         </h2>
         <div className="flex flex-wrap gap-2">
           <Button asChild size="sm" variant="outline"><Link href={report.href}>Open {report.name}</Link></Button>
-          <Button size="sm" variant="outline" onClick={() => downloadText(toCsv([report.table.headers, ...report.table.rows]), `${file}.csv`)}><Download /> Export CSV</Button>
-          <Button size="sm" variant="outline" onClick={() => downloadXlsx(report, `${file}.xlsx`)}><FileSpreadsheet /> Export Excel</Button>
+          <ExportMenu actions={[
+            { label: "CSV", icon: <Download />, onSelect: () => downloadText(toCsv([report.table.headers, ...report.table.rows]), `${file}.csv`) },
+            { label: "Excel", icon: <FileSpreadsheet />, onSelect: () => downloadXlsx(report, `${file}.xlsx`) },
+          ]} />
         </div>
       </div>
 
-      <section aria-label="Key numbers" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {report.metrics.map((m) => (
-          <div key={m.label} data-testid="report-metric">
-            <SummaryTile icon={Icon} label={m.label} value={m.value} tone={TONE[m.tone]} />
-            {m.note && <p className="mt-1 px-1 text-xs text-muted-foreground">{m.note}</p>}
-          </div>
-        ))}
+      <section aria-label="Key numbers" className="rounded-2xl border bg-card shadow-panel">
+        <dl className="grid grid-cols-2 lg:grid-cols-4 [&>div]:border-b [&>div]:p-4 lg:[&>div]:border-b-0 lg:[&>div:not(:first-child)]:border-l [&>div:nth-child(even)]:border-l lg:[&>div:nth-child(even)]:border-l">
+          {report.metrics.map((m) => (
+            <div key={m.label} data-testid="report-metric" className="min-w-0">
+              <dt className="truncate text-xs text-muted-foreground" title={m.label}>{m.label}</dt>
+              <dd className={`mt-0.5 break-words text-2xl font-semibold tabular-nums ${TONE[m.tone]}`}>{m.value}</dd>
+              {m.note && <p className="mt-1 text-xs text-muted-foreground">{m.note}</p>}
+            </div>
+          ))}
+        </dl>
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">

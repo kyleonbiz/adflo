@@ -1,6 +1,7 @@
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 import { AVAILABLE_MODULE_IDS, IMPORTABLE, canFinish, recommendModules, runSetupChecks, setupScore } from "@/lib/setup/logic";
 import { templatesFor } from "@/lib/setup/templates";
+import { DRAFT_SERVICES } from "./guardrails";
 import { INDUSTRIES, TEAM_SIZES, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
 
 export interface Link { label: string; href: string }
@@ -27,7 +28,7 @@ export function greeting(config: SetupConfig): Turn {
   }
   return {
     role: "assistant",
-    text: "Hi, I am the AdFlo assistant. I can set up your business: ask a few questions, pick the right services, install their starter templates and check the result. Where do you want to start?",
+    text: "Hi, I am Addy, the AdFlo assistant. I can set up your business: ask a few questions, pick the right services, install their starter templates and check the result. Where do you want to start?",
     chips: MAIN_CHIPS,
   };
 }
@@ -76,13 +77,25 @@ function status(config: SetupConfig): Reply {
   return { turns: [{ role: "assistant", text, links, chips: config.completedOn ? undefined : [DEPLOY] }], config, pending: null };
 }
 
-const HELP_TEXT = "I can: set up your business step by step, pick services for your industry and team size, install starter templates, and tell you what is left to do. I follow fixed rules for now, so use the buttons or plain phrases such as \"set up\", \"status\" or \"help\".";
+const HELP_TEXT = "I can: set up your business step by step, pick services for your industry and team size, install starter templates, tell you what is left to do, and open a new invoice, contact, vendor, project or license form. I can also add something to your to-do list for today, set a reminder (for example, remind me to renew the permit in 3 days) and tick off a to-do, and each of those has an Undo. Apart from those, I only open forms: you fill them in and save, and I never delete, approve, pay, send or sign anything. I follow fixed rules for now, so use the buttons or plain phrases such as \"set up\", \"status\", \"new invoice\" or \"help\".";
 
 /** Matches an answer to one of the allowed choices, ignoring case and punctuation. */
 function choose<T extends string>(input: string, options: readonly T[]): T | undefined {
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9+]/g, "");
   const n = norm(input);
   return n ? options.find((o) => norm(o) === n) ?? options.find((o) => norm(o).startsWith(n) && n.length >= 3) : undefined;
+}
+
+/** "New invoice", "add a contact": opens that service's blank form. The assistant only opens it; the owner fills in and saves. */
+function draftRequest(lower: string): Turn | null {
+  if (!/\b(new|add|create|draft|make|start)\b/.test(lower)) return null;
+  const hit = DRAFT_SERVICES.find((s) => new RegExp(`\\b${{ invoices: "invoice", admin: "request", contacts: "contact", vendors: "vendor", projects: "project", licenses: "licen[sc]e" }[s.id]}s?\\b`).test(lower));
+  if (!hit) return null;
+  return {
+    role: "assistant",
+    text: `I can open ${hit.noun} for you. I only open the form: you fill it in and press save, so nothing is changed until you do.`,
+    links: [{ label: `Open ${hit.noun}`, href: `${hit.path}?${hit.open}` }],
+  };
 }
 
 /** One step of the conversation. Pure: the caller keeps `config` and `pending` between turns. */
@@ -115,6 +128,8 @@ export function respond(config: SetupConfig, pending: Pending, input: string, to
     return wrap({ turns: [{ role: "assistant", text: "Shall I deploy these services?", chips: [DEPLOY, "Not yet"] }], config, pending });
   }
 
+  const draft = draftRequest(lower);
+  if (draft) return wrap({ turns: [draft], config, pending: null });
   if (/\b(set ?up|start|deploy|onboard|begin)\b/.test(lower)) return wrap(askNext(config));
   if (/\b(status|left|todo|to do|progress|check|health|next)\b/.test(lower)) return wrap(status(config));
   return wrap({ turns: [{ role: "assistant", text: HELP_TEXT, chips: MAIN_CHIPS }], config, pending: null });

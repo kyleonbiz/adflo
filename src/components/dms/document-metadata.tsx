@@ -17,7 +17,6 @@ import { formatBytes } from "@/lib/dms/validation";
 import { formatDate, formatDateTime } from "./format";
 import { fileKindOf } from "./file-kind";
 import { contentStatusLabel } from "./snippet";
-import { titleCase } from "@/lib/text";
 
 export function SectionLabel({ children, id }: { children: React.ReactNode; id?: string }) {
   return (
@@ -90,7 +89,7 @@ export function DocumentMetadata({
               <SelectContent>
                 {CATEGORIES.map((c) => (
                   <SelectItem key={c} value={c}>
-                    {titleCase(CATEGORY_LABELS[c])}
+                    {CATEGORY_LABELS[c]}
                   </SelectItem>
                 ))}
               </SelectContent>

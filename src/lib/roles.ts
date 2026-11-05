@@ -20,7 +20,7 @@ const MODULE_ACCESS: Record<Role, readonly string[] | undefined> = {
 /** Settings tabs each role can open. `undefined` means all of them. */
 const SETTINGS_ACCESS: Record<Role, readonly string[] | undefined> = {
   owner: undefined,
-  admin: ["profile", "notifications", "invoice-checks", "appearance", "setup"],
+  admin: ["profile", "notifications", "invoice-checks", "setup"],
   contributor: [],
 };
 

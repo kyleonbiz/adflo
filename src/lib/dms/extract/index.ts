@@ -1,6 +1,7 @@
 import { ExtractError, type ExtractReason } from "./errors";
 import { DEFAULT_EXTRACT_LIMITS, type ExtractLimits } from "./limits";
 import { extractDocx, extractPptx, extractXlsx } from "./office";
+import { isOcrFile, ocrImage } from "./ocr";
 import { extractPdf } from "./pdf";
 import { decodeText, normalizeText } from "./text";
 
@@ -17,6 +18,8 @@ export interface ExtractInput {
   bytes: Uint8Array;
   fileName: string;
   mimeType?: string;
+  /** Read the text in photos and scans (slower: each image takes a second or more). Off unless asked for. */
+  ocr?: boolean;
 }
 
 const extOf = (name: string) => {
@@ -27,8 +30,8 @@ const extOf = (name: string) => {
 /** File types we can read. Everything else is reported as unsupported, never guessed at. */
 export const EXTRACTABLE_EXTENSIONS = ["pdf", "docx", "xlsx", "pptx", "csv", "txt"] as const;
 
-export function canExtract(fileName: string): boolean {
-  return (EXTRACTABLE_EXTENSIONS as readonly string[]).includes(extOf(fileName));
+export function canExtract(fileName: string, ocr = false): boolean {
+  return (EXTRACTABLE_EXTENSIONS as readonly string[]).includes(extOf(fileName)) || (ocr && isOcrFile(fileName));
 }
 
 function deadline(ms: number) {
@@ -47,7 +50,7 @@ export async function extractText(
   limits: ExtractLimits = DEFAULT_EXTRACT_LIMITS,
 ): Promise<ExtractResult> {
   const ext = extOf(input.fileName);
-  if (!canExtract(input.fileName)) return { status: "unsupported", reason: "unsupported_type", text: "" };
+  if (!canExtract(input.fileName, input.ocr)) return { status: "unsupported", reason: "unsupported_type", text: "" };
   if (input.bytes.length > limits.maxInputBytes) return { status: "unsupported", reason: "too_large", text: "" };
 
   const check = deadline(limits.timeoutMs);
@@ -58,6 +61,12 @@ export async function extractText(
 
   const work = async (): Promise<{ raw: string; partial: boolean }> => {
     switch (ext) {
+      case "png":
+      case "jpg":
+      case "jpeg":
+      case "webp":
+      case "bmp":
+        return { raw: await ocrImage(input.bytes, check), partial: false };
       case "csv":
       case "txt":
         return { raw: decodeText(input.bytes.subarray(0, limits.maxTextChars * 4)), partial: false };
@@ -68,7 +77,7 @@ export async function extractText(
       case "pptx":
         return { raw: extractPptx(input.bytes, limits, check), partial: false };
       default: {
-        const r = await extractPdf(input.bytes, limits, check);
+        const r = await extractPdf(input.bytes, limits, check, input.ocr);
         return { raw: r.text, partial: r.truncatedPages };
       }
     }

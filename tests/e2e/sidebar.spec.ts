@@ -2,8 +2,8 @@ import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 const NAMES = [
-  "Home", "AI Assistant", "Documents", "Invoices", "Licenses & Renewals", "Vendors", "CRM & Data", "Projects", "Forms & Paperwork",
-  "Reporting", "Requests", "Settings",
+  "Home", "Addy", "Documents", "Invoices", "Licenses & Renewals", "Contacts", "Tasks", "Forms & Paperwork",
+  "Reporting", "Calendar", "Activity", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
 
@@ -30,17 +30,19 @@ test.describe("module sidebar on a wide screen", () => {
 
   test("highlights the current module and moves the highlight when you navigate", async ({ page }) => {
     await page.goto("/app/projects");
-    const projects = nav(page).getByRole("link", { name: "Projects", exact: true });
+    const projects = nav(page).getByRole("link", { name: "Tasks", exact: true });
     await expect(projects).toHaveAttribute("aria-current", "page");
     await expect(nav(page).locator("[aria-current=page]")).toHaveCount(1);
     const bg = (l: ReturnType<typeof nav>) => l.evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(await bg(projects)).not.toBe("rgba(0, 0, 0, 0)");
-    expect(await bg(nav(page).getByRole("link", { name: "Vendors", exact: true }))).toBe("rgba(0, 0, 0, 0)");
+    expect(await bg(nav(page).getByRole("link", { name: "Contacts", exact: true }))).toBe("rgba(0, 0, 0, 0)");
 
-    await nav(page).getByRole("link", { name: "Vendors", exact: true }).click();
+    await nav(page).getByRole("link", { name: "Contacts", exact: true }).click();
+    await expect(page).toHaveURL(/\/app\/contacts$/);
+    await page.getByRole("navigation", { name: "Contacts" }).getByRole("link", { name: "Vendors" }).click();
     await expect(page).toHaveURL(/\/app\/vendors$/);
     await expect(page.getByRole("heading", { level: 1, name: "Vendors" })).toBeVisible();
-    await expect(nav(page).getByRole("link", { name: "Vendors", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(nav(page).getByRole("link", { name: "Contacts", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(projects).not.toHaveAttribute("aria-current", "page");
   });
 

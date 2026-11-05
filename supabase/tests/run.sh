@@ -25,3 +25,8 @@ for f in "$HERE"/../migrations/*.sql; do
   RUN "$PSQL -d dms -f '$f'"
 done
 RUN "$PSQL -d dms -f '$HERE/rls.sql'" 2>&1 | grep -E "PASS|FAIL|ALL RLS|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/control.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CONTROL|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/control2.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CONTROL2|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/control3.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CONTROL3|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/control4.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CONTROL4|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/control5.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CONTROL5|ERROR" | sed 's/^psql:[^ ]* //'

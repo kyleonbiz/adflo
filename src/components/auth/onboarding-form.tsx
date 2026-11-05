@@ -48,7 +48,7 @@ export function OnboardingForm({ displayName, email }: { displayName: string; em
           {error}
         </p>
       )}
-      <Button type="submit" variant="gradient" className="w-full" disabled={formState.isSubmitting}>
+      <Button type="submit" className="w-full" disabled={formState.isSubmitting}>
         {formState.isSubmitting ? "Creating…" : "Create workspace"}
       </Button>
     </form>

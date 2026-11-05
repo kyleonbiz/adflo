@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  allTasksDone, completeTask, overdueTasks, progress, projectHealth, projectsReport, reopenTask, sortProjects, sortTasks, summarize, taskAlerts, taskState,
+  GENERAL_PROJECT_ID, allTasksDone, completeTask, generalProject, isGeneral, overdueTasks, progress, projectHealth, projectsReport, reopenTask, sortProjects, sortTasks, summarize, taskAlerts, taskList, taskState,
 } from "@/lib/projects/logic";
 import { sampleProjects } from "../support/projects-sample-data";
 import { PROJECT_TEMPLATES, buildTasks, templateById, templateDueOn } from "@/lib/projects/templates";
@@ -220,5 +220,43 @@ describe("project templates", () => {
     const tasks = buildTasks(t.tasks, "2026-11-01", (() => { let i = 0; return () => `n${++i}`; })());
     const weekly = tasks.find((x) => x.repeat === "weekly")!;
     expect(completeTask(tasks, weekly.id, "2026-11-08", "next").find((x) => x.id === "next")!.dueOn).toBe("2026-11-15");
+  });
+});
+
+describe("taskList", () => {
+  const all = sampleProjects(TODAY);
+  it("flattens open tasks across projects, most urgent first, undated last", () => {
+    expect(taskList(all, TODAY).map((i) => [i.task.title, i.state])).toEqual([
+      ["Import vendor list", "overdue"],
+      ["Submit city permit renewal", "due_today"],
+      ["Configure invoice templates", "due_soon"],
+      ["Weekly check-in", "due_soon"],
+      ["Scope the cleanup", "open"],
+      ["Export contact list", "open"],
+      ["Train staff", "open"],
+      ["Update insurance certificate", "unscheduled"],
+    ]);
+  });
+  it("skips tasks in on-hold or completed projects, and shows finished tasks only on request", () => {
+    const held = all.map((p) => (p.id === "p-1" ? { ...p, status: "on_hold" as const } : p));
+    expect(taskList(held, TODAY).map((i) => i.task.title)).not.toContain("Import vendor list");
+    expect(taskList(all, TODAY).every((i) => !i.task.done)).toBe(true);
+    const withDone = taskList(all, TODAY, true);
+    expect(withDone.filter((i) => i.task.done).length).toBe(5);
+    const firstDone = withDone.findIndex((i) => i.task.done);
+    expect(withDone.slice(firstDone).every((i) => i.task.done)).toBe(true); // finished tasks come last
+  });
+});
+
+describe("the General tasks project", () => {
+  it("holds standalone tasks without counting as a project", () => {
+    const general = { ...generalProject(TODAY), tasks: [task({ id: "g1", dueOn: "2026-10-01" })] };
+    expect(isGeneral(general)).toBe(true);
+    expect(general.id).toBe(GENERAL_PROJECT_ID);
+    const before = summarize(sampleProjects(TODAY), TODAY);
+    const after = summarize([...sampleProjects(TODAY), general], TODAY);
+    expect(after.activeProjects).toBe(before.activeProjects);
+    expect(after.openTasks).toBe(before.openTasks + 1);
+    expect(taskList([general], TODAY).map((i) => i.task.id)).toEqual(["g1"]);
   });
 });

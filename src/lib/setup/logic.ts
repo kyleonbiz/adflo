@@ -7,18 +7,17 @@ export interface Recommendation { id: string; reason: string }
 const BASE: Recommendation[] = [
   { id: "documents", reason: "Keep every file in one searchable place." },
   { id: "invoices", reason: "Track what you are owed and chase late payments." },
-  { id: "admin", reason: "One inbox for requests, with approval for anything risky." },
 ];
 
 const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
   "Professional services": [
     { id: "projects", reason: "Client work needs tasks, deadlines and status reports." },
-    { id: "forms", reason: "Intake forms and approvals for new clients." },
+    { id: "forms", reason: "Intake forms for new clients." },
     { id: "crm", reason: "Keep client contacts clean and de-duplicated." },
     { id: "licenses", reason: "Professional licenses and insurance expire." },
   ],
   "Retail & e-commerce": [
-    { id: "vendors", reason: "Suppliers need documents and approval." },
+    { id: "vendors", reason: "Suppliers need their documents collected." },
     { id: "reporting", reason: "Turn sales exports into reports." },
     { id: "licenses", reason: "Sales tax registration and permits renew." },
     { id: "crm", reason: "Customer lists need cleaning." },
@@ -52,17 +51,71 @@ const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
     { id: "licenses", reason: "Agent and brokerage licenses renew." },
     { id: "projects", reason: "Listings and renovations." },
   ],
+  "Auto & fleet": [
+    { id: "licenses", reason: "Registrations, tags, inspections and insurance expire vehicle by vehicle." },
+    { id: "vendors", reason: "Parts suppliers and repair shops need insurance on file." },
+    { id: "forms", reason: "Inspection checklists and accident reports." },
+    { id: "projects", reason: "Fleet audits and service schedules." },
+  ],
+  "Home services": [
+    { id: "licenses", reason: "Contractor licenses, bonds and insurance must stay current." },
+    { id: "projects", reason: "Every job has steps and a finish date." },
+    { id: "vendors", reason: "Subcontractors and suppliers." },
+    { id: "crm", reason: "Customers and repeat clients." },
+  ],
+  "Beauty & wellness": [
+    { id: "licenses", reason: "Individual licenses and the shop permit renew on different dates." },
+    { id: "forms", reason: "Consent, allergy and patch-test records." },
+    { id: "crm", reason: "Clients and their last visit." },
+    { id: "vendors", reason: "Product suppliers." },
+  ],
+  Legal: [
+    { id: "licenses", reason: "Bar admissions, CLE hours and malpractice cover renew." },
+    { id: "forms", reason: "Matter intake and conflict checks." },
+    { id: "crm", reason: "Clients and opposing contacts." },
+    { id: "projects", reason: "Matters have deadlines." },
+  ],
+  "Accounting & tax": [
+    { id: "projects", reason: "Tax season is a deadline-driven project for every client." },
+    { id: "forms", reason: "Engagement letters and document checklists." },
+    { id: "licenses", reason: "CPA license, PTIN and CPE hours renew." },
+    { id: "crm", reason: "Clients and their filing history." },
+  ],
+  "Trucking & logistics": [
+    { id: "licenses", reason: "USDOT, driver licenses, medical cards and insurance expire." },
+    { id: "vendors", reason: "Carriers and repair vendors need insurance on file." },
+    { id: "forms", reason: "Inspection and accident paperwork." },
+    { id: "reporting", reason: "Cost and compliance reports." },
+  ],
+  "Education & childcare": [
+    { id: "licenses", reason: "Facility license, background checks and first-aid cards renew." },
+    { id: "forms", reason: "Enrollment, pickup authorization and incident reports." },
+    { id: "crm", reason: "Families and emergency contacts." },
+    { id: "projects", reason: "Enrollment periods and inspections." },
+  ],
+  Manufacturing: [
+    { id: "licenses", reason: "Environmental, fire and safety permits renew." },
+    { id: "vendors", reason: "Suppliers need quality and insurance documents." },
+    { id: "forms", reason: "Nonconformance and maintenance logs." },
+    { id: "projects", reason: "Audits and line changes." },
+  ],
+  "Tech & agency": [
+    { id: "projects", reason: "Client work runs on projects and milestones." },
+    { id: "crm", reason: "Clients and leads." },
+    { id: "forms", reason: "Intake and sign-off." },
+    { id: "vendors", reason: "Contractors and software vendors." },
+  ],
   Other: [
     { id: "crm", reason: "Keep your contacts in one clean list." },
     { id: "projects", reason: "Plan work with tasks and deadlines." },
   ],
 };
 
-/** Which modules to suggest, with a reason each. Bigger teams also get forms, for approvals. */
+/** Which modules to suggest, with a reason each. Bigger teams also get forms, for standard paperwork. */
 export function recommendModules(industry: Industry | "", teamSize: TeamSize | ""): Recommendation[] {
   const list = [...BASE, ...(industry ? BY_INDUSTRY[industry] : [])];
   if ((teamSize === "6-20 people" || teamSize === "21+ people") && !list.some((r) => r.id === "forms")) {
-    list.push({ id: "forms", reason: "A bigger team needs requests and approvals on paper." });
+    list.push({ id: "forms", reason: "A bigger team needs standard paperwork." });
   }
   const seen = new Set<string>();
   return list.filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
@@ -136,22 +189,11 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
     );
   }
 
-  if (has("admin")) {
-    const recurring = c.templates.some((t) => t.startsWith("routine-"));
-    checks.push(
-      recurring
-        ? { id: "recurring", status: "pass", title: "Recurring workflow", detail: "Recurring tasks are set up.", step: 2 }
-        : { id: "recurring", status: "warn", title: "Recurring workflow", detail: "Requests is on, but no recurring task is installed. Add one so routine work creates itself.", step: 2 },
-    );
-  }
   if (has("vendors") && !has("forms")) {
-    checks.push({ id: "vendors-forms", status: "warn", title: "Vendor intake", detail: "Vendors work best with Forms & Paperwork for intake and approvals.", step: 1 });
+    checks.push({ id: "vendors-forms", status: "warn", title: "Vendor intake", detail: "Vendors work best with Forms & Paperwork for intake.", step: 1 });
   }
   if (has("invoices") && !has("crm")) {
-    checks.push({ id: "invoices-crm", status: "warn", title: "Client contacts", detail: "Add CRM & Data to keep the contacts behind your invoices clean.", step: 1 });
-  }
-  if (has("licenses") && !has("admin")) {
-    checks.push({ id: "licenses-admin", status: "warn", title: "Renewal follow-up", detail: "Requests gives renewal work a place to land.", step: 1 });
+    checks.push({ id: "invoices-crm", status: "warn", title: "Client contacts", detail: "Add Contacts to keep the contacts behind your invoices clean.", step: 1 });
   }
   for (const id of c.modules) {
     if (!IMPORTABLE[id]) continue;

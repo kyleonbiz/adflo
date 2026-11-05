@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAudit } from "@/components/audit/use-audit";
 import { FlaskConical, Info } from "lucide-react";
 import type { DmsApi } from "@/lib/dms/client/api";
 import { toDmsError } from "@/lib/dms/errors";
@@ -24,6 +25,7 @@ const MODE_NOTICE: Record<DmsApi["mode"], string | null> = {
 /** The whole workspace UI. Data access is injected through `api`; this component owns no I/O. */
 export function DocumentManagementPage({ api, startUpload, initialSearch }: { api: DmsApi; startUpload?: boolean; initialSearch?: string }) {
   const m = useDocumentManager(api, initialSearch);
+  const audit = useAudit();
   const [uploadOpen, setUploadOpen] = useState(!!startUpload);
   const [uploadFolder, setUploadFolder] = useState<string | null>(null);
   const [teamOpen, setTeamOpen] = useState(false);
@@ -36,10 +38,11 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
   // Several uploads finishing together should trigger one refresh.
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { reload } = m;
-  const onUploaded = useCallback(() => {
+  const onUploaded = useCallback((doc?: { displayName?: string; originalName?: string }) => {
+    if (doc) audit("uploaded", doc.displayName || doc.originalName || "a document", "Documents", "/app");
     if (refreshTimer.current) clearTimeout(refreshTimer.current);
     refreshTimer.current = setTimeout(() => void reload(), 250);
-  }, [reload]);
+  }, [reload, audit]);
   useEffect(() => () => void (refreshTimer.current && clearTimeout(refreshTimer.current)), []);
 
   const uploadVersion = useCallback(

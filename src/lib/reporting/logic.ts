@@ -1,5 +1,4 @@
 import { daysBetween } from "@/lib/dates";
-import { summarize as adminSummary, isActive, isOverdue } from "@/lib/admin/logic";
 import { contactDuplicates, summarize as contactSummary } from "@/lib/contacts/logic";
 import type { Contact } from "@/lib/contacts/types";
 import type { DashboardSources } from "@/lib/dashboard/logic";
@@ -11,7 +10,7 @@ import { daysOverdue, formatMoney, invoiceState, summarize as invoiceSummary } f
 import { licenseStatus, missingDocuments, daysLeft, summarize as licenseSummary } from "@/lib/licenses/logic";
 import { LICENSE_CATEGORIES, RENEWAL_STAGES } from "@/lib/licenses/types";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
-import { progress, projectHealth, summarize as projectSummary } from "@/lib/projects/logic";
+import { isGeneral, progress, projectHealth, summarize as projectSummary } from "@/lib/projects/logic";
 import { PROJECT_STATUSES } from "@/lib/projects/types";
 import { STATUS_LABEL as VENDOR_STATUS, onboardingProgress, summarize as vendorSummary } from "@/lib/vendors/logic";
 
@@ -24,7 +23,7 @@ export interface ReportSources extends DashboardSources {
 }
 
 export const emptySources = (): ReportSources => ({
-  invoices: [], licenses: [], projects: [], vendors: [], requests: [], routines: [], contacts: [], forms: [], submissions: [], documents: [],
+  invoices: [], licenses: [], projects: [], vendors: [], contacts: [], forms: [], submissions: [], documents: [],
 });
 
 export type ReportTone = "neutral" | "warning" | "danger";
@@ -75,11 +74,8 @@ const LICENSE_STATUS: Record<string, string> = { active: "Active", renewal_windo
 const LICENSE_ORDER = ["Expired", "Expiring", "Renewal open", "Active"];
 const HEALTH: Record<string, string> = { completed: "Completed", on_hold: "On hold", planning: "Planning", late: "Late", at_risk: "At risk", on_track: "On track" };
 const HEALTH_ORDER = ["Late", "At risk", "On track", "Planning", "On hold", "Completed"];
-const REQUEST_STATUS: Record<string, string> = { pending_approval: "Waiting for approval", open: "Open", in_progress: "In progress", done: "Done", declined: "Declined" };
-const REQUEST_ORDER = ["Waiting for approval", "Open", "In progress", "Done", "Declined"];
-const SUBMISSION_STATUS: Record<string, string> = { received: "Received", pending: "Pending", approved: "Approved", rejected: "Rejected" };
-const SUBMISSION_ORDER = ["Pending", "Received", "Approved", "Rejected"];
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const SUBMISSION_STATUS: Record<string, string> = { new: "New", done: "Done" };
+const SUBMISSION_ORDER = ["New", "Done"];
 const day = (iso: string | null | undefined) => (iso ? iso.slice(0, 10) : "");
 
 function invoices(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
@@ -134,8 +130,8 @@ function vendors(src: ReportSources, today: string): Omit<ModuleReport, "id" | "
     count: src.vendors.length, noun: "vendors",
     metrics: [
       { label: "Vendors", value: String(s.vendors), tone: "neutral" },
-      { label: "Approved", value: String(s.approved), tone: "neutral" },
-      { label: "Awaiting approval", value: String(s.pendingApproval), tone: tone(s.pendingApproval, "warning") },
+      { label: "Active", value: String(s.active), tone: "neutral" },
+      { label: "Onboarding", value: String(s.onboarding), tone: tone(s.onboarding, "warning") },
       { label: "Document issues", value: String(s.documentIssues), tone: tone(s.documentIssues, "warning") },
     ],
     breakdowns: [
@@ -172,9 +168,10 @@ function contacts(src: ReportSources, today: string): Omit<ModuleReport, "id" | 
 
 function projects(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
   const s = projectSummary(src.projects, today);
+  const list = src.projects.filter((p) => !isGeneral(p)); // the built-in bucket for standalone tasks is not a project
   const open = src.projects.filter((p) => p.status !== "completed" && p.status !== "on_hold").flatMap((p) => p.tasks.filter((t) => !t.done));
   return {
-    count: src.projects.length, noun: "projects",
+    count: list.length, noun: "projects",
     metrics: [
       { label: "Active projects", value: String(s.activeProjects), tone: "neutral" },
       { label: "Open tasks", value: String(s.openTasks), tone: "neutral" },
@@ -182,58 +179,36 @@ function projects(src: ReportSources, today: string): Omit<ModuleReport, "id" | 
       { label: "Done this month", value: String(s.completedThisMonth), tone: "neutral" },
     ],
     breakdowns: [
-      { title: "Projects by health", rows: tally(src.projects, (p) => HEALTH[projectHealth(p, today)], HEALTH_ORDER) },
-      { title: "Projects by status", rows: tally(src.projects, (p) => label(PROJECT_STATUSES, p.status), PROJECT_STATUSES.map((x) => x.label)) },
+      { title: "Projects by health", rows: tally(list, (p) => HEALTH[projectHealth(p, today)], HEALTH_ORDER) },
+      { title: "Projects by status", rows: tally(list, (p) => label(PROJECT_STATUSES, p.status), PROJECT_STATUSES.map((x) => x.label)) },
       { title: "Open tasks by person", rows: tally(open, (t) => t.assignee || "Unassigned") },
     ],
     table: {
       headers: ["Project", "Client", "Status", "Health", "Tasks done", "Tasks", "Due"],
-      rows: src.projects.map((p) => { const g = progress(p); return [p.name, p.client, label(PROJECT_STATUSES, p.status), HEALTH[projectHealth(p, today)], g.done, g.total, p.dueOn]; }),
+      rows: list.map((p) => { const g = progress(p); return [p.name, p.client, label(PROJECT_STATUSES, p.status), HEALTH[projectHealth(p, today)], g.done, g.total, p.dueOn]; }),
     },
   };
 }
 
-function forms(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
-  const s = formSummary(src.forms, src.submissions, today);
+function forms(src: ReportSources): Omit<ModuleReport, "id" | "name" | "href"> {
+  const s = formSummary(src.forms, src.submissions);
   const names = new Map(src.forms.map((f) => [f.id, f.name]));
   const mine = src.submissions.filter((x) => names.has(x.formId));
   return {
-    count: mine.length, noun: "submissions",
+    count: mine.length, noun: "responses",
     metrics: [
       { label: "Forms", value: String(s.forms), tone: "neutral" },
-      { label: "Submissions", value: String(s.submissions), tone: "neutral" },
-      { label: "Waiting for approval", value: String(s.pending), tone: tone(s.pending, "warning") },
-      { label: "Decided this month", value: String(s.decidedThisMonth), tone: "neutral" },
+      { label: "Times sent", value: String(s.sent), tone: "neutral" },
+      { label: "Responses", value: String(s.responses), tone: "neutral" },
+      { label: "New responses", value: String(s.unread), tone: tone(s.unread, "warning") },
     ],
     breakdowns: [
-      { title: "Submissions by status", rows: tally(mine, (x) => SUBMISSION_STATUS[x.status], SUBMISSION_ORDER) },
-      { title: "Submissions by form", rows: tally(mine, (x) => names.get(x.formId)!) },
+      { title: "Responses by status", rows: tally(mine, (x) => SUBMISSION_STATUS[x.status], SUBMISSION_ORDER) },
+      { title: "Responses by form", rows: tally(mine, (x) => names.get(x.formId)!) },
     ],
     table: {
-      headers: ["Form", "Submitted on", "Submitted by", "Status", "Decided by", "Decided on"],
-      rows: [...mine].sort((a, b) => b.submittedOn.localeCompare(a.submittedOn)).map((x) => [names.get(x.formId)!, x.submittedOn, x.submittedBy, SUBMISSION_STATUS[x.status], x.decidedBy ?? "", x.decidedOn ?? ""]),
-    },
-  };
-}
-
-function admin(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
-  const s = adminSummary(src.requests, src.routines, today);
-  return {
-    count: src.requests.length, noun: "requests",
-    metrics: [
-      { label: "Open requests", value: String(s.open), tone: "neutral" },
-      { label: "Waiting for approval", value: String(s.pendingApproval), tone: tone(s.pendingApproval, "warning") },
-      { label: "Overdue", value: String(s.overdue), tone: tone(s.overdue, "danger") },
-      { label: "Recurring tasks due", value: String(s.routinesDue), tone: tone(s.routinesDue, "warning") },
-    ],
-    breakdowns: [
-      { title: "Requests by status", rows: tally(src.requests, (r) => REQUEST_STATUS[r.status], REQUEST_ORDER) },
-      { title: "Requests by category", rows: tally(src.requests, (r) => r.category) },
-      { title: "Active requests by priority", rows: tally(src.requests.filter(isActive), (r) => cap(r.priority), ["High", "Normal", "Low"]) },
-    ],
-    table: {
-      headers: ["Title", "Category", "Priority", "Status", "Requester", "Due", "Overdue", "Created"],
-      rows: src.requests.map((r) => [r.title, r.category, cap(r.priority), REQUEST_STATUS[r.status], r.requester, r.dueOn ?? "", isOverdue(r, today) ? "Yes" : "", r.createdOn]),
+      headers: ["Form", "Received on", "From", "Status"],
+      rows: [...mine].sort((a, b) => b.submittedOn.localeCompare(a.submittedOn)).map((x) => [names.get(x.formId)!, x.submittedOn, x.submittedBy, SUBMISSION_STATUS[x.status]]),
     },
   };
 }
@@ -264,7 +239,7 @@ function documents(src: ReportSources, today: string): Omit<ModuleReport, "id" |
 }
 
 const BUILDERS: Partial<Record<string, (src: ReportSources, today: string) => Omit<ModuleReport, "id" | "name" | "href">>> = {
-  documents, invoices, licenses, vendors, crm: contacts, projects, forms, admin,
+  documents, invoices, licenses, vendors, crm: contacts, projects, forms,
 };
 
 /** One report per module that holds records, in catalogue order. */

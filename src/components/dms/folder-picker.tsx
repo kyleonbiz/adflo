@@ -4,7 +4,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { FolderWithCount } from "@/lib/dms/types";
 import { FOLDER_STYLES } from "./folder-style";
 import { cn } from "@/lib/utils";
-import { titleCase } from "@/lib/text";
 
 const NONE = "__none__";
 
@@ -33,7 +32,7 @@ export function FolderPicker({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={NONE}>{titleCase(noneLabel)}</SelectItem>
+        <SelectItem value={NONE}>{noneLabel}</SelectItem>
         {folders.map((f) => (
           <SelectItem key={f.id} value={f.id}>
             <span className="flex items-center gap-2">

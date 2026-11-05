@@ -4,7 +4,6 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Dashboard } from "@/components/modules/dashboard";
 import { buildDashboard } from "@/lib/dashboard/logic";
-import { sampleRequests, sampleRoutines } from "../support/admin-sample-data";
 import { sampleInvoices } from "../support/invoices-sample-data";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import { sampleProjects } from "../support/projects-sample-data";
@@ -14,7 +13,7 @@ import { todayLocal } from "@/lib/dates";
 const today = todayLocal();
 const data = buildDashboard({
   invoices: sampleInvoices(today), licenses: sampleLicenses(today), projects: sampleProjects(today),
-  vendors: sampleVendors(today), requests: sampleRequests(today), routines: sampleRoutines(today),
+  vendors: sampleVendors(today),
 }, today);
 
 const show = () => render(<Dashboard base="/app" data={data} serverToday={today} name="Kyle" />);
@@ -23,17 +22,17 @@ const rows = () => screen.getAllByTestId("attention-item");
 beforeEach(() => window.localStorage.clear());
 
 describe("Dashboard", () => {
-  it("greets by name, shows grouped tiles that link to their service, and the quick actions", () => {
+  it("shows three cards that link to their service, the charts and today's progress", () => {
     show();
-    expect(screen.getByTestId("greeting").textContent).toMatch(/Kyle$/);
-    for (const g of ["Money", "Compliance", "Work"]) expect(screen.getByRole("heading", { name: g })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Overdue invoices/ }).getAttribute("href")).toBe("/app/invoices");
-    expect(screen.getByRole("link", { name: "New invoice" }).getAttribute("href")).toBe("/app/invoices?new=1");
-    expect(screen.getByRole("link", { name: "Upload document" }).getAttribute("href")).toBe("/app?upload=1");
-    expect(screen.getByRole("link", { name: "New request" }).getAttribute("href")).toBe("/app/admin?new=1");
+    expect(screen.getByRole("link", { name: /Outstanding invoices/ }).getAttribute("href")).toBe("/app/invoices");
+    expect(screen.getByRole("link", { name: /Open tasks/ }).getAttribute("href")).toBe("/app/projects");
+    expect(screen.getByRole("img", { name: /^Open work by area/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /^Due in the next 7 days/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /Today's tasks done: 0%/ })).toBeTruthy();
+    expect(screen.getByText("NEEDS ATTENTION")).toBeTruthy();
   });
 
-  it("shows five attention items, expands to all, and filters by service", async () => {
+  it("shows five attention items, expands to all, and filters by area", async () => {
     const user = userEvent.setup();
     show();
     expect(rows()).toHaveLength(5);
@@ -64,6 +63,24 @@ describe("Dashboard", () => {
   it("says so when nothing needs attention", () => {
     render(<Dashboard base="/app" data={{ ...data, items: [] }} serverToday={today} />);
     expect(screen.getByText("You are all caught up.")).toBeTruthy();
-    expect(screen.getByTestId("greeting").textContent).not.toContain(",");
+  });
+
+  it("has a Licenses & Renewals tab with the counts and what expires next", async () => {
+    const user = userEvent.setup();
+    show();
+    expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe("true");
+    await user.click(screen.getByRole("tab", { name: "Licenses & Renewals" }));
+    const tab = screen.getByTestId("licenses-tab");
+    expect(within(tab).getAllByTestId("license-next")).toHaveLength(data.licenses.next.length);
+    expect(within(tab).getByTestId("licenses-standing").textContent).toBe(`${data.licenses.inGoodStanding}%`);
+    expect(screen.queryByTestId("workload")).toBeNull(); // the overview charts are not on this tab
+  });
+
+  it("invites you to add licenses when there are none", async () => {
+    const user = userEvent.setup();
+    render(<Dashboard base="/app" data={{ ...data, licenses: { ...data.licenses, total: 0, next: [] } }} serverToday={today} />);
+    await user.click(screen.getByRole("tab", { name: "Licenses & Renewals" }));
+    expect(screen.getByText("No licenses tracked yet")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Start from a template" }).getAttribute("href")).toBe("/app/licenses");
   });
 });

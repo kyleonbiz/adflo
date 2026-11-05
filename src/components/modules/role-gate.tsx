@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ROLE_INFO, canOpenPath, useViewAs } from "@/lib/roles";
 
 /** Shows the page only when the role being viewed may open it. */
-export function RoleGate({ base, children }: { base: "/app"; children: React.ReactNode }) {
+export function RoleGate({ base, children }: { base: string; children: React.ReactNode }) {
   const role = useViewAs();
   const pathname = usePathname();
   if (canOpenPath(role, pathname)) return <>{children}</>;

@@ -10,12 +10,12 @@ export interface BusinessDetails {
   timezone: string;
 }
 
-export const NOTIFICATION_KEYS = ["renewals", "overdueInvoices", "approvals", "weeklyDigest"] as const;
+export const NOTIFICATION_KEYS = ["renewals", "overdueInvoices", "formResponses", "weeklyDigest"] as const;
 export type NotificationKey = (typeof NOTIFICATION_KEYS)[number];
 export const NOTIFICATION_INFO: Record<NotificationKey, { label: string; detail: string }> = {
   renewals: { label: "License and insurance renewals", detail: "A heads-up before a license, bond or certificate expires." },
   overdueInvoices: { label: "Overdue invoices", detail: "When a customer invoice passes its due date." },
-  approvals: { label: "Approval requests", detail: "When a form, vendor or request is waiting on you." },
+  formResponses: { label: "New form responses", detail: "When someone sends back a form you shared." },
   weeklyDigest: { label: "Weekly summary", detail: "One Monday email with what is due and what changed." },
 };
 
@@ -50,6 +50,6 @@ export interface AppSettings {
 export const defaultSettings = (): AppSettings => ({
   version: 1,
   details: { email: "", phone: "", address: "", timezone: "America/New_York" },
-  notifications: { enabled: { renewals: true, overdueInvoices: true, approvals: true, weeklyDigest: false }, leadDays: 30 },
+  notifications: { enabled: { renewals: true, overdueInvoices: true, formResponses: true, weeklyDigest: false }, leadDays: 30 },
   invoiceChecks: { duplicates: false, unusualAmount: false, variancePct: 25, addToContacts: false },
 });

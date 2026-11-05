@@ -4,6 +4,8 @@ export const LICENSE_CATEGORIES = [
   { value: "permit", label: "Permit" },
   { value: "insurance", label: "Insurance" },
   { value: "registration", label: "Registration" },
+  { value: "certification", label: "Certification" },
+  { value: "policy", label: "Policy" },
   { value: "other", label: "Other" },
 ] as const;
 export type LicenseCategory = (typeof LICENSE_CATEGORIES)[number]["value"];
@@ -47,6 +49,8 @@ export interface License {
   notes: string;
   /** The day someone confirmed the details match the license itself. Absent means it still needs review. */
   verifiedOn?: string;
+  /** What renewing costs, in whole dollars. Absent when not known. */
+  renewalCost?: number | null;
   renewals?: RenewalRecord[];
   /** Ids of licenses this one relies on (a permit that needs a valid insurance certificate). */
   dependsOn?: string[];
@@ -59,6 +63,8 @@ export const DEFAULT_DOCUMENTS: Record<LicenseCategory, string[]> = {
   permit: ["Signed application", "Renewal fee receipt"],
   insurance: ["Updated certificate of insurance"],
   registration: ["Registration certificate"],
+  certification: ["Certificate copy"],
+  policy: ["Reviewed policy", "Sign-off record"],
   other: [],
 };
 

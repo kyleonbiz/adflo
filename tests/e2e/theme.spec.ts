@@ -1,14 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-test("Settings has a Day/Night switch that persists", async ({ page }) => {
-  await page.goto("/app/setup?tab=appearance");
-  await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
-  await page.getByRole("radio", { name: "Night" }).click();
-  await expect(page.locator("html")).toHaveClass(/dark/);
-  await page.reload();
-  await expect(page.locator("html")).toHaveClass(/dark/);
-  await page.getByRole("radio", { name: "Day" }).click();
-  await expect(page.locator("html")).not.toHaveClass(/dark/);
+test.describe("AdFlo is Day only", () => {
+  test.use({ colorScheme: "dark" });
+  test("stays in Day on a dark device, a saved Night choice is cleared, and Settings has no Appearance tab", async ({ page }) => {
+    await page.addInitScript(() => { try { localStorage.setItem("adflo.theme", "dark"); } catch { /* ignore */ } });
+    await page.goto("/app/setup");
+    await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+    await expect(page.getByRole("link", { name: "Appearance" })).toHaveCount(0);
+    await expect(page.getByRole("radio", { name: "Night" })).toHaveCount(0);
+  });
 });
 
 test("business profile saves and notification choices persist", async ({ page }) => {

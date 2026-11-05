@@ -10,7 +10,10 @@ export async function ModuleOverview({ base, name }: { base: "/app"; name?: stri
   const data = buildDashboard(await loadDashboardSources(), today, base);
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">{name ? `Welcome back, ${name}.` : "Welcome back."} Here is where things stand.</p>
+      </div>
       <Dashboard base={base} data={data} serverToday={today} name={name} />
     </div>
   );

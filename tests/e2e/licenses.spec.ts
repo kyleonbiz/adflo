@@ -52,7 +52,7 @@ test.describe("platform modules", () => {
     await page.getByRole("button", { name: "Start renewal: Renew City Operating Permit" }).click();
     const card = page.getByTestId("license-card").filter({ hasText: "City Operating Permit" });
     await expect(page.getByRole("status")).toContainText("renewal in progress");
-    await expect(card.getByRole("combobox", { name: /Renewal stage/ })).toContainText("In Progress");
+    await expect(card.getByRole("combobox", { name: /Renewal stage/ })).toContainText("In progress");
     await expect(card.getByRole("checkbox", { name: "Signed application" })).toBeVisible();
   });
 
@@ -71,6 +71,26 @@ test.describe("platform modules", () => {
     const card = page.getByTestId("license-card").filter({ hasText: "Test permit" });
     await card.getByRole("button", { name: /Required documents/ }).click();
     await expect(card.getByRole("checkbox", { name: "Renewal fee receipt" })).toBeVisible();
+  });
+
+  test("licenses: start from a business template (vehicle registration) and see compliance", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await expect(page.getByTestId("compliance")).toContainText("Compliance");
+    await page.getByRole("button", { name: "More ways to add a license" }).click();
+    await page.getByRole("menuitem", { name: "From a template" }).click();
+    const picker = page.getByRole("dialog");
+    await picker.getByRole("combobox", { name: "Your business" }).click();
+    await page.getByRole("option", { name: "Vehicles and fleet" }).click();
+    await expect(picker.getByText("License plate tags / sticker")).toBeVisible();
+    await expect(picker.getByText("Commercial auto insurance")).toBeVisible();
+    await picker.getByRole("button", { name: "Use template: Vehicle registration" }).click();
+    const form = page.getByRole("dialog");
+    await expect(form.getByLabel("License name")).toHaveValue("Vehicle registration");
+    await expect(form.getByLabel("Required documents (one per line)")).toHaveValue(/Registration card/);
+    await form.getByLabel("License number").fill("ABC-1234");
+    await form.getByLabel("I have checked these details against the license document.").check();
+    await form.getByRole("button", { name: "Add license" }).click();
+    await expect(page.getByTestId("license-card").filter({ hasText: "Vehicle registration" })).toBeVisible();
   });
 
   test("licenses: upload a file to pre-fill a new license", async ({ page }) => {
@@ -111,11 +131,21 @@ test.describe("platform modules", () => {
     await expect(page.getByTestId("review-banner")).toContainText("4 licenses still need review");
   });
 
-  test("licenses: a photo can't be read and says so", async ({ page }) => {
+  test("licenses: a file that only claims to be a photo can't be read and says so", async ({ page }) => {
     await page.goto("/app/licenses");
     await page.getByRole("button", { name: "Add license" }).click();
     await page.getByLabel("Upload a license file", { exact: true }).setInputFiles({ name: "scan.png", mimeType: "image/png", buffer: Buffer.from("not really a png") });
-    await expect(page.getByRole("dialog").getByRole("alert")).toContainText("can't be read yet");
+    await expect(page.getByRole("dialog").getByRole("alert")).toContainText("could not be read");
+  });
+
+  test("licenses: a photo of a license is read and fills the form", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await page.getByRole("button", { name: "Add license" }).click();
+    await page.getByLabel("Upload a license file", { exact: true }).setInputFiles("tests/support/license-scan.png");
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/Filled from license-scan\.png/)).toBeVisible({ timeout: 20_000 });
+    await expect(dialog.getByLabel("License number")).toHaveValue("BL-20931");
+    await expect(dialog.getByLabel("Expires on")).toHaveValue("2027-01-15");
   });
 
   test("licenses: add, validate, edit and delete", async ({ page }) => {
@@ -159,5 +189,33 @@ test.describe("platform modules", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Licenses & Renewals" })).toBeVisible();
     await page.getByRole("link", { name: "Documents", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
+  });
+
+  test("licenses: the renewals can be added to a calendar", async ({ page }) => {
+    await page.goto("/app/licenses");
+    const download = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Add to calendar" }).click();
+    const file = await download;
+    expect(file.suggestedFilename()).toMatch(/^renewals-.*\.ics$/);
+    let text = "";
+    for await (const chunk of await file.createReadStream()) text += chunk;
+    expect(text).toContain("BEGIN:VCALENDAR");
+    expect(text).toContain("City Operating Permit expires");
+  });
+
+  test("licenses: a renewal fee shows on the card and in what is coming up", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await page.getByRole("button", { name: "Add license" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("License name").fill("Parking permit");
+    await dialog.getByLabel("Renewal fee in dollars (optional)").fill("12.50");
+    await dialog.getByLabel("I have checked these details against the license document.").check();
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("Whole dollars only");
+    await dialog.getByLabel("Renewal fee in dollars (optional)").fill("125");
+    await dialog.getByLabel("Expires on").fill(new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10));
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    await expect(page.getByTestId("license-card").filter({ hasText: "Parking permit" })).toContainText("Renewal fee about $125.");
+    await expect(page.getByTestId("renewal-spend")).toContainText("about $125");
   });
 });

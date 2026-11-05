@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  cleanValues, createSubmission, decide, generateDocument, submissionsToCsv, summarize, validateSubmission,
+  cleanValues, createSubmission, generateDocument, markDone, submissionsToCsv, summarize, validateSubmission,
 } from "@/lib/forms/logic";
 import { sampleForms, sampleSubmissions } from "../support/forms-sample-data";
 import type { FormTemplate } from "@/lib/forms/types";
@@ -39,40 +39,36 @@ describe("validateSubmission", () => {
   });
 });
 
-describe("submissions and approval", () => {
-  it("routes to approval only when the form requires it", () => {
-    expect(createSubmission(vendor, goodVendor, "Dana", TODAY, "s").status).toBe("pending");
-    expect(createSubmission(feedback, { "c-score": "8" }, "", TODAY, "s")).toMatchObject({ status: "received", submittedBy: "Anonymous" });
+describe("responses", () => {
+  it("starts every new response as new, with a name or Anonymous", () => {
+    expect(createSubmission(vendor, goodVendor, "Dana", TODAY, "s")).toMatchObject({ status: "new", submittedBy: "Dana" });
+    expect(createSubmission(feedback, { "c-score": "8" }, "", TODAY, "s")).toMatchObject({ status: "new", submittedBy: "Anonymous" });
   });
   it("keeps only the form's own fields and fills checkboxes", () => {
     expect(cleanValues(vendor, { ...goodVendor, "v-w9": undefined as unknown as string, extra: "x", "v-name": "  Acme  " })).toMatchObject({ "v-name": "Acme", "v-w9": "false" });
     expect(cleanValues(vendor, { ...goodVendor, extra: "x" })).not.toHaveProperty("extra");
   });
-  it("decides a pending submission once", () => {
+  it("can be marked done and reopened, with no approval step", () => {
     const s = createSubmission(vendor, goodVendor, "Dana", TODAY, "s");
-    const approved = decide(s, "approved", "Boss", TODAY, "  fine  ");
-    expect(approved).toMatchObject({ status: "approved", decidedBy: "Boss", decidedOn: TODAY, comment: "fine" });
-    expect(decide(approved, "rejected", "Other", TODAY)).toBe(approved);
-    const received = createSubmission(feedback, { "c-score": "8" }, "x", TODAY, "r");
-    expect(decide(received, "approved", "Boss", TODAY)).toBe(received);
+    expect(markDone(s, true).status).toBe("done");
+    expect(markDone(markDone(s, true), false).status).toBe("new");
+    expect(Object.keys(s)).not.toContain("decidedBy");
   });
 });
 
 describe("generateDocument", () => {
   const sub = sampleSubmissions(TODAY).find((s) => s.id === "s-2")!;
-  it("fills the template and appends the decision", () => {
+  it("fills the template", () => {
     const doc = generateDocument(vendor, sub);
     expect(doc).toContain("NEW VENDOR INTAKE\nSubmitted by Dana Whitfield on Oct 16, 2026");
     expect(doc).toContain("Vendor: Globex Software");
     expect(doc).toContain("W-9 on file: Yes");
-    expect(doc).toContain("Status: Approved");
-    expect(doc).toContain("Decision by Operations manager on Oct 18, 2026: Approved for FY26.");
+    expect(doc).not.toMatch(/Status:|Decision/);
   });
   it("uses a default layout without a template, with formatted dates", () => {
     const leave = forms.find((x) => x.id === "form-leave")!;
     const doc = generateDocument(leave, sampleSubmissions(TODAY).find((s) => s.id === "s-3")!);
     expect(doc).toContain("First day off: Nov 8, 2026");
-    expect(doc).toContain("Status: Pending");
   });
   it("expands placeholders once, so submitted text cannot inject more", () => {
     const sneaky = { ...sub, values: { ...sub.values, "v-notes": "{{Contact email}}", "v-name": "{{Notes}}" } };
@@ -90,25 +86,24 @@ describe("csv and summary", () => {
   it("exports one column per field and neutralises formulas", () => {
     const sub = { ...sampleSubmissions(TODAY)[0], values: { ...sampleSubmissions(TODAY)[0].values, "v-name": "=CMD()" } };
     const [header, row] = submissionsToCsv(vendor, [sub]).trimEnd().split("\r\n");
-    expect(header).toBe("Submitted on,Submitted by,Status,Decided by,Decided on,Comment,Company name,Contact email,Service category,Expected annual spend,W-9 on file,Notes");
+    expect(header).toBe("Submitted on,Submitted by,Status,Company name,Contact email,Service category,Expected annual spend,W-9 on file,Notes");
     expect(row).toContain("'=CMD()");
   });
-  it("summarizes forms, pending and this month's decisions", () => {
-    expect(summarize(forms, sampleSubmissions(TODAY), TODAY)).toEqual({ forms: 3, submissions: 5, pending: 2, decidedThisMonth: 2 });
-    expect(summarize([vendor], sampleSubmissions(TODAY), TODAY)).toEqual({ forms: 1, submissions: 2, pending: 1, decidedThisMonth: 1 });
+  it("summarizes forms, times sent, responses and new responses", () => {
+    expect(summarize(forms, sampleSubmissions(TODAY))).toEqual({ forms: 3, sent: 0, responses: 5, unread: 3 });
+    expect(summarize([{ ...vendor, sentCount: 4 }], sampleSubmissions(TODAY))).toEqual({ forms: 1, sent: 4, responses: 2, unread: 1 });
   });
 });
 
 describe("formBuilderSchema", () => {
   const field = (label: string, over = {}) => ({ id: label, label, type: "text", required: false, options: [], ...over });
-  const ok = { name: "Intake", description: "", fields: [field("Name")], requiresApproval: false, approver: "", documentTemplate: "" };
+  const ok = { name: "Intake", description: "", fields: [field("Name")], documentTemplate: "" };
   it("accepts a minimal form", () => expect(formBuilderSchema.safeParse(ok).success).toBe(true));
   it.each([
     [{ fields: [] }, "at least one field"],
     [{ fields: [field("Name"), field("name")] }, "must be unique"],
     [{ fields: [field("Pick", { type: "select", options: ["Only"] })] }, "at least two options"],
     [{ fields: [field("  ")] }, "needs a label"],
-    [{ requiresApproval: true, approver: " " }, "who approves"],
     [{ name: "x" }, "form name"],
   ])("rejects %j", (patch, text) => {
     const r = formBuilderSchema.safeParse({ ...ok, ...patch });

@@ -12,7 +12,7 @@ export interface PlatformModule {
   hidden?: boolean;
 }
 
-/** The eleven service modules of the client portal, in catalogue order. */
+/** The ten service modules of the client portal, in catalogue order. */
 export const MODULES: readonly PlatformModule[] = [
   { id: "documents", number: "01", name: "Documents", slug: "documents", status: "available",
     summary: "Upload, organize and search files; versioning, sharing and an audit trail." },
@@ -21,20 +21,18 @@ export const MODULES: readonly PlatformModule[] = [
   { id: "licenses", number: "03", name: "Licenses & Renewals", slug: "licenses", status: "available",
     summary: "Track licenses and expiry dates, collect required documents, get renewal reminders." },
   { id: "vendors", number: "04", name: "Vendors", slug: "vendors", status: "available",
-    summary: "Supplier profiles, intake forms, document collection and approval routing." },
-  { id: "crm", number: "05", name: "CRM & Data", slug: "contacts", status: "available",
-    summary: "Import contacts, detect duplicates, validate fields and export clean data." },
-  { id: "projects", number: "06", name: "Projects", slug: "projects", status: "available",
-    summary: "Projects, tasks, recurring work, deadlines and status reports." },
+    summary: "Supplier profiles, intake forms and document collection." },
+  { id: "crm", number: "05", name: "Contacts", slug: "contacts", status: "available",
+    summary: "Customers, leads and vendors in one place: import, clean up duplicates, and keep each one's documents and notes together." },
+  { id: "projects", number: "06", name: "Tasks", slug: "projects", status: "available",
+    summary: "Tasks, recurring chores, deadlines and projects for bigger jobs." },
   { id: "forms", number: "07", name: "Forms & Paperwork", slug: "forms", status: "available",
-    summary: "Reusable forms, submission tracking, document generation and approvals." },
+    summary: "Build forms, send them to anyone and collect the answers." },
   { id: "reporting", number: "08", name: "Reporting", slug: "reporting", status: "available",
     summary: "Turn raw files into organized records and scheduled reports." },
-  { id: "admin", number: "09", name: "Requests", slug: "admin", status: "available",
-    summary: "Requests, recurring tasks and reminders in one place." },
-  { id: "file-reset", number: "10", name: "Tidy up files", slug: "file-reset", status: "available", hidden: true,
+  { id: "file-reset", number: "09", name: "Tidy up files", slug: "file-reset", status: "available", hidden: true,
     summary: "One-time cleanup: duplicates, folder structure and filenames, with preview and approval." },
-  { id: "setup", number: "11", name: "Settings", slug: "setup", status: "available",
+  { id: "setup", number: "10", name: "Settings", slug: "setup", status: "available",
     summary: "Guided onboarding: pick services, import data and configure recurring workflows." },
 ];
 

@@ -1,29 +1,37 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, ShieldAlert, Store, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, BellRing, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, ShieldAlert, Store, X } from "lucide-react";
+import { useAudit } from "@/components/audit/use-audit";
+import { useCurrentUserName } from "@/components/current-user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import {
-  VENDOR_APPROVER, decide, defaultRequirements, duplicatePairs, fileProblem, hasDocumentIssues, isNonCompliant, mergeVendors, needsAttention, pairKey,
-  reopen, setActive, submitForApproval, summarize, vendorsToCsv,
+  activate, defaultRequirements, duplicatePairs, fileProblem, hasDocumentIssues, isNonCompliant, mergeVendors, needsAttention, pairKey,
+  setActive, summarize, vendorsToCsv,
 } from "@/lib/vendors/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { VENDOR_CATEGORIES, type Vendor, type VendorCategory, type VendorStatus } from "@/lib/vendors/types";
 import type { VendorFormValues } from "@/lib/vendors/validation";
+import { addNote, dueFollowUps, logReminder, mailtoLink, reminderEmail } from "@/lib/vendors/follow-up";
+import { readLicenseFile } from "@/lib/licenses/upload";
+import { formatDayLong } from "@/lib/dates";
+import { industryVendorDocs } from "@/lib/setup/industries";
+import { useSetupConfig } from "@/lib/setup/storage";
+import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
-import { VendorFormDialog } from "./vendor-form-dialog";
-import { titleCase } from "@/lib/text";
+import { VendorFormDialog, type VendorDraft } from "./vendor-form-dialog";
 
 type SortKey = "name" | "status" | "newest";
-const STATUS_ORDER: VendorStatus[] = ["pending_approval", "onboarding", "approved", "inactive", "rejected"];
+const STATUS_ORDER: VendorStatus[] = ["onboarding", "active", "inactive"];
 const SORT_LABEL: Record<SortKey, string> = { name: "Name", status: "Status", newest: "Newest first" };
 
 const SORTS: SortKey[] = ["name", "status", "newest"];
@@ -60,13 +68,15 @@ function downloadCsv(text: string, name: string) {
  * Vendor administration. Vendors live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits and no notifications are sent.
  */
-export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?: string; approver?: string }) {
+export function VendorsPage({ preview, startNew, draft }: { preview?: string; startNew?: boolean; draft?: VendorDraft }) {
   const today = useToday();
+  const audit = useAudit();
+  const me = useCurrentUserName();
   const [edited, setEdited] = useState<Vendor[] | null>(null);
   const [initial] = useState(readFilters);
   const [query, setQuery] = useState(initial.q);
   const [statusFilter, setStatusFilter] = useState<"all" | VendorStatus>(initial.status);
-  const [formFor, setFormFor] = useState<Vendor | "new" | null>(null);
+  const [formFor, setFormFor] = useState<Vendor | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Vendor | null>(null);
   const [notice, setNotice] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | VendorCategory>(initial.category);
@@ -74,7 +84,6 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   const [issuesOnly, setIssuesOnly] = useState(initial.issues);
   const [nonCompliantOnly, setNonCompliantOnly] = useState(false);
   const [undo, setUndo] = useState<Vendor[] | null>(null);
-  const [deciding, setDeciding] = useState<{ vendor: Vendor; decision: "approved" | "rejected"; comment: string } | null>(null);
   const [merging, setMerging] = useState<{ keep: Vendor; drop: Vendor } | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [focus, setFocus] = useState<{ id: string; n: number } | null>(null);
@@ -83,6 +92,10 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   const vendors = edited ?? seed;
   const summary = useMemo(() => (today ? summarize(vendors, today) : null), [vendors, today]);
   const attention = useMemo(() => (today ? needsAttention(vendors, today) : []), [vendors, today]);
+  const setup = useSetupConfig();
+  const latest = useRef(vendors);
+  useEffect(() => { latest.current = vendors; }, [vendors]);
+  const followUps = useMemo(() => (today ? dueFollowUps(vendors, today) : []), [vendors, today]);
   const allPairs = useMemo(() => duplicatePairs(vendors), [vendors]);
   const pairs = useMemo(() => allPairs.filter((p) => !dismissed.includes(pairKey(p.a, p.b))), [allPairs, dismissed]);
 
@@ -122,9 +135,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
   const actions: VendorActions = {
     onEdit: (v) => setFormFor(v),
     onDelete: (v) => setDeleting(v),
-    onSubmit: (v) => { patch(v.id, (x) => submitForApproval(x, today)); say(`${v.name} submitted for approval.`); },
-    onDecide: (v, decision, comment) => setDeciding({ vendor: v, decision, comment }),
-    onReopen: (v) => { patch(v.id, reopen); say(`${v.name} reopened for onboarding.`); },
+    onActivate: (v) => { patch(v.id, (x) => activate(x, today)); audit("activated", `the vendor ${v.name}`, "Vendors", "/app/vendors"); say(`${v.name} is now active.`); },
     onActive: (v, active) => { patch(v.id, (x) => setActive(x, active)); say(`${v.name} ${active ? "reactivated" : "deactivated"}.`); },
     onSetDocument: (v, d, dates) => {
       if (dates.receivedOn && dates.expiresOn && dates.expiresOn < dates.receivedOn) {
@@ -136,6 +147,16 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
         return;
       }
       patch(v.id, (x) => ({ ...x, documents: x.documents.map((y) => (y.id === d.id ? { ...y, ...dates } : y)) }));
+    },
+    onNote: (v, kind, text) => { patch(v.id, (x) => addNote(x, { id: rid("vn"), on: today, kind, text, by: me })); audit(kind === "reply" ? "logged a reply from" : "added a note on", `the vendor ${v.name}`, "Vendors", "/app/vendors"); say(kind === "reply" ? `Logged: ${v.name} replied.` : "Note added."); },
+    onRemind: (v) => {
+      const mail = reminderEmail(v, today);
+      patch(v.id, (x) => logReminder(x, today, rid("vn"), me));
+      audit("sent a reminder to", `the vendor ${v.name}`, "Vendors", "/app/vendors");
+      say(`Reminder logged for ${v.name}. Your email app opens with the message ready to send.`);
+      const a = document.createElement("a");
+      a.href = mailtoLink(mail);
+      a.click();
     },
     onAddDocument: (v, type, required) =>
       patch(v.id, (x) => ({ ...x, documents: [...x.documents, { id: rid("vd"), type, required, receivedOn: null, expiresOn: null }] })),
@@ -153,7 +174,17 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
         ...x,
         documents: x.documents.map((y) => (y.id === d.id ? { ...y, file: { name: file.name, size: file.size, url }, receivedOn: y.receivedOn ?? today } : y)),
       }));
+      audit("uploaded", `${file.name} for ${v.name}`, "Vendors", "/app/vendors");
       say(`${file.name} attached to ${d.type}${d.receivedOn ? "" : ", marked received today"}.`);
+      // Photos, scans and PDFs are read for an expiry date, which fills in only when none is set yet.
+      if (!d.expiresOn && /\.(pdf|docx|png|jpe?g)$/i.test(file.name)) {
+        readLicenseFile(file).then(({ fields }) => {
+          const found = fields.expiresOn;
+          if (!found) return;
+          setEdited(latest.current.map((x) => (x.id === v.id ? { ...x, documents: x.documents.map((y) => (y.id === d.id && !y.expiresOn ? { ...y, expiresOn: found } : y)) } : x)));
+          say(`Read ${file.name}: expires ${formatDayLong(found)}. Check it against the document.`);
+        }).catch(() => { /* reading is a convenience; the file is attached either way */ });
+      }
     },
     onClearFile: (v, d) => {
       if (d.file) URL.revokeObjectURL(d.file.url);
@@ -171,16 +202,19 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
         .filter((r) => !have.has(r.type))
         .map((r) => ({ id: rid("vd"), type: r.type, required: true, receivedOn: null, expiresOn: null }));
       patch(current.id, (x) => ({ ...x, ...values, documents: [...x.documents, ...extra] }));
+      audit("edited", `the vendor ${values.name}`, "Vendors", "/app/vendors");
       say(extra.length > 0 ? `${values.name} updated. ${extra.length} required document${extra.length === 1 ? "" : "s"} added for ${values.category}.` : `${values.name} updated.`);
       return;
     }
-    const documents = defaultRequirements(values.category).map((r) => ({
-      id: rid("vd"), type: r.type, required: true, receivedOn: null, expiresOn: null,
+    const extras = industryVendorDocs(setup).filter((t) => !defaultRequirements(values.category).some((r) => r.type.toLowerCase() === t.toLowerCase()));
+    const documents = [...defaultRequirements(values.category).map((r) => r.type), ...extras].map((type) => ({
+      id: rid("vd"), type, required: true, receivedOn: null, expiresOn: null,
     }));
     update((all) => [...all, {
-      ...values, id: rid("v"), status: "onboarding", createdOn: today, documents, decidedBy: null, decidedOn: null, comment: "",
+      ...values, id: rid("v"), status: "onboarding", createdOn: today, documents,
     }]);
-    say(`${values.name} added. Collect its ${documents.length} required documents to submit it for approval.`);
+    audit("added", `the vendor ${values.name}`, "Vendors", "/app/vendors");
+    say(`${values.name} added. Collect its ${documents.length} required documents, then activate it.`);
   };
 
   const q = query.trim().toLowerCase();
@@ -204,6 +238,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
 
   return (
     <div className="space-y-5">
+      <ContactsTabs current="vendors" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Vendors</h1>
@@ -236,14 +271,35 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
 
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <SummaryTile icon={Store} label="Vendors" value={summary.vendors} tone="text-primary" onClick={clearFilters} />
-        <SummaryTile icon={CheckCircle2} label="Awaiting approval" value={summary.pendingApproval} tone="text-amber-600" pressed={statusFilter === "pending_approval"}
-          onClick={() => { setIssuesOnly(false); setNonCompliantOnly(false); setStatusFilter("pending_approval"); }} />
+        <SummaryTile icon={CheckCircle2} label="Onboarding" value={summary.onboarding} tone="text-amber-600" pressed={statusFilter === "onboarding"}
+          onClick={() => { setIssuesOnly(false); setNonCompliantOnly(false); setStatusFilter("onboarding"); }} />
         <SummaryTile icon={FileWarning} label="Document issues" value={summary.documentIssues} tone="text-red-600" pressed={issuesOnly}
           onClick={() => { setStatusFilter("all"); setNonCompliantOnly(false); setIssuesOnly(true); }} />
         <SummaryTile icon={ShieldAlert} label="Non-compliant" value={summary.nonCompliant} tone="text-red-600" pressed={nonCompliantOnly}
           onClick={() => { setStatusFilter("all"); setIssuesOnly(false); setNonCompliantOnly((on) => !on); }} />
         <SummaryTile icon={Copy} label="Possible duplicates" value={pairs.length} tone="text-sky-600" href="#vendor-duplicates" />
       </section>
+
+      {followUps.length > 0 && (
+        <section aria-labelledby="vendor-followups" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="followups">
+          <h2 id="vendor-followups" className="flex items-center gap-2 text-base font-semibold"><BellRing className="size-4 text-amber-600" aria-hidden /> Follow up today</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Vendors who still owe documents. A reminder is due when none has gone out, or the last one is a week old with no reply.</p>
+          <ul className="mt-2 divide-y">
+            {followUps.map(({ vendor, state, sent, owes }) => (
+              <li key={vendor.id} data-testid="followup-row" className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                <span className="min-w-0 flex-1">
+                  <span className="font-medium">{vendor.name}</span>
+                  <span className="text-muted-foreground"> · owes {owes.map((d) => d.type).join(", ")}</span>
+                </span>
+                {state === "ghosted" ? <Badge variant="danger">No reply after {sent} reminders</Badge> : sent > 0 ? <Badge variant="muted">{sent} sent</Badge> : <Badge variant="muted">Not chased yet</Badge>}
+                {vendor.email
+                  ? <Button size="sm" variant="outline" aria-label={`Send reminder to ${vendor.name}`} onClick={() => actions.onRemind(vendor)}>Send reminder</Button>
+                  : <span className="text-xs text-muted-foreground">No email on file</span>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className="grid gap-3 lg:grid-cols-2">
         <section aria-labelledby="vendor-attention" className="rounded-2xl border bg-card p-4 shadow-panel">
@@ -313,7 +369,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
             <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
               <SelectTrigger aria-label="Sort vendors"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
+                {(Object.keys(SORT_LABEL) as SortKey[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -331,7 +387,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                {(Object.keys(STATUS_LABEL) as VendorStatus[]).map((s) => <SelectItem key={s} value={s}>{titleCase(STATUS_LABEL[s])}</SelectItem>)}
+                {(Object.keys(STATUS_LABEL) as VendorStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -340,10 +396,16 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
           <p className="text-sm text-muted-foreground">Showing vendors with expiring or expired documents. <button type="button" onClick={() => setIssuesOnly(false)} className="font-medium text-primary underline-offset-2 hover:underline">Show all</button></p>
         )}
         {visible.length === 0 ? (
-          <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
-            <p>{vendors.length === 0 ? "No vendors yet. Use Add vendor above to create your first one." : "No vendors match these filters."}</p>
-            {vendors.length > 0 && filtered && <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
-          </div>
+          vendors.length === 0 ? (
+            <EmptyState icon={Store} title="Add your first vendor" description="Keep every supplier's details and paperwork together, and know who still owes you a document." points={["Required documents set by vendor type", "Reminders that get firmer when a vendor goes quiet", "Approval before a vendor is used"]}>
+              <Button onClick={() => setFormFor("new")}><Plus /> Add vendor</Button>
+            </EmptyState>
+          ) : (
+            <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
+              <p>No vendors match these filters.</p>
+              {filtered && <Button variant="outline" onClick={clearFilters}>Clear filters</Button>}
+            </div>
+          )
         ) : (
           <ul className="space-y-3">
             {visible.map((v) => <VendorCard key={v.id} vendor={v} today={today} actions={actions} focusKey={focus?.id === v.id ? focus.n : undefined} />)}
@@ -354,38 +416,11 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
       <VendorFormDialog
         open={formFor !== null}
         vendor={formFor && formFor !== "new" ? formFor : undefined}
+        draft={draft}
         existing={vendors}
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
       />
-
-      <Dialog open={!!deciding} onOpenChange={(o) => !o && setDeciding(null)}>
-        <DialogContent variant={deciding?.decision === "rejected" ? "alert" : undefined}>
-          <DialogTitle>{deciding?.decision === "rejected" ? "Reject" : "Approve"} {deciding?.vendor.name}?</DialogTitle>
-          <DialogDescription className="mt-1">
-            {deciding?.decision === "rejected"
-              ? "The vendor goes back to its owner as rejected. It can be reopened for onboarding."
-              : "The vendor becomes approved and can be used. You will be recorded as the approver."}
-            {deciding?.comment.trim() && ` Comment: “${deciding.comment.trim()}”.`}
-          </DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeciding(null)}>Cancel</Button>
-            <Button
-              variant={deciding?.decision === "rejected" ? "destructive" : "default"}
-              onClick={() => {
-                if (deciding) {
-                  const { vendor, decision, comment } = deciding;
-                  patch(vendor.id, (x) => decide(x, decision, approver, today, comment));
-                  say(`${vendor.name} ${decision}.`);
-                }
-                setDeciding(null);
-              }}
-            >
-              {deciding?.decision === "rejected" ? "Reject" : "Approve"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={!!merging} onOpenChange={(o) => !o && setMerging(null)}>
         <DialogContent>
@@ -402,6 +437,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
                   const { keep, drop } = merging;
                   const before = vendors;
                   update((all) => all.filter((v) => v.id !== drop.id).map((v) => (v.id === keep.id ? mergeVendors(keep, drop) : v)));
+                  audit("merged", `${drop.name} into ${keep.name}`, "Vendors", "/app/vendors");
                   say(`${drop.name} merged into ${keep.name}.`, before);
                 }
                 setMerging(null);
@@ -425,6 +461,7 @@ export function VendorsPage({ preview, approver = VENDOR_APPROVER }: { preview?:
                 if (deleting) {
                   const before = vendors;
                   update((all) => all.filter((v) => v.id !== deleting.id));
+                  audit("deleted", `the vendor ${deleting.name}`, "Vendors", "/app/vendors");
                   say(`${deleting.name} deleted.`, before);
                 }
                 setDeleting(null);

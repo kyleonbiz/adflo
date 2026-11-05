@@ -11,7 +11,6 @@ import { formatDayLong } from "@/lib/dates";
 import { LICENSE_CATEGORIES, RENEWAL_STAGES, type License, type RenewalStage } from "@/lib/licenses/types";
 import { cn } from "@/lib/utils";
 import { SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL, TIER_BADGE, TIER_LABEL } from "./status";
-import { titleCase } from "@/lib/text";
 
 export interface LicenseActions {
   onEdit: (license: License) => void;
@@ -75,6 +74,7 @@ export function LicenseCard({ license, all = [], today, actions, focusToken = 0 
               {alerts.map((a) => <li key={a.message}><Badge variant={SEVERITY_BADGE[a.severity]}>{a.message}</Badge></li>)}
             </ul>
           )}
+          {license.renewalCost ? <p className="text-xs text-muted-foreground">Renewal fee about ${license.renewalCost.toLocaleString("en-US")}.</p> : null}
           {license.verifiedOn && <p className="text-xs text-muted-foreground">Details reviewed {formatDayLong(license.verifiedOn)}.</p>}
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <BellRing className="size-3.5" aria-hidden />
@@ -89,7 +89,7 @@ export function LicenseCard({ license, all = [], today, actions, focusToken = 0 
               <Select value={license.stage} onValueChange={(v) => actions.onStage(license, v as RenewalStage)}>
                 <SelectTrigger aria-label={`Renewal stage for ${license.name}`} className="h-8 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {RENEWAL_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>Renewal: {titleCase(s.label)}</SelectItem>)}
+                  {RENEWAL_STAGES.map((s) => <SelectItem key={s.value} value={s.value}>Renewal: {s.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
