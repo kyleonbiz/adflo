@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { planIncludes } from "@/lib/control/plan-server";
+import { isOcrFile } from "@/lib/dms/extract/ocr";
 import { canExtract, extractText } from "@/lib/dms/extract";
 import { REASON_LABELS } from "@/lib/dms/extract/errors";
 import { DmsError } from "@/lib/dms/errors";
@@ -32,7 +34,12 @@ export function POST(req: Request) {
       if (!canExtract(upload.name, true)) {
         throw new DmsError("validation", "That file type can't be read. Upload a photo or scan (PNG, JPG), a PDF, Word, text or CSV file, or enter the details by hand.");
       }
-      const result = await extractText({ bytes: new Uint8Array(await upload.arrayBuffer()), fileName: upload.name, mimeType: upload.type, ocr: true });
+      // Reading photos and scans (OCR) is part of Core +; other files are read on every plan.
+      const ocr = await planIncludes("ocr");
+      if (!ocr && isOcrFile(upload.name)) {
+        throw new DmsError("forbidden", "Reading photos and scans is part of Core +. Upload a PDF, Word, text or CSV file, or enter the details by hand.");
+      }
+      const result = await extractText({ bytes: new Uint8Array(await upload.arrayBuffer()), fileName: upload.name, mimeType: upload.type, ocr });
       if (result.status !== "indexed") {
         throw new DmsError("validation", (result.reason && REASON_LABELS[result.reason]) || "That file could not be read.");
       }
