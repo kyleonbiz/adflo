@@ -31,7 +31,7 @@ test("control center preview: overview, clients and audit log open", async ({ pa
 
   await page.getByRole("link", { name: "Plans & pricing" }).first().click();
   await expect(page.getByRole("heading", { name: "Plans & pricing" })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("cell", { name: "business" })).toBeVisible();
+  await expect(page.getByRole("cell", { name: "core" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add plan" })).toHaveCount(0);
 
   await page.getByRole("link", { name: "Team" }).first().click();

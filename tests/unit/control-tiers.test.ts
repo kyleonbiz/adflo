@@ -4,21 +4,19 @@ import { parsePlanInput } from "@/lib/control/validation";
 
 describe("tiers", () => {
   const by = Object.fromEntries(TIERS.map((t) => [t.name, t.features]));
-  it("offers three tiers, each a superset of the one before", () => {
-    expect(TIERS.map((t) => t.name)).toEqual(["essentials", "business", "complete"]);
-    expect(by.business).toEqual(expect.arrayContaining([...by.essentials]));
-    expect(by.complete).toEqual(expect.arrayContaining([...by.business]));
+  it("offers two tiers, AI being Core plus more", () => {
+    expect(TIERS.map((t) => t.name)).toEqual(["core", "ai"]);
+    expect(by.ai).toEqual(expect.arrayContaining([...by.core]));
   });
-  it("puts invoices in Business and above, not Essentials", () => {
-    expect(hasFeature(by.essentials, "invoices")).toBe(false);
-    expect(hasFeature(by.business, "invoices")).toBe(true);
-    expect(hasFeature(by.complete, "invoices")).toBe(true);
+  it("keeps every module and the automations in Core", () => {
+    for (const k of ["invoices", "vendors", "forms", "licenses", "reporting_scheduled", "activity", "assistant_rules"] as const) expect(hasFeature(by.core, k)).toBe(true);
   });
-  it("keeps the costly extras in Complete only", () => {
-    for (const k of ["assistant_ai", "ocr", "activity", "reporting_scheduled"] as const) {
-      expect(hasFeature(by.business, k)).toBe(false);
-      expect(hasFeature(by.complete, k)).toBe(true);
+  it("puts only the Claude assistant, OCR and priority support in AI", () => {
+    for (const k of ["assistant_ai", "ocr", "priority_support"] as const) {
+      expect(hasFeature(by.core, k)).toBe(false);
+      expect(hasFeature(by.ai, k)).toBe(true);
     }
+    expect(by.ai.length - by.core.length).toBe(3);
   });
   it("treats a plan with no list as including everything", () => {
     expect(hasFeature(null, "ocr")).toBe(true);
@@ -36,25 +34,23 @@ describe("tiers", () => {
 import { itemAllowed, pathAllowed } from "@/lib/control/gating";
 
 describe("gating", () => {
-  const essentials = TIERS[0].features as string[];
-  const business = TIERS[1].features as string[];
-  it("hides gated pages from a plan that lacks them", () => {
-    expect(pathAllowed(essentials, "/app/invoices")).toBe(false);
-    expect(pathAllowed(essentials, "/app/vendors/abc")).toBe(false);
-    expect(pathAllowed(business, "/app/invoices")).toBe(true);
-    expect(pathAllowed(business, "/app/activity")).toBe(false);
+  const core = TIERS[0].features as string[];
+  it("lets Core use every page", () => {
+    for (const p of ["/app", "/app/invoices", "/app/vendors/x", "/app/activity", "/app/assistant", "/app/reporting"]) expect(pathAllowed(core, p)).toBe(true);
+  });
+  it("hides a page a custom plan leaves out", () => {
+    expect(pathAllowed(["documents"], "/app/invoices")).toBe(false);
+    expect(pathAllowed(["documents"], "/app/vendors/abc")).toBe(false);
   });
   it("always allows Home, Settings and unlisted pages", () => {
     for (const p of ["/app/overview", "/app/setup", "/app/file-reset"]) expect(pathAllowed([], p)).toBe(true);
-    expect(pathAllowed(essentials, "/app")).toBe(true);
   });
   it("allows everything when the plan has no list", () => {
     expect(pathAllowed(null, "/app/activity")).toBe(true);
     expect(itemAllowed(null, "invoices")).toBe(true);
   });
   it("filters sidebar items the same way", () => {
-    expect(itemAllowed(essentials, "invoices")).toBe(false);
-    expect(itemAllowed(essentials, "crm")).toBe(true);
-    expect(itemAllowed(business, "assistant")).toBe(true);
+    expect(itemAllowed(["documents"], "invoices")).toBe(false);
+    expect(itemAllowed(core, "crm")).toBe(true);
   });
 });

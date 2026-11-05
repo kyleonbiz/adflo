@@ -26,15 +26,16 @@ export const FEATURES = [
 export type FeatureKey = (typeof FEATURES)[number]["key"];
 export const FEATURE_KEYS: readonly string[] = FEATURES.map((f) => f.key);
 
-const ESSENTIALS: FeatureKey[] = ["documents", "contacts", "tasks", "setup", "licenses_basic"];
-const BUSINESS: FeatureKey[] = [...ESSENTIALS, "vendors", "licenses", "forms", "invoices", "projects", "reporting", "versioning", "assistant_rules"];
-const COMPLETE: FeatureKey[] = [...BUSINESS, "reporting_scheduled", "certifications", "activity", "assistant_ai", "ocr", "priority_support"];
+const CORE: FeatureKey[] = [
+  "documents", "contacts", "tasks", "setup", "licenses_basic", "vendors", "licenses", "forms", "invoices", "projects", "reporting",
+  "versioning", "assistant_rules", "reporting_scheduled", "certifications", "activity",
+];
+const AI: FeatureKey[] = [...CORE, "assistant_ai", "ocr", "priority_support"];
 
-/** The tiers offered, in order. Seats are included seats; prices are set separately by the Owner. */
+/** The tiers offered, in order. Core is the whole platform run by hand with its automations; AI adds the Claude assistant and OCR. */
 export const TIERS: readonly { name: string; blurb: string; seatsIncluded: number; features: readonly FeatureKey[] }[] = [
-  { name: "essentials", blurb: "Solo owners and very small teams getting organized.", seatsIncluded: 3, features: ESSENTIALS },
-  { name: "business", blurb: "Small teams with licenses, vendors, paperwork and billing.", seatsIncluded: 10, features: BUSINESS },
-  { name: "complete", blurb: "Regulated or multi-role businesses that want automation and oversight.", seatsIncluded: 25, features: COMPLETE },
+  { name: "core", blurb: "The whole platform with its automations: you enter and review, it reminds and schedules.", seatsIncluded: 10, features: CORE },
+  { name: "ai", blurb: "Everything in Core, plus the Claude-backed assistant, OCR of photos and priority support.", seatsIncluded: 25, features: AI },
 ];
 
 /** True when a plan with these features includes `key`. `null` (a legacy plan with no list) includes everything. */
