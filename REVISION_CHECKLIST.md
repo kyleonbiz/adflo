@@ -46,7 +46,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Rename the AI assistant to Addy
 - [x] Send a form after creating it (main already had a Send button on each form; now the Send dialog also opens right after you create a new form)
 - [x] Make the app feel alive: pages ease in again
-- [ ] "Remind me" on the flat Tasks list too, not only inside Projects
+- [x] "Remind me" on the flat Tasks list too, not only inside Projects (the alarm-clock button on each open task; the reminder shows in the bell, on Home and on the calendar)
 - [ ] AI assistant completes a task in any service, within its limits (drafts only today)
 - [ ] OCR for scanned PDFs (photos and scans only today)
 - [ ] Sending email for vendor reminders and scheduled reports (needs a mail service)

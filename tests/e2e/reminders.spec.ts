@@ -19,4 +19,17 @@ test.describe("remind me", () => {
     await item.getByRole("button", { name: /^Clear reminder/ }).click();
     await expect(page.getByTestId("attention-item").filter({ hasText: "Send the W-9" })).toHaveCount(0);
   });
+
+  test("a task in the flat Tasks list can be given a reminder, and it shows on the calendar", async ({ page }) => {
+    await page.goto("/app/projects");
+    const row = page.getByTestId("task-row").first();
+    await expect(row).toBeVisible();
+    await row.getByRole("button", { name: /^Remind me about / }).click();
+    await page.getByRole("menuitem", { name: "Tomorrow" }).click();
+    await expect(row.getByRole("button", { name: /^Reminder set for / })).toBeVisible();
+
+    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Calendar", exact: true }).click();
+    await page.getByRole("tab", { name: "agenda" }).click();
+    await expect(page.getByTestId("agenda-event").filter({ hasText: "Reminders" }).first()).toBeVisible();
+  });
 });

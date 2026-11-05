@@ -2,6 +2,7 @@
 
 import { useId, useMemo, useState } from "react";
 import { Pencil, Plus, Repeat, X } from "lucide-react";
+import { RemindMenu } from "@/components/modules/remind-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -167,6 +168,7 @@ export function TasksView({ projects, today, query, filter, onFilter, showDone, 
                   )}
                   {task.assignee && <span className="text-xs text-muted-foreground">{task.assignee}</span>}
                   {task.dueOn && <Badge variant={TASK_BADGE[state] ?? "muted"} aria-hidden>{dueText(task, today)}</Badge>}
+                  {!task.done && <RemindMenu kind="task" id={task.id} text={isGeneral(project) ? task.title : `${task.title} · ${project.name}`} area="Tasks" href="/app/projects" today={today} />}
                   <Button size="icon-sm" variant="ghost" aria-label={`Edit task ${task.title}`} title="Edit task" onClick={() => setEditing(task.id)}><Pencil /></Button>
                   <Button size="icon-sm" variant="ghost" aria-label={`Remove task ${task.title}`} title="Remove task" onClick={() => actions.onRemoveTask(project, task)}><X /></Button>
                 </li>
