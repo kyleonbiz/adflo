@@ -1,7 +1,7 @@
 import "server-only";
 import { notFound, redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { devModeAllowed, getSupabaseEnv } from "@/lib/supabase/env";
+import { controlDemoActive, devModeAllowed, getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { STAFF_ROLES, type StaffRole } from "./types";
 
@@ -20,9 +20,10 @@ export async function findStaff(supabase: SupabaseClient): Promise<Staff | null>
 /**
  * Demo switch for trying the screens before the database is set up: set CONTROL_DEMO=true on the server (e.g. in Vercel).
  * Off unless set. When on, /control opens without sign-in and shows only the built-in sample data; it never reads or
- * writes the database, and every change request is refused. Turn it off (remove the variable) before real clients use the app.
+ * writes the database, and every change request is refused. It only applies while no database is configured: once Supabase
+ * is connected the variable is ignored. Still remove it before real clients use the app.
  */
-export const controlDemoEnabled = () => process.env.CONTROL_DEMO === "true";
+export const controlDemoEnabled = controlDemoActive;
 
 export type ControlAccess = { mode: "live"; staff: Staff; supabase: SupabaseClient } | { mode: "preview" };
 

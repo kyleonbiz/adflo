@@ -24,7 +24,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import { updateSession } from "@/lib/supabase/proxy";
-import { devModeAllowed } from "@/lib/supabase/env";
+import { controlDemoActive, devModeAllowed } from "@/lib/supabase/env";
 import { safeNext } from "@/lib/safe-redirect";
 import { getDms } from "@/lib/dms/server/context";
 import { json, route } from "@/lib/dms/server/respond";
@@ -68,6 +68,38 @@ describe("proxy / route gating", () => {
   });
   it("is a pass-through when Supabase is not configured (dev mode)", async () => {
     expect((await updateSession(req("/app"))).status).toBe(200);
+  });
+
+  // CONTROL_DEMO is for trying the staff screens before a database exists. Left on by mistake once Supabase is
+  // connected, it used to drop the sign-in redirect for /control on a live deployment.
+  it("keeps /control behind sign-in even if CONTROL_DEMO is left on, once Supabase is configured", async () => {
+    withSupabase();
+    vi.stubEnv("CONTROL_DEMO", "true");
+    for (const path of ["/control", "/control/clients", "/control/billing"]) {
+      const res = await updateSession(req(path));
+      expect(res.status, path).toBe(307);
+      expect(new URL(res.headers.get("location")!).pathname).toBe("/login");
+    }
+  });
+  it("answers anonymous /api/control calls with a 401 even with CONTROL_DEMO on", async () => {
+    withSupabase();
+    vi.stubEnv("CONTROL_DEMO", "true");
+    expect((await updateSession(req("/api/control/clients", { method: "POST" }))).status).toBe(401);
+  });
+});
+
+describe("control demo switch", () => {
+  it("applies only while no database is configured", () => {
+    vi.stubEnv("CONTROL_DEMO", "true");
+    expect(controlDemoActive()).toBe(true);
+    withSupabase();
+    expect(controlDemoActive()).toBe(false);
+  });
+  it("is off unless exactly 'true'", () => {
+    for (const v of ["", "1", "TRUE", "yes", "false"]) {
+      vi.stubEnv("CONTROL_DEMO", v);
+      expect(controlDemoActive(), v).toBe(false);
+    }
   });
 });
 

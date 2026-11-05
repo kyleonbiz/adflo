@@ -3,7 +3,6 @@ import { Brand } from "@/components/brand";
 import { AgreementText } from "@/components/control/agreement-text";
 import { AcceptForm } from "@/components/control/agreement-accept";
 import { fakeAgreementView, isFakeAgreement } from "@/lib/control/fake-agreement";
-import { hashToken } from "@/lib/control/token";
 import { isAgreementToken } from "@/lib/control/validation";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -18,7 +17,8 @@ export default async function AgreementPage({ params }: PageProps<"/agreement/[t
   let view: View | null = null;
   if (isFakeAgreement(token)) view = fakeAgreementView();
   else if (getSupabaseEnv() && isAgreementToken(token)) {
-    const { data } = await (await createServerSupabase()).rpc("agreement_public_view", { p_token_hash: hashToken(token) });
+    // The database hashes the secret itself, so the stored hash is never a usable credential.
+    const { data } = await (await createServerSupabase()).rpc("agreement_public_view", { p_token: token });
     view = ((data ?? []) as View[])[0] ?? null;
   }
   return (

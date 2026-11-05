@@ -17,7 +17,7 @@ select t.as_staff(:own::uuid);
 select t.affected('owner adds a plan', $$insert into public.plans (name, price_cents, seats_included) values ('pro', 9900, 10)$$, 1);
 select t.affected('owner sets a client price', $$update public.clients set price_override_cents = 7900, price_note = 'founding client' where name = 'Gamma LLC'$$, 1);
 select t.ok('price change is audited', t.count($$select 1 from public.staff_audit_log where action = 'client.updated' and detail ? 'price_override_cents'$$) = 1);
-select t.ok('plan creation is audited', t.count($$select 1 from public.staff_audit_log where action = 'plan.insert'$$) = 1);
+select t.ok('plan creation is audited', t.count($$select 1 from public.staff_audit_log where action = 'plan.insert' and detail ->> 'name' = 'pro'$$) = 1);
 select t.ok('usage counts seats and last login', t.count($$select 1 from public.control_client_usage() u join public.clients c on c.id = u.client_id where c.name = 'Gamma LLC' and u.seats_used = 1 and u.last_active = '2026-10-30 10:00+00'$$) = 1);
 
 select t.as_staff(:sup::uuid);
@@ -33,7 +33,7 @@ select t.fails('support cannot add staff', $$select public.control_add_staff('ne
 select t.affected('support cannot promote themselves', format($$update public.staff_members set role = 'owner' where user_id = %L$$, :sup::text), 0);
 
 select t.as_staff(:bil::uuid);
-select t.ok('billing reads plans', t.count('select 1 from public.plans') = 2);
+select t.ok('billing reads plans', t.count($$select 1 from public.plans where lower(name) in ('standard', 'pro')$$) = 2);
 select t.fails('billing cannot tick a step', format($$insert into public.client_checklist (client_id, step, done_by) select id, 'workspace', %L from public.clients where name = 'Gamma LLC'$$, :bil::text));
 
 select t.as_staff(:own::uuid, 'aal1');

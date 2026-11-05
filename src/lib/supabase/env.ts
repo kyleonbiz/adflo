@@ -18,6 +18,15 @@ export function getServiceRoleKey(): string | null {
 }
 
 /**
+ * The sample-data preview of /control (CONTROL_DEMO=true) exists for clicking through the screens before a database is
+ * connected. Once Supabase is configured the flag is ignored, so a variable left on by mistake cannot open the staff
+ * screens without sign-in on a live deployment.
+ */
+export function controlDemoActive(): boolean {
+  return process.env.CONTROL_DEMO === "true" && !getSupabaseEnv();
+}
+
+/**
  * In-memory "development mode" is only allowed when Supabase is not configured
  * AND we are not in production, unless explicitly forced with DMS_ALLOW_DEV_MODE=true.
  */

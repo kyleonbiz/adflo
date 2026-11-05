@@ -2,9 +2,11 @@
 \set own '''00000000-0000-4000-8000-000000000091'''
 \set sup '''00000000-0000-4000-8000-000000000092'''
 \set bil '''00000000-0000-4000-8000-000000000093'''
-\set h1 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-\set h2 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+-- The link secrets (43 URL-safe characters, as newToken() makes them). Only their SHA-256 is stored.
+\set r1 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
+\set r2 'BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB'
 reset role;
+select encode(sha256(convert_to(:'r1', 'utf8')), 'hex') as h1, encode(sha256(convert_to(:'r2', 'utf8')), 'hex') as h2 \gset
 insert into auth.users (id, email) values (:own, 'own4@staff.test'), (:sup, 'sup4@staff.test'), (:bil, 'bil4@staff.test');
 insert into public.staff_members (user_id, role, display_name, email) values (:own, 'owner', 'Own4', 'own4@staff.test'), (:sup, 'support', 'Sup4', 'sup4@staff.test'), (:bil, 'billing', 'Bil4', 'bil4@staff.test');
 insert into public.clients (name) values ('Epsilon LLC');
@@ -30,17 +32,24 @@ select t.fails('agreements cannot be written directly', format($$update public.a
 select t.as_staff(:bil::uuid);
 select t.fails('billing cannot send', format($$select public.control_send_agreement((select id from public.clients where name = 'Epsilon LLC'), (select id from public.agreement_templates limit 1), %L)$$, :'h2'), 'Not allowed');
 select t.ok('billing can read what was sent', t.count('select 1 from public.agreements_sent') = 1);
+select t.ok('billing cannot use the stored hash to accept for the client',
+  public.agreement_public_accept((select token_hash from public.agreements_sent limit 1), 'Forger Name', 'forger@e.co') = false
+  and t.count('select 1 from public.agreements_sent where accepted_at is not null') = 0);
 
 select t.as_anon();
 select t.fails('anon cannot read the tables', 'select 1 from public.agreements_sent');
-select t.ok('anon sees the agreement with the right secret', t.count($$select 1 from public.agreement_public_view('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') where title = 'Terms of Service' and version = 2 and client_name = 'Epsilon LLC' and accepted_at is null$$) = 1);
-select t.ok('anon sees nothing for a wrong secret', t.count($$select 1 from public.agreement_public_view('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb')$$) = 0);
-select t.ok('acceptance needs a real name', public.agreement_public_accept(:'h1', 'X', 'a@b.co') = false);
-select t.ok('acceptance needs a real email', public.agreement_public_accept(:'h1', 'Pat Lee', 'nope') = false);
-select t.ok('acceptance by a wrong secret fails', public.agreement_public_accept(:'h2', 'Pat Lee', 'pat@e.co') = false);
-select t.ok('client accepts', public.agreement_public_accept(:'h1', 'Pat Lee', 'Pat@E.co') = true);
-select t.ok('a second acceptance is refused', public.agreement_public_accept(:'h1', 'Someone Else', 'x@e.co') = false);
-select t.ok('the view now shows who accepted', t.count($$select 1 from public.agreement_public_view('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') where accepted_name = 'Pat Lee'$$) = 1);
+select t.ok('anon sees the agreement with the right secret', t.count($$select 1 from public.agreement_public_view('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA') where title = 'Terms of Service' and version = 2 and client_name = 'Epsilon LLC' and accepted_at is null$$) = 1);
+select t.ok('anon sees nothing for a wrong secret', t.count($$select 1 from public.agreement_public_view('BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')$$) = 0);
+select t.ok('the stored hash is no credential: it shows nothing', t.count(format($$select 1 from public.agreement_public_view(%L)$$, :'h1')) = 0);
+select t.ok('...and cannot accept', public.agreement_public_accept(:'h1', 'Pat Lee', 'pat@e.co') = false);
+select t.ok('a malformed secret is refused', public.agreement_public_accept('short', 'Pat Lee', 'pat@e.co') = false and public.agreement_public_accept(null, 'Pat Lee', 'pat@e.co') = false);
+select t.ok('a secret with the wrong length is refused', public.agreement_public_accept(repeat('A', 44), 'Pat Lee', 'pat@e.co') = false);
+select t.ok('acceptance needs a real name', public.agreement_public_accept(:'r1', 'X', 'a@b.co') = false);
+select t.ok('acceptance needs a real email', public.agreement_public_accept(:'r1', 'Pat Lee', 'nope') = false);
+select t.ok('acceptance by a wrong secret fails', public.agreement_public_accept(:'r2', 'Pat Lee', 'pat@e.co') = false);
+select t.ok('client accepts', public.agreement_public_accept(:'r1', 'Pat Lee', 'Pat@E.co') = true);
+select t.ok('a second acceptance is refused', public.agreement_public_accept(:'r1', 'Someone Else', 'x@e.co') = false);
+select t.ok('the view now shows who accepted', t.count($$select 1 from public.agreement_public_view('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA') where accepted_name = 'Pat Lee'$$) = 1);
 
 select t.as_staff(:own::uuid);
 select t.ok('acceptance is recorded with the email', t.count($$select 1 from public.agreements_sent where accepted_email = 'pat@e.co'$$) = 1);
@@ -50,7 +59,7 @@ select t.ok('the timeline shows the agreement', t.count($$select 1 from public.c
 reset role;
 update public.agreements_sent set expires_at = now() - interval '1 day', accepted_at = null where token_hash = :'h1';
 select t.as_anon();
-select t.ok('an expired link cannot be accepted', public.agreement_public_accept(:'h1', 'Pat Lee', 'pat@e.co') = false);
-select t.ok('...and is reported as expired', t.count($$select 1 from public.agreement_public_view('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa') where expired$$) = 1);
+select t.ok('an expired link cannot be accepted', public.agreement_public_accept(:'r1', 'Pat Lee', 'pat@e.co') = false);
+select t.ok('...and is reported as expired', t.count($$select 1 from public.agreement_public_view('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA') where expired$$) = 1);
 reset role;
 \echo ALL CONTROL4 TESTS PASSED

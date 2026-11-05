@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { checkRate } from "@/lib/dms/server/rate-limit";
 import { sameOrigin } from "@/lib/dms/server/respond";
 import { fakeAgreementAccept, fakeAgreementReset, isFakeAgreement } from "@/lib/control/fake-agreement";
-import { hashToken } from "@/lib/control/token";
 import { parseAcceptInput } from "@/lib/control/validation";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -29,7 +28,7 @@ export async function POST(req: Request) {
   if (!parsed.ok) return bad(400, "Check the highlighted fields.", parsed.errors);
   const { token, name, email } = parsed.value;
   const supabase = await createServerSupabase();
-  const { data, error } = await supabase.rpc("agreement_public_accept", { p_token_hash: hashToken(token), p_name: name, p_email: email });
+  const { data, error } = await supabase.rpc("agreement_public_accept", { p_token: token, p_name: name, p_email: email });
   if (error) return bad(500, "Something went wrong. Try again.");
   if (!data) return bad(409, "This link has expired or was already used. Ask AdFlo for a new one.");
   return NextResponse.json({ ok: true }, { headers: { "cache-control": "no-store" } });

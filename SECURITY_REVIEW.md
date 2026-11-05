@@ -165,3 +165,66 @@ Deployment note: apply migration `20261023000007_dms_content_search.sql`. It dro
 `search_vector` column (content only) and resets nothing else; existing documents become `pending` and are indexed
 by the backfill described in the README.
 
+
+## Addendum 2 (2026-11-05): control center, agreements, assistant, licenses, public pages
+
+Scope: everything added after the first review: migrations 8–19, the staff Control Center and its API, the public agreement
+flow, the Claude assistant, license parsing/OCR, the public invoice page, plan gating, and a dependency and git-history scan.
+Method: read every new route, helper and SQL function (grants, `SECURITY DEFINER` bodies, RLS policies); ran the full SQL
+suite, typecheck, lint, unit and e2e tests; reproduced each fixed issue against the old code before fixing it.
+**Not** a penetration test and **not** run against a hosted Supabase project (same limits as above).
+
+| # | Severity | Finding | Status |
+|---|----------|---------|--------|
+| 20 | Medium | The stored agreement-link hash was itself a credential: `agreement_public_accept(hash, …)` is callable by `anon`, and every staff role (including read-only billing) can `SELECT` `token_hash`. Anyone able to read that column, a backup or a query result could record a client's legal acceptance without the link. | Fixed (migration 19) |
+| 21 | Low–Med | `CONTROL_DEMO=true` left on after Supabase was connected removed the sign-in redirect for `/control` (the proxy returned 200 to anonymous users; sample data only). The proxy clause only ever took effect in that exact combination. | Fixed |
+| 22 | Medium (design) | `/invoice/[token]` carries the whole invoice, unsigned, in the URL and renders it on the app's own origin. XSS is not possible today (every string is escaped, dates pass a strict anchored regex), but anyone can mint an "invoice from AdFlo" with their own payment details on your domain. | **Open: decision needed** |
+| 23 | Medium (defence in depth) | No CSP `script-src` (item 19). More relevant now: `invoice/[token]` uses `dangerouslySetInnerHTML` on a cookie-bearing origin, so a single future escaping mistake there is script execution. | **Open: decision needed** |
+| 24 | Medium (architecture) | Many modules (todos, approvals, signing, audit, reminders, packets, settings, and staff billing in `lib/control/billing-storage.ts`) persist business data in the browser's `localStorage`: no server auth, no RLS, no audit trail, readable by any script on the origin, and left on shared computers. | **Open: decision needed** |
+| 25 | Low | Agreement acceptance proves possession of the link, not who the signer is. Staff who relay the link (the UI shows it to them) can accept it. | Open: send the link to the client from the server and record IP / user agent. |
+| 26 | Low | Assistant spend is capped only by the per-instance in-memory limiter (20 messages/min/user, up to 6 model calls each). | Open: add a per-user daily cap in the database. |
+| 27 | Low | Password-reset `redirectTo` is built from the request origin. | Open: set `NEXT_PUBLIC_SITE_URL` and rely on Supabase's Redirect URL allow-list. |
+| 28 | Low | `/api/licenses/parse` buffers a multipart body before the size check when no `Content-Length` is sent. Vercel's request-size cap hides this; a self-hosted deployment needs a proxy limit. | Open |
+| 29 | Info | `planIncludes()` fails open when it cannot tell (by design). Plan gating is a billing control, not a security boundary. | Accepted |
+
+### 20. Agreement hash as bearer credential: fixed
+Before: the app hashed the secret and passed the hash to `agreement_public_view/accept`. After (`…0019_agreement_verify_secret_in_db.sql`):
+both functions take the 43-character secret and hash it in the database, so the stored hash matches nothing if replayed.
+Tests: `supabase/tests/control4.sql` (billing reads the hash and cannot accept with it; the hash shows nothing to anon; malformed
+and wrong-length secrets are refused), `tests/unit/agreement-accept-route.test.ts` (the route sends the secret, never a hash).
+Reproduced first: against the old functions the billing-forgery assertion fails. **Deploy the app and the migration together**;
+until both are live, links fail closed ("not valid").
+Residual: see item 25.
+
+### 21. Demo switch: fixed
+`controlDemoActive()` (`src/lib/supabase/env.ts`) is true only when `CONTROL_DEMO=true` **and** Supabase is not configured; the
+proxy no longer consults the variable. Tests in `tests/unit/auth.test.ts`; reproduced first (old proxy answered 200 for `/control`).
+
+### Reviewed and found sound
+- **Database authorization.** Every `SECURITY DEFINER` function sets `search_path = ''`; execute is revoked from `public`/`anon`
+  everywhere except the two agreement functions that are meant to be public; every staff function checks `is_staff(...)` itself, and
+  `staff_role()` requires `aal2`, so the second factor is enforced by the database, not only the app. Role changes are owner-only, the
+  last-owner rule is a trigger, `app_errors` is written only by the service role. All 11 new tables have RLS enabled.
+- **Staff API.** Each route goes through `staffRoute`: same-origin check, active staff row, `aal2`, then role. Password-reset email
+  only goes to an address that belongs to a client and is audit-logged.
+- **Assistant.** It never reads server data. It edits a setup config the client sent (re-validated on return) and can only emit
+  same-origin "draft" links built from fixed paths and allow-listed, length- and shape-checked fields; it rejects card, SSN and
+  password-like values and cannot save, send, approve or delete. Prompt injection therefore cannot reach another tenant or any record.
+- **Maintenance routes** (`CRON_SECRET`, constant-time compare, fail closed), **share links** (service-role RPC only) and **auth callback**
+  unchanged and sound.
+- **Dependencies.** `npm audit --omit=dev`: 0 vulnerabilities. Eight *moderate* findings exist in the dev-only lint chain
+  (`minimatch` ReDoS via `typescript-eslint`); nothing ships. `npm audit fix` would downgrade `eslint-config-next` by a major
+  version, so it was not applied.
+- **Secrets.** Pattern scan (Anthropic and GitHub tokens, Supabase JWTs and `sbp_` tokens, AWS keys, private keys) over the tree and all 81
+  commits found nothing; the scan was checked with a positive control. `.env` files were never committed (only `.env.example`).
+
+### Test-suite repairs (no behaviour change)
+`supabase/tests/control2.sql` had two stale assertions that failed on `main` and stopped `test:db` before the control, agreement and
+monitoring suites ran: it counted exactly one `plan.insert` audit row and exactly two visible plans, but the tier migrations (15, 17)
+seed more. They now assert on the plan the test creates. `test:db` is green again (355 assertions).
+
+### Deployment requirements added
+- Apply `20261105000019_agreement_verify_secret_in_db.sql` together with this release.
+- Remove `CONTROL_DEMO` from production anyway; it is now ignored once Supabase is configured.
+- Supabase Auth: keep "Confirm email" on, add your production URL to the Redirect URL allow-list (item 27), and consider requiring
+  MFA for staff accounts at enrolment time. These are hosted settings this review could not see.

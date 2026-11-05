@@ -25,7 +25,9 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
   const isApi = path.startsWith("/api/dms") || path.startsWith("/api/control");
-  const isPrivate = path === "/app" || path.startsWith("/app/") || ((path === "/control" || path.startsWith("/control/")) && process.env.CONTROL_DEMO !== "true") || isApi;
+  // With a database configured the staff screens always need sign-in. CONTROL_DEMO is deliberately not consulted here:
+  // it only applies when no database is connected, and this code does not run then.
+  const isPrivate = path === "/app" || path.startsWith("/app/") || path === "/control" || path.startsWith("/control/") || isApi;
 
   if (!data.user && isPrivate) {
     if (isApi) {

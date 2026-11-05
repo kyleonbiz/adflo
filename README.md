@@ -421,4 +421,5 @@ See [SECURITY_REVIEW.md](SECURITY_REVIEW.md) for the pre-release review: fixed f
 
 **Demo switch.** To click through the screens before the database is set up, set `CONTROL_DEMO=true` on the server (Vercel →
 Settings → Environment Variables, then redeploy). `/control` then opens without sign-in and shows only built-in sample data;
-it never reads or writes the database and refuses every change. Remove the variable before real clients use the app.
+it never reads or writes the database and refuses every change. The switch is ignored as soon as Supabase is configured, so it
+cannot expose `/control` on a live deployment, but remove the variable before real clients use the app anyway.
