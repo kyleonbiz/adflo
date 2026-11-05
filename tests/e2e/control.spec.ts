@@ -26,7 +26,7 @@ test("control center preview: overview, clients and audit log open", async ({ pa
 
   await page.getByRole("link", { name: "Agreements" }).first().click();
   await expect(page.getByRole("heading", { name: "Agreements" })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText("Terms of Service")).toBeVisible();
+  await expect(page.getByText("Terms of Service").first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Publish" })).toHaveCount(0);
 
   await page.getByRole("link", { name: "Plans & pricing" }).first().click();
@@ -61,6 +61,17 @@ test("control center API refuses plan, team and checklist writes without a datab
   expect((await request.patch("/api/control/errors/1", { data: { resolved: true } })).status()).toBe(503);
   expect((await request.post("/api/control/staff", { data: { email: "a@b.co", role: "support" } })).status()).toBe(503);
   expect((await request.post("/api/control/clients/00000000-0000-4000-8000-000000000000/checklist", { data: { step: "workspace", done: true } })).status()).toBe(503);
+});
+
+test("agreements page shows a published agreement with headings and lists", async ({ page }) => {
+  await page.goto("/control/agreements");
+  await expect(page.getByRole("heading", { name: "Agreements", level: 1 })).toBeVisible({ timeout: 30_000 });
+  await page.getByText("v2 ·").click(); // open the sample agreement
+  const published = page.getByRole("region", { name: "Published" });
+  await expect(published.getByRole("heading", { name: "What you agree to" })).toBeVisible();
+  const bullets = published.locator("ul ul");
+  await expect(bullets.getByRole("listitem")).toHaveText(["Pay invoices when they are due", "Keep your account details up to date"]);
+  await expect(published.locator("ol").getByRole("listitem")).toHaveText(["Read the terms", "Tick both boxes and accept"]);
 });
 
 test("agreement link with an unknown secret shows a plain not-valid page, and public accept refuses bad input", async ({ page, request }) => {
