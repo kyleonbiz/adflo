@@ -17,7 +17,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // The text reader for photos and scans runs worker threads and reads its language data from disk.
-  serverExternalPackages: ["tesseract.js"],
+  serverExternalPackages: ["tesseract.js", "@napi-rs/canvas"],
   // Only a production build needs the files copied next to the route; listing them in development makes the dev server
   // rebuild and reload the page over and over.
   ...(process.env.NODE_ENV === "production"

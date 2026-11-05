@@ -77,7 +77,7 @@ export async function extractText(
       case "pptx":
         return { raw: extractPptx(input.bytes, limits, check), partial: false };
       default: {
-        const r = await extractPdf(input.bytes, limits, check);
+        const r = await extractPdf(input.bytes, limits, check, input.ocr);
         return { raw: r.text, partial: r.truncatedPages };
       }
     }

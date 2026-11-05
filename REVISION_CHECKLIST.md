@@ -48,5 +48,5 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Make the app feel alive: pages ease in again
 - [x] "Remind me" on the flat Tasks list too, not only inside Projects (the alarm-clock button on each open task; the reminder shows in the bell, on Home and on the calendar)
 - [x] AI assistant completes a task in any service, within its limits (Addy now adds to your to-do list, sets reminders and ticks off to-dos by itself, each with Undo; everything else is still a draft you save)
-- [ ] OCR for scanned PDFs (photos and scans only today)
+- [x] OCR for scanned PDFs (a PDF with no text layer now has its first 3 pages drawn and read like photos, wherever the text reader is turned on; the document index still skips OCR)
 - [ ] Sending email for vendor reminders and scheduled reports (needs a mail service)
