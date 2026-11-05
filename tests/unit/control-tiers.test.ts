@@ -4,19 +4,19 @@ import { parsePlanInput } from "@/lib/control/validation";
 
 describe("tiers", () => {
   const by = Object.fromEntries(TIERS.map((t) => [t.name, t.features]));
-  it("offers two tiers, AI being Core plus more", () => {
-    expect(TIERS.map((t) => t.name)).toEqual(["core", "ai"]);
-    expect(by.ai).toEqual(expect.arrayContaining([...by.core]));
+  it("offers two tiers, Core + being Core plus more", () => {
+    expect(TIERS.map((t) => t.name)).toEqual(["core", "core +"]);
+    expect(by["core +"]).toEqual(expect.arrayContaining([...by.core]));
   });
   it("keeps every module and the automations in Core", () => {
     for (const k of ["invoices", "vendors", "forms", "licenses", "reporting_scheduled", "activity", "assistant_rules"] as const) expect(hasFeature(by.core, k)).toBe(true);
   });
-  it("puts only the Claude assistant, OCR and priority support in AI", () => {
+  it("puts only the Claude assistant, OCR and priority support in Core +", () => {
     for (const k of ["assistant_ai", "ocr", "priority_support"] as const) {
       expect(hasFeature(by.core, k)).toBe(false);
-      expect(hasFeature(by.ai, k)).toBe(true);
+      expect(hasFeature(by["core +"], k)).toBe(true);
     }
-    expect(by.ai.length - by.core.length).toBe(3);
+    expect(by["core +"].length - by.core.length).toBe(3);
   });
   it("treats a plan with no list as including everything", () => {
     expect(hasFeature(null, "ocr")).toBe(true);

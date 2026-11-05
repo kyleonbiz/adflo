@@ -35,7 +35,7 @@ const AI: FeatureKey[] = [...CORE, "assistant_ai", "ocr", "priority_support"];
 /** The tiers offered, in order. Core is the whole platform run by hand with its automations; AI adds the Claude assistant and OCR. */
 export const TIERS: readonly { name: string; blurb: string; seatsIncluded: number; features: readonly FeatureKey[] }[] = [
   { name: "core", blurb: "The whole platform with its automations: you enter and review, it reminds and schedules.", seatsIncluded: 10, features: CORE },
-  { name: "ai", blurb: "Everything in Core, plus the Claude-backed assistant, OCR of photos and priority support.", seatsIncluded: 25, features: AI },
+  { name: "core +", blurb: "Everything in Core, plus the Claude-backed assistant, OCR of photos and priority support.", seatsIncluded: 25, features: AI },
 ];
 
 /** True when a plan with these features includes `key`. `null` (a legacy plan with no list) includes everything. */
