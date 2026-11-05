@@ -1,15 +1,16 @@
-import Link from "next/link";
 import { ApprovalsSection } from "./approvals-section";
+import { SettingsNav, SettingsTabGate } from "./settings-access";
+import { InvoiceChecksSection } from "./invoice-checks-section";
 import { NotificationsSection } from "./notifications-section";
 import { ProfileSection } from "./profile-section";
 import { TeamSection } from "./team-section";
 import { SetupPage } from "@/components/setup/setup-page";
-import { cn } from "@/lib/utils";
 
 export const SETTINGS_TABS = [
   { id: "profile", label: "Business profile", blurb: "Your business details, used across AdFlo." },
   { id: "team", label: "Team", blurb: "Who can open this workspace, and what they can do." },
   { id: "notifications", label: "Notifications", blurb: "Which reminders you want, and how early." },
+  { id: "invoice-checks", label: "Invoice options", blurb: "Optional invoice checks and shortcuts. Everything here is off until you switch it on." },
   { id: "approvals", label: "Approvals", blurb: "Who signs off, in what order, before a request or form goes ahead." },
   { id: "setup", label: "Guided setup", blurb: "Five short steps to get your services, templates and checks in place." },
 ] as const;
@@ -22,31 +23,19 @@ export function SettingsPage({ tab, mode, base, preview }: { tab: SettingsTab; m
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-      <nav aria-label="Settings sections">
-        <ul className="flex flex-wrap gap-2">
-          {SETTINGS_TABS.map((t) => (
-            <li key={t.id}>
-              <Link
-                href={`${base}/setup?tab=${t.id}`}
-                aria-current={t.id === tab ? "page" : undefined}
-                className={cn("flex h-9 items-center rounded-full border px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  t.id === tab ? "border-primary bg-accent font-medium text-primary" : "bg-card text-muted-foreground hover:text-foreground")}
-              >
-                {t.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      <SettingsNav tabs={SETTINGS_TABS} current={tab} base={base} />
       <div>
         <h2 className="text-lg font-semibold">{current.label}</h2>
         <p className="text-sm text-muted-foreground">{current.blurb}</p>
       </div>
-      {tab === "profile" && <ProfileSection />}
-      {tab === "team" && <TeamSection mode={mode} />}
-      {tab === "notifications" && <NotificationsSection />}
-      {tab === "approvals" && <ApprovalsSection />}
-      {tab === "setup" && <SetupPage base={base} preview={preview} />}
+      <SettingsTabGate tab={tab}>
+        {tab === "profile" && <ProfileSection />}
+        {tab === "team" && <TeamSection mode={mode} />}
+        {tab === "notifications" && <NotificationsSection />}
+        {tab === "approvals" && <ApprovalsSection />}
+        {tab === "invoice-checks" && <InvoiceChecksSection />}
+        {tab === "setup" && <SetupPage base={base} preview={preview} />}
+      </SettingsTabGate>
     </div>
   );
 }

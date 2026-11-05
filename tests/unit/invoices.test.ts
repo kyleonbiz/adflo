@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { addDays } from "@/lib/dates";
 import {
-  invoiceAlerts, invoiceState, invoicesToCsv, markPaid, markSent, needsAttention, nextInvoiceNumber,
+  findDuplicateInvoice, invoiceWarnings, unusualAmount, invoiceAlerts, invoiceState, invoicesToCsv, markPaid, markSent, needsAttention, nextInvoiceNumber,
   nextOverdueNotice, nextRecurringInvoice, nextReminder, groupInvoices, hasNextInvoice, invoiceTotals, describeItems, generateInvoiceNumber, paymentDateError, reopen, voidInvoice, summarize, formatMoney, daysOverdue,
 } from "@/lib/invoices/logic";
+import { addContactPath } from "@/lib/invoices/share";
+import { parseSettings } from "@/lib/settings/storage";
 import { sampleInvoices } from "../support/invoices-sample-data";
 import type { Invoice } from "@/lib/invoices/types";
 import { invoiceFormSchema, parseDollars } from "@/lib/invoices/validation";
@@ -253,5 +255,55 @@ describe("groupInvoices", () => {
     expect(groups.map((g) => [g.key, g.invoices.map((i) => i.id)])).toEqual([
       ["overdue", ["b", "a"]], ["due_soon", ["c"]], ["draft", ["d"]], ["closed", ["f", "e"]],
     ]);
+  });
+});
+
+describe("optional invoice checks", () => {
+  const history = [
+    inv({ id: "a", number: "A", amountCents: 10_000, issuedOn: "2026-08-01" }),
+    inv({ id: "b", number: "B", amountCents: 11_000, issuedOn: "2026-09-01" }),
+    inv({ id: "c", number: "C", amountCents: 9_000, issuedOn: "2026-10-01" }),
+  ];
+  const on = { duplicates: true, unusualAmount: true, variancePct: 25 };
+  const off = { duplicates: false, unusualAmount: false, variancePct: 25 };
+
+  it("does nothing while the checks are off", () => {
+    expect(invoiceWarnings({ client: "Acme", amountCents: 99_999, issuedOn: "2026-10-02" }, history, off)).toEqual([]);
+  });
+  it("flags the same client, total and a near date as a duplicate", () => {
+    const found = findDuplicateInvoice({ client: " acme ", amountCents: 9_000, issuedOn: "2026-10-03" }, history);
+    expect(found?.id).toBe("c");
+    expect(findDuplicateInvoice({ client: "Acme", amountCents: 9_000, issuedOn: "2026-10-05" }, history)).toBeUndefined();
+    expect(findDuplicateInvoice({ client: "Acme", amountCents: 9_000, issuedOn: "2026-10-03" }, history, "c")).toBeUndefined();
+    expect(findDuplicateInvoice({ client: "Other", amountCents: 9_000, issuedOn: "2026-10-03" }, history)).toBeUndefined();
+  });
+  it("ignores void invoices", () => {
+    const voided = [inv({ id: "v", status: "void", amountCents: 5_000, issuedOn: "2026-10-01" })];
+    expect(findDuplicateInvoice({ client: "Acme", amountCents: 5_000, issuedOn: "2026-10-01" }, voided)).toBeUndefined();
+  });
+  it("flags totals far from the client's average, in either direction", () => {
+    expect(unusualAmount({ client: "Acme", amountCents: 20_000, issuedOn: "2026-10-20" }, history, 25)).toEqual({ averageCents: 10_000, percent: 100, direction: "above" });
+    expect(unusualAmount({ client: "Acme", amountCents: 5_000, issuedOn: "2026-10-20" }, history, 25)?.direction).toBe("below");
+    expect(unusualAmount({ client: "Acme", amountCents: 12_000, issuedOn: "2026-10-20" }, history, 25)).toBeUndefined();
+  });
+  it("needs enough history before judging an amount", () => {
+    expect(unusualAmount({ client: "Acme", amountCents: 99_999, issuedOn: "2026-10-20" }, history.slice(0, 2), 25)).toBeUndefined();
+  });
+  it("reports messages only for the checks that are on", () => {
+    const candidate = { client: "Acme", amountCents: 20_000, issuedOn: "2026-10-20" };
+    expect(invoiceWarnings(candidate, history, on)).toHaveLength(1);
+    expect(invoiceWarnings(candidate, history, { ...on, unusualAmount: false })).toEqual([]);
+  });
+});
+
+describe("invoice check settings", () => {
+  it("default to off and survive a bad saved value", () => {
+    expect(parseSettings("").invoiceChecks).toEqual({ duplicates: false, unusualAmount: false, variancePct: 25, addToContacts: false });
+    const raw = JSON.stringify({ version: 1, invoiceChecks: { duplicates: true, unusualAmount: "yes", variancePct: 7 } });
+    expect(parseSettings(raw).invoiceChecks).toEqual({ duplicates: true, unusualAmount: false, variancePct: 25, addToContacts: false });
+  });
+  it("builds a link that starts a contact from the client", () => {
+    expect(addContactPath({ client: " Acme & Sons ", clientEmail: "bill@acme.com" })).toBe("/app/contacts?add=1&name=Acme+%26+Sons&email=bill%40acme.com");
+    expect(addContactPath({ client: "Acme", clientEmail: "" })).toBe("/app/contacts?add=1&name=Acme");
   });
 });

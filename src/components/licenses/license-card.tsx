@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { daysLeft, expiryText, plural, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder } from "@/lib/licenses/logic";
+import { daysLeft, expiryText, plural, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder, riskTier } from "@/lib/licenses/logic";
 import { formatDayLong } from "@/lib/dates";
 import { LICENSE_CATEGORIES, RENEWAL_STAGES, type License, type RenewalStage } from "@/lib/licenses/types";
 import { cn } from "@/lib/utils";
-import { SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL } from "./status";
+import { SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL, TIER_BADGE, TIER_LABEL } from "./status";
 
 export interface LicenseActions {
   onEdit: (license: License) => void;
@@ -26,13 +26,14 @@ export interface LicenseActions {
  * `focusToken` changes when the page wants this card revealed (from the renewal task list): it
  * opens the documents panel and scrolls the card into view.
  */
-export function LicenseCard({ license, today, actions, focusToken = 0 }: { license: License; today: string; actions: LicenseActions; focusToken?: number }) {
+export function LicenseCard({ license, all = [], today, actions, focusToken = 0 }: { license: License; /** Every license, so dependencies can be checked. */ all?: License[]; today: string; actions: LicenseActions; focusToken?: number }) {
   // Documents start open when some are still missing and the renewal is close, so the alert is never a dead end.
   const [open, setOpen] = useState(() => missingDocuments(license) > 0 && licenseStatus(license, today) !== "active" && license.stage !== "submitted");
   const [newDoc, setNewDoc] = useState("");
   const status = licenseStatus(license, today);
   const left = daysLeft(license, today);
-  const alerts = licenseAlerts(license, today);
+  const alerts = licenseAlerts(license, today, all);
+  const tier = riskTier(license, today, all);
   const reminder = nextReminder(license, today);
   const missing = missingDocuments(license);
   const received = license.requiredDocuments.length - missing;
@@ -57,6 +58,7 @@ export function LicenseCard({ license, today, actions, focusToken = 0 }: { licen
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-semibold">{license.name}</h3>
             <Badge variant={STATUS_BADGE[status]}>{STATUS_LABEL[status]}</Badge>
+            <Badge variant={TIER_BADGE[tier]}>{TIER_LABEL[tier]} risk</Badge>
             <Badge variant="muted">{category}</Badge>
             {needsReview(license) && <Badge variant="warning">Needs review</Badge>}
           </div>

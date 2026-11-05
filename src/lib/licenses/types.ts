@@ -52,6 +52,8 @@ export interface License {
   /** What renewing costs, in whole dollars. Absent when not known. */
   renewalCost?: number | null;
   renewals?: RenewalRecord[];
+  /** Ids of licenses this one relies on (a permit that needs a valid insurance certificate). */
+  dependsOn?: string[];
 }
 
 /** Documents a license of each category usually needs at renewal; they prefill the add form. */
@@ -67,6 +69,8 @@ export const DEFAULT_DOCUMENTS: Record<LicenseCategory, string[]> = {
 };
 
 export type LicenseStatus = "active" | "renewal_window" | "expiring" | "expired";
+/** Safe: more than 60 days out. Warning: 30 to 60 days. Critical: under 30 days, expired, or a dependency has expired. */
+export type RiskTier = "safe" | "warning" | "critical";
 export type AlertSeverity = "info" | "warning" | "critical";
 
 export interface LicenseAlert {

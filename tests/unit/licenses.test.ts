@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays, addMonths, daysBetween, isDay } from "@/lib/dates";
 import {
-  expiryText, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder, renewLicense, renewalTasks, suggestedExpiry, summarize,
+  expiredDependencies, expiryText, licenseAlerts, riskTier, licenseStatus, missingDocuments, needsReview, nextReminder, renewLicense, renewalTasks, suggestedExpiry, summarize,
 } from "@/lib/licenses/logic";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import type { License } from "@/lib/licenses/types";
@@ -190,6 +190,43 @@ describe("licenseFormSchema", () => {
     const r = licenseFormSchema.safeParse({ ...valid, ...patch });
     expect(r.success).toBe(false);
     if (!r.success && text) expect(JSON.stringify(r.error.issues).toLowerCase()).toContain(text.toLowerCase());
+  });
+});
+
+describe("risk tiers and dependencies", () => {
+  const at = (days: number, over: Partial<License> = {}) => lic({ expiresOn: addDays(TODAY, days), ...over });
+
+  it("is Safe past 60 days, Warning from 60 down to 30, Critical under 30 or expired", () => {
+    expect(riskTier(at(61), TODAY)).toBe("safe");
+    expect(riskTier(at(60), TODAY)).toBe("warning");
+    expect(riskTier(at(30), TODAY)).toBe("warning");
+    expect(riskTier(at(29), TODAY)).toBe("critical");
+    expect(riskTier(at(-5), TODAY)).toBe("critical");
+  });
+  it("calms to Warning once a renewal is submitted", () => {
+    expect(riskTier(at(10, { stage: "submitted" }), TODAY)).toBe("warning");
+    expect(riskTier(at(-3, { stage: "submitted" }), TODAY)).toBe("warning");
+    expect(riskTier(at(90, { stage: "submitted" }), TODAY)).toBe("safe");
+  });
+  it("makes a license Critical when a dependency has expired, whatever its own date", () => {
+    const insurance = at(-1, { id: "coi", name: "Certificate of insurance" });
+    const permit = at(400, { id: "permit", name: "Site permit", dependsOn: ["coi"] });
+    expect(riskTier(permit, TODAY)).toBe("safe");
+    expect(riskTier(permit, TODAY, [insurance, permit])).toBe("critical");
+    expect(expiredDependencies(permit, [insurance, permit], TODAY).map((l) => l.id)).toEqual(["coi"]);
+    const alert = licenseAlerts(permit, TODAY, [insurance, permit])[0];
+    expect(alert).toMatchObject({ severity: "critical" });
+    expect(alert.message).toContain("Certificate of insurance has expired");
+  });
+  it("overrides a submitted renewal when a dependency has expired", () => {
+    const insurance = at(-1, { id: "coi" });
+    const permit = at(5, { id: "permit", stage: "submitted", dependsOn: ["coi"] });
+    expect(riskTier(permit, TODAY, [insurance, permit])).toBe("critical");
+  });
+  it("ignores dependencies that are valid, missing or itself", () => {
+    const insurance = at(200, { id: "coi" });
+    const permit = at(400, { id: "permit", dependsOn: ["coi", "gone", "permit"] });
+    expect(riskTier(permit, TODAY, [insurance, permit])).toBe("safe");
   });
 });
 

@@ -17,12 +17,13 @@ import { e2eSeed } from "@/lib/e2e-seed";
 import {
   formatMoney, describeItems, groupInvoices, hasNextInvoice, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent,   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
-import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
+import { addContactPath, invoiceMailto, invoicePath } from "@/lib/invoices/share";
 import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog, type InvoiceDraft } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
+import { useSettings } from "@/lib/settings/storage";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
 type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
@@ -48,6 +49,7 @@ function downloadCsv(text: string, name: string) {
  */
 export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { preview?: string; startNew?: boolean; draft?: InvoiceDraft; initialQuery?: string }) {
   const today = useToday();
+  const { invoiceChecks } = useSettings();
   const audit = useAudit();
   const [edited, setEdited] = useState<Invoice[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
@@ -97,6 +99,10 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
       try { await navigator.clipboard.writeText(link); setNotice(`Link to ${i.number} copied.`); }
       catch { setNotice(`Copy this link to ${i.number}: ${link}`); }
     },
+    // A new tab, because invoices live only in this tab until the database is connected.
+    onAddContact: invoiceChecks.addToContacts
+      ? (i) => { window.open(addContactPath(i), "_blank", "noopener"); setNotice(`Opened Contacts in a new tab to add ${i.client}.`); }
+      : undefined,
     onNext: (i) => {
       if (hasNextInvoice(i, invoices)) { setNotice(`The next invoice after ${i.number} already exists.`); return; }
       const next = nextRecurringInvoice(i, invoices, newId());
@@ -223,6 +229,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
         draft={draft}
         existing={invoices}
         today={today}
+        checks={invoiceChecks}
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
       />

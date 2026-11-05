@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDayLong } from "@/lib/dates";
-import { FILE_EXTENSIONS, activationBlockers, docState, onboardingProgress, vendorAlerts } from "@/lib/vendors/logic";
+import { FILE_EXTENSIONS, activationBlockers, docState, isNonCompliant, onboardingProgress, vendorAlerts } from "@/lib/vendors/logic";
 import { GHOSTED_AFTER, followUpState, notesOf, owed, unansweredReminders } from "@/lib/vendors/follow-up";
 import type { Vendor, VendorDocument } from "@/lib/vendors/types";
 import { cn } from "@/lib/utils";
@@ -110,6 +110,7 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="truncate text-base font-semibold">{vendor.name}</h3>
             <Badge variant={STATUS_BADGE[vendor.status]}>{STATUS_LABEL[vendor.status]}</Badge>
+            {isNonCompliant(vendor, today) && <Badge variant="danger">Non-compliant</Badge>}
             <Badge variant="muted">{vendor.category}</Badge>
           </div>
           <p className="text-sm text-muted-foreground">

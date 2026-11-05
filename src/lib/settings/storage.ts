@@ -1,5 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
-import { LEAD_DAYS, NOTIFICATION_KEYS, TIMEZONES, defaultSettings, type AppSettings } from "./types";
+import { LEAD_DAYS, NOTIFICATION_KEYS, TIMEZONES, VARIANCE_OPTIONS, defaultSettings, type AppSettings } from "./types";
 
 export const SETTINGS_KEY = "adflo.settings.v1";
 const EVENT = "adflo-settings-change";
@@ -18,6 +18,7 @@ export function parseSettings(raw: string): AppSettings {
     const d = (r.details ?? {}) as Record<string, unknown>;
     const n = (r.notifications ?? {}) as Record<string, unknown>;
     const en = (n.enabled ?? {}) as Record<string, unknown>;
+    const ic = (r.invoiceChecks ?? {}) as Record<string, unknown>;
     const str = (v: unknown, max: number, fallback: string) => (typeof v === "string" ? v.slice(0, max) : fallback);
     return {
       version: 1,
@@ -30,6 +31,12 @@ export function parseSettings(raw: string): AppSettings {
       notifications: {
         enabled: Object.fromEntries(NOTIFICATION_KEYS.map((k) => [k, typeof en[k] === "boolean" ? en[k] : base.notifications.enabled[k]])) as AppSettings["notifications"]["enabled"],
         leadDays: (LEAD_DAYS as readonly unknown[]).includes(n.leadDays) ? (n.leadDays as AppSettings["notifications"]["leadDays"]) : base.notifications.leadDays,
+      },
+      invoiceChecks: {
+        duplicates: ic.duplicates === true,
+        unusualAmount: ic.unusualAmount === true,
+        addToContacts: ic.addToContacts === true,
+        variancePct: (VARIANCE_OPTIONS as readonly unknown[]).includes(ic.variancePct) ? (ic.variancePct as AppSettings["invoiceChecks"]["variancePct"]) : base.invoiceChecks.variancePct,
       },
     };
   } catch { return base; }

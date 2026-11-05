@@ -76,6 +76,17 @@ export function activationBlockers(v: Vendor, today: string): string[] {
     .map((d) => (docState(d, today) === "expired" ? `${d.type} has expired` : `${d.type} is missing`));
 }
 
+/**
+ * Why an active vendor is out of compliance: a required document (such as the certificate of
+ * insurance) has expired or is missing. Empty means compliant. Vendors still onboarding or switched
+ * off are not judged here.
+ */
+export function complianceIssues(v: Vendor, today: string): string[] {
+  return v.status === "active" ? activationBlockers(v, today) : [];
+}
+
+export const isNonCompliant = (v: Vendor, today: string) => complianceIssues(v, today).length > 0;
+
 /** Moves an onboarding vendor to active, but only when every required document is in. */
 export function activate(v: Vendor, today: string): Vendor {
   if (v.status !== "onboarding" || activationBlockers(v, today).length > 0) return v;
@@ -231,6 +242,7 @@ export interface VendorSummary {
   active: number;
   onboarding: number;
   documentIssues: number;
+  nonCompliant: number;
   duplicatePairs: number;
 }
 
@@ -241,6 +253,7 @@ export function summarize(vendors: Vendor[], today: string): VendorSummary {
     active: vendors.filter((v) => v.status === "active").length,
     onboarding: vendors.filter((v) => v.status === "onboarding").length,
     documentIssues: live.reduce((n, v) => n + v.documents.filter((d) => ["expiring", "expired"].includes(docState(d, today))).length, 0),
+    nonCompliant: vendors.filter((v) => isNonCompliant(v, today)).length,
     duplicatePairs: duplicatePairs(vendors).length,
   };
 }

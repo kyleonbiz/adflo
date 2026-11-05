@@ -23,6 +23,8 @@ export const licenseFormSchema = z
           .min(1, "Add at least one reminder, e.g. 60, 30, 7")
           .max(8, "Use at most 8 reminders"),
       ),
+    /** Licenses this one relies on, by id. */
+    dependsOn: z.array(z.string()).max(20).default([]),
     notes: z.string().trim().max(1000, "Keep notes under 1000 characters"),
     renewalCost: z.string().trim().default("")
       .refine((v) => v === "" || /^\d{1,7}$/.test(v), "Whole dollars only, like 250")

@@ -215,3 +215,62 @@ export function groupInvoices(invoices: Invoice[], today: string): InvoiceGroup[
       .sort((a, b) => (key === "closed" ? (a.dueOn < b.dueOn ? 1 : a.dueOn > b.dueOn ? -1 : 0) : a.dueOn < b.dueOn ? -1 : a.dueOn > b.dueOn ? 1 : 0)),
   })).filter((g) => g.invoices.length > 0);
 }
+
+/** Two invoices to the same client for the same total, issued this close together, look like one entered twice. */
+export const DUPLICATE_WINDOW_DAYS = 3;
+/** An amount is only judged against a client's history once there are this many earlier invoices. */
+export const MIN_HISTORY = 3;
+/** Only the client's most recent invoices, from this far back, set their usual amount. */
+export const HISTORY_DAYS = 183;
+
+const sameClient = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/** The invoice that `candidate` appears to repeat, if any. Void invoices and the candidate itself are ignored. */
+export function findDuplicateInvoice(
+  candidate: Pick<Invoice, "client" | "amountCents" | "issuedOn">, existing: Invoice[], ignoreId?: string,
+): Invoice | undefined {
+  if (!candidate.client.trim()) return undefined;
+  return existing.find((i) =>
+    i.id !== ignoreId && i.status !== "void" && sameClient(i.client, candidate.client) &&
+    i.amountCents === candidate.amountCents && Math.abs(daysBetween(i.issuedOn, candidate.issuedOn)) <= DUPLICATE_WINDOW_DAYS);
+}
+
+export interface AmountCheck { averageCents: number; percent: number; direction: "above" | "below" }
+
+/**
+ * How far `candidate` is from the client's average over their recent invoices, when that is more than
+ * `variancePct`. Returns undefined when there is too little history or the amount is in the usual range.
+ */
+export function unusualAmount(
+  candidate: Pick<Invoice, "client" | "amountCents" | "issuedOn">, existing: Invoice[], variancePct: number, ignoreId?: string,
+): AmountCheck | undefined {
+  if (!candidate.client.trim()) return undefined;
+  const history = existing
+    .filter((i) => i.id !== ignoreId && i.status !== "void" && sameClient(i.client, candidate.client)
+      && i.issuedOn <= candidate.issuedOn && daysBetween(i.issuedOn, candidate.issuedOn) <= HISTORY_DAYS)
+    .sort((a, b) => (a.issuedOn < b.issuedOn ? 1 : -1))
+    .slice(0, 6);
+  if (history.length < MIN_HISTORY) return undefined;
+  const averageCents = Math.round(history.reduce((sum, i) => sum + i.amountCents, 0) / history.length);
+  if (averageCents <= 0) return undefined;
+  const percent = Math.round((Math.abs(candidate.amountCents - averageCents) / averageCents) * 100);
+  if (percent <= variancePct) return undefined;
+  return { averageCents, percent, direction: candidate.amountCents > averageCents ? "above" : "below" };
+}
+
+/** Warnings to show before saving, for the checks the user has switched on. Empty when all are off. */
+export function invoiceWarnings(
+  candidate: Pick<Invoice, "client" | "amountCents" | "issuedOn">, existing: Invoice[],
+  checks: { duplicates: boolean; unusualAmount: boolean; variancePct: number }, ignoreId?: string,
+): string[] {
+  const out: string[] = [];
+  if (checks.duplicates) {
+    const dup = findDuplicateInvoice(candidate, existing, ignoreId);
+    if (dup) out.push(`Looks like a duplicate of ${dup.number}: same client, same total (${formatMoney(dup.amountCents)}), issued ${dup.issuedOn}.`);
+  }
+  if (checks.unusualAmount) {
+    const odd = unusualAmount(candidate, existing, checks.variancePct, ignoreId);
+    if (odd) out.push(`${formatMoney(candidate.amountCents)} is ${odd.percent}% ${odd.direction} this client's recent average of ${formatMoney(odd.averageCents)}.`);
+  }
+  return out;
+}

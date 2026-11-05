@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
@@ -10,9 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addDays } from "@/lib/dates";
-import { formatMoney, generateInvoiceNumber, invoiceTotals } from "@/lib/invoices/logic";
+import { formatMoney, generateInvoiceNumber, invoiceTotals, invoiceWarnings } from "@/lib/invoices/logic";
 import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
 import { invoiceFormSchema, parseDollars, type InvoiceFormInput, type InvoiceFormValues } from "@/lib/invoices/validation";
+import type { InvoiceChecks } from "@/lib/settings/types";
 
 const SENDER_KEY = "adflo.invoice.sender";
 const emptyItem = { description: "", qty: "1", rate: "" };
@@ -85,13 +86,15 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 /** Create or edit an invoice. `invoice` present means edit. */
 export function InvoiceFormDialog({
-  open, invoice, draft, existing, today, onOpenChange, onSubmit,
+  open, invoice, draft, existing, today, checks, onOpenChange, onSubmit,
 }: {
   open: boolean;
   invoice?: Invoice;
   draft?: InvoiceDraft;
   existing: Invoice[];
   today: string;
+  /** Optional checks from Settings; omitted or all off means nothing extra happens on save. */
+  checks?: InvoiceChecks;
   onOpenChange: (open: boolean) => void;
   onSubmit: (values: InvoiceFormValues) => void;
 }) {
@@ -101,6 +104,9 @@ export function InvoiceFormDialog({
   });
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const { errors } = formState;
+  const [warnings, setWarnings] = useState<string[]>([]);
+  // Warnings belong to one attempt at saving, so closing the dialog clears them.
+  const close = (o: boolean) => { if (!o) setWarnings([]); onOpenChange(o); };
   const watched = useWatch({ control, name: ["items", "taxRate"] });
 
   useEffect(() => {
@@ -121,6 +127,15 @@ export function InvoiceFormDialog({
       setError("number", { message: "That invoice number is already in use" });
       return;
     }
+    if (checks && (checks.duplicates || checks.unusualAmount)) {
+      const lines = values.items.map((i) => ({ description: i.description, qty: i.qty, rateCents: i.rate }));
+      const found = invoiceWarnings(
+        { client: values.client, issuedOn: values.issuedOn, amountCents: invoiceTotals(lines, values.taxRate).totalCents },
+        existing, checks, invoice?.id,
+      );
+      // Show them once; saving again with the same warnings means "save anyway".
+      if (found.length > 0 && found.join("\n") !== warnings.join("\n")) { setWarnings(found); return; }
+    }
     try {
       localStorage.setItem(SENDER_KEY, JSON.stringify({
         fromName: values.fromName, fromAddress: values.fromAddress, fromPhone: values.fromPhone, fromEmail: values.fromEmail,
@@ -128,7 +143,7 @@ export function InvoiceFormDialog({
       }));
     } catch { /* storage unavailable: nothing remembered */ }
     onSubmit(values);
-    onOpenChange(false);
+    close(false);
   });
   const invalid = (name: string, message?: string) => ({
     "aria-invalid": !!message,
@@ -137,7 +152,7 @@ export function InvoiceFormDialog({
   const itemsError = typeof errors.items?.message === "string" ? errors.items.message : errors.items?.root?.message;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-2xl">
         <div className="border-b px-5 py-4 pr-14">
           <DialogTitle>{invoice ? "Edit invoice" : "New invoice"}</DialogTitle>
@@ -242,9 +257,15 @@ export function InvoiceFormDialog({
               </div>
             </Section>
           </div>
+          {warnings.length > 0 && (
+            <div role="alert" className="border-t border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900">
+              <p className="font-medium">Check before saving</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">{warnings.map((w) => <li key={w}>{w}</li>)}</ul>
+            </div>
+          )}
           <div className="flex justify-end gap-2 border-t px-5 py-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit">{invoice ? "Save changes" : "Create invoice"}</Button>
+            <Button type="button" variant="outline" onClick={() => (warnings.length > 0 ? setWarnings([]) : close(false))}>{warnings.length > 0 ? "Go back and edit" : "Cancel"}</Button>
+            <Button type="submit">{warnings.length > 0 ? "Save anyway" : invoice ? "Save changes" : "Create invoice"}</Button>
           </div>
         </form>
       </DialogContent>

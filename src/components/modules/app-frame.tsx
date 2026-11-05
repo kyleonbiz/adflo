@@ -5,6 +5,8 @@ import { Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Brand } from "@/components/brand";
 import { GlobalSearch } from "./global-search";
+import { RoleGate } from "./role-gate";
+import { RoleSwitcher } from "./role-switcher";
 import { saveSidebarCollapsed, useSidebarCollapsed } from "@/lib/sidebar-storage";
 import { cn } from "@/lib/utils";
 import { SidebarNav } from "./sidebar-nav";
@@ -55,11 +57,11 @@ export function AppFrame({ base, topRight, children, variant = "app" }: { base: 
               {collapsed ? <PanelLeftOpen className="size-4" aria-hidden /> : <PanelLeftClose className="size-4" aria-hidden />} {collapsed ? "Expand menu" : "Minimize menu"}
             </button>
             <div className="hidden min-w-0 flex-1 sm:block">{control ? <span className="text-sm font-medium text-muted-foreground">Control Center</span> : <GlobalSearch />}</div>
-            <div className="ml-auto flex min-w-0 items-center gap-3">{topRight}</div>
+            <div className="ml-auto flex min-w-0 items-center gap-3"><RoleSwitcher />{topRight}</div>
           </div>
           {!control && <div className="px-4 pb-3 sm:hidden"><GlobalSearch /></div>}
         </header>
-        <main id="main-content" tabIndex={-1} className="page-rise mx-auto max-w-6xl px-3 py-6 outline-none sm:px-6">{children}</main>
+        <main id="main-content" tabIndex={-1} className="page-rise mx-auto max-w-6xl px-3 py-6 outline-none sm:px-6"><RoleGate base={base}>{children}</RoleGate></main>
       </div>
     </div>
   );
