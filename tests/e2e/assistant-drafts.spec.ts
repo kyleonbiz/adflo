@@ -40,7 +40,7 @@ test.describe("assistant drafts", () => {
     await expect(link).toBeVisible();
     await box.fill("delete all my invoices");
     await box.press("Enter");
-    await expect(page.getByTestId("assistant-log")).toContainText("never delete, approve, pay or send");
+    await expect(page.getByTestId("assistant-log")).toContainText("never delete, approve, pay, send or sign");
     await link.click();
     await expect(page).toHaveURL(/\/app\/invoices\?new=1$/);
     await expect(page.getByRole("dialog")).toBeVisible();

@@ -77,7 +77,7 @@ function status(config: SetupConfig): Reply {
   return { turns: [{ role: "assistant", text, links, chips: config.completedOn ? undefined : [DEPLOY] }], config, pending: null };
 }
 
-const HELP_TEXT = "I can: set up your business step by step, pick services for your industry and team size, install starter templates, tell you what is left to do, and open a new invoice, request, contact, vendor, project or license form. I only open forms: you fill them in and save, and I never delete, approve, pay or send anything. I follow fixed rules for now, so use the buttons or plain phrases such as \"set up\", \"status\", \"new invoice\" or \"help\".";
+const HELP_TEXT = "I can: set up your business step by step, pick services for your industry and team size, install starter templates, tell you what is left to do, and open a new invoice, contact, vendor, project or license form. I can also add something to your to-do list for today, set a reminder (for example, remind me to renew the permit in 3 days) and tick off a to-do, and each of those has an Undo. Apart from those, I only open forms: you fill them in and save, and I never delete, approve, pay, send or sign anything. I follow fixed rules for now, so use the buttons or plain phrases such as \"set up\", \"status\", \"new invoice\" or \"help\".";
 
 /** Matches an answer to one of the allowed choices, ignoring case and punctuation. */
 function choose<T extends string>(input: string, options: readonly T[]): T | undefined {
