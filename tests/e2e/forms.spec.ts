@@ -208,7 +208,8 @@ test.describe("forms module", () => {
   });
   test("choose paperwork by business type, fill it in, then print or download it", async ({ page }) => {
     await page.goto("/app/forms");
-    await page.getByRole("button", { name: "Choose paperwork" }).click();
+    await page.getByRole("button", { name: "More ways to start a form" }).click();
+    await page.getByRole("menuitem", { name: "Choose paperwork" }).click();
     const picker = page.getByRole("dialog");
     await picker.getByRole("combobox", { name: "Your business" }).click();
     await page.getByRole("option", { name: "Restaurant or food service" }).click();

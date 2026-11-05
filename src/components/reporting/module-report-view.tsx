@@ -6,6 +6,7 @@ import { downloadText } from "@/components/import/csv-source";
 import { IconSquare } from "@/components/modules/icon-square";
 import { MODULE_ICONS } from "@/components/modules/module-icons";
 import { Button } from "@/components/ui/button";
+import { ExportMenu } from "@/components/ui/split-button";
 import { toCsv } from "@/lib/csv";
 import { datasetToXlsx } from "@/lib/datasets/xlsx";
 import type { ModuleReport, ReportTone } from "@/lib/reporting/logic";
@@ -53,8 +54,10 @@ export function ModuleReportView({ report, today }: { report: ModuleReport; toda
         </h2>
         <div className="flex flex-wrap gap-2">
           <Button asChild size="sm" variant="outline"><Link href={report.href}>Open {report.name}</Link></Button>
-          <Button size="sm" variant="outline" onClick={() => downloadText(toCsv([report.table.headers, ...report.table.rows]), `${file}.csv`)}><Download /> Export CSV</Button>
-          <Button size="sm" variant="outline" onClick={() => downloadXlsx(report, `${file}.xlsx`)}><FileSpreadsheet /> Export Excel</Button>
+          <ExportMenu actions={[
+            { label: "CSV", icon: <Download />, onSelect: () => downloadText(toCsv([report.table.headers, ...report.table.rows]), `${file}.csv`) },
+            { label: "Excel", icon: <FileSpreadsheet />, onSelect: () => downloadXlsx(report, `${file}.xlsx`) },
+          ]} />
         </div>
       </div>
 

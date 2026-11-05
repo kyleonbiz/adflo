@@ -63,14 +63,16 @@ test.describe("reporting module", () => {
   test("a service report exports its records as CSV and Excel, and a service with no records says so", async ({ page }) => {
     await page.goto("/app/reporting?view=vendors");
     let download = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Export CSV" }).click();
+    await page.getByRole("button", { name: "Export" }).click();
+    await page.getByRole("menuitem", { name: "CSV" }).click();
     let file = await download;
     expect(file.suggestedFilename()).toMatch(/^vendors-report-\d{4}-\d{2}-\d{2}\.csv$/);
     const lines = (await readDownload(file)).toString("utf8").trimEnd().split("\r\n");
     expect(lines[0]).toBe("Name,Category,Status,Contact,Email,Required documents received,Required documents");
     expect(lines.length).toBeGreaterThan(1);
     download = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Export Excel" }).click();
+    await page.getByRole("button", { name: "Export" }).click();
+    await page.getByRole("menuitem", { name: "Excel" }).click();
     file = await download;
     expect(file.suggestedFilename()).toMatch(/\.xlsx$/);
     expect((await readDownload(file)).subarray(0, 2).toString()).toBe("PK");

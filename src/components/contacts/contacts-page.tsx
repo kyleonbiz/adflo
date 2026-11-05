@@ -5,6 +5,7 @@ import { Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search,
 import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SplitButton } from "@/components/ui/split-button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -164,11 +165,16 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
           <p className="text-sm text-muted-foreground">Keep your contacts in one place: import lists, clean them up, merge duplicates, track who needs a follow-up and export tidy data.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setImporting(true)}><Upload /> Import CSV</Button>
           <Button variant="outline" disabled={visible.length === 0} onClick={exportCsv}>
             <Download /> Export CSV{filtered && visible.length > 0 ? ` (${visible.length} shown)` : ""}
           </Button>
-          <Button onClick={() => setFormFor("new")}><Plus /> Add contact</Button>
+          <SplitButton
+            onClick={() => setFormFor("new")}
+            menuLabel="More ways to bring in contacts"
+            actions={[{ label: "Import CSV", icon: <Upload />, onSelect: () => setImporting(true) }]}
+          >
+            <Plus /> Add contact
+          </SplitButton>
         </div>
       </div>
 

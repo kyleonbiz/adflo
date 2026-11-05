@@ -76,7 +76,8 @@ test.describe("platform modules", () => {
   test("licenses: start from a business template (vehicle registration) and see compliance", async ({ page }) => {
     await page.goto("/app/licenses");
     await expect(page.getByTestId("compliance")).toContainText("Compliance");
-    await page.getByRole("button", { name: "Start from a template" }).click();
+    await page.getByRole("button", { name: "More ways to add a license" }).click();
+    await page.getByRole("menuitem", { name: "From a template" }).click();
     const picker = page.getByRole("dialog");
     await picker.getByRole("combobox", { name: "Your business" }).click();
     await page.getByRole("option", { name: "Vehicles and fleet" }).click();

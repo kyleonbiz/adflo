@@ -14,7 +14,8 @@ const CSV = [
 
 async function openImport(page: Page) {
   await page.goto("/app/contacts");
-  await page.getByRole("button", { name: "Import CSV" }).click();
+  await page.getByRole("button", { name: "More ways to bring in contacts" }).click();
+  await page.getByRole("menuitem", { name: "Import CSV" }).click();
   return page.getByRole("dialog");
 }
 
@@ -255,7 +256,8 @@ test.describe("Contacts module", () => {
     await expect(dialog.getByTestId("count-accepted")).toHaveText("1");
     await dialog.getByRole("button", { name: "Cancel" }).click();
 
-    await page.getByRole("button", { name: "Import CSV" }).click();
+    await page.getByRole("button", { name: "More ways to bring in contacts" }).click();
+    await page.getByRole("menuitem", { name: "Import CSV" }).click();
     await page.getByRole("dialog").getByLabel("Or paste CSV text").fill('Name,Email\n"Unclosed,x@y.co');
     await page.getByRole("dialog").getByRole("button", { name: "Next" }).click();
     await expect(page.getByRole("dialog").getByRole("alert")).toContainText("starting on line 2 is never closed");
@@ -291,7 +293,8 @@ test.describe("Contacts module", () => {
     await page.goto("/app/contacts");
     await expect(page.getByTestId("contact-row").first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
-    await page.getByRole("button", { name: "Import CSV" }).click();
+    await page.getByRole("button", { name: "More ways to bring in contacts" }).click();
+    await page.getByRole("menuitem", { name: "Import CSV" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Or paste CSV text").fill(CSV);
     await dialog.getByRole("button", { name: "Next" }).click();

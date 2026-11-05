@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CalendarClock, CalendarPlus, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, CalendarClock, CalendarPlus, FileText, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SplitButton } from "@/components/ui/split-button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,6 +44,7 @@ const NOTICE_MS = 8000;
 export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { preview?: string; initialQuery?: string; startNew?: boolean; draft?: LicenseDraft }) {
   const today = useToday();
   const audit = useAudit();
+  const uploadInput = useRef<HTMLInputElement>(null);
   const [edited, setEdited] = useState<License[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<Filter>("all");
@@ -175,25 +177,30 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
           <p className="text-sm text-muted-foreground">Track expiry dates, collect required documents and stay ahead of every renewal.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
-            <label className="cursor-pointer">
-              <Upload /> Upload license
-              <input
-                type="file"
-                accept={LICENSE_UPLOAD_ACCEPT}
-                className="sr-only"
-                aria-label="Upload a license file to add"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (f) openForm("new", f);
-                }}
-              />
-            </label>
-          </Button>
           <Button variant="outline" disabled={licenses.length === 0} onClick={() => downloadText(toIcs(licenseCalendarEvents(licenses, today), today), `renewals-${today}.ics`, "text/calendar")}><CalendarPlus /> Add to calendar</Button>
-          <Button variant="outline" onClick={() => setPicking(true)}>Start from a template</Button>
-          <Button onClick={() => openForm("new")}><Plus /> Add license</Button>
+          <input
+            ref={uploadInput}
+            type="file"
+            accept={LICENSE_UPLOAD_ACCEPT}
+            className="sr-only"
+            aria-label="Upload a license file to add"
+            tabIndex={-1}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) openForm("new", f);
+            }}
+          />
+          <SplitButton
+            onClick={() => openForm("new")}
+            menuLabel="More ways to add a license"
+            actions={[
+              { label: "From a template", icon: <FileText />, onSelect: () => setPicking(true) },
+              { label: "From a photo or scan", icon: <Upload />, onSelect: () => uploadInput.current?.click() },
+            ]}
+          >
+            <Plus /> Add license
+          </SplitButton>
         </div>
       </div>
 

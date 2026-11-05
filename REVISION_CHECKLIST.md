@@ -42,7 +42,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Audit trail: who did what and when (new Activity page: the person's name, what they did, the time; filter by area; saved in this browser)
 - [x] Calendar page in the navigation menu (month grid and agenda; invoices due, license expiries and renewals, tasks, milestones, vendor documents, reminders; filter by kind)
 - [x] Fix the Reporting page: it is just a bunch of boxes (overview now leads with headline numbers, a ranked where-to-look-first list, a records-by-service chart and a service-by-service table; each service report has one key-numbers panel)
-- [ ] Dropdowns on service tabs where they make sense
+- [x] Dropdowns on service tabs where they make sense (Add license, Add contact and New form each have an arrow with the other ways to add; Reporting has one Export menu for CSV or Excel)
 - [x] Rename the AI assistant to Addy
 - [ ] Send a form after creating it (main may already cover this; compare)
 - [x] Make the app feel alive: pages ease in again

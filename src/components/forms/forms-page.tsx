@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { CheckCircle2, FileInput, Inbox, Plus, Search, Send } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { Button } from "@/components/ui/button";
+import { SplitButton } from "@/components/ui/split-button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -135,8 +136,13 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
           <p className="text-sm text-muted-foreground">Build the forms you need, send them to anyone and collect the answers.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={() => setBuilderFor("new")}><Plus /> New form</Button>
-          <Button onClick={() => setChoosing(true)}>Choose paperwork</Button>
+          <SplitButton
+            onClick={() => setBuilderFor("new")}
+            menuLabel="More ways to start a form"
+            actions={[{ label: "Choose paperwork", onSelect: () => setChoosing(true) }]}
+          >
+            <Plus /> New form
+          </SplitButton>
         </div>
       </div>
 
