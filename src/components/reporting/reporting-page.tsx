@@ -94,10 +94,10 @@ function Body({ sources, today, view, onView, section, onSection }: { sources: R
  * Reporting across the services: an overview, one report per service, and a place to report on a file of
  * your own. `sources` is what the server could read (see `loadReportSources`); `initialView` comes from `?view=`.
  */
-export function ReportingPage({ sources, initialView, preview }: { sources: ReportSources; initialView?: string; preview?: string }) {
+export function ReportingPage({ sources, initialView, initialSection, preview }: { sources: ReportSources; initialView?: string; initialSection?: string; preview?: string }) {
   const today = useToday();
   const [view, setView] = useState(initialView || OVERVIEW);
-  const [section, setSection] = useState<Section>("reports");
+  const [section, setSection] = useState<Section>(SECTIONS.some((x) => x.id === initialSection) ? (initialSection as Section) : "reports");
   const change = useCallback((v: string) => {
     setView(v);
     try { window.history.replaceState(null, "", v === OVERVIEW ? window.location.pathname : `?view=${encodeURIComponent(v)}`); } catch { /* the address bar is a convenience */ }

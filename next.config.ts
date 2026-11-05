@@ -39,6 +39,8 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   turbopack: {
+    // The scanned-PDF reader draws pages with a native library; the browser build must never try to load it.
+    resolveAlias: { "@napi-rs/canvas": { browser: "./src/lib/empty/native-stub.ts" } },
     rules: {
       "*.css": {
         loaders: ["@tailwindcss/turbopack"],
