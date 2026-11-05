@@ -29,7 +29,8 @@ export default async function AgreementPage({ params }: PageProps<"/agreement/[t
           <span className="text-sm font-medium text-muted-foreground">Terms and agreements</span>
         </div>
       </header>
-      <main className="page-rise mx-auto max-w-3xl space-y-5 px-3 py-6 sm:px-6">
+      <main className="page-rise mx-auto max-w-3xl px-3 py-6 sm:px-6">
+        <div className="space-y-5">
         {!view ? (
           <section className="rounded-2xl border bg-card p-5 shadow-panel"><h1 className="text-xl font-semibold tracking-tight">This link is not valid</h1><p className="mt-1 text-sm text-muted-foreground">Check that you opened the whole link, or ask AdFlo to send you a new one.</p></section>
         ) : (
@@ -50,6 +51,7 @@ export default async function AgreementPage({ params }: PageProps<"/agreement/[t
             </section>
           </>
         )}
+        </div>
       </main>
     </div>
   );
