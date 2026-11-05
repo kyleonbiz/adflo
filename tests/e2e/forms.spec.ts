@@ -121,6 +121,27 @@ test.describe("forms module", () => {
     expect(res?.status()).toBe(404);
   });
 
+  test("a new form can be sent straight after it is made, or later from its card", async ({ page }) => {
+    await page.goto("/app/forms");
+    await page.getByRole("button", { name: "New form" }).click();
+    const builder = page.getByRole("dialog");
+    await builder.getByLabel("Form name").fill("Site visit");
+    await builder.getByLabel("Label of field 1").fill("Visitor name");
+    await builder.getByRole("button", { name: "Create form" }).click();
+
+    const send = page.getByRole("dialog", { name: /^Send/ });
+    await expect(send).toContainText("Site visit");
+    await expect(send.getByTestId("send-just-created")).toBeVisible();
+    await send.getByRole("button", { name: "Close" }).click();
+    await expect(page.getByRole("dialog")).toBeHidden();
+
+    const card = page.getByTestId("form-card").filter({ hasText: "Site visit" });
+    await expect(card).toBeVisible(); // closing the prompt keeps the form
+    await card.getByRole("button", { name: "Send" }).click();
+    await expect(page.getByRole("dialog", { name: /^Send/ })).toBeVisible();
+    await expect(page.getByTestId("send-just-created")).toHaveCount(0); // the saved line is only for the first time
+  });
+
   test("builds a form, uses it, edits it and deletes it", async ({ page }) => {
     await page.goto("/app/forms");
     await page.getByRole("button", { name: "New form" }).click();
@@ -151,7 +172,14 @@ test.describe("forms module", () => {
     await expect(dialog).not.toContainText("pproval");
     await dialog.getByLabel("Document template (optional)").fill("Request from {{Name}}: {{Item}}");
     await create.click();
-    await expect(dialog).toBeHidden();
+
+    // A new form is made to be sent, so the Send dialog opens straight away.
+    const send = page.getByRole("dialog", { name: /^Send/ });
+    await expect(send.getByTestId("send-just-created")).toContainText("Your form is saved");
+    await send.getByLabel("Send the answers to").fill("me@example.com");
+    await expect(send.getByLabel("Link to the form")).toHaveValue(/\/form\//);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
 
     const card = page.getByTestId("form-card").filter({ hasText: "Equipment request" });
     await expect(card).toContainText("2 fields");

@@ -63,6 +63,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   const [choosing, setChoosing] = useState(false);
   const [ready, setReady] = useState<{ form: FormTemplate; sub: Submission } | null>(null);
   const [sending, setSending] = useState<FormTemplate | null>(null);
+  const [justCreated, setJustCreated] = useState<string | null>(null); // the form whose Send dialog opened straight after it was made
   const [adding, setAdding] = useState<FormTemplate | null>(null);
   const [deleting, setDeleting] = useState<FormTemplate | null>(null);
   const [notice, setNotice] = useState("");
@@ -118,9 +119,12 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
       audit("edited the form", v.name, "Forms", "/app/forms");
       setNotice(`${v.name} updated.`);
     } else {
-      setEditedForms([...forms, { ...next, id: rid("form"), sentCount: 0 }]);
+      const created: FormTemplate = { ...next, id: rid("form"), sentCount: 0 };
+      setEditedForms([...forms, created]);
       audit("created the form", v.name, "Forms", "/app/forms");
       setNotice(`${v.name} created.`);
+      setJustCreated(created.id);
+      setSending(created); // a new form is made to be sent, so offer that straight away
     }
   };
 
@@ -240,7 +244,8 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
 
       <SendFormDialog
         form={sending}
-        onOpenChange={(o) => !o && setSending(null)}
+        justCreated={sending !== null && sending.id === justCreated}
+        onOpenChange={(o) => { if (!o) { setSending(null); setJustCreated(null); } }}
         onSent={(f, count) => {
           setEditedForms(forms.map((x) => (x.id === f.id ? { ...x, sentCount: x.sentCount + count } : x)));
           audit("sent", `${f.name} to ${count} ${count === 1 ? "person" : "people"}`, "Forms", "/app/forms");

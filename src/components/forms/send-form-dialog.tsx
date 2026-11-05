@@ -69,7 +69,7 @@ function SendBody({ form, onSent }: { form: FormTemplate; onSent: (count: number
 }
 
 /** Send a form: a link anyone can open, optionally in a ready-written email. Nothing is sent from AdFlo itself. */
-export function SendFormDialog({ form, onOpenChange, onSent }: { form: FormTemplate | null; onOpenChange: (open: boolean) => void; onSent: (form: FormTemplate, count: number) => void }) {
+export function SendFormDialog({ form, onOpenChange, onSent, justCreated = false }: { form: FormTemplate | null; onOpenChange: (open: boolean) => void; onSent: (form: FormTemplate, count: number) => void; justCreated?: boolean }) {
   return (
     <Dialog open={form !== null} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -77,7 +77,10 @@ export function SendFormDialog({ form, onOpenChange, onSent }: { form: FormTempl
           <>
             <div className="border-b px-5 py-4 pr-14">
               <DialogTitle>Send &ldquo;{form.name}&rdquo;</DialogTitle>
-              <DialogDescription className="mt-1">Anyone with the link can fill this form in. Their answers come back to you by email.</DialogDescription>
+              <DialogDescription className="mt-1">
+                {justCreated && <span className="mb-1 block font-medium text-foreground" data-testid="send-just-created">Your form is saved. Send it now, or close this and send it later from its card.</span>}
+                Anyone with the link can fill this form in. Their answers come back to you by email.
+              </DialogDescription>
             </div>
             <SendBody key={form.id} form={form} onSent={(n) => onSent(form, n)} />
           </>
