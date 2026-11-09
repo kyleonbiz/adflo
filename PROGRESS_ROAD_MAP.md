@@ -58,3 +58,4 @@ Databases go last. Update this file in the same commit as the work.
 - [~] More Title Case form labels remain (Issued On, Vendor Name and similar); only the ones the audit named were fixed
 - [ ] Decide how the demo opens: empty, or with optional sample data (keep in mind AdFlo is not only for small businesses)
 - [ ] Accessibility: sidebar chevron tap targets, contrast; Addy's live Claude mode untested
+- [x] Landing page at / (hero, features, how it works, Addy, Core and Core + plans; flat styling, no prices because none are set)

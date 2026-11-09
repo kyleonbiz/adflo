@@ -6,8 +6,7 @@ XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
 Tailwind and shadcn/ui-style components.
 
-AdFlo is software, not a website: opening the site address goes straight into the app (`/` redirects to
-`/app/overview`, the Home screen).
+The site address (`/`) is the landing page (`src/app/page.tsx`); its Open the app button goes to `/app/overview`, the Home screen.
 
 * **With Supabase configured** – real sign-in, workspaces and (for Documents) a real database and storage.
 * **Without Supabase** – the app still opens, as a **preview** labelled "Preview" in the top
