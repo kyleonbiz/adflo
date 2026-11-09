@@ -16,7 +16,7 @@ test.describe("Addy acts on small requests", () => {
     await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Home", exact: true }).click();
     await expect(page.getByTestId("today-todos")).toContainText("call the accountant");
 
-    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Addy", exact: true }).click();
+    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "AI Assistant", exact: true }).click();
     // Addy's earlier messages are not kept when you leave the page, so say it again and undo straight away.
     await say(page, "add pay the electric bill to my to-do list");
     await page.getByRole("button", { name: "Undo" }).click();

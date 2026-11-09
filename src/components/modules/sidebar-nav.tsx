@@ -95,7 +95,7 @@ function NavGroup({ item, base, active, onNavigate, collapsed }: { item: Item; b
   );
 }
 
-/** The vertical module menu: Home, Addy (the assistant) and the working modules, then Settings apart at the bottom. */
+/** The vertical module menu: Home, AI Assistant and the working modules, then Settings apart at the bottom. */
 export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/app"; onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const features = usePlanFeatures();
@@ -106,7 +106,7 @@ export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/ap
   const setup = MODULES.find((m) => m.id === "setup");
   const setupHref = setup ? moduleHref(setup, base) : null;
   const overview: Item = { id: "overview", label: "Home", href: `${base}/overview` };
-  const assistant: Item = { id: "assistant", label: "Addy", href: `${base}/assistant` };
+  const assistant: Item = { id: "assistant", label: "AI Assistant", href: `${base}/assistant` };
   const calendar: Item = { id: "calendar", label: "Calendar", href: `${base}/calendar` };
   const activity: Item = { id: "activity", label: "Activity", href: `${base}/activity` };
 

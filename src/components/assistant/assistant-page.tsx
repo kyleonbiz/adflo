@@ -150,7 +150,7 @@ export function AssistantPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Sparkles className="size-6 text-primary" aria-hidden /> Addy</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Sparkles className="size-6 text-primary" aria-hidden /> AI Assistant</h1>
         <p className="text-sm text-muted-foreground">Addy is your back-office assistant. Tell Addy about your business and it sets up the right services and templates for you.</p>
       </div>
       {today ? <Chat today={today} /> : <Skeleton className="h-96 rounded-2xl" aria-busy="true" />}
