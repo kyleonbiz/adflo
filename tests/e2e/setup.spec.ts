@@ -62,7 +62,7 @@ test.describe("back office setup module", () => {
     await next(page).click();
     const groups = page.getByTestId("template-group");
     await expect(groups.filter({ hasText: "Forms & Paperwork" })).toContainText("New employee details");
-    await expect(groups.filter({ hasText: "Licenses & Renewals" })).toContainText("Common small-business licenses");
+    await expect(groups.filter({ hasText: "Licenses & Renewals" })).toContainText("Common business licenses");
     await expect(groups.filter({ hasText: "Contacts" })).toContainText("Nothing to install");
     await expect(page.getByLabel("New employee details")).toBeChecked();
   });
@@ -84,7 +84,7 @@ test.describe("back office setup module", () => {
     await expect(done).toContainText("Acme Studio is set up");
     const installed = page.getByTestId("installed-list");
     await expect(installed).toContainText("New employee details (Form, in Forms & Paperwork)");
-    await expect(installed).toContainText("Common small-business licenses (License records, in Licenses & Renewals)");
+    await expect(installed).toContainText("Common business licenses (License records, in Licenses & Renewals)");
     await expect(done.getByRole("link", { name: "Vendors" })).toBeVisible();
     await expect(done.getByRole("link", { name: "Tasks" })).toHaveCount(0);
 

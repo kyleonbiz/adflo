@@ -38,7 +38,7 @@ export const TEMPLATES: Template[] = [
     documentTemplate: "",
   },
   {
-    id: "licenses-small-business", module: "licenses", kind: "license", name: "Common small-business licenses",
+    id: "licenses-small-business", module: "licenses", kind: "license", name: "Common business licenses",
     description: "Four records to fill in with your real numbers and dates.",
     items: [
       { name: "State business license", category: "business", issuer: "Secretary of State", termMonths: 12, reminderDays: [60, 30, 7], documents: ["Annual report", "Renewal fee receipt"] },

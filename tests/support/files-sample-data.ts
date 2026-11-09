@@ -1,7 +1,7 @@
 import { addDays } from "@/lib/dates";
 import type { FileEntry } from "@/lib/files/types";
 
-/** A messy small-business folder: copies, odd names, files in the wrong place and a pile on the desktop. */
+/** A messy business folder: copies, odd names, files in the wrong place and a pile on the desktop. */
 export function sampleFiles(today: string): FileEntry[] {
   const f = (path: string, size: number, ago: number, hash?: string): FileEntry => ({ path, size, modified: addDays(today, -ago), hash });
   return [
