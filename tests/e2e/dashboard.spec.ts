@@ -75,6 +75,9 @@ test.describe("dashboard", () => {
       await dialog.getByRole("button", { name: "Create invoice" }).click();
       await page.keyboard.press("Escape");
       await expect(page.getByTestId("invoice-card")).toHaveCount(1);
+      // Only sent invoices count as outstanding.
+      await page.getByRole("button", { name: /^More actions for / }).click();
+      await page.getByRole("menuitem", { name: "Mark sent" }).click();
 
       await page.reload();
       await expect(page.getByTestId("invoice-card")).toHaveCount(1);
