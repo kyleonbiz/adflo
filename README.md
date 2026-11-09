@@ -6,7 +6,7 @@ XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
 Tailwind and shadcn/ui-style components.
 
-The site address (`/`) is the landing page (`src/app/page.tsx`, the hero and demo workspace); Open workspace goes into the app. The earlier marketing page (hero, features, plans) is in git history at commit `534795a`.
+The site address (`/`) is the landing page (`src/app/page.tsx`, parts in `src/components/marketing/`): hero with a dashboard mockup, problem and solution, capabilities, the human and AI approach, a tabbed product showcase and a demo request form. The form posts to `/api/demo-request`, which calls the `demo_request_submit` database function (migration `20261109000020_demo_requests.sql`); staff with support access can read `demo_requests`. Without a database it says requests are not switched on. `/privacy` and `/terms` are placeholders until the legal text exists.
 
 * **With Supabase configured** – real sign-in, workspaces and (for Documents) a real database and storage.
 * **Without Supabase** – the app still opens, as a **preview** labelled "Preview" in the top

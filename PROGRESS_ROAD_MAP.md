@@ -58,4 +58,5 @@ Databases go last. Update this file in the same commit as the work.
 - [~] More Title Case form labels remain (Issued On, Vendor Name and similar); only the ones the audit named were fixed
 - [ ] Decide how the demo opens: empty, or with optional sample data (keep in mind AdFlo is not only for small businesses)
 - [ ] Accessibility: sidebar chevron tap targets, contrast; Addy's live Claude mode untested
-- [x] Landing page at / is the original hero with the demo workspace (my longer marketing page is in git history, commit 534795a)
+- [x] Landing page at / rebuilt to the premium SaaS brief (hero dashboard mockup, capabilities, human + AI, tabbed showcase, demo form; no prices, customers or statistics)
+- [ ] Apply migration 20261109000020_demo_requests.sql so the demo form saves; write the real Privacy Policy and Terms (placeholder pages for now); decide where demo requests are read and who is told about them
