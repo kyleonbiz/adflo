@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ApprovalsSection } from "./approvals-section";
 import { NotificationsSection } from "./notifications-section";
 import { ProfileSection } from "./profile-section";
+import { DemoDataSection } from "@/components/modules/sample-data";
 import { TeamSection } from "./team-section";
 import { SetupPage } from "@/components/setup/setup-page";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ export const SETTINGS_TABS = [
   { id: "notifications", label: "Notifications", blurb: "Which reminders you want, and how early." },
   { id: "approvals", label: "Approvals", blurb: "Who signs off, in what order, before a request or form goes ahead." },
   { id: "setup", label: "Guided setup", blurb: "Five short steps to get your services, templates and checks in place." },
+  { id: "demo", label: "Demo data", blurb: "Try AdFlo with sample records, or clear everything back to a blank start." },
 ] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
 
@@ -47,6 +49,7 @@ export function SettingsPage({ tab, mode, base, preview }: { tab: SettingsTab; m
       {tab === "notifications" && <NotificationsSection />}
       {tab === "approvals" && <ApprovalsSection />}
       {tab === "setup" && <SetupPage base={base} preview={preview} />}
+      {tab === "demo" && <DemoDataSection />}
     </div>
   );
 }

@@ -33,6 +33,13 @@ export function writeRecords<T>(kind: RecordKind, list: T[]): void {
   window.dispatchEvent(new Event(EVENT));
 }
 
+/** Forgets a service's saved records, so it starts blank again. */
+export function clearRecords(kind: RecordKind): void {
+  memory.delete(kind);
+  try { window.localStorage.removeItem(key(kind)); } catch { /* nothing to remove */ }
+  window.dispatchEvent(new Event(EVENT));
+}
+
 function subscribe(onChange: () => void) {
   window.addEventListener(EVENT, onChange);
   window.addEventListener("storage", onChange);

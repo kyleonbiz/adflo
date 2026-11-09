@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, DollarSign, FolderKanban, Info, ListPlus, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { MiniBars, ProgressRing, UpcomingChart, WorkloadChart } from "@/components/modules/dashboard-charts";
+import { SampleDataBanner } from "@/components/modules/sample-data";
 import { TodayTodos } from "@/components/modules/today-todos";
 import { useToday } from "@/components/modules/use-today";
 import { Badge } from "@/components/ui/badge";
@@ -249,6 +250,7 @@ export function Dashboard({ data, serverToday }: { base?: "/app"; data: Dashboar
         ))}
       </div>
       <div id="dash-panel" role="tabpanel" aria-labelledby={`dash-tab-${tab}`} className="space-y-5">
+      <SampleDataBanner />
       {tab === "licenses" ? <LicensesTab panel={data.licenses} /> : (<>
       <section aria-label="At a glance" className="grid gap-4 sm:grid-cols-3">
         {data.kpis.map((k) => <KpiCard key={k.id} kpi={k} bars={bars} />)}
