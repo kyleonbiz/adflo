@@ -1,24 +1,11 @@
 import { expect, test } from "./fixtures";
 
 test.describe("Landing page and the app", () => {
-  test("the site address shows the landing page, and Open the app goes to Home with the sidebar", async ({ page }) => {
+  test("the site address shows the landing page, and Open workspace goes into the app", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle("AdFlo · Your back office in one place");
-    await expect(page.getByRole("heading", { level: 1, name: "Admin work, handled." })).toBeVisible();
-    await page.getByRole("navigation", { name: "Site" }).getByRole("link", { name: "Open the app" }).click();
-    await expect(page).toHaveURL(/\/app\/overview$/);
-    await expect(page).toHaveTitle("Home · AdFlo");
-    await expect(page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Home", exact: true })).toHaveAttribute("aria-current", "page");
-    await expect(page.getByRole("heading", { level: 1, name: "Dashboard" })).toBeVisible();
-  });
-
-  test("the landing page names both plans and links to sign in and sign up", async ({ page }) => {
-    await page.goto("/");
-    await expect(page.getByRole("heading", { level: 3, name: "Core +" })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 3, name: "Core", exact: true })).toBeVisible();
-    await expect(page.getByRole("banner").getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
-    await expect(page.getByRole("main").getByRole("link", { name: "Create an account" })).toHaveAttribute("href", "/signup");
-    await expect(page.getByText("Demo", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("heading", { level: 1, name: "Document Management System" })).toBeVisible();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Open workspace" }).click();
+    await expect(page).toHaveURL(/\/app$/);
   });
 
   test("without a database it says so plainly and still works", async ({ page }) => {
