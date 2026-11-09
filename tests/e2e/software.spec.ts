@@ -8,6 +8,18 @@ test.describe("Landing page and the app", () => {
     await expect(page).toHaveURL(/\/app$/);
   });
 
+  test("the landing page keeps its hero and demo, and adds the story and demo request form below", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "AI does the repetitive work. Your people stay in control." })).toBeVisible();
+    await page.getByRole("link", { name: "Book a demo" }).first().click();
+    const form = page.getByRole("form", { name: "Request a demo" });
+    await expect(form).toBeVisible();
+    for (const label of ["Full name", "Business email", "Company name", "Company size", "Message"]) {
+      await expect(form.getByLabel(label)).toBeVisible();
+    }
+  });
+
   test("without a database it says so plainly and still works", async ({ page }) => {
     await page.goto("/app/overview");
     await expect(page.getByText("Preview", { exact: true })).toBeVisible();

@@ -6,7 +6,7 @@ XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
 Tailwind and shadcn/ui-style components.
 
-The site address (`/`) is the landing page (`src/app/page.tsx`, the hero and demo workspace); Open workspace goes into the app. The earlier marketing page (hero, features, plans) is in git history at commit `534795a`.
+The site address (`/`) is the landing page (`src/app/page.tsx`: the hero, the demo workspace, then the story sections and a Book a demo form in `src/components/marketing/sections.tsx`; the form opens the visitor's email app, addressed to `NEXT_PUBLIC_SALES_EMAIL`); Open workspace goes into the app. The earlier marketing page (hero, features, plans) is in git history at commit `534795a`.
 
 * **With Supabase configured** – real sign-in, workspaces and (for Documents) a real database and storage.
 * **Without Supabase** – the app still opens, as a **preview** labelled "Preview" in the top
