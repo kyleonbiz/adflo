@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 const SIZES = ["1–10", "11–50", "51–200", "201–1,000", "1,000+"];
-const field = "mt-1.5 w-full rounded-lg border border-white/25 bg-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/50 outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const field = "mt-1.5 w-full rounded-md border border-white/25 bg-transparent px-3 py-2.5 text-sm text-white placeholder:text-white/50 outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /** Demo request. It opens the visitor's email app with the details filled in, addressed to NEXT_PUBLIC_SALES_EMAIL. */
 export function DemoRequestForm() {
@@ -22,7 +22,7 @@ export function DemoRequestForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border border-brand-violet/30 bg-brand-purple/10 p-5 backdrop-blur-sm sm:p-6" aria-label="Request a demo">
+    <form onSubmit={onSubmit} className="rounded-lg border border-white/20 bg-brand-navy-deep p-5 sm:p-6" aria-label="Request a demo">
       <h3 className="text-lg font-semibold text-white">Book a demo</h3>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="text-sm text-white/90">Full name
@@ -44,7 +44,7 @@ export function DemoRequestForm() {
           <textarea name="message" rows={3} className={field} />
         </label>
       </div>
-      <button type="submit" disabled={!to} className="mt-5 w-full rounded-lg bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-3 font-medium text-white shadow-lg shadow-brand-purple/30 transition hover:brightness-110 disabled:opacity-60">
+      <button type="submit" disabled={!to} className="mt-5 w-full rounded-md bg-brand-purple px-5 py-3 font-medium text-white transition hover:bg-brand-purple-deep disabled:opacity-60">
         Schedule your AdFlo demo
       </button>
       <p role="status" className="mt-3 text-xs text-white/70">
