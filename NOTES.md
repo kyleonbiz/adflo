@@ -8,6 +8,7 @@ Working notes for tests: run `npm run typecheck` before every push (the Vercel b
 
 ## Audit Edit Revisions (Nov 9)
 Invoices, licenses, vendors, contacts and projects now persist in localStorage (`src/lib/records/storage.ts`, keys `adflo.records.<kind>.v1`). Home, the bell and Reporting build from those records in the browser (`src/lib/records/sources.ts`), so `loadDashboardSources` on the server stays empty. Until the browser's day is known the hook returns empty, so hydration matches the server. AdFlo is not only for small businesses: keep that in mind when choosing demo sample data and product wording.
+Sample data: `src/lib/samples/data.ts` builds two sets from today's date (small shop, large regulated company), `storage.ts` loads or clears them, and `src/components/modules/sample-data.tsx` is the Home card and the Settings > Demo data tab. Add a set by adding an entry to `SAMPLE_SETS`. Sample records are written into the same browser storage as real ones, so the services treat them identically.
 Playwright tip: a stale `next dev` or old `.next` makes pages reload in a loop; kill it and `rm -rf .next` before a run.
 
 ## Design choices to review (change any of these)
