@@ -11,7 +11,7 @@ const DialogClose = DialogPrimitive.Close;
 function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
     <DialogPrimitive.Overlay
-      className={cn("fixed inset-0 z-50 animate-fade-in bg-slate-950/30 backdrop-blur-[2px]", className)}
+      className={cn("fixed inset-0 z-50 animate-fade-in bg-slate-950/35 backdrop-blur-md", className)}
       {...props}
     />
   );
@@ -38,7 +38,7 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          "fixed z-50 flex flex-col bg-card text-card-foreground shadow-float outline-none",
+          "glass-strong fixed z-50 flex flex-col text-card-foreground outline-none",
           variant === "float" &&
             "inset-x-0 bottom-0 top-8 animate-sheet-in rounded-t-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[calc(100dvh-3rem)] sm:w-[calc(100vw-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:animate-pop-in sm:rounded-2xl",
           variant === "upload" &&
