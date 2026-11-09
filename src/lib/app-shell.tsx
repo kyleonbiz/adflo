@@ -7,17 +7,14 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { OnboardingForm } from "@/components/auth/onboarding-form";
 import { AppFrame } from "@/components/modules/app-frame";
 import { pathAllowed } from "@/lib/control/gating";
-import { loadDashboardSources } from "@/lib/dashboard/data";
-import { buildDashboard, dayInZone } from "@/lib/dashboard/logic";
+import { dayInZone } from "@/lib/dashboard/logic";
 import { acceptPendingInvites, findMembership } from "@/lib/dms/server/context";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-/** The same attention list as the dashboard, for the bell in the top bar. */
+/** The visitor's day for the bell in the top bar; the bell works out its own list from the records in the browser. */
 async function loadNotifications() {
-  const today = dayInZone((await headers()).get("x-vercel-ip-timezone"));
-  const data = buildDashboard(await loadDashboardSources(), today);
-  return { items: data.items, today };
+  return { today: dayInZone((await headers()).get("x-vercel-ip-timezone")) };
 }
 
 function Frame({ topRight, userName, features = null, children }: { topRight: React.ReactNode; userName?: string; features?: string[] | null; children: React.ReactNode }) {

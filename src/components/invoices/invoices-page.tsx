@@ -23,6 +23,7 @@ import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog, type InvoiceDraft } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
+import { useRecordsState } from "@/lib/records/storage";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
 type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
@@ -49,7 +50,7 @@ function downloadCsv(text: string, name: string) {
 export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { preview?: string; startNew?: boolean; draft?: InvoiceDraft; initialQuery?: string }) {
   const today = useToday();
   const audit = useAudit();
-  const [edited, setEdited] = useState<Invoice[] | null>(null);
+  const [edited, setEdited] = useRecordsState<Invoice>("invoices");
   const [query, setQuery] = useState(initialQuery);
   const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
   const [formFor, setFormFor] = useState<Invoice | "new" | null>(startNew ? "new" : null);
@@ -186,7 +187,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
             <Select value={stateFilter} onValueChange={(v) => setStateFilter(v as StatusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 {FILTERS.map((s) => <SelectItem key={s} value={s}>{FILTER_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>

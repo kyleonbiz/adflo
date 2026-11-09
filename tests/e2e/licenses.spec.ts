@@ -10,7 +10,7 @@ test.describe("platform modules", () => {
 
   test("licenses: summary, tasks, filtering, documents checklist and renewal", async ({ page }) => {
     await page.goto("/app/licenses");
-    await expect(page.getByRole("note")).toContainText("Nothing is saved");
+    await expect(page.getByRole("note")).toContainText("saved in this browser only");
     await expect(page.getByTestId("license-card")).toHaveCount(5);
 
     const summary = page.getByRole("region", { name: "Summary" });

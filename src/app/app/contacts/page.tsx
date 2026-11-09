@@ -13,6 +13,6 @@ export default async function ContactsRoute({ searchParams }: PageProps<"/app/co
   const one = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : undefined);
   const person = params.add === "1" ? { ...personFromParams(one), ...draftFromParams("contacts", one) } : undefined;
   return renderAppShell("/app/contacts", () => (
-    <ContactsPage initialAdd={person} initialQuery={typeof q === "string" ? q : ""} preview="Records live only in this browser tab. Nothing is saved, and imported files never leave your browser." />
+    <ContactsPage initialAdd={person} initialQuery={typeof q === "string" ? q : ""} preview="Records are saved in this browser only, not shared with other people or devices. Imported files never leave your browser." />
   ));
 }

@@ -29,6 +29,7 @@ import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
 import { VendorFormDialog, type VendorDraft } from "./vendor-form-dialog";
+import { useRecordsState } from "@/lib/records/storage";
 
 type SortKey = "name" | "status" | "newest";
 const STATUS_ORDER: VendorStatus[] = ["onboarding", "active", "inactive"];
@@ -72,7 +73,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
   const today = useToday();
   const audit = useAudit();
   const me = useCurrentUserName();
-  const [edited, setEdited] = useState<Vendor[] | null>(null);
+  const [edited, setEdited] = useRecordsState<Vendor>("vendors");
   const [initial] = useState(readFilters);
   const [query, setQuery] = useState(initial.q);
   const [statusFilter, setStatusFilter] = useState<"all" | VendorStatus>(initial.status);
@@ -382,7 +383,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 {(Object.keys(STATUS_LABEL) as VendorStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>

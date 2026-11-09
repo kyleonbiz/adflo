@@ -13,7 +13,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <AuthForm mode="login" next={typeof next === "string" ? next : undefined} />
       ) : (
         <p className="text-sm text-muted-foreground">
-          Authentication is not configured. Set the Supabase environment variables (see README) to enable sign-in.
+          Sign-in is not available in this demo. Open the app to look around; your work is saved in this browser.
         </p>
       )}
     </AuthCard>

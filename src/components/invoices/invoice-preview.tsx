@@ -66,7 +66,7 @@ function Body({ invoice, today, onDownload, onEdit }: { invoice: Invoice; today:
       </div>
 
       <section aria-label="Service details">
-        <h3 className="mb-2 text-sm font-semibold">Service Details</h3>
+        <h3 className="mb-2 text-sm font-semibold">Service details</h3>
         <div className="overflow-x-auto rounded-xl border">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs">
@@ -87,7 +87,7 @@ function Body({ invoice, today, onDownload, onEdit }: { invoice: Invoice; today:
         <dl className="ml-auto mt-3 w-64 space-y-1 text-sm tabular-nums">
           <div className="flex justify-between"><dt>Subtotal:</dt><dd className="font-medium">{formatMoney(subtotalCents)}</dd></div>
           {invoice.taxRate > 0 && <div className="flex justify-between"><dt>Tax ({invoice.taxRate}%):</dt><dd className="font-medium">{formatMoney(taxCents)}</dd></div>}
-          <div className="flex justify-between pt-1 text-base font-bold"><dt>Total Due:</dt><dd className="text-emerald-600">{formatMoney(totalCents)}</dd></div>
+          <div className="flex justify-between pt-1 text-base font-bold"><dt>Total due:</dt><dd className="text-emerald-600">{formatMoney(totalCents)}</dd></div>
         </dl>
       </section>
 
@@ -118,7 +118,7 @@ function Body({ invoice, today, onDownload, onEdit }: { invoice: Invoice; today:
 
       <div className="space-y-2 border-t pt-4">
         <Button variant="outline" className="w-full" onClick={onDownload}><Download /> Download invoice</Button>
-        <Button className="w-full" onClick={onEdit}><Pencil /> Edit Invoice</Button>
+        <Button className="w-full" onClick={onEdit}><Pencil /> Edit invoice</Button>
       </div>
     </div>
   );

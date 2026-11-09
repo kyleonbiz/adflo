@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { Bell, BellOff } from "lucide-react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import { useToday } from "@/components/modules/use-today";
@@ -8,7 +9,8 @@ import { applyPrefs, rememberSeen, unseen } from "@/lib/dashboard/prefs";
 import { saveSeen, useSeen } from "@/lib/dashboard/seen-storage";
 import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
-import type { AttentionItem, Severity } from "@/lib/dashboard/logic";
+import { buildDashboard, type AttentionItem, type Severity } from "@/lib/dashboard/logic";
+import { useDashboardSources } from "@/lib/records/sources";
 import { clearReminder, reminderItems } from "@/lib/reminders/logic";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { useSettings } from "@/lib/settings/storage";
@@ -21,8 +23,11 @@ const SHOWN = 8;
  * The bell in the top bar: the same "needs your attention" items as the dashboard (already computed on
  * the server), minus the ones snoozed in this browser. Opens a short list; each row goes to its service.
  */
-export function NotificationBell({ items, serverToday, overviewHref = "/app/overview" }: { items: AttentionItem[]; serverToday: string; overviewHref?: string }) {
+export function NotificationBell({ items: given, serverToday, overviewHref = "/app/overview" }: { items?: AttentionItem[]; serverToday: string; overviewHref?: string }) {
   const today = useToday(serverToday) ?? serverToday;
+  const sources = useDashboardSources(useToday());
+  const computed = useMemo(() => buildDashboard(sources, today).items, [sources, today]);
+  const items = given ?? computed;
   const snoozed = useSnoozed();
   const settings = useSettings();
   const seen = useSeen();

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, DollarSign, FolderKanban, Info, ListPlus, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { MiniBars, ProgressRing, UpcomingChart, WorkloadChart } from "@/components/modules/dashboard-charts";
@@ -13,6 +13,8 @@ import { formatDayLong } from "@/lib/dates";
 import type { Area, AttentionItem, DashboardData, Kpi, LicensesPanel, Severity } from "@/lib/dashboard/logic";
 import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
+import { buildDashboard } from "@/lib/dashboard/logic";
+import { useDashboardSources } from "@/lib/records/sources";
 import { clearReminder, reminderItems } from "@/lib/reminders/logic";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { addTodo, newTodoId, hasOpenTodo, pruneTodos, todaysTodos } from "@/lib/todos/logic";
@@ -283,4 +285,15 @@ export function Dashboard({ data, serverToday }: { base?: "/app"; data: Dashboar
       </div>
     </div>
   );
+}
+
+/**
+ * The home dashboard on the visitor's own records. The services keep their records in this browser, so
+ * the numbers are worked out here from what is saved. The server has none, so its first paint is the empty view.
+ */
+export function LiveDashboard({ base, serverToday, name }: { base?: "/app"; serverToday: string; name?: string }) {
+  const today = useToday(serverToday) ?? serverToday;
+  const sources = useDashboardSources(useToday());
+  const live = useMemo(() => buildDashboard(sources, today, base ?? "/app"), [sources, today, base]);
+  return <Dashboard base={base} data={live} serverToday={serverToday} name={name} />;
 }

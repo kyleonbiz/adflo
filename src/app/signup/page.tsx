@@ -12,7 +12,7 @@ export default function SignupPage() {
         <AuthForm mode="signup" />
       ) : (
         <p className="text-sm text-muted-foreground">
-          Authentication is not configured. Set the Supabase environment variables (see README) to enable sign-up.
+          Sign-up is not available in this demo. Open the app to look around; your work is saved in this browser.
         </p>
       )}
     </AuthCard>

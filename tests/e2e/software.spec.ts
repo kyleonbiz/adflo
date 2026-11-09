@@ -24,7 +24,7 @@ test.describe("AdFlo opens as software, not a website", () => {
     await expect(page.getByText("Not configured")).toHaveCount(0);
     await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Invoices", exact: true }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Invoices" })).toBeVisible();
-    await expect(page.getByRole("note")).toContainText("Nothing is saved");
+    await expect(page.getByRole("note")).toContainText("saved in this browser only");
   });
 
   test("Documents is the app's front page and starts empty, in the browser", async ({ page }) => {

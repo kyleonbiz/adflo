@@ -75,7 +75,7 @@ function Body({
               <SelectContent>{CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
             </Select>
           </Field>
-          <Field id="contact-lastContacted" label="Last Contacted" error={errors.lastContacted}>
+          <Field id="contact-lastContacted" label="Last contacted" error={errors.lastContacted}>
             <Input type="date" max={today} {...bind("lastContacted")} />
           </Field>
           <div className="sm:col-span-2">

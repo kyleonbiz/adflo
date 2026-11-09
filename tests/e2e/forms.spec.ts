@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures";
 test.describe("forms module", () => {
   test("summary, response counts and search", async ({ page }) => {
     await page.goto("/app/forms");
-    await expect(page.getByRole("note")).toContainText("Nothing is saved");
+    await expect(page.getByRole("note")).toContainText("saved in this browser only");
     await expect(page.getByTestId("form-card")).toHaveCount(3);
     const summary = page.getByRole("region", { name: "Summary" });
     await expect(summary).toContainText("New responses");

@@ -71,7 +71,7 @@ test("the tasks view fits a phone screen without horizontal scroll", async ({ pa
 test.describe("projects view", () => {
   test("summary, attention list, health and status filter", async ({ page }) => {
     await page.goto("/app/projects?view=projects");
-    await expect(page.getByRole("note")).toContainText("Nothing is saved");
+    await expect(page.getByRole("note")).toContainText("saved in this browser only");
     await expect(page.getByTestId("project-card")).toHaveCount(4);
 
     const summary = page.getByRole("region", { name: "Summary" });

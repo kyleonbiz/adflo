@@ -4,15 +4,12 @@ import { useCallback, useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToday } from "@/components/modules/use-today";
-import { buildDashboard } from "@/lib/dashboard/logic";
+import { buildDashboard, type DashboardSources } from "@/lib/dashboard/logic";
+import { useDashboardSources } from "@/lib/records/sources";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { starterForms } from "@/lib/forms/starter-forms";
 import type { Contact } from "@/lib/contacts/types";
-import type { Invoice } from "@/lib/invoices/types";
-import type { License } from "@/lib/licenses/types";
-import type { Project } from "@/lib/projects/types";
 import type { Submission } from "@/lib/forms/types";
-import type { Vendor } from "@/lib/vendors/types";
 import { buildReports, type ReportSources } from "@/lib/reporting/logic";
 import { cn } from "@/lib/utils";
 import { CustomDataReport } from "./custom-data-report";
@@ -24,15 +21,11 @@ import { ScheduledReports } from "./scheduled-reports";
 const OVERVIEW = "overview";
 export const CUSTOM = "custom";
 
-/** Records a test injects into every service (see `e2e-seed`); otherwise what the server loaded. */
-function withSeeds(src: ReportSources): ReportSources {
+/** The records saved in this browser (or a test's seeds, see `e2e-seed`) laid over what the server loaded. */
+function withLive(src: ReportSources, live: DashboardSources & { contacts: Contact[] }): ReportSources {
   return {
     ...src,
-    invoices: e2eSeed<Invoice>("invoices") ?? src.invoices,
-    licenses: e2eSeed<License>("licenses") ?? src.licenses,
-    projects: e2eSeed<Project>("projects") ?? src.projects,
-    vendors: e2eSeed<Vendor>("vendors") ?? src.vendors,
-    contacts: e2eSeed<Contact>("contacts") ?? src.contacts,
+    ...live,
     submissions: e2eSeed<Submission>("submissions") ?? src.submissions,
     forms: src.forms.length > 0 ? src.forms : starterForms(),
   };
@@ -46,7 +39,8 @@ const SECTIONS = [
 type Section = (typeof SECTIONS)[number]["id"];
 
 function Body({ sources, today, view, onView, section, onSection }: { sources: ReportSources; today: string; view: string; onView: (v: string) => void; section: Section; onSection: (s: Section) => void }) {
-  const seeded = useMemo(() => withSeeds(sources), [sources]);
+  const live = useDashboardSources(today);
+  const seeded = useMemo(() => withLive(sources, live), [sources, live]);
   const reports = useMemo(() => buildReports(seeded, today), [seeded, today]);
   const attention = useMemo(() => buildDashboard(seeded, today).items, [seeded, today]);
   const current = reports.find((r) => r.id === view);

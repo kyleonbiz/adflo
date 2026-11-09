@@ -6,7 +6,7 @@ const card = (page: import("@playwright/test").Page, name: string) =>
 test.describe("vendors module", () => {
   test("summary, attention list, duplicates and filters", async ({ page }) => {
     await page.goto("/app/vendors");
-    await expect(page.getByRole("note")).toContainText("Nothing is saved");
+    await expect(page.getByRole("note")).toContainText("saved in this browser only");
     await expect(page.getByTestId("vendor-card")).toHaveCount(6);
 
     const attention = page.getByRole("region", { name: "Needs attention" });

@@ -25,6 +25,7 @@ import { ContactsTabs } from "./contacts-tabs";
 import { ContactFormDialog } from "./contact-form-dialog";
 import { ImportDialog } from "./import-dialog";
 import { MergeDialog } from "./merge-dialog";
+import { useRecordsState } from "@/lib/records/storage";
 
 const rid = () => `c-${Math.random().toString(36).slice(2, 10)}`;
 const CATEGORY_BADGE: Record<ContactCategory, "success" | "default" | "warning" | "muted" | "outline"> = {
@@ -51,7 +52,7 @@ const linkClass = "rounded underline-offset-2 hover:text-foreground hover:underl
 export function ContactsPage({ preview, initialQuery = "", initialAdd }: { preview?: string; initialQuery?: string; initialAdd?: Partial<Person> }) {
   const today = useToday();
   const audit = useAudit();
-  const [edited, setEdited] = useState<Contact[] | null>(null);
+  const [edited, setEdited] = useRecordsState<Contact>("contacts");
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState<"all" | ContactCategory>("all");
   const [quick, setQuick] = useState<Quick>("all");

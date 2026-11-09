@@ -17,19 +17,18 @@ import { formatDayLong } from "@/lib/dates";
 import { toIcs } from "@/lib/ics";
 import { downloadText } from "@/components/import/csv-source";
 import { compliance, expiryText, licenseCalendarEvents, renewalSpend, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
-import { e2eSeed } from "@/lib/e2e-seed";
-import { industryLicenses } from "@/lib/setup/industries";
 import { TemplateDialog } from "./template-dialog";
 import { draftTemplate, type LicenseDraft, type LicenseTemplate } from "@/lib/licenses/templates";
 import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage } from "@/lib/licenses/types";
 import type { LicenseFormValues } from "@/lib/licenses/validation";
 import { useSetupConfig } from "@/lib/setup/storage";
-import { installedLicenses } from "@/lib/setup/templates";
 import { LicenseCard, type LicenseActions } from "./license-card";
 import { LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { LicenseFormDialog } from "./license-form-dialog";
 import { RenewDialog } from "./renew-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
+import { useRecordsState } from "@/lib/records/storage";
+import { licenseRecords } from "@/lib/records/sources";
 
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -45,7 +44,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const today = useToday();
   const audit = useAudit();
   const uploadInput = useRef<HTMLInputElement>(null);
-  const [edited, setEdited] = useState<License[] | null>(null);
+  const [edited, setEdited] = useRecordsState<License>("licenses");
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("expiry");
@@ -62,17 +61,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
 
   const setup = useSetupConfig();
   // Starter records installed by Settings (only once setup is finished) sit alongside your own records.
-  const licenses = useMemo(
-    () => {
-      if (edited) return edited;
-      if (!today) return [];
-      const starters = installedLicenses(setup?.completedOn ? setup.templates : [], today);
-      // The industry's records skip any a starter template already brought in under the same name.
-      const industry = industryLicenses(setup, today).filter((l) => !starters.some((s) => s.name.toLowerCase() === l.name.toLowerCase()));
-      return [...(e2eSeed<License>("licenses") ?? []), ...starters, ...industry];
-    },
-    [edited, today, setup],
-  );
+  const licenses = useMemo(() => licenseRecords(edited, today, setup), [edited, today, setup]);
 
   // The confirmation fades on its own so it never lingers as stale text.
   useEffect(() => {
@@ -292,7 +281,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as Filter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 <SelectItem value="attention">Needs Attention</SelectItem>
                 <SelectItem value="missing_docs">Documents Missing</SelectItem>
                 <SelectItem value="needs_review">Needs Review</SelectItem>

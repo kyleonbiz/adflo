@@ -12,6 +12,6 @@ export default async function FormsRoute({ searchParams }: PageProps<"/app/forms
   const one = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : undefined);
   const fill = one("fill") ? { formId: one("fill")!.slice(0, 80), person: personFromParams(one) } : undefined;
   return renderAppShell("/app/forms", () => (
-    <FormsPage initialFill={fill} initialQuery={typeof q === "string" ? q : ""} preview="Records live only in this browser tab. Nothing is saved and no notifications are sent." />
+    <FormsPage initialFill={fill} initialQuery={typeof q === "string" ? q : ""} preview="Records are saved in this browser only, not shared with other people or devices. No notifications are sent." />
   ));
 }

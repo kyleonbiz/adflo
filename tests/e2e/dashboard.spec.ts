@@ -39,21 +39,49 @@ test.describe("dashboard", () => {
     await expect(home).toHaveText("Home");
   });
 
-  test("the Licenses & Renewals tab opens and the Overview comes back", async ({ page }) => {
-    await page.goto("/app/overview");
-    await page.getByRole("tab", { name: "Licenses & Renewals" }).click();
-    await expect(page.getByTestId("licenses-tab")).toContainText("No licenses tracked yet");
-    await page.getByRole("link", { name: "Start from a template" }).click();
-    await expect(page).toHaveURL(/\/app\/licenses$/);
-    await page.goto("/app/overview");
-    await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
-  });
+  test.describe("with no records", () => {
+    test.beforeEach(async ({ page }) => {
+      await page.addInitScript(() => { (window as unknown as { __E2E_SEED__: unknown }).__E2E_SEED__ = {}; });
+    });
 
-  test("starts empty: zeros, nothing needing attention, and an empty to-do list", async ({ page }) => {
-    await page.goto("/app/overview");
-    await expect(page.getByRole("link", { name: /Outstanding invoices/ })).toContainText("$0.00");
-    await expect(page.getByRole("link", { name: /Needs attention/ })).toContainText("All clear");
-    await expect(page.getByTestId("attention")).toContainText("You are all caught up.");
-    await expect(page.getByTestId("today-todos")).toContainText("No tasks yet");
+    test("the Licenses & Renewals tab opens and the Overview comes back", async ({ page }) => {
+      await page.goto("/app/overview");
+      await page.getByRole("tab", { name: "Licenses & Renewals" }).click();
+      await expect(page.getByTestId("licenses-tab")).toContainText("No licenses tracked yet");
+      await page.getByRole("link", { name: "Start from a template" }).click();
+      await expect(page).toHaveURL(/\/app\/licenses$/);
+      await page.goto("/app/overview");
+      await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
+    });
+
+    test("starts empty: zeros, nothing needing attention, and an empty to-do list", async ({ page }) => {
+      await page.goto("/app/overview");
+      await expect(page.getByRole("link", { name: /Outstanding invoices/ })).toContainText("$0.00");
+      await expect(page.getByRole("link", { name: /Needs attention/ })).toContainText("All clear");
+      await expect(page.getByTestId("attention")).toContainText("You are all caught up.");
+      await expect(page.getByTestId("today-todos")).toContainText("No tasks yet");
+    });
+
+    test("an invoice you create is still there after leaving the page, and Home and the bell reflect it", async ({ page }) => {
+      await page.goto("/app/invoices");
+      await page.getByRole("button", { name: "New invoice" }).first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Business name").fill("Sample Co");
+      await dialog.getByLabel("Client", { exact: true }).fill("Globex Corp");
+      await dialog.getByLabel("Description", { exact: true }).fill("Setup");
+      await dialog.getByLabel("Rate", { exact: true }).fill("1,250.50");
+      await dialog.getByLabel("Issued On").fill("2020-01-01");
+      await dialog.getByLabel("Due On").fill("2020-01-15");
+      await dialog.getByRole("button", { name: "Create invoice" }).click();
+      await page.keyboard.press("Escape");
+      await expect(page.getByTestId("invoice-card")).toHaveCount(1);
+
+      await page.reload();
+      await expect(page.getByTestId("invoice-card")).toHaveCount(1);
+
+      await page.goto("/app/overview");
+      await expect(page.getByRole("link", { name: /Outstanding invoices/ })).not.toContainText("$0.00");
+      await expect(page.getByTestId("attention")).toContainText("Globex Corp");
+    });
   });
 });

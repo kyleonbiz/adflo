@@ -12,6 +12,6 @@ export default async function ProjectsRoute({ searchParams }: PageProps<"/app/pr
   const startNew = params.new === "1";
   const draft = startNew ? draftFromParams("projects", (k) => (typeof params[k] === "string" ? (params[k] as string) : undefined)) : undefined;
   return renderAppShell("/app/projects", () => (
-    <ProjectsPage key={view === "projects" ? "projects" : "tasks"} initialQuery={typeof q === "string" ? q : ""} initialView={view === "projects" || startNew ? "projects" : "tasks"} startNew={startNew} draft={draft} preview="Records live only in this browser tab. Nothing is saved and no notifications are sent." />
+    <ProjectsPage key={view === "projects" ? "projects" : "tasks"} initialQuery={typeof q === "string" ? q : ""} initialView={view === "projects" || startNew ? "projects" : "tasks"} startNew={startNew} draft={draft} preview="Records are saved in this browser only, not shared with other people or devices. No notifications are sent." />
   ));
 }

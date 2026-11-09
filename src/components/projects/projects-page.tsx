@@ -25,6 +25,7 @@ import { STATUS_LABEL, TASK_BADGE } from "./status";
 import { TasksView, type TaskFilter } from "./tasks-view";
 import { cn } from "@/lib/utils";
 import { titleCase } from "@/lib/text";
+import { useRecordsState } from "@/lib/records/storage";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -74,7 +75,10 @@ export function ProjectsPage({ preview, initialQuery = "", initialView = "tasks"
 function ProjectsView({ today, preview, initialQuery, initialView, startNew, draft }: { today: string; preview?: string; initialQuery: string; initialView: ProjectsViewName; startNew?: boolean; draft?: ProjectDraft }) {
   const audit = useAudit();
   const me = useCurrentUserName();
-  const [projects, setProjects] = useState<Project[]>(() => e2eSeed<Project>("projects") ?? []);
+  const [stored, setStored] = useRecordsState<Project>("projects");
+  const seed = useMemo(() => e2eSeed<Project>("projects") ?? [], []);
+  const projects = stored ?? seed;
+  const setProjects = (next: Project[] | ((all: Project[]) => Project[])) => setStored((prev) => (typeof next === "function" ? next(prev ?? seed) : next));
   const [open, setOpen] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       (e2eSeed<Project>("projects") ?? []).filter((p) => isLive(p) && overdueTasks(p, today).length > 0).slice(0, AUTO_OPEN).map((p) => [p.id, true]),
@@ -400,7 +404,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="all">All statuses</SelectItem>
                 {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{titleCase(s.label)}</SelectItem>)}
               </SelectContent>
             </Select>

@@ -91,7 +91,7 @@ test.describe("server API (development store)", () => {
 
   test("login page explains that auth is not configured in dev mode", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByText(/Authentication is not configured/)).toBeVisible();
+    await expect(page.getByText(/Sign-in is not available in this demo/)).toBeVisible();
   });
 });
 

@@ -11,7 +11,7 @@ async function menu(page: Page, card: Locator, number: string, item: string) {
 test.describe("invoices module", () => {
   test("summary, attention list and status filter", async ({ page }) => {
     await page.goto("/app/invoices");
-    await expect(page.getByRole("note")).toContainText("Nothing is saved");
+    await expect(page.getByRole("note")).toContainText("saved in this browser only");
     await expect(page.getByTestId("invoice-card")).toHaveCount(7);
     const summary = page.getByRole("region", { name: "Summary" });
     await expect(summary).toContainText("$5,855.00"); // outstanding: 1850 + 625 + 2400 + 980
@@ -73,7 +73,7 @@ test.describe("invoices module", () => {
     // creating opens the invoice view
     const view = page.getByRole("dialog");
     await expect(view).toContainText("INVOICE");
-    await expect(view).toContainText("Total Due:");
+    await expect(view).toContainText("Total due:");
     await expect(view).toContainText("$1,375.55");
     const download = page.waitForEvent("download");
     await view.getByRole("button", { name: "Download invoice" }).click();
