@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures";
 test.describe("Landing page and the app", () => {
   test("the site address shows the landing page, and Open workspace goes into the app", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "Document Management System" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place" })).toBeVisible();
     await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Open workspace" }).click();
     await expect(page).toHaveURL(/\/app$/);
   });
