@@ -48,6 +48,7 @@ test.describe("on a phone", () => {
 });
 
 test("the notification bell opens and offers the dashboard", async ({ page }) => {
+  await page.addInitScript(() => { (window as unknown as { __E2E_SEED__: unknown }).__E2E_SEED__ = {}; });
   await page.goto("/app/vendors");
   await page.getByRole("button", { name: /^Notifications/ }).click();
   await expect(page.getByText("You're all caught up.")).toBeVisible();

@@ -3,6 +3,7 @@ import { expect, test } from "./fixtures";
 
 test.describe("remind me", () => {
   test("a due reminder shows in the bell and on the home feed until cleared", async ({ page }) => {
+    await page.addInitScript(() => { (window as unknown as { __E2E_SEED__: unknown }).__E2E_SEED__ = {}; });
     await page.goto("/app/overview");
     // A reminder whose day has come (set directly, since the test cannot wait for tomorrow).
     const today = todayLocal();

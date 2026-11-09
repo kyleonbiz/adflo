@@ -50,3 +50,11 @@ Databases go last. Update this file in the same commit as the work.
 - [x] AI assistant completes a task in any service, within its limits (Addy now adds to your to-do list, sets reminders and ticks off to-dos by itself, each with Undo; everything else is still a draft you save)
 - [x] OCR for scanned PDFs (a PDF with no text layer now has its first 3 pages drawn and read like photos, wherever the text reader is turned on; the document index still skips OCR)
 - [ ] Sending email for vendor reminders and scheduled reports (needs a mail service)
+
+## Audit Edit Revisions (from the 5 Nov demo audit)
+- [x] Invoices, licenses, vendors, contacts and projects are saved in this browser and survive leaving the page or a reload
+- [x] Home, the bell and Reporting read those saved records, so they agree with each service
+- [x] Cheap fixes: casing leftovers, Documents h1, friendlier sign-in message, unused logo removed, wordmarks resized
+- [~] More Title Case form labels remain (Issued On, Vendor Name and similar); only the ones the audit named were fixed
+- [ ] Decide how the demo opens: empty, or with optional sample data (keep in mind AdFlo is not only for small businesses)
+- [ ] Accessibility: sidebar chevron tap targets, contrast; Addy's live Claude mode untested

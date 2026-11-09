@@ -6,6 +6,10 @@ Waiting on a database or outside service (last): shared contact/vendor profiles,
 To discuss first: setup for different industries, what the Projects module should include.
 Working notes for tests: run `npm run typecheck` before every push (the Vercel build type-checks tests). Run Playwright with `--output=/tmp/...` (traces written inside the project make the dev server reload pages in a loop and the first tests fail), and never leave a stray `next dev` running (a leaked one is reused and misbehaves).
 
+## Audit Edit Revisions (Nov 9)
+Invoices, licenses, vendors, contacts and projects now persist in localStorage (`src/lib/records/storage.ts`, keys `adflo.records.<kind>.v1`). Home, the bell and Reporting build from those records in the browser (`src/lib/records/sources.ts`), so `loadDashboardSources` on the server stays empty. Until the browser's day is known the hook returns empty, so hydration matches the server. AdFlo is not only for small businesses: keep that in mind when choosing demo sample data and product wording.
+Playwright tip: a stale `next dev` or old `.next` makes pages reload in a loop; kill it and `rm -rf .next` before a run.
+
 ## Design choices to review (change any of these)
 
 **Industry setup** (`src/lib/setup/industries.ts` holds the table; the libraries it draws from live with their services)
