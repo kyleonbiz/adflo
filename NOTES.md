@@ -1,6 +1,6 @@
 # AdFlo — Working Notes
 
-**Revision list (Kyle's 30 items):** the live checklist is `REVISION_CHECKLIST.md`. Branch `revision-part-1`, PR #22.
+**Revision list (Kyle's 30 items):** the live list is the progress road map, `PROGRESS_ROAD_MAP.md`. Branch `revision-part-1`, PR #22.
 Done without a database (everything keeps its records in the browser, like the rest of the app): icon sidebar, Contacts with Vendors tab, name greeting, home queue and where-to-begin, empty states, sentence-case labels, license templates/certifications/compliance/calendar/fees, invoice frequency label, Choose paperwork + print/PDF, signatures, onboarding packets, approval chains (Settings > Approvals), Reporting dropdown (scheduled reports, materials), custom project types, vendor follow-ups/notes/terms, stuck-approval flags, "Remind me", OCR for license and vendor-document photos, useful notifications, Contacts<->Forms bridge, assistant drafts with guardrails, motion.
 Waiting on a database or outside service (last): shared contact/vendor profiles, real vendor/contact record merge, emailing reminders and scheduled reports, naming an owner for stuck work, OCR of scanned PDFs and of the document index.
 To discuss first: setup for different industries, what the Projects module should include.
