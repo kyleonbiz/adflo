@@ -26,7 +26,11 @@ export function licenseRecords(edited: License[] | null, today: string | null, s
   return [...(e2eSeed<License>("licenses") ?? []), ...starters, ...industry];
 }
 
-/** Every service's records as the browser holds them; this is what Home, the bell and Reporting read. */
+/**
+ * Every service's records as the browser holds them; this is what Home, the bell and Reporting read.
+ * Until the browser's day is known (the server render and the hydration pass) it is empty, so the
+ * first client render matches the server's.
+ */
 export function useDashboardSources(today: string | null): DashboardSources & { contacts: Contact[] } {
   const invoices = useStoredRecords<Invoice>("invoices");
   const licenses = useStoredRecords<License>("licenses");
@@ -34,7 +38,7 @@ export function useDashboardSources(today: string | null): DashboardSources & { 
   const vendors = useStoredRecords<Vendor>("vendors");
   const contacts = useStoredRecords<Contact>("contacts");
   const setup = useSetupConfig();
-  return useMemo(() => ({
+  return useMemo(() => !today ? { invoices: [], licenses: [], projects: [], vendors: [], contacts: [] } : ({
     invoices: invoices ?? e2eSeed<Invoice>("invoices") ?? [],
     licenses: licenseRecords(licenses, today, setup),
     projects: projects ?? e2eSeed<Project>("projects") ?? [],
