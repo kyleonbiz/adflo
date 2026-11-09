@@ -56,6 +56,6 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Home, the bell and Reporting read those saved records, so they agree with each service
 - [x] Cheap fixes: casing leftovers, Documents h1, friendlier sign-in message, unused logo removed, wordmarks resized
 - [~] More Title Case form labels remain (Issued On, Vendor Name and similar); only the ones the audit named were fixed
-- [ ] Decide how the demo opens: empty, or with optional sample data (keep in mind AdFlo is not only for small businesses)
+- [x] Demo opens blank with a "See AdFlo with sample data" card on Home: a small shop set and a large regulated company set (Settings > Demo data loads or clears them; loading over saved records asks first)
 - [ ] Accessibility: sidebar chevron tap targets, contrast; Addy's live Claude mode untested
 - [x] Landing page at / is the original hero with the demo workspace (my longer marketing page is in git history, commit 534795a)
