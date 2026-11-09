@@ -22,7 +22,7 @@ export function DemoRequestForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border border-white/20 bg-white/[0.08] p-5 backdrop-blur-sm sm:p-6" aria-label="Request a demo">
+    <form onSubmit={onSubmit} className="rounded-2xl border border-brand-violet/30 bg-brand-purple/10 p-5 backdrop-blur-sm sm:p-6" aria-label="Request a demo">
       <h3 className="text-lg font-semibold text-white">Book a demo</h3>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <label className="text-sm text-white/90">Full name
@@ -44,7 +44,7 @@ export function DemoRequestForm() {
           <textarea name="message" rows={3} className={field} />
         </label>
       </div>
-      <button type="submit" disabled={!to} className="mt-5 w-full rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground transition hover:bg-primary/90 disabled:opacity-60">
+      <button type="submit" disabled={!to} className="mt-5 w-full rounded-lg bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-3 font-medium text-white shadow-lg shadow-brand-purple/30 transition hover:brightness-110 disabled:opacity-60">
         Schedule your AdFlo demo
       </button>
       <p role="status" className="mt-3 text-xs text-white/70">

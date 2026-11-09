@@ -6,8 +6,9 @@ import {
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
-const card = "rounded-2xl border border-white/15 bg-white/[0.07] p-5 backdrop-blur-sm transition duration-200 hover:border-white/30 hover:bg-white/[0.11]";
-const eyebrow = "text-sm font-medium text-brand-sky";
+const card = "rounded-2xl border border-white/15 bg-white/[0.07] p-5 backdrop-blur-sm transition duration-200 hover:border-brand-violet/60 hover:bg-brand-purple/15";
+const eyebrow = "text-sm font-medium text-[#b9a2ff]"
+const gradientBtn = "bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-lg shadow-brand-purple/30 transition hover:brightness-110";
 const h2 = "mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl";
 
 const PROBLEMS = [
@@ -67,11 +68,11 @@ export function LandingSections() {
             <h2 id="problem-title" className={h2}>Running a business shouldn’t mean managing endless administrative work.</h2>
             <ul className="mt-6 space-y-3 text-white/80">
               {PROBLEMS.map((p) => (
-                <li key={p} className="flex gap-3"><AlertTriangle className="mt-1 size-4 shrink-0 text-brand-sky" aria-hidden="true" />{p}</li>
+                <li key={p} className="flex gap-3"><AlertTriangle className="mt-1 size-4 shrink-0 text-[#c4b0ff]" aria-hidden="true" />{p}</li>
               ))}
             </ul>
           </div>
-          <div className={`${card} p-7`}>
+          <div className={`${card} bg-gradient-to-br from-brand-purple/30 to-brand-blue/10 p-7`}>
             <p className={eyebrow}>The answer</p>
             <h3 className="mt-2 text-2xl font-semibold tracking-tight">One platform. Better-controlled operations.</h3>
             <p className="mt-3 text-white/80">
@@ -89,7 +90,7 @@ export function LandingSections() {
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {CAPABILITIES.map(({ icon: Icon, name, text }) => (
             <li key={name} className={card}>
-              <span className="flex size-10 items-center justify-center rounded-lg bg-white/10 text-brand-sky"><Icon className="size-5" aria-hidden="true" /></span>
+              <span className="flex size-10 items-center justify-center rounded-lg bg-brand-purple/30 text-[#d2c4ff]"><Icon className="size-5" aria-hidden="true" /></span>
               <h3 className="mt-3 font-semibold">{name}</h3>
               <p className="mt-1 text-sm text-white/70">{text}</p>
             </li>
@@ -97,7 +98,7 @@ export function LandingSections() {
         </ul>
       </section>
 
-      <section id="approach" className="scroll-mt-4 border-y border-white/10 bg-black/20" aria-labelledby="approach-title">
+      <section id="approach" className="scroll-mt-4 border-y border-white/10 bg-gradient-to-b from-brand-purple-deep/30 to-black/20" aria-labelledby="approach-title">
         <div className={`${container} py-14 sm:py-20`}>
           <p className={eyebrow}>Human + AI</p>
           <h2 id="approach-title" className={`${h2} max-w-3xl`}>AI does the repetitive work. Your people stay in control.</h2>
@@ -106,8 +107,8 @@ export function LandingSections() {
             {APPROACH.map(({ icon: Icon, step, text }, i) => (
               <li key={step} className={card}>
                 <div className="flex items-center gap-3">
-                  <span className="flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold">{i + 1}</span>
-                  <Icon className="size-5 text-brand-sky" aria-hidden="true" />
+                  <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-violet text-sm font-semibold">{i + 1}</span>
+                  <Icon className="size-5 text-[#c4b0ff]" aria-hidden="true" />
                 </div>
                 <h3 className="mt-3 text-sm font-semibold uppercase tracking-wider">{step}</h3>
                 <p className="mt-1 text-sm text-white/75">{text}</p>
@@ -123,7 +124,7 @@ export function LandingSections() {
         <ol className="mt-8 grid gap-8 md:grid-cols-3">
           {HOW.map((s) => (
             <li key={s.n} className="flex gap-4">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-white/25 text-sm font-semibold text-brand-sky">{s.n}</span>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-brand-violet/60 bg-brand-purple/20 text-sm font-semibold text-[#d2c4ff]">{s.n}</span>
               <div><h3 className="font-semibold">{s.title}</h3><p className="mt-1 text-sm text-white/75">{s.text}</p></div>
             </li>
           ))}
@@ -139,7 +140,7 @@ export function LandingSections() {
           </div>
           <ul className="flex flex-wrap content-start gap-2.5" aria-label="Who AdFlo is for">
             {AUDIENCE.map((a) => (
-              <li key={a} className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm">{a}</li>
+              <li key={a} className="rounded-full border border-brand-violet/40 bg-brand-purple/20 px-4 py-2 text-sm">{a}</li>
             ))}
           </ul>
         </div>
@@ -152,7 +153,7 @@ export function LandingSections() {
           <ul className="mt-8 grid gap-3 sm:grid-cols-2">
             {VALUE.map((v) => (
               <li key={v} className="flex gap-3 rounded-xl border border-white/15 p-4 text-white/85">
-                <Check className="mt-0.5 size-4 shrink-0 text-brand-sky" aria-hidden="true" />{v}
+                <Check className="mt-0.5 size-4 shrink-0 text-[#c4b0ff]" aria-hidden="true" />{v}
               </li>
             ))}
           </ul>
@@ -167,7 +168,7 @@ export function LandingSections() {
               Discover how AdFlo can help your organization simplify administrative work, streamline workflows and operate more efficiently.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href="#demo-form" className="rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground transition hover:bg-primary/90">Schedule your AdFlo demo</a>
+              <a href="#demo-form" className={`rounded-lg px-5 py-3 font-medium ${gradientBtn}`}>Schedule your AdFlo demo</a>
               <Link href="/app" className="rounded-lg border border-white/30 px-5 py-3 font-medium transition hover:bg-white/10">Open workspace</Link>
             </div>
           </div>
