@@ -59,9 +59,9 @@ export default function LandingPage() {
         </div>
 
         <div className={`${container} pb-20 pt-12 sm:pb-28 sm:pt-20`}>
-          <p className="text-sm font-medium text-brand-sky">The back office, handled</p>
+          <p className="text-sm font-medium text-brand-sky">Your back office, in one place</p>
           <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-[1.1] tracking-tight text-white sm:text-6xl">
-            Your back office, in one place.
+            Admin work, handled.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-white/75">
             Invoices, licenses and renewals, vendors, forms and signatures, projects and reporting. AdFlo keeps the admin

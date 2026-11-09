@@ -4,7 +4,7 @@ test.describe("Landing page and the app", () => {
   test("the site address shows the landing page, and Open the app goes to Home with the sidebar", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle("AdFlo · Your back office in one place");
-    await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place." })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Admin work, handled." })).toBeVisible();
     await page.getByRole("navigation", { name: "Site" }).getByRole("link", { name: "Open the app" }).click();
     await expect(page).toHaveURL(/\/app\/overview$/);
     await expect(page).toHaveTitle("Home · AdFlo");
