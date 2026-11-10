@@ -7,9 +7,9 @@ import { useToday } from "@/components/modules/use-today";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { agenda, buildEvents, byDay, EVENT_KINDS, monthGrid, monthLabel, monthOf, type CalendarEvent, type EventKind } from "@/lib/calendar/logic";
+import { agenda, buildEvents, byDay, EVENT_KINDS, monthGrid, monthLabel, monthOf, nextMonth, type CalendarEvent, type EventKind } from "@/lib/calendar/logic";
 import { useCalendarSources } from "@/lib/calendar/sources";
-import { addMonths, formatDayLong } from "@/lib/dates";
+import { addDays, addMonths, formatDayLong, formatDayShort } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -40,7 +40,7 @@ function EventRow({ e, testId }: { e: CalendarEvent; testId: string }) {
 export function CalendarPage({ preview }: { preview?: string }) {
   const today = useToday();
   const sources = useCalendarSources(today);
-  const [view, setView] = useState<"month" | "agenda">("month");
+  const [view, setView] = useState<"month" | "agenda" | "next">("month");
   const [month, setMonth] = useState<string | null>(null);
   const [kind, setKind] = useState<"all" | EventKind>("all");
   const [selected, setSelected] = useState<string | null>(null);
@@ -65,6 +65,8 @@ export function CalendarPage({ preview }: { preview?: string }) {
   const upcoming = agenda(events, today);
   const late = upcoming.filter((e) => e.late);
   const ahead = upcoming.filter((e) => !e.late);
+  const next = nextMonth(events, today);
+  const nextEnd = addDays(addMonths(next.month, 1), -1);
 
   return (
     <div className="space-y-5">
@@ -82,12 +84,12 @@ export function CalendarPage({ preview }: { preview?: string }) {
             </SelectContent>
           </Select>
           <div role="tablist" aria-label="Calendar view" className="flex rounded-lg border bg-card p-0.5">
-            {(["month", "agenda"] as const).map((v) => (
+            {(["month", "agenda", "next"] as const).map((v) => (
               <button
                 key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)}
-                className={cn("rounded-md px-3 py-1.5 text-sm font-medium capitalize outline-none focus-visible:ring-2 focus-visible:ring-ring", view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+                className={cn("rounded-md px-3 py-1.5 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring", view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
               >
-                {v}
+                {{ month: "Month", agenda: "Agenda", next: "Next month" }[v]}
               </button>
             ))}
           </div>
@@ -96,7 +98,41 @@ export function CalendarPage({ preview }: { preview?: string }) {
 
       {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
 
-      {view === "month" ? (
+      {view === "next" ? (
+        <section aria-label="Next month" className="space-y-5">
+          <div className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="next-month-summary">
+            <h2 className="text-lg font-semibold">{next.label}</h2>
+            <p className="text-sm text-muted-foreground">
+              {next.total === 0 ? "Nothing is due yet." : `${next.total} ${next.total === 1 ? "item" : "items"} coming up, by week.`}
+            </p>
+            {next.total > 0 && (
+              <ul className="mt-3 flex flex-wrap gap-2" aria-label="Items by kind">
+                {EVENT_KINDS.filter((k) => next.byKind[k]).map((k) => (
+                  <li key={k} className={cn("rounded-full px-2.5 py-1 text-xs font-medium", KIND_STYLE[k])}>{k} {next.byKind[k]}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+          {next.total === 0 ? (
+            <div className="rounded-2xl border bg-card p-8 text-center shadow-panel" data-testid="next-month-empty">
+              <h2 className="text-lg font-semibold">Nothing due in {next.label}</h2>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">Invoices due, licenses expiring, tasks, vendor documents and reminders dated next month show here as you add them.</p>
+            </div>
+          ) : (
+            next.weeks.map((w) => (
+              <div key={w.start} className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="next-month-week">
+                <h2 className="text-base font-semibold">{formatDayShort(w.start < next.month ? next.month : w.start)} to {formatDayShort(w.end > nextEnd ? nextEnd : w.end)}</h2>
+                {[...byDay(w.events)].map(([day, list]) => (
+                  <div key={day} className="mt-2">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{formatDayLong(day)}</h3>
+                    <ul className="divide-y">{list.map((e) => <EventRow key={e.id} e={e} testId="next-month-event" />)}</ul>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </section>
+      ) : view === "month" ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
           <section aria-label="Month" className="rounded-2xl border bg-card p-3 shadow-panel sm:p-4">
             <div className="mb-3 flex items-center justify-between gap-2">

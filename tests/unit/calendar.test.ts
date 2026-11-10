@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agenda, buildEvents, byDay, monthGrid, monthLabel, monthOf, type CalendarSources } from "@/lib/calendar/logic";
+import { agenda, buildEvents, byDay, monthGrid, monthLabel, monthOf, nextMonth, type CalendarSources } from "@/lib/calendar/logic";
 import type { Invoice } from "@/lib/invoices/types";
 import type { License } from "@/lib/licenses/types";
 import type { Project } from "@/lib/projects/types";
@@ -81,5 +81,41 @@ describe("agenda", () => {
   it("keeps late items and the next 60 days, and drops anything further out", () => {
     const e = buildEvents({ ...none, invoices: [invoice({ dueOn: "2026-10-01" }), invoice({ id: "i2", number: "INV-2", dueOn: "2026-12-30" }), invoice({ id: "i3", number: "INV-3", dueOn: "2027-03-01" })] }, T);
     expect(agenda(e, T).map((x) => x.title)).toEqual(["INV-1 due", "INV-2 due"]);
+  });
+});
+
+describe("nextMonth", () => {
+  const src = (): CalendarSources => ({
+    ...none,
+    invoices: [invoice({ id: "a", number: "INV-A", dueOn: "2026-12-02" }), invoice({ id: "b", number: "INV-B", dueOn: "2026-12-03" }), invoice({ id: "c", number: "INV-C", dueOn: "2026-12-20" }), invoice({ id: "z", number: "INV-Z", dueOn: "2026-11-10" }), invoice({ id: "y", number: "INV-Y", dueOn: "2027-01-05" })],
+  });
+
+  it("keeps only the calendar month after today's, whatever day of the month it is", () => {
+    for (const today of ["2026-11-01", "2026-11-04", "2026-11-30"]) {
+      const n = nextMonth(buildEvents(src(), today), today);
+      expect(n.month).toBe("2026-12-01");
+      expect(n.label).toBe("December 2026");
+      expect(n.total).toBe(3);
+    }
+  });
+
+  it("groups into Sunday-to-Saturday weeks and counts by kind", () => {
+    const n = nextMonth(buildEvents(src(), "2026-11-04"), "2026-11-04");
+    expect(n.weeks.map((w) => [w.start, w.events.length])).toEqual([["2026-11-29", 2], ["2026-12-20", 1]]);
+    expect(n.weeks[0].end).toBe("2026-12-05");
+    expect(n.byKind).toEqual({ Invoices: 3 });
+  });
+
+  it("rolls over the year, and is empty when nothing is due", () => {
+    const dec = nextMonth(buildEvents(src(), "2026-12-15"), "2026-12-15");
+    expect(dec.month).toBe("2027-01-01");
+    expect(dec.total).toBe(1);
+    const none_ = nextMonth([], "2026-11-04");
+    expect(none_).toMatchObject({ total: 0, weeks: [] });
+  });
+
+  it("does not include late items, which belong to the month they were due", () => {
+    const events = buildEvents({ ...none, invoices: [invoice({ dueOn: "2026-10-01" })] }, "2026-11-04");
+    expect(nextMonth(events, "2026-11-04").total).toBe(0);
   });
 });

@@ -1,3 +1,4 @@
+import { addMonths, todayLocal } from "../../src/lib/dates";
 import { expect, test } from "./fixtures";
 
 test.describe("calendar", () => {
@@ -63,5 +64,45 @@ test.describe("calendar", () => {
     await expect(page.getByTestId("calendar-month")).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
+  });
+
+  test.describe("next month view", () => {
+    const monthName = (day: string) => new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+    const nextMonthDay = () => { const d = addMonths(`${todayLocal().slice(0, 7)}-01`, 1); return `${d.slice(0, 7)}-15`; };
+
+    test("lists what is due next month by week, narrowed by the kind filter", async ({ page }) => {
+      const due = nextMonthDay();
+      await page.addInitScript((day) => {
+        const w = window as unknown as { __E2E_SEED__: { invoices: Record<string, unknown>[] } };
+        w.__E2E_SEED__.invoices = [...w.__E2E_SEED__.invoices, { ...w.__E2E_SEED__.invoices[0], id: "inv-next", number: "INV-NEXT", client: "Next Month Co", status: "sent", dueOn: day }];
+      }, due);
+      await page.goto("/app/calendar");
+      await page.getByRole("tab", { name: "Next month" }).click();
+      await expect(page.getByTestId("next-month-summary")).toContainText(monthName(due));
+      await expect(page.getByTestId("next-month-week").first()).toBeVisible();
+      await expect(page.getByTestId("next-month-event").filter({ hasText: "INV-NEXT due" })).toHaveCount(1);
+      await expect(page.getByTestId("next-month-event").filter({ hasText: "Next Month Co" })).toHaveCount(1);
+
+      await page.getByRole("combobox", { name: "Show on the calendar" }).click();
+      await page.getByRole("option", { name: "Reminders" }).click();
+      await expect(page.getByTestId("next-month-empty")).toContainText(`Nothing due in ${monthName(due)}`);
+      await page.getByRole("combobox", { name: "Show on the calendar" }).click();
+      await page.getByRole("option", { name: "Invoices" }).click();
+      await expect(page.getByTestId("next-month-event").filter({ hasText: "INV-NEXT due" })).toHaveCount(1);
+
+      await page.getByTestId("next-month-event").filter({ hasText: "INV-NEXT due" }).getByRole("link").click();
+      await expect(page).toHaveURL(/\/app\/invoices/);
+    });
+
+    test("says so when nothing is due next month, and the other views still work", async ({ page }) => {
+      await page.addInitScript(() => { (window as unknown as { __E2E_SEED__: Record<string, unknown[]> }).__E2E_SEED__ = { invoices: [], licenses: [], projects: [], vendors: [], contacts: [], submissions: [] }; });
+      await page.goto("/app/calendar");
+      await page.getByRole("tab", { name: "Next month" }).click();
+      await expect(page.getByTestId("next-month-empty")).toBeVisible();
+      await page.getByRole("tab", { name: "agenda" }).click();
+      await expect(page.getByTestId("agenda-empty")).toBeVisible();
+      await page.getByRole("tab", { name: "Month", exact: true }).click();
+      await expect(page.getByTestId("calendar-month")).toBeVisible();
+    });
   });
 });

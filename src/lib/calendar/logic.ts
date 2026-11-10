@@ -1,4 +1,4 @@
-import { addDays } from "@/lib/dates";
+import { addDays, addMonths } from "@/lib/dates";
 import type { Invoice } from "@/lib/invoices/types";
 import type { License } from "@/lib/licenses/types";
 import type { Reminder } from "@/lib/reminders/logic";
@@ -102,4 +102,28 @@ export function monthLabel(month: string): string {
 export function agenda(events: CalendarEvent[], today: string, days = 60): CalendarEvent[] {
   const last = addDays(today, days);
   return events.filter((e) => e.day <= last);
+}
+
+export interface WeekGroup { start: string; end: string; events: CalendarEvent[] }
+export interface NextMonth { month: string; label: string; total: number; byKind: Partial<Record<EventKind, number>>; weeks: WeekGroup[] }
+
+/**
+ * What falls in the calendar month after `today`'s, grouped into Sunday-to-Saturday weeks (the first and last
+ * weeks are cut at the month's edges). Late items are not part of it: they belong to the month they were due.
+ */
+export function nextMonth(events: CalendarEvent[], today: string): NextMonth {
+  const month = monthOf(addMonths(monthOf(today), 1));
+  const prefix = month.slice(0, 7);
+  const inMonth = events.filter((e) => e.day.startsWith(prefix));
+  const byKind: Partial<Record<EventKind, number>> = {};
+  for (const e of inMonth) byKind[e.kind] = (byKind[e.kind] ?? 0) + 1;
+  const weeks: WeekGroup[] = [];
+  for (const e of inMonth) {
+    const dow = new Date(`${e.day}T00:00:00Z`).getUTCDay();
+    const start = addDays(e.day, -dow);
+    const last = weeks[weeks.length - 1];
+    if (last && last.start === start) last.events.push(e);
+    else weeks.push({ start, end: addDays(start, 6), events: [e] });
+  }
+  return { month, label: monthLabel(month), total: inMonth.length, byKind, weeks };
 }
