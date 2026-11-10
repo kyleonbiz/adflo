@@ -59,4 +59,15 @@ test.describe("Addy acts on small requests", () => {
     await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Activity", exact: true }).click();
     await expect(page.getByTestId("activity-item").first()).toContainText("asked Addy to add");
   });
+
+  test("runs, explains and exports reports from the chat", async ({ page }) => {
+    await page.goto("/app/assistant");
+    const log = page.getByTestId("assistant-log");
+    await say(page, "how are we doing?");
+    await expect(log).toContainText(/nothing to explain|Most urgent|Nothing is urgent/);
+    await say(page, "run a report on weather");
+    await expect(log).toContainText("Which one do you want?");
+    await say(page, "export invoices to Excel");
+    await expect(log).toContainText(/no records in that service|ready: /);
+  });
 });

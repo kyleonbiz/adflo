@@ -1,6 +1,7 @@
 import { addDays, formatDayLong } from "@/lib/dates";
 import { reminderId, setReminder, type Reminder } from "@/lib/reminders/logic";
 import { addTodo, hasOpenTodo, MAX_TITLE, pruneTodos, toggleTodo, todaysTodos, type Todo } from "@/lib/todos/logic";
+import { explainAll, explainReport } from "@/lib/reporting/explain";
 import { buildReports, type ReportSources } from "@/lib/reporting/logic";
 import { looksSensitive } from "./guardrails";
 
@@ -13,7 +14,7 @@ export type DirectAction =
   | { kind: "todo"; title: string }
   | { kind: "remind"; title: string; days: number }
   | { kind: "done"; query: string }
-  | { kind: "report"; topic: string };
+  | { kind: "report"; topic: string; mode: "summary" | "explain" | "export" };
 
 export const MAX_REMIND_DAYS = 60;
 
@@ -42,9 +43,19 @@ export function parseDirect(input: string): DirectAction | null {
     const query = clean(m[1]);
     return query ? { kind: "done", query } : null;
   }
-  if ((m = text.match(/^(?:run|show|give|pull(?:\s+up)?|generate|build|create)\s+(?:me\s+)?(?:a|an|the|my|all)?\s*(.*?)\s*reports?(?:\s+(?:on|for|about|of)\s+(.+?))?\s*[.!?]*$/i)
-    || (m = text.match(/^(?:report\s+on|how\s+(?:are\s+we|is\s+(?:the\s+)?business)\s+doing)()(\s*.*?)\s*[.!?]*$/i)))) {
-    return { kind: "report", topic: clean(m[2] || m[1] || "").toLowerCase() };
+  if ((m = text.match(/^(?:export|download)\s+(?:me\s+)?(?:a|an|the|my|all)?\s*(.+?)(?:\s+reports?)?(?:\s+(?:to|as|in|into)\s+(?:a\s+)?(?:csv|excel|xlsx|spreadsheet))?\s*[.!?]*$/i))) {
+    const topic = clean(m[1]).toLowerCase();
+    return isReportTopic(topic) ? { kind: "report", topic, mode: "export" } : null;
+  }
+  if ((m = text.match(/^(?:explain|summari[sz]e|break\s+down|walk\s+me\s+through)\s+(?:me\s+)?(?:a|an|the|my|all)?\s*(.*?)\s*(?:reports?|numbers|figures)?\s*[.!?]*$/i))) {
+    const topic = clean(m[1]).toLowerCase();
+    if (topic ? !isReportTopic(topic) : !/report|numbers|figures/i.test(text)) return null;
+    return { kind: "report", topic, mode: "explain" };
+  }
+  if (/^how\s+(?:are\s+we|is\s+(?:the\s+)?business)\s+doing\s*[.!?]*$/i.test(text)) return { kind: "report", topic: "", mode: "explain" };
+  if ((m = text.match(/^(?:run|show|give|pull(?:\s+up)?|generate|build|create)\s+(?:me\s+)?(?:a|an|the|my|all)?\s*(.*?)\s*reports?(?:\s+(?:on|for|about|of)\s+(.+?))?\s*[.!?]*$/i))
+    || (m = text.match(/^report\s+on()\s+(.+?)\s*[.!?]*$/i))) {
+    return { kind: "report", topic: clean(m[2] || m[1] || "").toLowerCase(), mode: "summary" };
   }
   return null;
 }
@@ -54,6 +65,8 @@ const REPORT_TOPICS: Record<string, RegExp> = {
   invoices: /invoice|billing|payment|receivable/, licenses: /licen[sc]e|renewal|permit|compliance/, vendors: /vendor|supplier/,
   crm: /contact|client|customer/, projects: /project|task/, forms: /form|paperwork|submission/, documents: /document|file|record/,
 };
+
+const isReportTopic = (t: string) => Object.values(REPORT_TOPICS).some((re) => re.test(t));
 
 export interface DirectContext {
   todos: Todo[]; reminders: Reminder[]; today: string; newId: () => string;
@@ -65,6 +78,8 @@ export interface DirectContext {
 export interface DirectResult {
   text: string;
   link?: { label: string; href: string };
+  /** A table the owner can save as CSV or Excel. Built from their own records; nothing is sent anywhere. */
+  download?: { name: string; headers: string[]; rows: (string | number)[][] };
   todos?: Todo[];
   reminders?: Reminder[];
   undo?: { todos?: Todo[]; reminders?: Reminder[] };
@@ -100,7 +115,7 @@ export function runDirect(action: DirectAction, ctx: DirectContext): DirectResul
     };
   }
 
-  if (action.kind === "report") return runReport(action.topic, ctx);
+  if (action.kind === "report") return runReport(action.topic, action.mode, ctx);
 
   const q = action.query.toLowerCase();
   const open = todaysTodos(todos, today).filter((t) => !t.done && t.title.toLowerCase().includes(q));
@@ -110,20 +125,31 @@ export function runDirect(action: DirectAction, ctx: DirectContext): DirectResul
 }
 
 /** Read-only: summarizes the same reports the Reporting page shows. Changes nothing, so there is nothing to undo. */
-function runReport(topic: string, ctx: DirectContext): DirectResult {
+function runReport(topic: string, mode: "summary" | "explain" | "export", ctx: DirectContext): DirectResult {
   const base = { label: "Open Reporting", href: "/app/reporting" };
   if (!ctx.sources) return { text: "I cannot read your records right now. Open Reporting to see them.", link: base };
   const reports = buildReports(ctx.sources, ctx.today).filter((r) => r.count > 0);
   const line = (r: (typeof reports)[number]) =>
-    `${r.name} (${r.count} ${r.noun}${r.count === 1 ? "" : "s"}): ${r.metrics.slice(0, 4).map((x) => `${x.label} ${x.value}${x.tone === "neutral" ? "" : " ⚠"}`).join(", ")}`;
+    `${r.name} (${r.count} ${r.count === 1 ? r.noun.replace(/s$/, "") : r.noun}): ${r.metrics.slice(0, 4).map((x) => `${x.label} ${x.value}${x.tone === "neutral" ? "" : " ⚠"}`).join(", ")}`;
 
   const id = Object.keys(REPORT_TOPICS).find((k) => REPORT_TOPICS[k].test(topic));
-  if (topic && !id) return { text: `I can report on invoices, licenses, vendors, contacts, projects, forms and documents. Which one do you want?`, link: base };
-  if (id) {
-    const r = reports.find((x) => x.id === id);
-    if (!r) return { text: `There are no records in that service yet, so there is nothing to report. Add some and ask again.`, link: base };
-    return { text: line(r), link: { label: `Open ${r.name} report`, href: `/app/reporting?view=${r.id}` } };
+  if (topic && !id) return { text: "I can report on invoices, licenses, vendors, contacts, projects, forms and documents. Which one do you want?", link: base };
+  if (mode === "export" && !id) return { text: "Which report should I export? Say, for example, \"export invoices to Excel\".", link: base };
+
+  const r = id ? reports.find((x) => x.id === id) : undefined;
+  if (id && !r) return { text: "There are no records in that service yet, so there is nothing to report. Add some and ask again.", link: base };
+
+  if (mode === "export" && r) {
+    if (r.table.rows.length === 0) return { text: `The ${r.name} report has no rows to export.`, link: base };
+    const name = `${r.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${ctx.today}`;
+    return {
+      text: `The ${r.name} report is ready: ${r.table.rows.length} row${r.table.rows.length === 1 ? "" : "s"}. Pick a format to save it. The file is made in your browser and goes nowhere else.`,
+      link: { label: `Open ${r.name} report`, href: `/app/reporting?view=${r.id}` },
+      download: { name, headers: r.table.headers, rows: r.table.rows },
+    };
   }
+  if (mode === "explain") return { text: r ? explainReport(r) : explainAll(reports), link: r ? { label: `Open ${r.name} report`, href: `/app/reporting?view=${r.id}` } : base };
+  if (r) return { text: line(r), link: { label: `Open ${r.name} report`, href: `/app/reporting?view=${r.id}` } };
   if (reports.length === 0) return { text: "There are no records in any service yet, so there is nothing to report. This fills in as you add records.", link: base };
   return { text: `Here is where things stand. ⚠ marks something to look at.\n${reports.map(line).join("\n")}`, link: base };
 }
@@ -133,7 +159,7 @@ export const DIRECT_ABILITIES = [
   "add something to the owner's to-do list for today",
   "set a reminder for the owner (from tomorrow up to 60 days away)",
   "tick off one of the owner's to-dos for today",
-  "run a read-only report on the owner's records, as on the Reporting page",
+  "run a read-only report on the owner's records, explain it in plain language, and offer it as a CSV or Excel download",
 ] as const;
 
 

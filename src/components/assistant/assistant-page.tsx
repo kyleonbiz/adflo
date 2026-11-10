@@ -13,6 +13,9 @@ import { greeting, respond, type Link as ChatLink, type Pending, type Turn } fro
 import { starterForms } from "@/lib/forms/starter-forms";
 import { useDashboardSources } from "@/lib/records/sources";
 import { emptySources } from "@/lib/reporting/logic";
+import { datasetToXlsx } from "@/lib/datasets/xlsx";
+import { toCsv } from "@/lib/csv";
+import { downloadBlob } from "@/components/reporting/materials";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { newTodoId } from "@/lib/todos/logic";
 import { saveTodos, useTodos } from "@/lib/todos/storage";
@@ -68,7 +71,7 @@ function Chat({ today }: { today: string }) {
         },
       }));
     }
-    setTurns((t) => [...t, { role: "user", text: message }, { role: "assistant", text: r.text, links: r.link ? [r.link] : undefined }]);
+    setTurns((t) => [...t, { role: "user", text: message }, { role: "assistant", text: r.text, links: r.link ? [r.link] : undefined, download: r.download }]);
   };
 
   const send = async (input: string) => {
@@ -121,6 +124,12 @@ function Chat({ today }: { today: string }) {
                 undone.has(i)
                   ? <p className="text-xs text-muted-foreground" data-testid="undone">Undone.</p>
                   : <Button type="button" size="sm" variant="outline" className="h-7" onClick={() => undoers[i]?.()}>Undo</Button>
+              )}
+              {t.download && (
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => downloadBlob(toCsv([t.download!.headers, ...t.download!.rows]), `${t.download!.name}.csv`, "text/csv")}>Save as CSV</Button>
+                  <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => downloadBlob(datasetToXlsx({ name: t.download!.name, columns: t.download!.headers.map((name) => ({ name, type: "text" as const, required: false })), rows: t.download!.rows }), `${t.download!.name}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}>Save as Excel</Button>
+                </div>
               )}
               {t.links && t.links.length > 0 && (
                 <ul className="flex flex-wrap gap-2">

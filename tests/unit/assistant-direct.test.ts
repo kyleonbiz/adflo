@@ -91,18 +91,24 @@ describe("runDirect", () => {
 
 describe("reports", () => {
   it("reads report requests", () => {
-    expect(parseDirect("run a report on invoices")).toEqual({ kind: "report", topic: "invoices" });
-    expect(parseDirect("Show me the vendor report")).toEqual({ kind: "report", topic: "vendor" });
-    expect(parseDirect("run reports")).toEqual({ kind: "report", topic: "" });
-    expect(parseDirect("how are we doing?")).toEqual({ kind: "report", topic: "" });
+    expect(parseDirect("run a report on invoices")).toEqual({ kind: "report", topic: "invoices", mode: "summary" });
+    expect(parseDirect("Show me the vendor report")).toEqual({ kind: "report", topic: "vendor", mode: "summary" });
+    expect(parseDirect("run reports")).toEqual({ kind: "report", topic: "", mode: "summary" });
+    expect(parseDirect("how are we doing?")).toEqual({ kind: "report", topic: "", mode: "explain" });
+    expect(parseDirect("explain the invoice report")).toEqual({ kind: "report", topic: "invoice", mode: "explain" });
+    expect(parseDirect("explain my numbers")).toEqual({ kind: "report", topic: "", mode: "explain" });
+    expect(parseDirect("export invoices to Excel")).toEqual({ kind: "report", topic: "invoices", mode: "export" });
+    expect(parseDirect("download the vendor report as csv")).toEqual({ kind: "report", topic: "vendor", mode: "export" });
+    expect(parseDirect("explain how to set up")).toBeNull();
+    expect(parseDirect("download the app")).toBeNull();
     expect(parseDirect("send the report to Acme")).toBeNull();
   });
 
   it("summarizes without changing anything", () => {
     const inv = { id: "i1", client: "Acme", description: "Work", amount: 500, dueOn: "2026-10-01", status: "sent", issuedOn: "2026-09-01", recurrence: "none" } as unknown as Invoice;
     const sources = { ...emptySources(), invoices: [inv] };
-    const r = runDirect({ kind: "report", topic: "invoices" }, ctx({ sources }));
-    expect(r.text).toContain("Invoices (1");
+    const r = runDirect({ kind: "report", topic: "invoices", mode: "summary" }, ctx({ sources }));
+    expect(r.text).toContain("Invoices (1 invoice)");
     expect(r.link?.href).toBe("/app/reporting?view=invoices");
     expect(r.todos).toBeUndefined();
     expect(r.reminders).toBeUndefined();
@@ -110,8 +116,28 @@ describe("reports", () => {
   });
 
   it("explains empty, unknown and unreadable cases", () => {
-    expect(runDirect({ kind: "report", topic: "" }, ctx({ sources: emptySources() })).text).toContain("nothing to report");
-    expect(runDirect({ kind: "report", topic: "weather" }, ctx({ sources: emptySources() })).text).toContain("Which one");
-    expect(runDirect({ kind: "report", topic: "" }, ctx()).text).toContain("cannot read");
+    expect(runDirect({ kind: "report", topic: "", mode: "summary" }, ctx({ sources: emptySources() })).text).toContain("nothing to report");
+    expect(runDirect({ kind: "report", topic: "weather", mode: "summary" }, ctx({ sources: emptySources() })).text).toContain("Which one");
+    expect(runDirect({ kind: "report", topic: "", mode: "summary" }, ctx()).text).toContain("cannot read");
+  });
+
+  it("explains a report in plain words, urgent items first", () => {
+    const late = { id: "i1", number: "INV-1", client: "Acme", description: "Work", amountCents: 50000, dueOn: "2026-10-01", issuedOn: "2026-09-01", status: "sent", recurrence: "none" } as unknown as Invoice;
+    const sources = { ...emptySources(), invoices: [late] };
+    const r = runDirect({ kind: "report", topic: "invoices", mode: "explain" }, ctx({ sources }));
+    expect(r.text).toContain("Invoices: 1 invoice tracked.");
+    expect(r.text).toMatch(/Urgent: overdue is 1/);
+    expect(r.text).toContain("Acme leads");
+    expect(r.download).toBeUndefined();
+  });
+
+  it("offers the table as a download and changes nothing", () => {
+    const inv = { id: "i1", number: "INV-1", client: "Acme", description: "Work", amountCents: 50000, dueOn: "2026-12-01", issuedOn: "2026-11-01", status: "sent", recurrence: "none" } as unknown as Invoice;
+    const r = runDirect({ kind: "report", topic: "invoices", mode: "export" }, ctx({ sources: { ...emptySources(), invoices: [inv] } }));
+    expect(r.download?.name).toBe(`invoices-${T}`);
+    expect(r.download?.headers[0]).toBe("Number");
+    expect(r.download?.rows).toHaveLength(1);
+    expect(r.todos).toBeUndefined();
+    expect(runDirect({ kind: "report", topic: "", mode: "export" }, ctx({ sources: emptySources() })).text).toContain("Which report");
   });
 });
