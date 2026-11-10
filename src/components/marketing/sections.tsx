@@ -41,7 +41,7 @@ const APPROACH = [
 const HOW = [
   { n: "1", title: "Centralize", text: "Bring your administrative operations into one platform." },
   { n: "2", title: "Streamline", text: "Manage workflows by hand, or let the assistant reduce the repetitive work." },
-  { n: "3", title: "Stay in control", text: "Monitor activity, review results and keep oversight through Home, the bell and Reporting." },
+  { n: "3", title: "Stay in control", text: "Monitor activity, review results and keep oversight through the Dashboard, the bell and Reporting." },
 ];
 
 const AUDIENCE = [
@@ -78,7 +78,7 @@ export function LandingSections() {
             <h3 className="mt-2 text-2xl font-semibold tracking-tight">One platform. Better-controlled operations.</h3>
             <p className="mt-3 text-white/80">
               AdFlo gives your business one organized environment for its administrative responsibilities, so repetitive work gets
-              automated and what is about to slip gets flagged on Home and in the bell.
+              automated and what is about to slip gets flagged on the Dashboard and in the bell.
             </p>
           </div>
         </div>
@@ -89,7 +89,7 @@ export function LandingSections() {
       <section className={`${container} pb-14 sm:pb-20`} aria-labelledby="capabilities-title">
         <p className={eyebrow}>Platform capabilities</p>
         <h2 id="capabilities-title" className={h2}>Everything the admin side needs</h2>
-        <p className="mt-2 max-w-2xl text-white/75">Tools that share one set of records, so Home, the bell and Reporting always agree.</p>
+        <p className="mt-2 max-w-2xl text-white/75">Tools that share one set of records, so the Dashboard, the bell and Reporting always agree.</p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {CAPABILITIES.map(({ icon: Icon, name, text }) => (
             <li key={name} className={card}>

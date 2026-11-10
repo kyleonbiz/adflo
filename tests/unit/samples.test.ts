@@ -23,7 +23,7 @@ describe.each(SAMPLE_SETS)("sample set: $label", (set) => {
     for (const l of data.licenses) expect([l.issuedOn, l.expiresOn].every(dateOk)).toBe(true);
     for (const p of data.projects) for (const t of p.tasks) expect(dateOk(t.dueOn)).toBe(true);
   });
-  it("shows late and upcoming work so Home has something to say", () => {
+  it("shows late and upcoming work so the Dashboard has something to say", () => {
     const states = new Set(data.invoices.map((i) => invoiceState(i, T)));
     expect(states.has("overdue")).toBe(true);
     expect(data.licenses.some((l) => licenseStatus(l, T) === "expired")).toBe(true);

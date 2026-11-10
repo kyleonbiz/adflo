@@ -42,7 +42,7 @@ describe("gating", () => {
     expect(pathAllowed(["documents"], "/app/invoices")).toBe(false);
     expect(pathAllowed(["documents"], "/app/vendors/abc")).toBe(false);
   });
-  it("always allows Home, Settings and unlisted pages", () => {
+  it("always allows the Dashboard, Settings and unlisted pages", () => {
     for (const p of ["/app/overview", "/app/setup", "/app/file-reset"]) expect(pathAllowed([], p)).toBe(true);
   });
   it("allows everything when the plan has no list", () => {

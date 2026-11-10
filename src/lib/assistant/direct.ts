@@ -78,7 +78,7 @@ export function runDirect(action: DirectAction, ctx: DirectContext): DirectResul
     const on = addDays(today, action.days);
     const next = setReminder(reminders, { id: reminderId("task", `addy-${ctx.newId()}`), text: action.title, area: "Tasks", href: "/app/calendar" }, today, action.days);
     return {
-      text: `I will remind you on ${formatDayLong(on)}: ${action.title}. It will show in the bell, on Home and on the calendar.`,
+      text: `I will remind you on ${formatDayLong(on)}: ${action.title}. It will show in the bell, on the Dashboard and on the calendar.`,
       link: { label: "Open calendar", href: "/app/calendar" },
       reminders: next, undo: { reminders },
     };

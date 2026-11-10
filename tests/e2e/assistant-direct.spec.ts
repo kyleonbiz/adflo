@@ -13,7 +13,7 @@ test.describe("Addy acts on small requests", () => {
     const log = page.getByTestId("assistant-log");
     await expect(log).toContainText('Added "call the accountant" to your to-do list for today.');
 
-    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Home", exact: true }).click();
+    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Dashboard", exact: true }).click();
     await expect(page.getByTestId("today-todos")).toContainText("call the accountant");
 
     await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "AI Assistant", exact: true }).click();
@@ -21,7 +21,7 @@ test.describe("Addy acts on small requests", () => {
     await say(page, "add pay the electric bill to my to-do list");
     await page.getByRole("button", { name: "Undo" }).click();
     await expect(page.getByTestId("undone")).toBeVisible();
-    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Home", exact: true }).click();
+    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Dashboard", exact: true }).click();
     await expect(page.getByTestId("today-todos")).not.toContainText("pay the electric bill");
     await expect(page.getByTestId("today-todos")).toContainText("call the accountant");
   });

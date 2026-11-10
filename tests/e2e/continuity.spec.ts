@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 // No seeded records here: this follows one real record through the app, the way a person would.
 test.describe("records carry through the app", () => {
-  test("an invoice you create shows on Home and in Reporting, and is still there after leaving and reloading", async ({ page }) => {
+  test("an invoice you create shows on the Dashboard and in Reporting, and is still there after leaving and reloading", async ({ page }) => {
     await page.goto("/app/invoices");
     await page.getByRole("button", { name: "New invoice" }).first().click();
     const dialog = page.getByRole("dialog");
@@ -16,7 +16,7 @@ test.describe("records carry through the app", () => {
     await page.keyboard.press("Escape");
 
     const nav = page.getByRole("navigation", { name: "Services" });
-    await nav.getByRole("link", { name: "Home", exact: true }).click();
+    await nav.getByRole("link", { name: "Dashboard", exact: true }).click();
     await expect(page.getByRole("link", { name: /Outstanding invoices/ })).toContainText("$1,250.50");
 
     await nav.getByRole("link", { name: "Reporting", exact: true }).click();
@@ -31,7 +31,7 @@ test.describe("records carry through the app", () => {
     await expect(page.getByRole("link", { name: /Outstanding invoices/ })).toContainText("$1,250.50");
   });
 
-  test("Home's to-do list and its task card use different words, so they do not look like they disagree", async ({ page }) => {
+  test("the Dashboard's to-do list and its task card use different words, so they do not look like they disagree", async ({ page }) => {
     await page.goto("/app/overview");
     const todos = page.getByTestId("today-todos");
     await todos.getByRole("button", { name: "Add a to-do" }).click();

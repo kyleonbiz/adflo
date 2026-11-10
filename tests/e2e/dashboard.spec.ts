@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures";
 test.describe("dashboard", () => {
   test("shows three cards that link through, the charts, and today's to-do list", async ({ page }) => {
     await page.goto("/app/overview");
-    await expect(page.getByRole("heading", { name: "Home", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
     await expect(page.getByTestId("workload")).toBeVisible();
     await expect(page.getByTestId("upcoming")).toBeVisible();
     await expect(page.getByTestId("progress")).toContainText("ALL CLEAR");
@@ -27,8 +27,8 @@ test.describe("dashboard", () => {
   test("the menu can be minimized to icons and expanded again", async ({ page }) => {
     await page.goto("/app/overview");
     const nav = page.getByRole("navigation", { name: "Services" });
-    const home = nav.getByRole("link", { name: "Home", exact: true });
-    await expect(home).toHaveText("Home");
+    const home = nav.getByRole("link", { name: "Dashboard", exact: true });
+    await expect(home).toHaveText("Dashboard");
     await page.getByRole("button", { name: "Minimize menu" }).click();
     await expect(nav).toBeVisible();
     await expect(home).toHaveText("");
@@ -36,7 +36,7 @@ test.describe("dashboard", () => {
     await page.reload();
     await expect(page.getByRole("button", { name: "Expand menu" })).toBeVisible(); // remembered
     await page.getByRole("button", { name: "Expand menu" }).click();
-    await expect(home).toHaveText("Home");
+    await expect(home).toHaveText("Dashboard");
   });
 
   test.describe("with no records", () => {
@@ -62,7 +62,7 @@ test.describe("dashboard", () => {
       await expect(page.getByTestId("today-todos")).toContainText("No to-dos yet");
     });
 
-    test("an invoice you create is still there after leaving the page, and Home and the bell reflect it", async ({ page }) => {
+    test("an invoice you create is still there after leaving the page, and the Dashboard and the bell reflect it", async ({ page }) => {
       await page.goto("/app/invoices");
       await page.getByRole("button", { name: "New invoice" }).first().click();
       const dialog = page.getByRole("dialog");

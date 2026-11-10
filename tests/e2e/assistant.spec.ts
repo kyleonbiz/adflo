@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-test("the assistant sits under Home and deploys a business", async ({ page }) => {
+test("the assistant sits under Dashboard and deploys a business", async ({ page }) => {
   await page.goto("/app/overview");
   const links = page.getByRole("navigation", { name: "Services" }).getByRole("link");
-  await expect(links.nth(0)).toHaveText("Home");
+  await expect(links.nth(0)).toHaveText("Dashboard");
   await expect(links.nth(1)).toHaveText("AI Assistant");
   await links.nth(1).click();
   await expect(page.getByRole("heading", { level: 1, name: "AI Assistant" })).toBeVisible();

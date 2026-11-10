@@ -59,7 +59,7 @@ export const BUNDLES = [
   { id: "bundle:vendor-docs", label: "Documents every vendor owes", needs: "vendors" },
   { id: "bundle:approvals", label: "Approval chain", needs: "admin" },
   { id: "bundle:reminders", label: "Reminder lead time", needs: "licenses" },
-  { id: "bundle:home", label: "Home screen starting points", needs: "" },
+  { id: "bundle:home", label: "Dashboard starting points", needs: "" },
 ] as const;
 export type BundleId = (typeof BUNDLE_ID_LIST)[number];
 

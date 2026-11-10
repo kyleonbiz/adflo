@@ -5,7 +5,7 @@ test.describe("sample data", () => {
     await page.addInitScript(() => { (window as unknown as { __E2E_SEED__: unknown }).__E2E_SEED__ = {}; });
   });
 
-  test("an empty Home offers sample sets; loading one fills every service, and clearing returns to blank", async ({ page }) => {
+  test("an empty Dashboard offers sample sets; loading one fills every service, and clearing returns to blank", async ({ page }) => {
     await page.goto("/app/overview");
     const picker = page.getByTestId("sample-picker");
     await expect(picker).toContainText("Small shop");

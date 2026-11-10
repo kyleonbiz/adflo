@@ -1,6 +1,6 @@
 import { hasFeature, type FeatureKey } from "./tiers";
 
-/** The feature a page needs, by route. Pages not listed (Home, Settings, Tidy up files) are always available. */
+/** The feature a page needs, by route. Pages not listed (Dashboard, Settings, Tidy up files) are always available. */
 const ROUTE_FEATURE: readonly [string, FeatureKey][] = [
   ["/app/contacts", "contacts"], ["/app/projects", "tasks"], ["/app/calendar", "tasks"],
   ["/app/vendors", "vendors"], ["/app/forms", "forms"], ["/app/invoices", "invoices"],

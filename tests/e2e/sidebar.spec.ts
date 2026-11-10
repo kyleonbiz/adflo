@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 const NAMES = [
-  "Home", "AI Assistant", "Documents", "Invoices", "Licenses & renewals", "Contacts", "Tasks", "Forms & paperwork",
+  "Dashboard", "AI Assistant", "Documents", "Invoices", "Licenses & renewals", "Contacts", "Tasks", "Forms & paperwork",
   "Reporting", "Calendar", "Activity", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
@@ -66,7 +66,7 @@ test.describe("module sidebar on a wide screen", () => {
     await page.getByRole("dialog").getByRole("button", { name: /^Load \d+ rows?$/ }).click();
     await expect(page.getByTestId("record-row").first()).toBeVisible();
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const box = await nav(page).getByRole("link", { name: "Home", exact: true }).boundingBox();
+    const box = await nav(page).getByRole("link", { name: "Dashboard", exact: true }).boundingBox();
     expect(box!.y).toBeGreaterThanOrEqual(0);
     expect(box!.y).toBeLessThan(200);
     await expect(nav(page).getByRole("link", { name: "Settings" })).toBeInViewport();
@@ -81,7 +81,7 @@ test.describe("module sidebar on a wide screen", () => {
     await page.goto("/app");
     await expect(page.getByText("Preview", { exact: true })).toBeVisible();
     await expect(nav(page).getByRole("link", { name: "Documents", exact: true })).toHaveAttribute("aria-current", "page");
-    await expect(nav(page).getByRole("link", { name: "Home", exact: true })).toHaveAttribute("href", "/app/overview");
+    await expect(nav(page).getByRole("link", { name: "Dashboard", exact: true })).toHaveAttribute("href", "/app/overview");
     await nav(page).getByRole("link", { name: "Licenses & renewals", exact: true }).click();
     await expect(page).toHaveURL(/\/app\/licenses$/);
     await expect(nav(page).getByRole("link", { name: "Licenses & renewals", exact: true })).toHaveAttribute("aria-current", "page");

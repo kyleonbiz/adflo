@@ -15,7 +15,7 @@ import { useStoredRecords } from "./storage";
 /**
  * The licenses to show: your own saved records, or until you save any, the starter records that guided
  * setup installed (only once setup is finished) and the industry's. One rule for the Licenses page,
- * Home, the bell and Reporting, so they always agree.
+ * the Dashboard, the bell and Reporting, so they always agree.
  */
 export function licenseRecords(edited: License[] | null, today: string | null, setup: SetupConfig | null): License[] {
   if (edited) return edited;
@@ -27,7 +27,7 @@ export function licenseRecords(edited: License[] | null, today: string | null, s
 }
 
 /**
- * Every service's records as the browser holds them; this is what Home, the bell and Reporting read.
+ * Every service's records as the browser holds them; this is what the Dashboard, the bell and Reporting read.
  * Until the browser's day is known (the server render and the hydration pass) it is empty, so the
  * first client render matches the server's.
  */

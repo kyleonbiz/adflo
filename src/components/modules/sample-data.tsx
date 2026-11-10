@@ -49,7 +49,7 @@ function Picker({ today, hasRecords, heading }: { today: string; hasRecords: boo
 }
 
 /**
- * The first thing on an empty Home: try AdFlo with sample data, or start blank. Once a sample is loaded it
+ * The first thing on an empty Dashboard: try AdFlo with sample data, or start blank. Once a sample is loaded it
  * becomes a one-line reminder with a way to clear it. Shows nothing until the browser has answered, so the
  * server's first paint never flashes it.
  */
