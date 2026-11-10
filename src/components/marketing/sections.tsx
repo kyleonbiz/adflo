@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   BadgeCheck, BarChart3, CalendarDays, Check, FileSignature, FolderKanban, Receipt, Sparkles, Store, Users, Layers, Eye,
-  AlertTriangle,
+  AlertTriangle, Clock, PiggyBank, Workflow,
 } from "lucide-react";
 import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
@@ -21,15 +21,24 @@ const PROBLEMS = [
 ];
 
 const CAPABILITIES = [
-  { icon: Layers, name: "Documents & records", text: "Keep important business documents in one organized place, with search." },
-  { icon: Receipt, name: "Invoices", text: "Track what is open, overdue and paid, with due dates in view." },
-  { icon: Store, name: "Vendors", text: "Payment terms, contract end alerts, tax-form checks and a dated notes log." },
-  { icon: BadgeCheck, name: "Licenses & renewals", text: "Expiry dates, renewal fees and a compliance score, ahead of the deadline." },
-  { icon: FolderKanban, name: "Projects & tasks", text: "Owners, milestones, progress and recurring tasks, with Remind me on every task." },
-  { icon: FileSignature, name: "Forms & signing", text: "Ready-made paperwork forms, typed-name signatures and signed-copy PDFs." },
-  { icon: Users, name: "Contacts", text: "People and vendors together, ready to drop into any form." },
-  { icon: CalendarDays, name: "Calendar", text: "Due dates, expiries, renewals and reminders on one month grid." },
-  { icon: BarChart3, name: "Reporting", text: "Headline numbers, scheduled reports, and CSV and Excel export." },
+  { icon: Layers, name: "Documents & records", best: "Finding any contract, certificate or file in seconds.",
+    time: "Search instead of digging through folders and inboxes.", money: "No paying twice for paperwork you already have.", flow: "One organized home for every business record." },
+  { icon: Receipt, name: "Invoices", best: "Knowing exactly what is open, overdue and paid.",
+    time: "Due dates in view, so no more chasing spreadsheets.", money: "Catch late payments and avoid missed or late-fee bills.", flow: "Everyone works from the same up-to-date status." },
+  { icon: Store, name: "Vendors", best: "Keeping suppliers, terms and contracts under control.",
+    time: "Payment terms and tax-form checks in one profile.", money: "Contract end alerts stop unwanted auto-renewals.", flow: "A dated notes log keeps the whole team in the loop." },
+  { icon: BadgeCheck, name: "Licenses & renewals", best: "Never letting a license or permit lapse.",
+    time: "Expiry dates tracked for you, ahead of the deadline.", money: "Avoid fines, lapses and rush renewal fees.", flow: "A compliance score shows what needs attention first." },
+  { icon: FolderKanban, name: "Projects & tasks", best: "Getting work done with clear owners and deadlines.",
+    time: "Recurring tasks and Remind me on every task.", money: "Fewer dropped balls means less costly rework.", flow: "Milestones and progress visible without status meetings." },
+  { icon: FileSignature, name: "Forms & signing", best: "Collecting paperwork and signatures without the back-and-forth.",
+    time: "Ready-made forms replace printing, scanning and emailing.", money: "Cut paper, postage and courier costs.", flow: "Typed-name signatures and signed-copy PDFs, filed automatically." },
+  { icon: Users, name: "Contacts", best: "Having every person and vendor one click away.",
+    time: "Drop a contact straight into any form.", money: "Stop re-keying details and fixing the typos.", flow: "People and vendors together, one source of truth." },
+  { icon: CalendarDays, name: "Calendar", best: "Seeing what is coming up before it is urgent.",
+    time: "Due dates, expiries and reminders on one month grid.", money: "Deadlines you see early cost far less to meet.", flow: "One view replaces five separate calendars." },
+  { icon: BarChart3, name: "Reporting", best: "Answering “how are we doing?” without building a report.",
+    time: "Headline numbers ready, plus scheduled reports.", money: "Spot overdue and expiring items driving costs.", flow: "CSV and Excel export for your accountant or board." },
 ];
 
 const APPROACH = [
@@ -88,14 +97,22 @@ export function LandingSections() {
 
       <section className={`${container} pb-14 sm:pb-20`} aria-labelledby="capabilities-title">
         <p className={eyebrow}>Platform capabilities</p>
-        <h2 id="capabilities-title" className={h2}>Everything the admin side needs</h2>
-        <p className="mt-2 max-w-2xl text-white/75">Tools that share one set of records, so the Dashboard, the bell and Reporting always agree.</p>
+        <h2 id="capabilities-title" className={h2}>Every module earns its place: saving time, money and effort</h2>
+        <p className="mt-2 max-w-2xl text-white/75">Tools that share one set of records, so the Dashboard, the bell and Reporting always agree. Here is what each one is best at.</p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {CAPABILITIES.map(({ icon: Icon, name, text }) => (
+          {CAPABILITIES.map(({ icon: Icon, name, best, time, money, flow }) => (
             <li key={name} className={card}>
               <span className="flex size-10 items-center justify-center rounded-lg bg-brand-purple/30 text-[#d2c4ff]"><Icon className="size-5" aria-hidden="true" /></span>
               <h3 className="mt-3 font-semibold">{name}</h3>
-              <p className="mt-1 text-sm text-white/70">{text}</p>
+              <p className="mt-1 text-sm text-white/85"><span className="font-medium text-[#d2c4ff]">Best for:</span> {best}</p>
+              <dl className="mt-3 space-y-2 border-t border-white/10 pt-3 text-sm text-white/70">
+                {[{ Ic: Clock, label: "Saves time", v: time }, { Ic: PiggyBank, label: "Saves money", v: money }, { Ic: Workflow, label: "Smoother workflow", v: flow }].map(({ Ic, label, v }) => (
+                  <div key={label} className="flex gap-2.5">
+                    <Ic className="mt-0.5 size-4 shrink-0 text-[#c4b0ff]" aria-hidden="true" />
+                    <div><dt className="font-medium text-white/90">{label}</dt><dd>{v}</dd></div>
+                  </div>
+                ))}
+              </dl>
             </li>
           ))}
         </ul>
