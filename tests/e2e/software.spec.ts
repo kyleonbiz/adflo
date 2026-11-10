@@ -25,6 +25,29 @@ test.describe("Landing page and the app", () => {
     }
   });
 
+  test("the landing page has an admin cost calculator that works out the visitor's own numbers", async ({ page }) => {
+    await page.goto("/landing");
+    const section = page.locator("#admin-cost");
+    await expect(section.getByRole("heading", { name: "How much time are you losing to admin work?" })).toBeVisible();
+    // 10 hours a week at $100 an hour, 48 weeks: $48,000; 40% freed, half of it used: $9,600.
+    await expect(section.getByTestId("admin-cost-annual")).toContainText("$48,000");
+    await expect(section.getByTestId("admin-cost-recoverable")).toContainText("$9,600");
+
+    await section.getByLabel("Hours a week on admin").fill("10");
+    await section.getByLabel("Your hourly value ($)").fill("200");
+    await expect(section.getByTestId("admin-cost-annual")).toContainText("$96,000");
+    await expect(section.getByTestId("admin-cost-recoverable")).toContainText("$19,200");
+
+    await section.getByText("My team’s time").click();
+    await expect(section.getByLabel("Team hours a week on admin")).toBeVisible();
+
+    await section.getByLabel("Team hours a week on admin").fill("");
+    await expect(section.getByTestId("admin-cost-result")).toContainText("your numbers will appear here");
+
+    await section.getByRole("link", { name: "See how AdFlo gets that time back" }).click();
+    await expect(page.getByRole("form", { name: "Request a demo" })).toBeVisible();
+  });
+
   test("without a database it says so plainly and still works", async ({ page }) => {
     await page.goto("/app/overview");
     await expect(page.getByText("Preview", { exact: true })).toBeVisible();

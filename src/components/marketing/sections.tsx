@@ -3,6 +3,7 @@ import {
   BadgeCheck, BarChart3, CalendarDays, Check, FileSignature, FolderKanban, Receipt, Sparkles, Store, Users, Layers, Eye,
   AlertTriangle,
 } from "lucide-react";
+import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
@@ -82,6 +83,8 @@ export function LandingSections() {
           </div>
         </div>
       </section>
+
+      <AdminCostCalculator />
 
       <section className={`${container} pb-14 sm:pb-20`} aria-labelledby="capabilities-title">
         <p className={eyebrow}>Platform capabilities</p>
