@@ -24,7 +24,7 @@ const ITEMS: NavItem[] = [
 export function ControlNav({ onNavigate, collapsed = false }: { base?: "/app"; onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   return (
-    <div className={cn("flex h-full flex-col gap-4 bg-brand-navy p-4", collapsed && "items-center px-2")}>
+    <div className={cn("flex h-full flex-col gap-4 p-4", collapsed && "items-center px-2")}>
       {collapsed ? (
         <Link href="/control" aria-label="Control Center home" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white outline-none focus-visible:ring-2 focus-visible:ring-brand-sky">
           <AdFloMark className="size-6" />
