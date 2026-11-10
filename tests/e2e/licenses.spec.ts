@@ -188,7 +188,7 @@ test.describe("platform modules", () => {
     await expect(page.getByRole("navigation", { name: "Services" })).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name: "Licenses & Renewals" })).toBeVisible();
     await page.getByRole("link", { name: "Documents", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Documents", exact: true })).toBeVisible();
   });
 
   test("licenses: the renewals can be added to a calendar", async ({ page }) => {

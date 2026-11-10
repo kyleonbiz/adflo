@@ -29,7 +29,7 @@ export function WorkloadChart({ rows }: { rows: WorkloadRow[] }) {
       {[0, top / 2, top].map((v) => (
         <g key={v}>
           <line x1={L} x2={W - R + 8} y1={y(v)} y2={y(v)} className="stroke-border" strokeDasharray={v === 0 ? undefined : "2 4"} />
-          <text x={W - R + 16} y={y(v) + 4} className="fill-muted-foreground text-[14px]">{Math.round(v)}</text>
+          {!empty && <text x={W - R + 16} y={y(v) + 4} className="fill-muted-foreground text-[14px]">{Math.round(v)}</text>}
         </g>
       ))}
       {rows.map((r, i) => {

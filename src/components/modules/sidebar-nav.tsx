@@ -70,7 +70,7 @@ function NavGroup({ item, base, active, onNavigate, collapsed }: { item: Item; b
           aria-expanded={expanded}
           aria-label={`${expanded ? "Hide" : "Show"} ${item.label} sections`}
           onClick={() => setOpen(!expanded)}
-          className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-300 outline-none hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-brand-sky"
+          className="absolute right-1 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-300 outline-none hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-brand-sky"
         >
           <ChevronDown className={cn("size-4 transition-transform", expanded && "rotate-180")} aria-hidden />
         </button>

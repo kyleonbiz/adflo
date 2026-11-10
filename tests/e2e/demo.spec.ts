@@ -4,7 +4,7 @@ import { addDocuments } from "./docs";
 test.describe("documents preview", () => {
   test("opens an empty, working documents workspace you can upload into", async ({ page }) => {
     await page.goto("/app");
-    await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Documents", exact: true })).toBeVisible();
     await expect(page.getByText("Preview", { exact: true })).toBeVisible();
     await expect(page.getByRole("note").filter({ hasText: "not saved or uploaded anywhere" })).toBeVisible();
     await expect(page.getByText("No documents yet")).toBeVisible();

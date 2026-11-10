@@ -16,7 +16,7 @@ const VIEWPORTS = [
 /** First visits compile pages in the dev server, so allow for a slow first render. */
 async function gotoReady(page: Page, url: string) {
   await page.goto(url);
-  await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByRole("heading", { name: "Documents", exact: true })).toBeVisible({ timeout: 45_000 });
   await addDocuments(page);
 }
 
@@ -62,7 +62,7 @@ for (const vp of VIEWPORTS) {
 
     test("documents page", async ({ page }) => {
       await gotoReady(page, "/app");
-      await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Documents", exact: true })).toBeVisible();
       await noHorizontalScroll(page, "documents page");
       await nothingClippedHorizontally(page, page.locator("main"), "documents page");
       await shot(page, "demo", true);

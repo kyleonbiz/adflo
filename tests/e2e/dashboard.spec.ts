@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures";
 test.describe("dashboard", () => {
   test("shows three cards that link through, the charts, and today's to-do list", async ({ page }) => {
     await page.goto("/app/overview");
-    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Home", exact: true })).toBeVisible();
     await expect(page.getByTestId("workload")).toBeVisible();
     await expect(page.getByTestId("upcoming")).toBeVisible();
     await expect(page.getByTestId("progress")).toContainText("ALL CLEAR");
