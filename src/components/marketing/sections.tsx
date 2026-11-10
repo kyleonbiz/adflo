@@ -41,6 +41,16 @@ const CAPABILITIES = [
     time: "Headline numbers ready, plus scheduled reports.", money: "Spot overdue and expiring items driving costs.", flow: "CSV and Excel export for your accountant or board." },
 ];
 
+const ADDY_DOES = [
+  { icon: Sparkles, title: "Sets up your business", text: "Answer three questions and Addy picks the right modules, turns them on and installs starter forms, recurring tasks and license records." },
+  { icon: FolderKanban, title: "Handles your to-dos", text: "Say “add call the accountant to my to-do list” or “mark it done”. Done in seconds, with Undo." },
+  { icon: CalendarDays, title: "Sets reminders", text: "“Remind me to renew the permit in 3 days” and it lands on your calendar and in the bell." },
+  { icon: Receipt, title: "Drafts records for you", text: "Invoices, contacts, vendors, projects and license records open pre-filled. You review and press save." },
+  { icon: BarChart3, title: "Tells you what is left", text: "Ask “what is left to do?” for your setup health score and the open items to fix." },
+];
+
+const ADDY_NEVER = ["Delete anything", "Approve or pay", "Send or sign for you", "Save a draft without your say-so"];
+
 const APPROACH = [
   { icon: Layers, step: "Organize", text: "Bring business information and administrative responsibilities into one platform." },
   { icon: Sparkles, step: "Automate", text: "Let the built-in assistant take on repetitive work such as to-dos and reminders, and prepare drafts." },
@@ -115,6 +125,29 @@ export function LandingSections() {
               </dl>
             </li>
           ))}
+        </ul>
+      </section>
+
+      <section id="addy" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="addy-title">
+        <p className={eyebrow}>Meet Addy, your AdFlo assistant</p>
+        <h2 id="addy-title" className={`${h2} max-w-3xl`}>Tell Addy what you need. She takes care of the busywork.</h2>
+        <p className="mt-3 max-w-2xl text-white/75">Plain-language requests, fewer clicks, and every important step stays in your hands.</p>
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {ADDY_DOES.map(({ icon: Icon, title, text }) => (
+            <li key={title} className={card}>
+              <span className="flex size-10 items-center justify-center rounded-lg bg-brand-purple/30 text-[#d2c4ff]"><Icon className="size-5" aria-hidden="true" /></span>
+              <h3 className="mt-3 font-semibold">{title}</h3>
+              <p className="mt-1 text-sm text-white/70">{text}</p>
+            </li>
+          ))}
+          <li className={`${card} bg-gradient-to-br from-brand-purple/30 to-brand-blue/10`}>
+            <span className="flex size-10 items-center justify-center rounded-lg bg-brand-purple/30 text-[#d2c4ff]"><Eye className="size-5" aria-hidden="true" /></span>
+            <h3 className="mt-3 font-semibold">You stay in control</h3>
+            <p className="mt-1 text-sm text-white/75">Addy will never:</p>
+            <ul className="mt-2 space-y-1 text-sm text-white/80">
+              {ADDY_NEVER.map((n) => <li key={n} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-[#c4b0ff]" aria-hidden="true" />{n}</li>)}
+            </ul>
+          </li>
         </ul>
       </section>
 
