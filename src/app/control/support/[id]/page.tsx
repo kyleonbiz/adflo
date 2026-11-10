@@ -6,7 +6,7 @@ import { renderControlShell } from "@/lib/control/shell";
 import { canEditClients } from "@/lib/control/types";
 import { isUuid } from "@/lib/control/validation";
 
-export const metadata: Metadata = { title: "Ticket · Control Center" };
+export const metadata: Metadata = { title: "Ticket · Control center" };
 export const dynamic = "force-dynamic";
 
 export default async function TicketRoute({ params }: PageProps<"/control/support/[id]">) {

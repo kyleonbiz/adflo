@@ -37,7 +37,7 @@ type Sort = "expiry" | "name";
 const NOTICE_MS = 8000;
 
 /**
- * Licenses & Renewals. Records live in this component's state (starting empty) until the
+ * Licenses & renewals. Records live in this component's state (starting empty) until the
  * database is connected, so nothing here is saved between visits.
  */
 export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { preview?: string; initialQuery?: string; startNew?: boolean; draft?: LicenseDraft }) {
@@ -162,7 +162,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Licenses &amp; Renewals</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Licenses &amp; renewals</h1>
           <p className="text-sm text-muted-foreground">Track expiry dates, collect required documents and stay ahead of every renewal.</p>
         </div>
         <div className="flex flex-wrap gap-2">

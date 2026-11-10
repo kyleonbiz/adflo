@@ -3,7 +3,7 @@ import { FormsPage } from "@/components/forms/forms-page";
 import { personFromParams } from "@/lib/bridge";
 import { renderAppShell } from "@/lib/app-shell";
 
-export const metadata: Metadata = { title: "Forms & Paperwork" };
+export const metadata: Metadata = { title: "Forms & paperwork" };
 export const dynamic = "force-dynamic";
 
 export default async function FormsRoute({ searchParams }: PageProps<"/app/forms">) {

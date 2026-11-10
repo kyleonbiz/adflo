@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 const NAMES = [
-  "Home", "AI Assistant", "Documents", "Invoices", "Licenses & Renewals", "Contacts", "Tasks", "Forms & Paperwork",
+  "Home", "AI Assistant", "Documents", "Invoices", "Licenses & renewals", "Contacts", "Tasks", "Forms & paperwork",
   "Reporting", "Calendar", "Activity", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
@@ -82,9 +82,9 @@ test.describe("module sidebar on a wide screen", () => {
     await expect(page.getByText("Preview", { exact: true })).toBeVisible();
     await expect(nav(page).getByRole("link", { name: "Documents", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(nav(page).getByRole("link", { name: "Home", exact: true })).toHaveAttribute("href", "/app/overview");
-    await nav(page).getByRole("link", { name: "Licenses & Renewals", exact: true }).click();
+    await nav(page).getByRole("link", { name: "Licenses & renewals", exact: true }).click();
     await expect(page).toHaveURL(/\/app\/licenses$/);
-    await expect(nav(page).getByRole("link", { name: "Licenses & Renewals", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(nav(page).getByRole("link", { name: "Licenses & renewals", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(nav(page).getByRole("link", { name: "Documents", exact: true })).not.toHaveAttribute("aria-current", "page");
   });
 });

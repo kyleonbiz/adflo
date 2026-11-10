@@ -3,7 +3,7 @@ import { PlansPage } from "@/components/control/plans-page";
 import { loadPlans, SAMPLE_PLANS } from "@/lib/control/data";
 import { renderControlShell } from "@/lib/control/shell";
 
-export const metadata: Metadata = { title: "Plans & pricing · Control Center" };
+export const metadata: Metadata = { title: "Plans & pricing · Control center" };
 export const dynamic = "force-dynamic";
 
 export default function PlansRoute() {

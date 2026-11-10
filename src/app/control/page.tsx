@@ -5,7 +5,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { loadClients, loadTickets, SAMPLE_CLIENTS, SAMPLE_TICKETS } from "@/lib/control/data";
 import { renderControlShell } from "@/lib/control/shell";
 
-export const metadata: Metadata = { title: "Control Center" };
+export const metadata: Metadata = { title: "Control center" };
 export const dynamic = "force-dynamic";
 
 export default function ControlHome() {
@@ -17,7 +17,7 @@ export default function ControlHome() {
     return (
       <div className="space-y-5">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Control Center</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Control center</h1>
           <p className="text-sm text-muted-foreground">{ctx.mode === "live" ? `Welcome, ${ctx.staff.name}.` : "Preview with sample clients."} Here is where AdFlo stands.</p>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-4">

@@ -12,7 +12,7 @@ export default async function VerifyRoute({ searchParams }: PageProps<"/control/
   if (access.mode === "preview") redirect("/control");
   const { next } = await searchParams;
   return (
-    <AuthCard title="Two-factor sign-in" subtitle="Enter the code from your authenticator app to open the Control Center.">
+    <AuthCard title="Two-factor sign-in" subtitle="Enter the code from your authenticator app to open the Control center.">
       <VerifyForm next={Array.isArray(next) ? next[0] : (next ?? "/control")} />
     </AuthCard>
   );

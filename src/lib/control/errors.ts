@@ -2,7 +2,7 @@ import "server-only";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
 /**
- * Records that something failed, for the Control Center's error log. Stores only the error class, where it happened and
+ * Records that something failed, for the Control center's error log. Stores only the error class, where it happened and
  * (when known) the workspace; never the message, which can contain file names or client data. Best effort: it must never
  * throw or slow a failing request, and does nothing without a database and a service key.
  */

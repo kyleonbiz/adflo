@@ -3,7 +3,7 @@ import { BillingPage } from "@/components/control/billing-page";
 import { loadClients, loadPlans, SAMPLE_CLIENTS, SAMPLE_PLANS } from "@/lib/control/data";
 import { renderControlShell } from "@/lib/control/shell";
 
-export const metadata: Metadata = { title: "Billing · Control Center" };
+export const metadata: Metadata = { title: "Billing · Control center" };
 export const dynamic = "force-dynamic";
 
 export default function BillingRoute() {

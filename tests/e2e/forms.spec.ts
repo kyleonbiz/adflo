@@ -231,8 +231,8 @@ test.describe("forms module", () => {
 
   test("is available in the signed-in app too", async ({ page }) => {
     await page.goto("/app/forms");
-    await expect(page.getByRole("heading", { level: 1, name: "Forms & Paperwork" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Forms & Paperwork", exact: true })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("heading", { level: 1, name: "Forms & paperwork" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Forms & paperwork", exact: true })).toHaveAttribute("aria-current", "page");
   });
   test("choose paperwork by business type, fill it in, then print or download it", async ({ page }) => {
     await page.goto("/app/forms");

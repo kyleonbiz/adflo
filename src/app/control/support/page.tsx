@@ -4,7 +4,7 @@ import { loadClients, loadDirectory, loadTickets, SAMPLE_CLIENTS, SAMPLE_TICKETS
 import { renderControlShell } from "@/lib/control/shell";
 import { canEditClients } from "@/lib/control/types";
 
-export const metadata: Metadata = { title: "Support · Control Center" };
+export const metadata: Metadata = { title: "Support · Control center" };
 export const dynamic = "force-dynamic";
 
 export default function SupportRoute() {

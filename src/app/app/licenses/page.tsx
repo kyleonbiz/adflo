@@ -3,7 +3,7 @@ import { LicensesPage } from "@/components/licenses/licenses-page";
 import { draftFromParams } from "@/lib/assistant/guardrails";
 import { renderAppShell } from "@/lib/app-shell";
 
-export const metadata: Metadata = { title: "Licenses & Renewals" };
+export const metadata: Metadata = { title: "Licenses & renewals" };
 export const dynamic = "force-dynamic";
 
 export default async function LicensesRoute({ searchParams }: PageProps<"/app/licenses">) {

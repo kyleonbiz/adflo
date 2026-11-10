@@ -4,7 +4,7 @@ import { loadClients, loadPlans, SAMPLE_CLIENTS, SAMPLE_PLANS } from "@/lib/cont
 import { renderControlShell } from "@/lib/control/shell";
 import { canEditClients } from "@/lib/control/types";
 
-export const metadata: Metadata = { title: "Clients · Control Center" };
+export const metadata: Metadata = { title: "Clients · Control center" };
 export const dynamic = "force-dynamic";
 
 export default function ClientsRoute() {

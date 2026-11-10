@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type ControlContext = { mode: "live"; staff: Staff; supabase: SupabaseClient } | { mode: "preview" };
 
-/** Every Control Center page renders through this: the staff gate, then the same frame as the app. */
+/** Every Control center page renders through this: the staff gate, then the same frame as the app. */
 export async function renderControlShell(nextPath: string, content: (ctx: ControlContext) => React.ReactNode | Promise<React.ReactNode>): Promise<React.ReactNode> {
   const access = await requireStaff(nextPath);
   const body = await content(access);

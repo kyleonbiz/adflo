@@ -7,7 +7,7 @@ import { AdFloMark, Brand } from "@/components/brand";
 import { NavLink, isActive, type NavItem } from "@/components/modules/sidebar-nav";
 import { cn } from "@/lib/utils";
 
-/** What the Control Center offers so far. Each step of the build adds its screen here. */
+/** What the Control center offers so far. Each step of the build adds its screen here. */
 const ITEMS: NavItem[] = [
   { id: "overview", label: "Overview", href: "/control", icon: Home },
   { id: "clients", label: "Clients", href: "/control/clients", icon: Building2 },
@@ -26,16 +26,16 @@ export function ControlNav({ onNavigate, collapsed = false }: { base?: "/app"; o
   return (
     <div className={cn("flex h-full flex-col gap-4 p-4", collapsed && "items-center px-2")}>
       {collapsed ? (
-        <Link href="/control" aria-label="Control Center home" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white outline-none focus-visible:ring-2 focus-visible:ring-brand-sky">
+        <Link href="/control" aria-label="Control center home" className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white outline-none focus-visible:ring-2 focus-visible:ring-brand-sky">
           <AdFloMark className="size-6" />
         </Link>
       ) : (
         <div className="space-y-2">
           <Brand wordmark light href="/control" className="w-44 px-1" />
-          <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-brand-sky">Control Center</p>
+          <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-brand-sky">Control center</p>
         </div>
       )}
-      <nav aria-label="Control Center" className="flex w-full flex-1 flex-col">
+      <nav aria-label="Control center" className="flex w-full flex-1 flex-col">
         <ul className="space-y-1">
           {ITEMS.map((item) => (
             <li key={item.id}>

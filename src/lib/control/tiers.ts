@@ -5,7 +5,7 @@
 export const FEATURES = [
   { key: "documents", label: "Documents", group: "Modules" },
   { key: "contacts", label: "Contacts", group: "Modules" },
-  { key: "tasks", label: "Tasks & Calendar", group: "Modules" },
+  { key: "tasks", label: "Tasks & calendar", group: "Modules" },
   { key: "setup", label: "Guided industry setup", group: "Modules" },
   { key: "licenses_basic", label: "Licenses (basic list)", group: "Modules" },
   { key: "vendors", label: "Vendors", group: "Modules" },

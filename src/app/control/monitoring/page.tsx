@@ -5,7 +5,7 @@ import { runHealthChecks } from "@/lib/control/health";
 import { renderControlShell } from "@/lib/control/shell";
 import { canEditClients } from "@/lib/control/types";
 
-export const metadata: Metadata = { title: "Monitoring · Control Center" };
+export const metadata: Metadata = { title: "Monitoring · Control center" };
 export const dynamic = "force-dynamic";
 
 export default function MonitoringRoute() {

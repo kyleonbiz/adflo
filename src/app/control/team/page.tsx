@@ -3,7 +3,7 @@ import { TeamPage } from "@/components/control/team-page";
 import { loadStaff } from "@/lib/control/data";
 import { renderControlShell } from "@/lib/control/shell";
 
-export const metadata: Metadata = { title: "Team · Control Center" };
+export const metadata: Metadata = { title: "Team · Control center" };
 export const dynamic = "force-dynamic";
 
 export default function TeamRoute() {

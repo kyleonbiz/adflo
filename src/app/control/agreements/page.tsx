@@ -3,7 +3,7 @@ import { AgreementsPage } from "@/components/control/agreements-page";
 import { loadSent, loadTemplates } from "@/lib/control/data";
 import { renderControlShell } from "@/lib/control/shell";
 
-export const metadata: Metadata = { title: "Agreements · Control Center" };
+export const metadata: Metadata = { title: "Agreements · Control center" };
 export const dynamic = "force-dynamic";
 
 export default function AgreementsRoute() {

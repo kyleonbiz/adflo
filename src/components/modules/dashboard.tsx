@@ -83,7 +83,7 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
                   <span className="block truncate text-xs text-muted-foreground">{it.area} · {it.label}</span>
                 </span>
               </Link>
-              <Button type="button" size="icon-sm" variant="ghost" aria-label={`Add to Today: ${it.text}`} title="Add to Today" disabled={hasOpenTodo(todos, it.text, today)} onClick={() => addToToday(it)}><ListPlus /></Button>
+              <Button type="button" size="icon-sm" variant="ghost" aria-label={`Add to today: ${it.text}`} title="Add to today" disabled={hasOpenTodo(todos, it.text, today)} onClick={() => addToToday(it)}><ListPlus /></Button>
               <Button type="button" size="icon-sm" variant="ghost" aria-label={it.id.startsWith("rem-") ? `Clear reminder: ${it.text}` : `Snooze until tomorrow: ${it.text}`} title={it.id.startsWith("rem-") ? "Clear reminder" : "Snooze until tomorrow"} onClick={() => (it.id.startsWith("rem-") ? saveReminders(clearReminder(reminders, it.id)) : doSnooze(it.id))}><BellOff /></Button>
             </li>
           ))}
@@ -173,11 +173,11 @@ const LICENSE_STATE = {
   expired: { label: "Expired", variant: "danger" },
 } as const;
 
-/** The dashboard's Licenses & Renewals tab: where each license stands and which ones need action next. */
+/** The dashboard's Licenses & renewals tab: where each license stands and which ones need action next. */
 function LicensesTab({ panel }: { panel: LicensesPanel }) {
   if (panel.total === 0) {
     return (
-      <section aria-label="Licenses & Renewals" className="rounded-2xl border bg-card p-6 shadow-panel" data-testid="licenses-tab">
+      <section aria-label="Licenses & renewals" className="rounded-2xl border bg-card p-6 shadow-panel" data-testid="licenses-tab">
         <h2 className="text-lg font-semibold">No licenses tracked yet</h2>
         <p className="mt-1 max-w-xl text-sm text-muted-foreground">Add your licenses, permits and insurance to see here what is current, what is about to expire and what is overdue.</p>
         <Button asChild className="mt-4"><Link href="/app/licenses">Start from a template</Link></Button>
@@ -191,7 +191,7 @@ function LicensesTab({ panel }: { panel: LicensesPanel }) {
     { label: "Expired", value: panel.expired, tone: "text-red-600" },
   ];
   return (
-    <section aria-label="Licenses & Renewals" className="space-y-5" data-testid="licenses-tab">
+    <section aria-label="Licenses & renewals" className="space-y-5" data-testid="licenses-tab">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
           <Link key={s.label} href="/app/licenses" className="rounded-2xl border bg-card p-4 shadow-panel outline-none transition-shadow hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring">
@@ -240,7 +240,7 @@ export function Dashboard({ data, serverToday }: { base?: "/app"; data: Dashboar
   return (
     <div className="space-y-5" data-testid="dashboard">
       <div role="tablist" aria-label="Dashboard views" className="flex gap-1 border-b">
-        {([["overview", "Overview"], ["licenses", "Licenses & Renewals"]] as const).map(([id, label]) => (
+        {([["overview", "Overview"], ["licenses", "Licenses & renewals"]] as const).map(([id, label]) => (
           <button
             key={id} type="button" role="tab" id={`dash-tab-${id}`} aria-selected={tab === id} aria-controls="dash-panel" onClick={() => setTab(id)}
             className={cn("-mb-px border-b-2 px-3 py-2 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring", tab === id ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}

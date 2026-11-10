@@ -28,7 +28,7 @@ export const controlDemoEnabled = controlDemoActive;
 export type ControlAccess = { mode: "live"; staff: Staff; supabase: SupabaseClient } | { mode: "preview" };
 
 /**
- * Gate for every Control Center page. With a database: sign in, then be active staff, otherwise the page does
+ * Gate for every Control center page. With a database: sign in, then be active staff, otherwise the page does
  * not exist (404, so its presence is not revealed). Without a database it opens as an empty preview, but only in
  * development; a production build without a database shows nothing.
  */

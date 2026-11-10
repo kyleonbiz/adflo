@@ -12,7 +12,7 @@ import { ROLE_LABEL, STAFF_ROLES, type StaffMember, type StaffRole } from "@/lib
 const SELECT = "h-9 rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
 const ROLE_HELP: Record<StaffRole, string> = { owner: "Everything, including pricing, team and the audit log.", support: "Edit clients, run onboarding, answer support.", billing: "Read-only for now." };
 
-/** The people who work in the Control Center. Owner only. */
+/** The people who work in the Control center. Owner only. */
 export function TeamPage({ staff, selfId, sample }: { staff: StaffMember[]; selfId?: string; sample?: boolean }) {
   const router = useRouter();
   const [form, setForm] = useState({ email: "", name: "", role: "support" as StaffRole });
@@ -35,7 +35,7 @@ export function TeamPage({ staff, selfId, sample }: { staff: StaffMember[]; self
     <div className="space-y-5">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
-        <p className="text-sm text-muted-foreground">People who can sign in to the Control Center. Each needs an AdFlo account and sets up two-factor on first sign-in.</p>
+        <p className="text-sm text-muted-foreground">People who can sign in to the Control center. Each needs an AdFlo account and sets up two-factor on first sign-in.</p>
       </div>
       {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample people.</p>}
       <ul className="divide-y rounded-2xl border bg-card shadow-panel">

@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-// Without a database the Control Center opens as a read-only preview with labelled sample clients.
+// Without a database the Control center opens as a read-only preview with labelled sample clients.
 test("control center preview: overview, clients and audit log open", async ({ page }) => {
   test.setTimeout(180_000); // a cold dev server compiles each of these pages on first visit
   await page.goto("/control");
-  await expect(page.getByRole("heading", { name: "Control Center" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Control center" })).toBeVisible();
   await expect(page.getByText("Preview", { exact: true })).toBeVisible();
-  await expect(page.getByRole("navigation", { name: "Control Center" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Control center" })).toBeVisible();
 
   // A cold dev server can drop a click that lands before hydration, so retry the first click until it navigates.
   await expect(async () => {
@@ -120,7 +120,7 @@ test.describe("on a device set to dark mode", () => {
   test.use({ colorScheme: "dark" });
   test("control center is always Day and has no Appearance switch", async ({ page }) => {
     await page.goto("/control");
-    await expect(page.getByRole("heading", { name: "Control Center" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Control center" })).toBeVisible();
     await expect(page.locator("html")).not.toHaveClass(/dark/);
     await expect(page.getByRole("link", { name: "Appearance" })).toHaveCount(0);
   });

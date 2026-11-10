@@ -65,11 +65,11 @@ export function runDirect(action: DirectAction, ctx: DirectContext): DirectResul
   }
 
   if (action.kind === "todo") {
-    if (hasOpenTodo(todos, action.title, today)) return { text: `"${action.title}" is already on your list for today.`, link: { label: "Open Today", href: "/app/overview" } };
+    if (hasOpenTodo(todos, action.title, today)) return { text: `"${action.title}" is already on your list for today.`, link: { label: "Open today", href: "/app/overview" } };
     const next = pruneTodos(addTodo(todos, action.title, today, ctx.newId()), today);
     return {
       text: `Added "${action.title}" to your to-do list for today.`,
-      link: { label: "Open Today", href: "/app/overview" },
+      link: { label: "Open today", href: "/app/overview" },
       todos: next, undo: { todos },
     };
   }
@@ -79,16 +79,16 @@ export function runDirect(action: DirectAction, ctx: DirectContext): DirectResul
     const next = setReminder(reminders, { id: reminderId("task", `addy-${ctx.newId()}`), text: action.title, area: "Tasks", href: "/app/calendar" }, today, action.days);
     return {
       text: `I will remind you on ${formatDayLong(on)}: ${action.title}. It will show in the bell, on Home and on the calendar.`,
-      link: { label: "Open Calendar", href: "/app/calendar" },
+      link: { label: "Open calendar", href: "/app/calendar" },
       reminders: next, undo: { reminders },
     };
   }
 
   const q = action.query.toLowerCase();
   const open = todaysTodos(todos, today).filter((t) => !t.done && t.title.toLowerCase().includes(q));
-  if (open.length === 0) return { text: `I could not find an open to-do for today that matches "${action.query}".`, link: { label: "Open Today", href: "/app/overview" } };
+  if (open.length === 0) return { text: `I could not find an open to-do for today that matches "${action.query}".`, link: { label: "Open today", href: "/app/overview" } };
   if (open.length > 1) return { text: `More than one to-do matches "${action.query}": ${open.slice(0, 4).map((t) => `"${t.title}"`).join(", ")}. Say a little more of the one you mean.` };
-  return { text: `Ticked off "${open[0].title}".`, link: { label: "Open Today", href: "/app/overview" }, todos: toggleTodo(todos, open[0].id), undo: { todos } };
+  return { text: `Ticked off "${open[0].title}".`, link: { label: "Open today", href: "/app/overview" }, todos: toggleTodo(todos, open[0].id), undo: { todos } };
 }
 
 /** Plain-language list of what Addy may do by itself, for the model's instructions and the help text. */

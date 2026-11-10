@@ -47,10 +47,10 @@ describe("Dashboard", () => {
     show();
     await user.click(screen.getByRole("button", { name: /^Invoices \(/ }));
     const first = rows()[0];
-    const add = within(first).getByRole("button", { name: /^Add to Today/ });
+    const add = within(first).getByRole("button", { name: /^Add to today/ });
     await user.click(add);
     expect(within(screen.getByTestId("today-todos")).getAllByTestId("todo-item")).toHaveLength(1);
-    expect((within(rows()[0]).getByRole("button", { name: /^Add to Today/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect((within(rows()[0]).getByRole("button", { name: /^Add to today/ }) as HTMLButtonElement).disabled).toBe(true);
 
     const before = rows().length;
     await user.click(within(rows()[0]).getByRole("button", { name: /^Snooze/ }));
@@ -65,11 +65,11 @@ describe("Dashboard", () => {
     expect(screen.getByText("You are all caught up.")).toBeTruthy();
   });
 
-  it("has a Licenses & Renewals tab with the counts and what expires next", async () => {
+  it("has a Licenses & renewals tab with the counts and what expires next", async () => {
     const user = userEvent.setup();
     show();
     expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe("true");
-    await user.click(screen.getByRole("tab", { name: "Licenses & Renewals" }));
+    await user.click(screen.getByRole("tab", { name: "Licenses & renewals" }));
     const tab = screen.getByTestId("licenses-tab");
     expect(within(tab).getAllByTestId("license-next")).toHaveLength(data.licenses.next.length);
     expect(within(tab).getByTestId("licenses-standing").textContent).toBe(`${data.licenses.inGoodStanding}%`);
@@ -79,7 +79,7 @@ describe("Dashboard", () => {
   it("invites you to add licenses when there are none", async () => {
     const user = userEvent.setup();
     render(<Dashboard base="/app" data={{ ...data, licenses: { ...data.licenses, total: 0, next: [] } }} serverToday={today} />);
-    await user.click(screen.getByRole("tab", { name: "Licenses & Renewals" }));
+    await user.click(screen.getByRole("tab", { name: "Licenses & renewals" }));
     expect(screen.getByText("No licenses tracked yet")).toBeTruthy();
     expect(screen.getByRole("link", { name: "Start from a template" }).getAttribute("href")).toBe("/app/licenses");
   });

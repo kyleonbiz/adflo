@@ -4,8 +4,8 @@ test.describe("platform modules", () => {
   test("the dashboard links through to the licenses module", async ({ page }) => {
     await page.goto("/app/overview");
     await expect(page.getByTestId("dashboard")).toBeVisible();
-    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Licenses & Renewals" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "Licenses & Renewals" })).toBeVisible();
+    await page.getByRole("navigation", { name: "Services" }).getByRole("link", { name: "Licenses & renewals" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Licenses & renewals" })).toBeVisible();
   });
 
   test("licenses: summary, tasks, filtering, documents checklist and renewal", async ({ page }) => {
@@ -186,7 +186,7 @@ test.describe("platform modules", () => {
   test("the signed-in app shows the module tabs in development mode", async ({ page }) => {
     await page.goto("/app/licenses");
     await expect(page.getByRole("navigation", { name: "Services" })).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1, name: "Licenses & Renewals" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Licenses & renewals" })).toBeVisible();
     await page.getByRole("link", { name: "Documents", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Documents", exact: true })).toBeVisible();
   });

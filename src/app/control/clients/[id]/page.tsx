@@ -7,7 +7,7 @@ import { loadClients, loadPlans, loadSent, loadTemplates, loadTickets, loadTimel
 import { renderControlShell } from "@/lib/control/shell";
 import { canEditClients } from "@/lib/control/types";
 
-export const metadata: Metadata = { title: "Client · Control Center" };
+export const metadata: Metadata = { title: "Client · Control center" };
 export const dynamic = "force-dynamic";
 
 export default async function ClientRoute({ params }: PageProps<"/control/clients/[id]">) {

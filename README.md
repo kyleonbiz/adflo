@@ -15,7 +15,7 @@ The site address (`/`) is the landing page (`src/app/page.tsx`: the hero, the de
   development only and is refused in production unless `DMS_ALLOW_DEV_MODE=true`.
 * **Old demo links** – `/demo/...` redirects to the same page under `/app/...`.
 
-## Control Center (staff console)
+## Control center (staff console)
 
 `/control` is Aurum Ventura's own back office, separate from the client app: a client directory (status, plan, seats,
 owner, notes) and an audit log of every staff change. It uses the same look as the app. Staff are rows in
@@ -56,16 +56,16 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
   class and route, never messages or client data, and needs `SUPABASE_SERVICE_ROLE_KEY` on the server to record anything.
   Clients also show last sign-in, and "Quiet" when an active client has not signed in for 30 days.
 
-Billing is deliberately later: the Control Center tracks plan and price only, with no invoicing or card payments.
+Billing is deliberately later: the Control center tracks plan and price only, with no invoicing or card payments.
 
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
 (`src/lib/modules/registry.ts`). All ten exist: **01 Documents**, **02 Invoices**
-(`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
+(`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
 **05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Tasks**
-(`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
+(`src/lib/projects/`, `src/components/projects/`), **07 Forms & paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
 (`src/lib/datasets/`, `src/components/reporting/`), **09 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **10 Settings**
 (`src/lib/setup/`, `src/components/setup/`). Every service starts empty and keeps its records in the browser until the database is
@@ -108,7 +108,7 @@ browser and never uploaded.
   modules with industry and team-size recommendations, templates, existing data, automatic checks). Progress
   is saved in the browser after every change (`localStorage`, validated and cleaned on load, so damaged or
   hand-edited data is ignored). Finishing installs the chosen templates for real: forms appear in Forms &
-  Paperwork and starter records in Licenses & Renewals. An unfinished or
+  Paperwork and starter records in Licenses & renewals. An unfinished or
   edited setup installs nothing. Choices are per browser, not per account, until the database is connected.
   Forms are built in the app and **sent** to anyone: Send gives a link (`/form/<token>`, which carries the whole form, so
   nothing is looked up or stored) and a ready-written email. The recipient fills it in on a plain public page and

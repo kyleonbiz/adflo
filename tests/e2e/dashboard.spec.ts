@@ -44,9 +44,9 @@ test.describe("dashboard", () => {
       await page.addInitScript(() => { (window as unknown as { __E2E_SEED__: unknown }).__E2E_SEED__ = {}; });
     });
 
-    test("the Licenses & Renewals tab opens and the Overview comes back", async ({ page }) => {
+    test("the Licenses & renewals tab opens and the Overview comes back", async ({ page }) => {
       await page.goto("/app/overview");
-      await page.getByRole("tab", { name: "Licenses & Renewals" }).click();
+      await page.getByRole("tab", { name: "Licenses & renewals" }).click();
       await expect(page.getByTestId("licenses-tab")).toContainText("No licenses tracked yet");
       await page.getByRole("link", { name: "Start from a template" }).click();
       await expect(page).toHaveURL(/\/app\/licenses$/);

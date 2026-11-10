@@ -47,7 +47,7 @@ function download(text: string | Uint8Array, name: string, type: string) {
 }
 
 /**
- * Forms & Paperwork. Forms and submissions live in this component's state (starting empty)
+ * Forms & paperwork. Forms and submissions live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
 export function FormsPage({ preview, initialQuery = "", initialFill }: { preview?: string; initialQuery?: string; initialFill?: { formId: string; person: Partial<Person> } }) {
@@ -136,7 +136,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Forms &amp; Paperwork</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Forms &amp; paperwork</h1>
           <p className="text-sm text-muted-foreground">Build the forms you need, send them to anyone and collect the answers.</p>
         </div>
         <div className="flex flex-wrap gap-2">

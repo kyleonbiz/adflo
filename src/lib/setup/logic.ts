@@ -190,7 +190,7 @@ export function runSetupChecks(c: SetupConfig): SetupCheck[] {
   }
 
   if (has("vendors") && !has("forms")) {
-    checks.push({ id: "vendors-forms", status: "warn", title: "Vendor intake", detail: "Vendors work best with Forms & Paperwork for intake.", step: 1 });
+    checks.push({ id: "vendors-forms", status: "warn", title: "Vendor intake", detail: "Vendors work best with Forms & paperwork for intake.", step: 1 });
   }
   if (has("invoices") && !has("crm")) {
     checks.push({ id: "invoices-crm", status: "warn", title: "Client contacts", detail: "Add Contacts to keep the contacts behind your invoices clean.", step: 1 });

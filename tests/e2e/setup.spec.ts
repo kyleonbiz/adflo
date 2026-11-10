@@ -41,7 +41,7 @@ test.describe("back office setup module", () => {
     await next(page).click();
     const list = page.getByTestId("module-choices");
     await expect(list.getByText("Recommended", { exact: true })).toHaveCount(6);
-    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) {
+    for (const name of ["Documents", "Invoices", "Tasks", "Forms & paperwork", "Contacts", "Licenses & renewals"]) {
       await expect(moduleBox(page, name)).toBeChecked();
     }
     for (const name of ["Vendors", "Reporting"]) await expect(moduleBox(page, name)).not.toBeChecked();
@@ -51,7 +51,7 @@ test.describe("back office setup module", () => {
     await page.getByRole("button", { name: "Use recommended" }).click();
     await expect(moduleBox(page, "Documents")).toBeChecked();
 
-    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) await moduleBox(page, name).uncheck();
+    for (const name of ["Documents", "Invoices", "Tasks", "Forms & paperwork", "Contacts", "Licenses & renewals"]) await moduleBox(page, name).uncheck();
     await expect(next(page)).toBeDisabled();
   });
 
@@ -61,8 +61,8 @@ test.describe("back office setup module", () => {
     await next(page).click();
     await next(page).click();
     const groups = page.getByTestId("template-group");
-    await expect(groups.filter({ hasText: "Forms & Paperwork" })).toContainText("New employee details");
-    await expect(groups.filter({ hasText: "Licenses & Renewals" })).toContainText("Common business licenses");
+    await expect(groups.filter({ hasText: "Forms & paperwork" })).toContainText("New employee details");
+    await expect(groups.filter({ hasText: "Licenses & renewals" })).toContainText("Common business licenses");
     await expect(groups.filter({ hasText: "Contacts" })).toContainText("Nothing to install");
     await expect(page.getByLabel("New employee details")).toBeChecked();
   });
@@ -83,8 +83,8 @@ test.describe("back office setup module", () => {
     const done = page.getByTestId("setup-complete");
     await expect(done).toContainText("Acme Studio is set up");
     const installed = page.getByTestId("installed-list");
-    await expect(installed).toContainText("New employee details (Form, in Forms & Paperwork)");
-    await expect(installed).toContainText("Common business licenses (License records, in Licenses & Renewals)");
+    await expect(installed).toContainText("New employee details (Form, in Forms & paperwork)");
+    await expect(installed).toContainText("Common business licenses (License records, in Licenses & renewals)");
     await expect(done.getByRole("link", { name: "Vendors" })).toBeVisible();
     await expect(done.getByRole("link", { name: "Tasks" })).toHaveCount(0);
 

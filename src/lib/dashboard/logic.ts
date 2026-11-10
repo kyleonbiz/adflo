@@ -34,7 +34,7 @@ export interface WorkloadRow { label: string; open: number; attention: number }
 export interface UpcomingDay { day: string; label: string; count: number }
 export interface AttentionItem { id: string; area: Area; severity: Severity; label: string; text: string; href: string }
 /** Plain data (no functions or dates), so a server component can hand it to the client dashboard. */
-/** The Licenses & Renewals tab on the dashboard: how many are in each state, and which expire next. */
+/** The Licenses & renewals tab on the dashboard: how many are in each state, and which expire next. */
 export interface LicensesPanel {
   total: number;
   active: number;

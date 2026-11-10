@@ -3,7 +3,7 @@ import { loadAudit } from "@/lib/control/data";
 import { renderControlShell } from "@/lib/control/shell";
 import { describeAudit } from "@/lib/control/validation";
 
-export const metadata: Metadata = { title: "Audit log · Control Center" };
+export const metadata: Metadata = { title: "Audit log · Control center" };
 export const dynamic = "force-dynamic";
 
 const when = (iso: string) => new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC";

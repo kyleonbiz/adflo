@@ -54,7 +54,7 @@ export function AppFrame({ base, topRight, children, variant = "app" }: { base: 
             <button type="button" onClick={() => saveSidebarCollapsed(!collapsed)} aria-expanded={!collapsed} aria-controls="sidebar" className="hidden h-9 shrink-0 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex">
               {collapsed ? <PanelLeftOpen className="size-4" aria-hidden /> : <PanelLeftClose className="size-4" aria-hidden />} {collapsed ? "Expand menu" : "Minimize menu"}
             </button>
-            <div className="hidden min-w-0 flex-1 sm:block">{control ? <span className="text-sm font-medium text-muted-foreground">Control Center</span> : <GlobalSearch />}</div>
+            <div className="hidden min-w-0 flex-1 sm:block">{control ? <span className="text-sm font-medium text-muted-foreground">Control center</span> : <GlobalSearch />}</div>
             <div className="ml-auto flex min-w-0 items-center gap-3">{topRight}</div>
           </div>
           {!control && <div className="px-4 pb-3 sm:hidden"><GlobalSearch /></div>}
