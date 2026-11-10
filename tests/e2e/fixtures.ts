@@ -19,7 +19,10 @@ export const test = base.extend({
       vendors: sampleVendors(today), contacts: sampleContacts(today),
       submissions: sampleSubmissions(today),
     };
-    await page.addInitScript((s) => { (window as unknown as { __E2E_SEED__: unknown }).__E2E_SEED__ = s; }, seed);
+    await page.addInitScript((s) => {
+      (window as unknown as { __E2E_SEED__: unknown }).__E2E_SEED__ = s;
+      try { window.localStorage.setItem("adflo.sample-auto.v1", "1"); } catch { /* the app then loads its sample on a first visit */ }
+    }, seed);
     await provide(page);
   },
 });

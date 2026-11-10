@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Database } from "lucide-react";
 import { useToday } from "@/components/modules/use-today";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,10 @@ function Picker({ today, hasRecords, heading }: { today: string; hasRecords: boo
   );
 }
 
+const AUTO_KEY = "adflo.sample-auto.v1";
+const autoDecided = () => { try { return window.localStorage.getItem(AUTO_KEY) !== null; } catch { return true; } };
+const markAutoDecided = () => { try { window.localStorage.setItem(AUTO_KEY, "1"); return true; } catch { return false; } };
+
 /**
  * The first thing on an empty Dashboard: try AdFlo with sample data, or start blank. Once a sample is loaded it
  * becomes a one-line reminder with a way to clear it. Shows nothing until the browser has answered, so the
@@ -57,6 +61,17 @@ export function SampleDataBanner() {
   const today = useToday();
   const loaded = useLoadedSample();
   const hasRecords = useHasSavedRecords();
+
+  // Until records are stored in a database, a first visit would show an empty Dashboard. So the first time (and only
+  // the first time) the workspace is blank, the small-shop sample loads itself. After that the choice is yours: clearing it
+  // leaves the workspace blank, and it never comes back on its own.
+  useEffect(() => {
+    if (!today || autoDecided()) return;
+    const mustLoad = !loaded && !hasRecords;
+    if (!markAutoDecided() || !mustLoad) return; // storage blocked, or you already have records: leave things as they are
+    loadSample("small", today);
+  }, [today, loaded, hasRecords]);
+
   if (!today) return null;
   if (loaded) {
     const label = SAMPLE_SETS.find((s) => s.id === loaded)?.label ?? "Sample";

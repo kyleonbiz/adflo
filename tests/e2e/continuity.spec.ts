@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
 // No seeded records here: this follows one real record through the app, the way a person would.
+test.beforeEach(async ({ page }) => {
+  // These tests start from a truly blank workspace, so the first-visit sample must not load itself.
+  await page.addInitScript(() => { try { localStorage.setItem("adflo.sample-auto.v1", "1"); } catch { /* ignore */ } });
+});
+
 test.describe("records carry through the app", () => {
   test("an invoice you create shows on the Dashboard and in Reporting, and is still there after leaving and reloading", async ({ page }) => {
     await page.goto("/app/invoices");
@@ -32,7 +37,7 @@ test.describe("records carry through the app", () => {
   });
 
   test("the Dashboard's to-do list and its task card use different words, so they do not look like they disagree", async ({ page }) => {
-    await page.goto("/app/overview");
+    await page.goto("/app/overview", { waitUntil: "networkidle" }); // clicking before the page is interactive does nothing
     const todos = page.getByTestId("today-todos");
     await todos.getByRole("button", { name: "Add a to-do" }).click();
     await todos.getByLabel("New to-do").fill("Call the accountant");
