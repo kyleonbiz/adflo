@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import { RemindMenu } from "@/components/modules/remind-menu";
-import { CheckCircle2, ChevronDown, Download, Flag, MoreHorizontal, Pencil, Plus, Repeat, Trash2, X } from "lucide-react";
+import { CheckCircle2, ChevronDown, Download, Flag, MoreHorizontal, Pencil, Plus, Repeat, Trash2, X, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -23,6 +23,7 @@ export interface ProjectActions {
   onDelete: (project: Project) => void;
   onStatus: (project: Project, status: ProjectStatus) => void;
   onReport: (project: Project) => void;
+  onSend: (project: Project) => void;
   onToggleTask: (project: Project, task: Task) => void;
   onAddTask: (project: Project, values: TaskFormValues) => void;
   onEditTask: (project: Project, task: Task, values: TaskFormValues) => void;
@@ -219,6 +220,7 @@ export function ProjectCard({ project, today, actions, open, onOpenChange }: {
               <SelectContent>{PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{STATUS_LABEL[s.value]}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+          <Button size="sm" variant="outline" className="h-8" aria-label={`Send update for ${project.name}`} onClick={() => actions.onSend(project)}><Send /> Send</Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon-sm" variant="ghost" aria-label={`More actions for ${project.name}`} title="More actions"><MoreHorizontal /></Button>

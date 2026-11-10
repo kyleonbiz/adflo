@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/modules/empty-state";
+import { SendDialog } from "@/components/modules/send-dialog";
+import { projectDraft } from "@/lib/send";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
@@ -89,6 +91,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
   const [sort, setSort] = useState<ProjectSort>("due");
   const [formFor, setFormFor] = useState<Project | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Project | null>(null);
+  const [sending, setSending] = useState<Project | null>(null);
   const [completing, setCompleting] = useState<Project | null>(null);
   const [notice, setNoticeState] = useState<Notice | null>(null);
   const [showAllAlerts, setShowAllAlerts] = useState(false);
@@ -138,6 +141,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
       if (status === "completed" && p.tasks.some((t) => !t.done)) setCompleting(p);
       else applyStatus(p, status);
     },
+    onSend: (p) => setSending(p),
     onReport: (p) => downloadText(projectsReport([p], today), `status-${slug(p.name)}-${today}.txt`),
     onToggleTask: (p, t: Task) => {
       if (t.done) {
@@ -441,6 +445,13 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
       )}
       </div>
 
+      <SendDialog
+        open={sending !== null}
+        title={sending ? `Send update: ${sending.name}` : "Send"}
+        draft={sending ? projectDraft(sending, today) : null}
+        onOpenChange={(o) => !o && setSending(null)}
+        onSent={(n) => setNotice(`Opened your email app with the update for ${sending?.name} to ${n} ${n === 1 ? "person" : "people"}.`)}
+      />
       <ProjectFormDialog
         open={formFor !== null}
         draft={draft}

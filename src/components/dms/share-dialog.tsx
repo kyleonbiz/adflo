@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Check, Copy, Link2, Trash2 } from "lucide-react";
+import { Check, Copy, Link2, Mail, Trash2 } from "lucide-react";
+import { SendDialog } from "@/components/modules/send-dialog";
+import { documentDraft } from "@/lib/send";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -38,6 +40,7 @@ export function ShareDialog({
   const [copied, setCopied] = useState(false);
   const [links, setLinks] = useState<ShareLinkInfo[] | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [emailing, setEmailing] = useState(false);
 
   const refreshLinks = useCallback(async () => {
     try {
@@ -149,11 +152,19 @@ export function ShareDialog({
                 {error}
               </p>
             )}
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEmailing(true)}><Mail /> Send by email</Button>
               <Button onClick={() => reset(false)}>Done</Button>
             </div>
           </div>
         )}
+
+        <SendDialog
+          open={emailing && link !== null}
+          title={`Send “${fileName}”`}
+          draft={link ? documentDraft(fileName, { url: link.url, expires: formatDateTime(link.expiresAt) }) : null}
+          onOpenChange={setEmailing}
+        />
 
         <section aria-labelledby="active-links-heading" className="mt-5 border-t pt-4">
           <h4 id="active-links-heading" className="mb-2 text-sm font-semibold">

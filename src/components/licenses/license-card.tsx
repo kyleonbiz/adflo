@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, CheckCircle2, ClipboardCheck, ChevronDown, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
+import { BellRing, CheckCircle2, ClipboardCheck, ChevronDown, Pencil, Plus, RefreshCw, Send, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { SEVERITY_BADGE, STATUS_BADGE, STATUS_LABEL, TIER_BADGE, TIER_LABEL } fr
 export interface LicenseActions {
   onEdit: (license: License) => void;
   onRenew: (license: License) => void;
+  onSend: (license: License) => void;
   onDelete: (license: License) => void;
   onStage: (license: License, stage: RenewalStage) => void;
   onToggleDocument: (license: License, documentId: string) => void;
@@ -99,6 +100,9 @@ export function LicenseCard({ license, all = [], today, actions, focusToken = 0 
               <ClipboardCheck /> Review
             </Button>
           )}
+          <Button size="sm" variant="outline" onClick={() => actions.onSend(license)} aria-label={`Send ${license.name}`}>
+            <Send /> Send
+          </Button>
           <Button size="sm" variant="outline" onClick={() => actions.onRenew(license)}>
             <RefreshCw /> Mark renewed
           </Button>

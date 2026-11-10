@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
+import { Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search, Send, Trash2, Upload, Users, X } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import type { ImportOutcome } from "@/lib/import/run";
 import type { Person } from "@/lib/bridge";
 import { SendFormDialog } from "./send-form-dialog";
 import { ContactsTabs } from "./contacts-tabs";
+import { SendDialog } from "@/components/modules/send-dialog";
+import { contactDraft } from "@/lib/send";
 import { ContactFormDialog } from "./contact-form-dialog";
 import { ImportDialog } from "./import-dialog";
 import { MergeDialog } from "./merge-dialog";
@@ -63,6 +65,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
   const [sendingTo, setSendingTo] = useState<Contact | null>(null);
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState<Contact[] | null>(null);
+  const [emailing, setEmailing] = useState<Contact | null>(null);
   const [merging, setMerging] = useState<[Contact, Contact] | null>(null);
   const [notice, setNotice] = useState("");
   const [undo, setUndo] = useState<Contact[] | null>(null);
@@ -331,6 +334,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center md:order-last">
+                      <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Send an email to ${c.name}`} title="Send an email" onClick={() => setEmailing(c)}><Send /></Button>
                       <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Fill out a form for ${c.name}`} title="Fill out a form for this contact" onClick={() => setSendingTo(c)}><FileText /></Button>
                       <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Edit ${c.name}`} onClick={() => setFormFor(c)}><Pencil /></Button>
                       <Button size="icon-sm" variant="ghost" className="size-10 md:size-8" aria-label={`Delete ${c.name}`} onClick={() => setDeleting([c])}><Trash2 /></Button>
@@ -368,6 +372,17 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
         )}
       </section>
 
+      <SendDialog
+        open={emailing !== null}
+        title={emailing ? `Email ${emailing.name}` : "Send"}
+        draft={emailing ? contactDraft(emailing) : null}
+        onOpenChange={(o) => !o && setEmailing(null)}
+        onSent={() => {
+          if (!emailing) return;
+          const id = emailing.id;
+          commit(contacts.map((x) => (x.id === id ? { ...x, lastContacted: today } : x)), `Opened your email app for ${emailing.name}; marked contacted today.`);
+        }}
+      />
       <SendFormDialog person={sendingTo} onOpenChange={(o) => !o && setSendingTo(null)} />
       <ContactFormDialog open={formFor !== null} contact={formFor && formFor !== "new" ? formFor : undefined} prefill={initialAdd} existing={contacts} today={today} onOpenChange={(o) => !o && setFormFor(null)} onSave={saveContact} />
       <ImportDialog open={importing} existing={contacts} onOpenChange={setImporting} onImport={runApply} />

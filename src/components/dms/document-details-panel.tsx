@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Check, Download, FolderInput, Pencil, Share2, Star, Trash2, Undo2, Upload, X } from "lucide-react";
+import { Check, Download, FolderInput, Mail, Pencil, Share2, Star, Trash2, Undo2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,8 @@ import { DocumentPreview } from "./document-preview";
 import { fileKindOf } from "./file-kind";
 import { ErrorState } from "./states";
 import { ShareDialog } from "./share-dialog";
+import { SendDialog } from "@/components/modules/send-dialog";
+import { documentDraft } from "@/lib/send";
 import { TagEditor } from "./tag-editor";
 import type { DocumentManager } from "./use-document-manager";
 import { normalizeRename } from "@/lib/dms/validation";
@@ -37,6 +39,7 @@ export function DocumentDetailsPanel({
   const [draft, setDraft] = useState("");
   const [renameError, setRenameError] = useState("");
   const [sharing, setSharing] = useState(false);
+  const [sendingNote, setSendingNote] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [moving, setMoving] = useState(false);
   const [moveTarget, setMoveTarget] = useState<string | null>(null);
@@ -152,6 +155,15 @@ export function DocumentDetailsPanel({
                 <div className="flex shrink-0 items-center gap-0.5">
                   <Button variant="ghost" size="icon-sm" aria-label="Download" onClick={() => manager.download(doc)}>
                     <Download />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Send"
+                    title="Send by email"
+                    onClick={() => (perms.share && api.capabilities.share ? setSharing(true) : setSendingNote(true))}
+                  >
+                    <Mail />
                   </Button>
                   <Button
                     variant="ghost"
@@ -280,6 +292,13 @@ export function DocumentDetailsPanel({
               </DialogContent>
             </Dialog>
 
+            <SendDialog
+              open={sendingNote}
+              title={`Send “${doc.displayName}”`}
+              note="Download the file first, then attach it in your email app. A link you can send needs a connected workspace."
+              draft={documentDraft(doc.displayName)}
+              onOpenChange={setSendingNote}
+            />
             <ShareDialog
               open={sharing}
               fileName={doc.displayName}

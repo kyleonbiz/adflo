@@ -25,6 +25,8 @@ import { LICENSE_CATEGORIES, type License, type LicenseStatus, type RenewalStage
 import type { LicenseFormValues } from "@/lib/licenses/validation";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { installedLicenses } from "@/lib/setup/templates";
+import { SendDialog } from "@/components/modules/send-dialog";
+import { licenseDraft } from "@/lib/send";
 import { LicenseCard, type LicenseActions } from "./license-card";
 import { LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { LicenseFormDialog } from "./license-form-dialog";
@@ -52,6 +54,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [formFor, setFormFor] = useState<License | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<License | null>(null);
+  const [sending, setSending] = useState<License | null>(null);
   const [picking, setPicking] = useState(false);
   const [template, setTemplate] = useState<LicenseTemplate | undefined>(() => (draft ? draftTemplate(draft) : undefined));
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -117,6 +120,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
     onEdit: (l) => openForm(l),
     onDelete: (l) => setDeleting(l),
     onRenew: (l) => setRenewing(l),
+    onSend: (l) => setSending(l),
     onStage: (l, stage: RenewalStage) =>
       commit(licenses.map((x) => (x.id === l.id ? { ...x, stage } : x)), `${l.name}: renewal ${STAGE_LABEL[stage].toLowerCase()}.`),
     onToggleDocument: (l, id) =>
@@ -343,6 +347,14 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
           </ul>
         )}
       </section>
+
+      <SendDialog
+        open={sending !== null}
+        title={sending ? `Send ${sending.name}` : "Send"}
+        draft={sending ? licenseDraft(sending, today) : null}
+        onOpenChange={(o) => !o && setSending(null)}
+        onSent={(n) => say(`Opened your email app for ${sending?.name} to ${n} ${n === 1 ? "person" : "people"}.`)}
+      />
 
       <LicenseFormDialog
         key={formSession}
