@@ -59,7 +59,7 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
                 type="button"
                 aria-pressed={area === a}
                 onClick={() => { setArea(a); setAll(false); }}
-                className={cn("rounded-full border px-2.5 py-1 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring", area === a ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}
+                className={cn("min-h-8 rounded-full border px-2.5 py-1 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring", area === a ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted")}
               >
                 {a === "all" ? `All (${live.length})` : `${a} (${counts(a)})`}
               </button>
@@ -92,14 +92,14 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
 
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
         {filtered.length > SHOWN && (
-          <button type="button" onClick={() => setAll((a) => !a)} aria-expanded={all} className="font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+          <button type="button" onClick={() => setAll((a) => !a)} aria-expanded={all} className="py-2 -my-2 font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
             {all ? "Show fewer" : `View all (${filtered.length})`}
           </button>
         )}
         {hidden > 0 && (
           <span className="text-muted-foreground">
             {hidden} snoozed until tomorrow ·{" "}
-            <button type="button" onClick={() => saveSnoozed({})} className="font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">Restore</button>
+            <button type="button" onClick={() => saveSnoozed({})} className="py-2 -my-2 font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">Restore</button>
           </span>
         )}
       </div>

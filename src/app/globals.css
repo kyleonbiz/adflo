@@ -9,15 +9,15 @@
   --card-foreground: #0d1330;
   --popover: rgb(255 255 255 / 0.88);
   --popover-foreground: #0d1330;
-  --primary: #287cff;
+  --primary: #1b66e0;
   --primary-foreground: #ffffff;
   --secondary: #edf1fb;
   --secondary-foreground: #1a2145;
   --muted: #f1f4fb;
-  --muted-foreground: #5d6177;
+  --muted-foreground: #565b70;
   --accent: #e8efff;
   --accent-foreground: #3436b9;
-  --destructive: #dc2626;
+  --destructive: #c81e1e;
   --border: rgb(160 178 215 / 0.32);
   --input: rgb(150 168 208 / 0.55);
   --ring: #287cff;
@@ -240,4 +240,11 @@
   }
   .glass-strong, .glass-header { background-color: var(--popover); }
   .app-mesh::before { background: var(--background); }
+}
+
+/* Tap targets: checkboxes and radios are at least 24px, the smallest size WCAG 2.2 accepts. */
+input[type="checkbox"],
+input[type="radio"] {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
 }

@@ -217,7 +217,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
           <span>
             {summary.needsReview === 1 ? "1 license still needs" : `${summary.needsReview} licenses still need`} review. Every license must be checked against its document before you rely on it.
           </span>
-          <button type="button" className="font-medium underline" onClick={() => setStatusFilter("needs_review")}>Show them</button>
+          <button type="button" className="py-2 -my-2 font-medium underline" onClick={() => setStatusFilter("needs_review")}>Show them</button>
         </p>
       )}
 

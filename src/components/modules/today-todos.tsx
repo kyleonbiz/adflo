@@ -84,7 +84,7 @@ export function TodayTodos({ today }: { today: string }) {
       )}
 
       {doneCount > 0 && (
-        <button type="button" onClick={() => setShowDone((s) => !s)} aria-pressed={showDone} className="mt-2 text-xs font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+        <button type="button" onClick={() => setShowDone((s) => !s)} aria-pressed={showDone} className="mt-2 text-xs py-2 -my-2 font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
           {showDone ? "Hide completed" : `Show completed (${doneCount})`}
         </button>
       )}

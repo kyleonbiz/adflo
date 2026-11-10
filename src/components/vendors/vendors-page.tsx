@@ -257,7 +257,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
       <div role="status" aria-live="polite" className={notice ? "sticky top-2 z-20 flex items-start justify-between gap-3 rounded-xl border bg-card px-4 py-2.5 text-sm shadow-float" : "sr-only"}>
         <span>{notice}</span>
         {notice && undo && (
-          <button type="button" onClick={() => { setEdited(undo); say("Undone."); }} className="ml-auto shrink-0 rounded font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <button type="button" onClick={() => { setEdited(undo); say("Undone."); }} className="ml-auto shrink-0 rounded py-2 -my-2 font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             Undo
           </button>
         )}

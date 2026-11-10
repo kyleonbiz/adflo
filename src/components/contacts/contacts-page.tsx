@@ -43,7 +43,7 @@ const PAIRS_SHOWN = 3;
 const NOTICE_MS = 12_000;
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]!.toUpperCase()).join("");
-const linkClass = "rounded underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const linkClass = "inline-block py-2 -my-2 rounded underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
  * Contacts. Contacts live in this component's state (starting empty) until the database is
@@ -187,7 +187,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
         {notice && (
           <span className="flex shrink-0 items-center gap-3">
             {undo && (
-              <button type="button" onClick={() => { setEdited(undo); setUndo(null); setNotice("Undone."); setSelected(new Set()); }} className="rounded font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Undo</button>
+              <button type="button" onClick={() => { setEdited(undo); setUndo(null); setNotice("Undone."); setSelected(new Set()); }} className="rounded py-2 -my-2 font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Undo</button>
             )}
             <button type="button" aria-label="Dismiss message" onClick={() => { setNotice(""); setUndo(null); }} className="rounded text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <X className="size-4" aria-hidden />
@@ -351,7 +351,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
                         aria-label={`Mark ${c.name} contacted today`}
                         disabled={c.lastContacted === today}
                         onClick={() => commit(contacts.map((x) => (x.id === c.id ? { ...x, lastContacted: today } : x)), `${c.name} marked contacted today.`)}
-                        className="rounded font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:hidden"
+                        className="rounded py-2 -my-2 font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:hidden"
                       >
                         Log today
                       </button>

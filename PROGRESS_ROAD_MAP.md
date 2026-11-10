@@ -57,5 +57,6 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Cheap fixes: casing leftovers, Documents h1, friendlier sign-in message, unused logo removed, wordmarks resized
 - [x] Remaining Title Case labels now sentence case (form fields, dropdown options, dialog titles, document type labels); module and product names such as Licenses & Renewals and Control Center keep their capitals, and the unused `titleCase` helper is gone
 - [x] Demo opens blank with a "See AdFlo with sample data" card on Home: a small shop set and a large regulated company set (Settings > Demo data loads or clears them; loading over saved records asks first)
-- [ ] Accessibility: sidebar chevron tap targets, contrast; Addy's live Claude mode untested
+- [x] Accessibility: contrast and tap targets fixed and guarded by tests/e2e/accessibility.spec.ts (axe on 17 pages, desktop and phone)
+- [ ] Addy's live Claude mode untested; browsers other than Chromium not tried
 - [x] Landing page at / is the original hero with the demo workspace (my longer marketing page is in git history, commit 534795a)

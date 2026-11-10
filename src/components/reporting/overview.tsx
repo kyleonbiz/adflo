@@ -64,7 +64,7 @@ export function Overview({ reports, attention, onOpen }: { reports: ModuleReport
                 {attention.slice(0, SHOWN).map((i) => (
                   <li key={i.id} className="flex items-center gap-3 py-2 text-sm" data-testid="attention-item">
                     <Badge variant={BADGE[i.severity]}>{i.label}</Badge>
-                    <Link href={i.href} className="min-w-0 flex-1 truncate hover:underline" title={i.text}>{i.text}</Link>
+                    <Link href={i.href} className="min-w-0 flex-1 truncate py-1.5 hover:underline" title={i.text}>{i.text}</Link>
                     <span className="hidden text-xs text-muted-foreground sm:inline">{i.area}</span>
                   </li>
                 ))}

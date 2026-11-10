@@ -161,7 +161,7 @@ export function TasksView({ projects, today, query, filter, onFilter, showDone, 
                     {task.repeat !== "none" && <Repeat role="img" className="size-3.5 shrink-0 text-muted-foreground" aria-label={`Repeats ${task.repeat}`} />}
                   </label>
                   {!isGeneral(project) && (
-                    <button type="button" onClick={() => onOpenProject(project.id)} className="rounded text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <button type="button" onClick={() => onOpenProject(project.id)} className="rounded py-1.5 -my-1.5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                       {project.name}
                     </button>
                   )}
