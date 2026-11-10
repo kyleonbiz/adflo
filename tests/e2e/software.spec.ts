@@ -1,15 +1,20 @@
 import { expect, test } from "./fixtures";
 
 test.describe("Landing page and the app", () => {
-  test("the site address shows the landing page, and Open workspace goes into the app", async ({ page }) => {
+  test("the site address goes straight into the app", async ({ page }) => {
     await page.goto("/");
+    await expect(page).toHaveURL(/\/app\/overview$/);
+  });
+
+  test("the landing page at /landing shows the hero, and Open workspace goes into the app", async ({ page }) => {
+    await page.goto("/landing");
     await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place" })).toBeVisible();
     await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Open workspace" }).click();
     await expect(page).toHaveURL(/\/app$/);
   });
 
   test("the landing page keeps its hero and demo, and adds the story and demo request form below", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/landing");
     await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI does the repetitive work. Your people stay in control." })).toBeVisible();
     await page.getByRole("link", { name: "Book a demo" }).first().click();
