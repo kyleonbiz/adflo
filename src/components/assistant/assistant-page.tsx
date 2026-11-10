@@ -10,6 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAudit } from "@/components/audit/use-audit";
 import { parseDirect, runDirect, type DirectAction, type DirectResult } from "@/lib/assistant/direct";
 import { greeting, respond, type Link as ChatLink, type Pending, type Turn } from "@/lib/assistant/engine";
+import { starterForms } from "@/lib/forms/starter-forms";
+import { useDashboardSources } from "@/lib/records/sources";
+import { emptySources } from "@/lib/reporting/logic";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { newTodoId } from "@/lib/todos/logic";
 import { saveTodos, useTodos } from "@/lib/todos/storage";
@@ -22,6 +25,7 @@ function Chat({ today }: { today: string }) {
   const todos = useTodos();
   const reminders = useReminders();
   const audit = useAudit();
+  const live = useDashboardSources(today);
   /** Undo for the actions Addy took itself, by turn number; `undone` marks the ones already used. */
   const [undoers, setUndoers] = useState<Record<number, () => void>>({});
   const [undone, setUndone] = useState<Set<number>>(new Set());
@@ -44,13 +48,13 @@ function Chat({ today }: { today: string }) {
 
   /** The few things Addy does itself (to-do, reminder, tick off). Handled here so they work whether or not the AI model is on. */
   const runLocally = (message: string, action: DirectAction) => {
-    const r: DirectResult = runDirect(action, { todos, reminders, today, newId: newTodoId });
+    const r: DirectResult = runDirect(action, { todos, reminders, today, newId: newTodoId, sources: { ...emptySources(), ...live, forms: starterForms() } });
     if (r.todos) saveTodos(r.todos);
     if (r.reminders) saveReminders(r.reminders);
     if (r.todos || r.reminders) {
       if (action.kind === "todo") audit("asked Addy to add", `"${action.title}" to today's to-do list`, "Tasks", "/app/overview");
       else if (action.kind === "remind") audit("asked Addy to set a reminder:", action.title, "Tasks", "/app/calendar");
-      else audit("asked Addy to tick off", action.query, "Tasks", "/app/overview");
+      else if (action.kind === "done") audit("asked Addy to tick off", action.query, "Tasks", "/app/overview");
     }
     const at = turns.length + 1; // the user's message comes first, then this reply
     const back = r.undo;

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { MAX_REMIND_DAYS, parseDirect, runDirect, type DirectContext } from "@/lib/assistant/direct";
+import { emptySources } from "@/lib/reporting/logic";
+import type { Invoice } from "@/lib/invoices/types";
 import type { Todo } from "@/lib/todos/logic";
 
 const T = "2026-11-05";
@@ -84,5 +86,32 @@ describe("runDirect", () => {
     const long = runDirect({ kind: "remind", title: "x".repeat(200), days: 1 }, ctx());
     expect(long.reminders).toBeUndefined();
     expect(long.text).toContain("too long");
+  });
+});
+
+describe("reports", () => {
+  it("reads report requests", () => {
+    expect(parseDirect("run a report on invoices")).toEqual({ kind: "report", topic: "invoices" });
+    expect(parseDirect("Show me the vendor report")).toEqual({ kind: "report", topic: "vendor" });
+    expect(parseDirect("run reports")).toEqual({ kind: "report", topic: "" });
+    expect(parseDirect("how are we doing?")).toEqual({ kind: "report", topic: "" });
+    expect(parseDirect("send the report to Acme")).toBeNull();
+  });
+
+  it("summarizes without changing anything", () => {
+    const inv = { id: "i1", client: "Acme", description: "Work", amount: 500, dueOn: "2026-10-01", status: "sent", issuedOn: "2026-09-01", recurrence: "none" } as unknown as Invoice;
+    const sources = { ...emptySources(), invoices: [inv] };
+    const r = runDirect({ kind: "report", topic: "invoices" }, ctx({ sources }));
+    expect(r.text).toContain("Invoices (1");
+    expect(r.link?.href).toBe("/app/reporting?view=invoices");
+    expect(r.todos).toBeUndefined();
+    expect(r.reminders).toBeUndefined();
+    expect(r.undo).toBeUndefined();
+  });
+
+  it("explains empty, unknown and unreadable cases", () => {
+    expect(runDirect({ kind: "report", topic: "" }, ctx({ sources: emptySources() })).text).toContain("nothing to report");
+    expect(runDirect({ kind: "report", topic: "weather" }, ctx({ sources: emptySources() })).text).toContain("Which one");
+    expect(runDirect({ kind: "report", topic: "" }, ctx()).text).toContain("cannot read");
   });
 });
