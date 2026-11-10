@@ -282,9 +282,9 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="attention">Needs Attention</SelectItem>
-                <SelectItem value="missing_docs">Documents Missing</SelectItem>
-                <SelectItem value="needs_review">Needs Review</SelectItem>
+                <SelectItem value="attention">Needs attention</SelectItem>
+                <SelectItem value="missing_docs">Documents missing</SelectItem>
+                <SelectItem value="needs_review">Needs review</SelectItem>
                 {(Object.keys(STATUS_LABEL) as LicenseStatus[]).map((s) => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -293,7 +293,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="all">All categories</SelectItem>
                 {LICENSE_CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -302,7 +302,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
             <Select value={sort} onValueChange={(v) => setSort(v as Sort)}>
               <SelectTrigger aria-label="Sort licenses"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="expiry">Soonest Expiry</SelectItem>
+                <SelectItem value="expiry">Soonest expiry</SelectItem>
                 <SelectItem value="name">Name A–Z</SelectItem>
               </SelectContent>
             </Select>

@@ -61,7 +61,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
   },
   {
     id: "vendor-onboarding",
-    name: "Vendor Onboarding",
+    name: "Vendor onboarding",
     summary: "Onboard a new vendor with the right paperwork on file.",
     description: "Collect compliance documents and activate the vendor before the first payment.",
     durationDays: 14,

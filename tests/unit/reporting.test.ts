@@ -80,7 +80,7 @@ describe("buildReports", () => {
     expect(docs.metrics.find((m) => m.label === "Storage used")!.value).toBe("4.0 KB");
     expect(docs.metrics.find((m) => m.label === "Expiring in 30 days")!.value).toBe("1");
     expect(docs.metrics.find((m) => m.label === "Expired")!.value).toBe("1");
-    expect(docs.breakdowns[0].rows).toEqual([{ label: "Tax Document", value: 2 }, { label: "Contract", value: 1 }]);
+    expect(docs.breakdowns[0].rows).toEqual([{ label: "Tax document", value: 2 }, { label: "Contract", value: 1 }]);
   });
 
   it("billed-by-client sums money, biggest first, leaving out voided invoices", () => {

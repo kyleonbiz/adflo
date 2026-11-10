@@ -14,9 +14,9 @@ export type Category = (typeof CATEGORIES)[number];
 export const CATEGORY_LABELS: Record<Category, string> = {
   invoice: "Invoice",
   receipt: "Receipt",
-  tax: "Tax Document",
+  tax: "Tax document",
   contract: "Contract",
-  hr: "HR Document",
+  hr: "HR document",
   other: "Other",
 };
 
@@ -120,7 +120,7 @@ export type DocumentSort =
 
 export interface DocumentQuery {
   view: DocumentView;
-  /** `null` means "All Files". */
+  /** `null` means "All files". */
   folderId: string | null;
   search: string;
   category: Category | null;

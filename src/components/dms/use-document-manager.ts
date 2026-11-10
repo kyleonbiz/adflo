@@ -320,7 +320,7 @@ export function useDocumentManager(api: DmsApi, initialSearch = "") {
     async (folder: FolderWithCount) => {
       try {
         await api.deleteFolder(folder.id);
-        notify("success", `Deleted folder “${folder.name}”. Its documents are still in All Files.`);
+        notify("success", `Deleted folder “${folder.name}”. Its documents are still in All files.`);
         if (query.folderId === folder.id) patchQuery({ folderId: null });
         await Promise.all([refreshMeta(), fetchPage({ ...query, folderId: query.folderId === folder.id ? null : query.folderId, page: 1 }, false)]);
       } catch (e) {

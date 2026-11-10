@@ -146,7 +146,7 @@ export function TaskForm({ project, task, onSubmit, onCancel }: {
           <Input id={`${uid}-who`} value={assignee} onChange={(e) => setAssignee(e.target.value)} placeholder="Optional" className="h-9" maxLength={80} />
         </div>
         <div className="space-y-1">
-          <Label htmlFor={`${uid}-due`} className={label}>Due Date</Label>
+          <Label htmlFor={`${uid}-due`} className={label}>Due date</Label>
           <Input id={`${uid}-due`} type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} className="h-9" />
         </div>
         <div className="space-y-1">

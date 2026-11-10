@@ -141,7 +141,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
             <div><h2 className="text-lg font-semibold">Tell us about your business</h2><p className="text-sm text-muted-foreground">We use this to recommend the right services.</p></div>
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-1.5">
-                <Label htmlFor="biz-name">Business Name</Label>
+                <Label htmlFor="biz-name">Business name</Label>
                 <Input id="biz-name" autoComplete="organization" maxLength={80} value={config.business.name} onChange={(e) => update((c) => ({ ...c, completedOn: null, business: { ...c.business, name: e.target.value } }))} />
               </div>
               <div className="space-y-1.5">
@@ -152,7 +152,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="biz-size">Team Size</Label>
+                <Label htmlFor="biz-size">Team size</Label>
                 <Select value={config.business.teamSize || undefined} onValueChange={(v) => update((c) => ({ ...c, completedOn: null, business: { ...c.business, teamSize: v as TeamSize } }))}>
                   <SelectTrigger id="biz-size"><SelectValue placeholder="Choose one" /></SelectTrigger>
                   <SelectContent>{TEAM_SIZES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>

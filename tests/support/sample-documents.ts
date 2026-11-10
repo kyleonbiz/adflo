@@ -20,9 +20,9 @@ interface SampleFolder {
 const FOLDERS: SampleFolder[] = [
   { n: 10, name: "Invoices", color: "violet", system: true, category: "invoice" },
   { n: 11, name: "Receipts", color: "emerald", system: true, category: "receipt" },
-  { n: 12, name: "Tax Documents", color: "amber", system: true, category: "tax" },
+  { n: 12, name: "Tax documents", color: "amber", system: true, category: "tax" },
   { n: 13, name: "Contracts", color: "blue", system: true, category: "contract" },
-  { n: 14, name: "HR Documents", color: "rose", system: true, category: "hr" },
+  { n: 14, name: "HR documents", color: "rose", system: true, category: "hr" },
   { n: 15, name: "Client Onboarding", color: "sky", system: false, category: null },
 ];
 

@@ -45,8 +45,8 @@ function Body({ invoice, today, onDownload, onEdit }: { invoice: Invoice; today:
         </div>
         <div className="pr-8 text-right">
           <p className="text-xl font-bold text-emerald-600">{invoice.number}</p>
-          <p className="text-xs text-muted-foreground">Issue Date: {invoice.issuedOn}</p>
-          <p className="text-xs text-muted-foreground">Due Date: {invoice.dueOn}</p>
+          <p className="text-xs text-muted-foreground">Issue date: {invoice.issuedOn}</p>
+          <p className="text-xs text-muted-foreground">Due date: {invoice.dueOn}</p>
         </div>
       </div>
 
@@ -93,9 +93,9 @@ function Body({ invoice, today, onDownload, onEdit }: { invoice: Invoice; today:
 
       {invoice.paymentMethods.length > 0 && (
         <section aria-label="Payment instructions" className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
-          <h3 className="flex items-center gap-2 font-semibold"><CreditCard className="size-4 text-primary" aria-hidden />Payment Instructions</h3>
+          <h3 className="flex items-center gap-2 font-semibold"><CreditCard className="size-4 text-primary" aria-hidden />Payment instructions</h3>
           <p className="mt-2">Please make payment by {invoice.dueOn}</p>
-          <p className="mt-2 font-medium">Payment Methods:</p>
+          <p className="mt-2 font-medium">Payment methods:</p>
           <ul className="list-disc pl-5">{invoice.paymentMethods.map((m) => <li key={m}>{m}</li>)}</ul>
         </section>
       )}

@@ -180,7 +180,7 @@ export function LicenseFormDialog({
               </div>
             )}
             <div className="sm:col-span-2">
-              <Field id="lic-name" label="License Name" error={errors.name?.message}>
+              <Field id="lic-name" label="License name" error={errors.name?.message}>
                 <Input id="lic-name" autoComplete="off" placeholder="State business license" {...invalid("name")} {...register("name")} />
               </Field>
             </div>
@@ -198,28 +198,28 @@ export function LicenseFormDialog({
                 )}
               />
             </Field>
-            <Field id="lic-issuer" label="Issuing Authority" error={errors.issuer?.message}>
+            <Field id="lic-issuer" label="Issuing authority" error={errors.issuer?.message}>
               <Input id="lic-issuer" autoComplete="off" {...invalid("issuer")} {...register("issuer")} />
             </Field>
-            <Field id="lic-number" label="License Number" error={errors.number?.message}>
+            <Field id="lic-number" label="License number" error={errors.number?.message}>
               <Input id="lic-number" autoComplete="off" {...invalid("number")} {...register("number")} />
             </Field>
             <Field id="lic-holder" label="Holder" error={errors.holder?.message}>
               <Input id="lic-holder" autoComplete="off" {...invalid("holder")} {...register("holder")} />
             </Field>
-            <Field id="lic-issuedOn" label="Issued On" error={errors.issuedOn?.message}>
+            <Field id="lic-issuedOn" label="Issued on" error={errors.issuedOn?.message}>
               <Input id="lic-issuedOn" type="date" {...invalid("issuedOn")} {...register("issuedOn")} />
             </Field>
-            <Field id="lic-expiresOn" label="Expires On" error={errors.expiresOn?.message}>
+            <Field id="lic-expiresOn" label="Expires on" error={errors.expiresOn?.message}>
               <Input id="lic-expiresOn" type="date" {...invalid("expiresOn")} {...register("expiresOn")} />
             </Field>
             <Field id="lic-renewalCost" label="Renewal fee in dollars (optional)" error={errors.renewalCost?.message}>
               <Input id="lic-renewalCost" inputMode="numeric" placeholder="250" {...invalid("renewalCost")} {...register("renewalCost")} />
             </Field>
-            <Field id="lic-renewalTermMonths" label="Renewal Term (Months)" error={errors.renewalTermMonths?.message}>
+            <Field id="lic-renewalTermMonths" label="Renewal term (months)" error={errors.renewalTermMonths?.message}>
               <Input id="lic-renewalTermMonths" inputMode="numeric" {...invalid("renewalTermMonths")} {...register("renewalTermMonths")} />
             </Field>
-            <Field id="lic-reminderDays" label="Remind Me (Days Before Expiry)" error={errors.reminderDays?.message}>
+            <Field id="lic-reminderDays" label="Remind me (days before expiry)" error={errors.reminderDays?.message}>
               <Input id="lic-reminderDays" placeholder="60, 30, 7" {...invalid("reminderDays")} {...register("reminderDays")} />
               <div className="flex flex-wrap gap-1.5 pt-1" role="group" aria-label="Common reminder times">
                 {REMINDER_PRESETS.map((d) => (
@@ -237,7 +237,7 @@ export function LicenseFormDialog({
             </Field>
             {!license && (
               <div className="sm:col-span-2">
-                <Field id="lic-documents" label="Required Documents (One Per Line)" error={errors.documents?.message}>
+                <Field id="lic-documents" label="Required documents (one per line)" error={errors.documents?.message}>
                   <textarea
                     id="lic-documents"
                     rows={3}

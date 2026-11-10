@@ -85,8 +85,8 @@ export function GlobalSearch() {
         ref={inputRef}
         type="search"
         value={query}
-        placeholder={scopeName ? `Search ${scopeName}` : "Search Adflo"}
-        aria-label="Search Adflo"
+        placeholder={scopeName ? `Search ${scopeName}` : "Search AdFlo"}
+        aria-label="Search AdFlo"
         role="combobox"
         aria-expanded={showList}
         aria-controls={listId}

@@ -138,11 +138,11 @@ export function ProjectFormDialog({
           <div className="grid flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">
             {!project && (
               <div className="sm:col-span-2">
-                <Field id="proj-template" label="Start From A Template">
+                <Field id="proj-template" label="Start from a template">
                   <Select value={templateId} onValueChange={pickTemplate}>
                     <SelectTrigger id="proj-template"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="blank">Blank Project</SelectItem>
+                      <SelectItem value="blank">Blank project</SelectItem>
                       {all.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                       <SelectItem value={NEW_TYPE}>+ Add your own project type</SelectItem>
                     </SelectContent>
@@ -186,7 +186,7 @@ export function ProjectFormDialog({
               </fieldset>
             )}
             <div className="sm:col-span-2">
-              <Field id="proj-name" label="Project Name" error={errors.name?.message}>
+              <Field id="proj-name" label="Project name" error={errors.name?.message}>
                 <Input id="proj-name" autoComplete="off" {...invalid("name")} {...register("name")} />
               </Field>
             </div>
@@ -229,10 +229,10 @@ export function ProjectFormDialog({
                 </Field>
               </div>
             )}
-            <Field id="proj-startOn" label="Starts On" error={errors.startOn?.message}>
+            <Field id="proj-startOn" label="Starts on" error={errors.startOn?.message}>
               <Input id="proj-startOn" type="date" {...invalid("startOn")} {...register("startOn")} />
             </Field>
-            <Field id="proj-dueOn" label="Due On" error={errors.dueOn?.message}>
+            <Field id="proj-dueOn" label="Due on" error={errors.dueOn?.message}>
               <Input id="proj-dueOn" type="date" {...invalid("dueOn")} {...register("dueOn")} />
             </Field>
             <div className="sm:col-span-2">

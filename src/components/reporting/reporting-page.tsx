@@ -44,7 +44,7 @@ function Body({ sources, today, view, onView, section, onSection }: { sources: R
   const reports = useMemo(() => buildReports(seeded, today), [seeded, today]);
   const attention = useMemo(() => buildDashboard(seeded, today).items, [seeded, today]);
   const current = reports.find((r) => r.id === view);
-  const tabs = [{ id: OVERVIEW, name: "Overview" }, ...reports.map((r) => ({ id: r.id, name: r.name })), { id: CUSTOM, name: "Custom Data" }];
+  const tabs = [{ id: OVERVIEW, name: "Overview" }, ...reports.map((r) => ({ id: r.id, name: r.name })), { id: CUSTOM, name: "Custom data" }];
   const active = view === CUSTOM || current ? view : OVERVIEW;
 
   const picker = (

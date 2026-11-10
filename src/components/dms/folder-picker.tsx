@@ -13,7 +13,7 @@ export function FolderPicker({
   onChange,
   id,
   disabled,
-  noneLabel = "No folder (All Files)",
+  noneLabel = "No folder (All files)",
   ariaLabel = "Folder",
   className,
 }: {

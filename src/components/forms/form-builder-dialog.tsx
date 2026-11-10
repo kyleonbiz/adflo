@@ -72,7 +72,7 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
       <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="fb-name">Form Name</Label>
+            <Label htmlFor="fb-name">Form name</Label>
             <Input id="fb-name" autoComplete="off" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
           </div>
           <div className="space-y-1.5">
@@ -114,7 +114,7 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
         </fieldset>
 
         <div className="space-y-1.5">
-          <Label htmlFor="fb-template">Document Template (Optional)</Label>
+          <Label htmlFor="fb-template">Document template (optional)</Label>
           <textarea id="fb-template" rows={5} value={draft.documentTemplate} onChange={(e) => setDraft({ ...draft, documentTemplate: e.target.value })} className={textareaClass}
             placeholder={"Write the document and drop in fields like {{Field label}}.\nLeave empty for a simple list of answers."} />
         </div>

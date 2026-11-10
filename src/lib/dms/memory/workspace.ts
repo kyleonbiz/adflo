@@ -12,7 +12,7 @@ const uid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0"
 const SYSTEM_FOLDERS: { n: number; name: string; color: FolderColor; category: Category }[] = [
   { n: 10, name: "Invoices", color: "violet", category: "invoice" },
   { n: 11, name: "Receipts", color: "emerald", category: "receipt" },
-  { n: 12, name: "Tax Documents", color: "amber", category: "tax" },
+  { n: 12, name: "Tax documents", color: "amber", category: "tax" },
   { n: 13, name: "Contracts", color: "blue", category: "contract" },
   { n: 14, name: "HR Documents", color: "rose", category: "hr" },
 ];

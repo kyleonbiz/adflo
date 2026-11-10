@@ -24,7 +24,6 @@ import { ProjectFormDialog, type ProjectDraft } from "./project-form-dialog";
 import { STATUS_LABEL, TASK_BADGE } from "./status";
 import { TasksView, type TaskFilter } from "./tasks-view";
 import { cn } from "@/lib/utils";
-import { titleCase } from "@/lib/text";
 import { useRecordsState } from "@/lib/records/storage";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -396,7 +395,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
             <Select value={sort} onValueChange={(v) => setSort(v as ProjectSort)}>
               <SelectTrigger aria-label="Sort projects"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {(Object.keys(SORT_LABEL) as ProjectSort[]).map((k) => <SelectItem key={k} value={k}>Sort: {titleCase(SORT_LABEL[k])}</SelectItem>)}
+                {(Object.keys(SORT_LABEL) as ProjectSort[]).map((k) => <SelectItem key={k} value={k}>Sort: {SORT_LABEL[k]}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -405,7 +404,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
-                {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{titleCase(s.label)}</SelectItem>)}
+                {PROJECT_STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

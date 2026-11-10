@@ -70,8 +70,8 @@ test.describe("dashboard", () => {
       await dialog.getByLabel("Client", { exact: true }).fill("Globex Corp");
       await dialog.getByLabel("Description", { exact: true }).fill("Setup");
       await dialog.getByLabel("Rate", { exact: true }).fill("1,250.50");
-      await dialog.getByLabel("Issued On").fill("2020-01-01");
-      await dialog.getByLabel("Due On").fill("2020-01-15");
+      await dialog.getByLabel("Issued on").fill("2020-01-01");
+      await dialog.getByLabel("Due on").fill("2020-01-15");
       await dialog.getByRole("button", { name: "Create invoice" }).click();
       await page.keyboard.press("Escape");
       await expect(page.getByTestId("invoice-card")).toHaveCount(1);

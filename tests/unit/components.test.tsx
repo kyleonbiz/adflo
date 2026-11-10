@@ -47,7 +47,7 @@ describe("workspace (demo data)", () => {
     expect(screen.getByRole("heading", { name: "Document Management" })).toBeInTheDocument();
     expect(screen.getByText(/Organize, store, and manage your business documents securely/)).toBeInTheDocument();
     await ready();
-    expect(screen.getByRole("button", { name: "All Files, 18 documents" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All files, 18 documents" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Invoices, 3 documents" })).toBeInTheDocument();
     expect(screen.getByTestId("storage-usage")).toBeInTheDocument();
   });
@@ -59,7 +59,7 @@ describe("workspace (demo data)", () => {
     await user.click(screen.getByRole("button", { name: "Contracts, 3 documents" }));
     await waitFor(() => expect(cards()).toHaveLength(3));
     expect(cards().every((c) => /Contract/.test(c.textContent ?? ""))).toBe(true);
-    await user.click(screen.getByRole("button", { name: /All Files/ }));
+    await user.click(screen.getByRole("button", { name: /All files/ }));
     await waitFor(() => expect(cards().length).toBeGreaterThan(3));
   });
 

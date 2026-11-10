@@ -47,7 +47,7 @@ export function UploadDialog({
   const exts = [...new Set(limits.allowedTypes.map((t) => t.extension.toUpperCase()))].filter((e) => e !== "JPEG");
   const hint = `${exts.slice(0, 7).join(", ")}${exts.length > 7 ? " and more" : ""} • Max ${formatBytes(limits.maxFileSizeBytes)} each`;
   const pct = usage.quotaBytes > 0 ? Math.min(100, Math.round((usage.usedBytes / usage.quotaBytes) * 100)) : 0;
-  const folderLabel = folders.find((f) => f.id === folderId)?.name ?? "All Files";
+  const folderLabel = folders.find((f) => f.id === folderId)?.name ?? "All files";
   const done = queue.items.filter((i) => i.status === "success").length;
 
   return (
@@ -59,7 +59,7 @@ export function UploadDialog({
               <CloudUpload className="size-5" aria-hidden />
             </span>
             <div className="min-w-0 flex-1">
-              <DialogTitle className="text-base">Upload Documents</DialogTitle>
+              <DialogTitle className="text-base">Upload documents</DialogTitle>
               <DialogDescription id="upload-desc" className="text-xs">
                 Drag and drop or browse your files
               </DialogDescription>
@@ -74,7 +74,7 @@ export function UploadDialog({
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
             <div className="space-y-1.5">
-              <Label htmlFor="upload-folder">Destination Folder</Label>
+              <Label htmlFor="upload-folder">Destination folder</Label>
               <FolderPicker id="upload-folder" folders={folders} value={folderId} onChange={onFolderChange} />
             </div>
 

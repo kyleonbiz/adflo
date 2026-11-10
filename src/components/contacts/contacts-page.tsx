@@ -245,7 +245,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
               <Select value={category} onValueChange={(v) => { setCategory(v as typeof category); setShown(PAGE); }}>
                 <SelectTrigger aria-label="Filter by category"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="all">All categories</SelectItem>
                   {CONTACT_CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>

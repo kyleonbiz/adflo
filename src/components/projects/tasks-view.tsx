@@ -12,7 +12,6 @@ import { daysBetween } from "@/lib/dates";
 import { isGeneral, taskList, type TaskItem } from "@/lib/projects/logic";
 import { TASK_REPEATS, type Project } from "@/lib/projects/types";
 import { taskFormSchema, type TaskFormValues } from "@/lib/projects/validation";
-import { titleCase } from "@/lib/text";
 import { cn } from "@/lib/utils";
 import { TaskForm, dueText, type ProjectActions } from "./project-card";
 import { TASK_BADGE } from "./status";
@@ -56,14 +55,14 @@ function QuickAdd({ projects, onAdd }: { projects: Project[]; onAdd: (values: Ta
           <Input id={`${uid}-who`} value={assignee} onChange={(e) => setAssignee(e.target.value)} placeholder="Optional" className="h-9" maxLength={80} />
         </div>
         <div className="space-y-1">
-          <Label htmlFor={`${uid}-due`} className={label}>Due Date</Label>
+          <Label htmlFor={`${uid}-due`} className={label}>Due date</Label>
           <Input id={`${uid}-due`} type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} className="h-9" />
         </div>
         <div className="space-y-1">
           <Label htmlFor={`${uid}-repeat`} className={label}>Repeats</Label>
           <Select value={repeat} onValueChange={setRepeat}>
             <SelectTrigger id={`${uid}-repeat`} className="h-9 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>{TASK_REPEATS.map((r) => <SelectItem key={r.value} value={r.value}>{titleCase(r.label)}</SelectItem>)}</SelectContent>
+            <SelectContent>{TASK_REPEATS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="space-y-1">

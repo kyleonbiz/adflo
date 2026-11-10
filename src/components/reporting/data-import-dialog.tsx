@@ -62,7 +62,7 @@ function Body({ onClose, onLoad }: { onClose: () => void; onLoad: (loaded: Loade
         {step === "columns" && parsed && (
           <>
             <div className="space-y-1.5">
-              <Label htmlFor="data-name">Name For This Data</Label>
+              <Label htmlFor="data-name">Name for this data</Label>
               <Input id="data-name" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
             </div>
             <p className="text-sm text-muted-foreground">{parsed.rows.length} row{parsed.rows.length === 1 ? "" : "s"} found. Types were guessed from the values.</p>

@@ -635,7 +635,7 @@ export class DocumentService {
     return updated;
   }
 
-  /** Deleting a folder keeps its documents; they move to "All Files" (no folder). */
+  /** Deleting a folder keeps its documents; they move to "All files" (no folder). */
   async deleteFolder(id: string): Promise<void> {
     this.require("manage_folders");
     const folder = await this.repo.getFolder(this.ctx.workspaceId, id);

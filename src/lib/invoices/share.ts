@@ -98,7 +98,7 @@ export function invoiceBodyHtml(inv: SharedInvoice): string {
     .join("");
   return `<div class="inv">
 <div class="top"><div><h1>INVOICE</h1><div class="muted">${esc(inv.sender.name)}</div></div>
-<div class="right"><div class="num">${esc(inv.number)}</div><div class="muted">Issue Date: ${inv.issuedOn}</div><div class="muted">Due Date: ${inv.dueOn}</div><span class="pill">${STATUS[inv.status]}</span></div></div>
+<div class="right"><div class="num">${esc(inv.number)}</div><div class="muted">Issue date: ${inv.issuedOn}</div><div class="muted">Due date: ${inv.dueOn}</div><span class="pill">${STATUS[inv.status]}</span></div></div>
 <div class="parties"><div><div class="label">From</div>${lines(inv.sender.name, inv.sender.address, inv.sender.phone, inv.sender.email)}</div>
 <div><div class="label">Bill to</div>${lines(inv.client, inv.clientEmail)}</div></div>
 <table><thead><tr><th>Description</th><th class="n">Qty</th><th class="n">Rate</th><th class="n">Amount</th></tr></thead><tbody>${rows}</tbody></table>

@@ -260,7 +260,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
           <DialogTitle>Mark as paid</DialogTitle>
           <DialogDescription className="mt-1">When did {paying?.client} pay {paying?.number}?</DialogDescription>
           <div className="mt-3 space-y-1.5">
-            <Label htmlFor="pay-date">Payment Date</Label>
+            <Label htmlFor="pay-date">Payment date</Label>
             <Input
               id="pay-date"
               type="date"

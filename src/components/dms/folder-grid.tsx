@@ -56,7 +56,7 @@ export function FolderGrid({
         <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           <FolderCard
             isAll
-            name="All Files"
+            name="All files"
             count={totalCount}
             color="violet"
             active={activeFolderId === null}
@@ -88,7 +88,7 @@ export function FolderGrid({
         open={deleting !== null}
         onOpenChange={(o) => !o && setDeleting(null)}
         title={`Delete “${deleting?.name ?? ""}”?`}
-        description="The folder is removed. Documents inside it are kept and remain available in All Files."
+        description="The folder is removed. Documents inside it are kept and remain available in All files."
         confirmLabel="Delete folder"
         onConfirm={async () => {
           await onDelete(deleting!);

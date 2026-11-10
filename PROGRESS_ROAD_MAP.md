@@ -55,7 +55,7 @@ Databases go last. Update this file in the same commit as the work.
 - [x] Invoices, licenses, vendors, contacts and projects are saved in this browser and survive leaving the page or a reload
 - [x] Home, the bell and Reporting read those saved records, so they agree with each service
 - [x] Cheap fixes: casing leftovers, Documents h1, friendlier sign-in message, unused logo removed, wordmarks resized
-- [~] More Title Case form labels remain (Issued On, Vendor Name and similar); only the ones the audit named were fixed
+- [x] Remaining Title Case labels now sentence case (form fields, dropdown options, dialog titles, document type labels); module and product names such as Licenses & Renewals and Control Center keep their capitals, and the unused `titleCase` helper is gone
 - [x] Demo opens blank with a "See AdFlo with sample data" card on Home: a small shop set and a large regulated company set (Settings > Demo data loads or clears them; loading over saved records asks first)
 - [ ] Accessibility: sidebar chevron tap targets, contrast; Addy's live Claude mode untested
 - [x] Landing page at / is the original hero with the demo workspace (my longer marketing page is in git history, commit 534795a)

@@ -79,7 +79,7 @@ export function DocumentToolbar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>All Categories</SelectItem>
+            <SelectItem value={ANY}>All categories</SelectItem>
             {CATEGORIES.map((c) => (
               <SelectItem key={c} value={c}>
                 {CATEGORY_LABELS[c]}
@@ -92,7 +92,7 @@ export function DocumentToolbar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>All File Types</SelectItem>
+            <SelectItem value={ANY}>All file types</SelectItem>
             {FILE_TYPE_GROUPS.map((g) => (
               <SelectItem key={g.id} value={g.id}>
                 {g.label}
@@ -106,7 +106,7 @@ export function DocumentToolbar({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ANY}>All Tags</SelectItem>
+            <SelectItem value={ANY}>All tags</SelectItem>
             {tags.map((t) => (
               <SelectItem key={t} value={t}>
                 {t}

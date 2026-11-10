@@ -81,7 +81,7 @@ function VendorFormBody({
         <form onSubmit={submit} noValidate className="flex min-h-0 flex-1 flex-col">
           <div className="grid flex-1 gap-4 overflow-y-auto px-5 py-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <Field id="vendor-name" label="Vendor Name" error={errors.name?.message}>
+              <Field id="vendor-name" label="Vendor name" error={errors.name?.message}>
                 <Input id="vendor-name" autoComplete="off" {...invalid("name")} {...register("name", { onChange: () => setMatches([]) })} />
               </Field>
             </div>
@@ -97,10 +97,10 @@ function VendorFormBody({
                 )}
               />
             </Field>
-            <Field id="vendor-contactName" label="Contact Name" error={errors.contactName?.message}>
+            <Field id="vendor-contactName" label="Contact name" error={errors.contactName?.message}>
               <Input id="vendor-contactName" autoComplete="off" {...invalid("contactName")} {...register("contactName")} />
             </Field>
-            <Field id="vendor-email" label="Contact Email" error={errors.email?.message}>
+            <Field id="vendor-email" label="Contact email" error={errors.email?.message}>
               <Input id="vendor-email" type="email" autoComplete="off" {...invalid("email")} {...register("email", { onChange: () => setMatches([]) })} />
             </Field>
             <Field id="vendor-phone" label="Phone" error={errors.phone?.message}>

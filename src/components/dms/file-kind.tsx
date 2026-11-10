@@ -21,7 +21,7 @@ export interface FileKind {
 
 const KINDS: Record<string, FileKind> = {
   pdf: { id: "pdf", label: "PDF", noun: "PDF Document", Icon: FileText, tile: "bg-rose-100/80 text-rose-500", previewable: "pdf" },
-  word: { id: "word", label: "Word", noun: "Word Document", Icon: FileType2, tile: "bg-blue-100/80 text-blue-500", previewable: null },
+  word: { id: "word", label: "Word", noun: "Word document", Icon: FileType2, tile: "bg-blue-100/80 text-blue-500", previewable: null },
   excel: { id: "excel", label: "Excel", noun: "Spreadsheet", Icon: FileSpreadsheet, tile: "bg-teal-100/80 text-teal-600", previewable: null },
   csv: { id: "csv", label: "CSV", noun: "Spreadsheet", Icon: FileSpreadsheet, tile: "bg-emerald-100/80 text-emerald-600", previewable: "text" },
   image: { id: "image", label: "Image", noun: "Image", Icon: FileImage, tile: "bg-amber-100/80 text-amber-600", previewable: "image" },
