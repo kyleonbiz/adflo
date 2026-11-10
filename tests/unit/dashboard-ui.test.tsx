@@ -28,7 +28,7 @@ describe("Dashboard", () => {
     expect(screen.getByRole("link", { name: /Open tasks/ }).getAttribute("href")).toBe("/app/projects");
     expect(screen.getByRole("img", { name: /^Open work by area/ })).toBeTruthy();
     expect(screen.getByRole("img", { name: /^Due in the next 7 days/ })).toBeTruthy();
-    expect(screen.getByRole("img", { name: /Today's tasks done: 0%/ })).toBeTruthy();
+    expect(screen.getByRole("img", { name: /Today's to-dos done: 0%/ })).toBeTruthy();
     expect(screen.getByText("NEEDS ATTENTION")).toBeTruthy();
   });
 

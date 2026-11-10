@@ -4,11 +4,11 @@ test.describe("today's to-do list", () => {
   test("+ adds a task, which can be completed, survives a reload and can be deleted", async ({ page }) => {
     await page.goto("/app/overview");
     const todos = page.getByTestId("today-todos");
-    await expect(todos).toContainText("No tasks yet");
+    await expect(todos).toContainText("No to-dos yet");
 
-    await todos.getByRole("button", { name: "Add a task" }).click();
-    await todos.getByLabel("New task").fill("Send the Q4 invoices");
-    await todos.getByLabel("New task").press("Enter");
+    await todos.getByRole("button", { name: "Add a to-do" }).click();
+    await todos.getByLabel("New to-do").fill("Send the Q4 invoices");
+    await todos.getByLabel("New to-do").press("Enter");
     await expect(todos.getByTestId("todo-item")).toHaveCount(1);
     await expect(todos).toContainText("1 to do");
 
