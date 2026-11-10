@@ -43,13 +43,16 @@ const CAPABILITIES = [
 
 const ADDY_DOES = [
   { icon: Sparkles, title: "Sets up your business", text: "Answer three questions and Addy picks the right modules, turns them on and installs starter forms, recurring tasks and license records." },
-  { icon: FolderKanban, title: "Handles your to-dos", text: "Say “add call the accountant to my to-do list” or “mark it done”. Done in seconds, with Undo." },
-  { icon: CalendarDays, title: "Sets reminders", text: "“Remind me to renew the permit in 3 days” and it lands on your calendar and in the bell." },
-  { icon: Receipt, title: "Drafts records for you", text: "Invoices, contacts, vendors, projects and license records open pre-filled. You review and press save." },
-  { icon: BarChart3, title: "Tells you what is left", text: "Ask “what is left to do?” for your setup health score and the open items to fix." },
+  { icon: Receipt, title: "Creates invoices", text: "“Invoice Acme $1,200 due Friday.” Addy fills it in, you review it and approve." },
+  { icon: Layers, title: "Creates documents", text: "Drafts the letters, notices and records you need, filed in the right place." },
+  { icon: FileSignature, title: "Prepares forms and paperwork", text: "Picks the right form, fills in what she knows and gets it ready for signing." },
+  { icon: FolderKanban, title: "Creates tasks and projects", text: "Turns a sentence into a project with owners, milestones, recurring tasks and to-dos, and ticks them off with you." },
+  { icon: CalendarDays, title: "Manages your calendar", text: "Sets reminders, adds due dates and renewals, and keeps events up to date. “Remind me to renew the permit in 3 days.”" },
+  { icon: BarChart3, title: "Runs your reports", text: "“How are we doing?” Addy runs the report, explains the numbers and exports them to CSV or Excel." },
+  { icon: Store, title: "Keeps records up to date", text: "Updates contacts, vendors and licenses as things change, and tells you what is left to do." },
 ];
 
-const ADDY_NEVER = ["Delete anything", "Approve or pay", "Send or sign for you", "Save a draft without your say-so"];
+const ADDY_NEVER = ["Delete anything", "Approve or pay", "Send or sign for you", "Finalize anything without your say-so"];
 
 const APPROACH = [
   { icon: Layers, step: "Organize", text: "Bring business information and administrative responsibilities into one platform." },
@@ -131,7 +134,7 @@ export function LandingSections() {
       <section id="addy" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="addy-title">
         <p className={eyebrow}>Meet Addy, your AdFlo assistant</p>
         <h2 id="addy-title" className={`${h2} max-w-3xl`}>Tell Addy what you need. She takes care of the busywork.</h2>
-        <p className="mt-3 max-w-2xl text-white/75">Plain-language requests, fewer clicks, and every important step stays in your hands.</p>
+        <p className="mt-3 max-w-2xl text-white/75">Ask in plain language. Addy does the work across every module, and every important step stays in your hands.</p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ADDY_DOES.map(({ icon: Icon, title, text }) => (
             <li key={title} className={card}>
