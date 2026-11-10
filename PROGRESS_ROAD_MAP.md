@@ -50,6 +50,8 @@ Databases go last. Update this file in the same commit as the work.
 - [x] AI assistant completes a task in any service, within its limits (Addy now adds to your to-do list, sets reminders and ticks off to-dos by itself, each with Undo; everything else is still a draft you save)
 - [x] OCR for scanned PDFs (a PDF with no text layer now has its first 3 pages drawn and read like photos, wherever the text reader is turned on; the document index still skips OCR)
 - [ ] Sending email for vendor reminders and scheduled reports (needs a mail service)
+- [x] Action layer (`src/lib/actions`): one typed, validated, undoable step per change, shared by buttons, schedules and Addy; Addy's three actions now run through it, with contact.create and invoice.markPaid (needs the owner's yes) ready for the app but not given to Addy
+- [ ] Move invoices, licenses, vendors, contacts, tasks and forms from browser storage to database tables so the action layer can run on the server
 
 ## Audit Edit Revisions (from the 5 Nov demo audit)
 - [x] Invoices, licenses, vendors, contacts and projects are saved in this browser and survive leaving the page or a reload
