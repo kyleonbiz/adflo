@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures";
 test.describe("dashboard", () => {
   test("shows three cards that link through, the charts, and today's to-do list", async ({ page }) => {
     await page.goto("/app/overview");
-    await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Home", exact: true })).toBeVisible();
     await expect(page.getByTestId("workload")).toBeVisible();
     await expect(page.getByTestId("upcoming")).toBeVisible();
     await expect(page.getByTestId("progress")).toContainText("ALL CLEAR");
@@ -59,7 +59,7 @@ test.describe("dashboard", () => {
       await expect(page.getByRole("link", { name: /Outstanding invoices/ })).toContainText("$0.00");
       await expect(page.getByRole("link", { name: /Needs attention/ })).toContainText("All clear");
       await expect(page.getByTestId("attention")).toContainText("You are all caught up.");
-      await expect(page.getByTestId("today-todos")).toContainText("No tasks yet");
+      await expect(page.getByTestId("today-todos")).toContainText("No to-dos yet");
     });
 
     test("an invoice you create is still there after leaving the page, and Home and the bell reflect it", async ({ page }) => {

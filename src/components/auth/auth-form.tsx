@@ -9,7 +9,6 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { safeNext } from "@/lib/safe-redirect";
 import { signInSchema } from "@/lib/dms/validation";
 
@@ -31,6 +30,7 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
   const submit = handleSubmit(async (values: SignInValues & Partial<SignUpValues>) => {
     setFormError("");
     setInfo("");
+    const { createBrowserSupabase } = await import("@/lib/supabase/browser"); // loaded on submit, so the page itself stays light
     const supabase = createBrowserSupabase();
     if (isSignup) {
       const { data, error } = await supabase.auth.signUp({

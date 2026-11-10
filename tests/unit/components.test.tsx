@@ -44,7 +44,7 @@ describe("state components", () => {
 describe("workspace (demo data)", () => {
   it("shows header, folders with counts and documents", async () => {
     render(<DocumentManagementPage api={createLocalApi()} />);
-    expect(screen.getByRole("heading", { name: "Document Management" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Documents" })).toBeInTheDocument();
     expect(screen.getByText(/Organize, store, and manage your business documents securely/)).toBeInTheDocument();
     await ready();
     expect(screen.getByRole("button", { name: "All files, 18 documents" })).toBeInTheDocument();

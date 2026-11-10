@@ -14,6 +14,7 @@ test.describe("module sidebar on a wide screen", () => {
     const links = nav(page).getByRole("link");
     await expect(links).toHaveText(NAMES);
 
+    for (const n of NAMES) await expect(nav(page).getByRole("link", { name: n, exact: true })).toBeVisible(); // boundingBox() does not wait
     const boxes = await Promise.all(NAMES.map((n) => nav(page).getByRole("link", { name: n, exact: true }).boundingBox()));
     for (const b of boxes) expect(b).not.toBeNull();
     const xs = boxes.map((b) => Math.round(b!.x));
@@ -50,7 +51,7 @@ test.describe("module sidebar on a wide screen", () => {
     await page.goto("/app/overview");
     await nav(page).getByRole("link", { name: "Documents", exact: true }).click();
     await expect(page).toHaveURL(/\/app$/);
-    await expect(page.getByRole("heading", { name: "Document Management", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Documents", exact: true })).toBeVisible();
     await expect(nav(page).getByRole("link", { name: "Documents", exact: true })).toHaveAttribute("aria-current", "page");
     await expect(nav(page)).toBeVisible();
   });

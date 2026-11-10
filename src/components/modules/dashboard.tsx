@@ -154,9 +154,9 @@ function ProgressCard({ today, status }: { today: string; status: DashboardData[
     <section aria-labelledby="progress-heading" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="progress">
       <h2 id="progress-heading" className="text-base font-semibold">Today&apos;s progress</h2>
       <div className="mt-2 flex items-center justify-around gap-3">
-        <ProgressRing percent={pct} label="Today's tasks done" />
+        <ProgressRing percent={pct} label="Today's to-dos done" />
         <div className="text-sm">
-          <p className="text-muted-foreground">{list.length === 0 ? "No tasks for today" : `${done} of ${list.length} tasks done`}</p>
+          <p className="text-muted-foreground">{list.length === 0 ? "No to-dos for today" : `${done} of ${list.length} to-dos done`}</p>
           <p className="mt-3 text-muted-foreground">Status</p>
           <p className="flex items-center gap-2 font-semibold tracking-wide"><span className={cn("size-3 rounded-full", s.dot)} aria-hidden /> {s.text}</p>
           <p className="mt-1 max-w-48 text-xs text-muted-foreground">{s.line}</p>

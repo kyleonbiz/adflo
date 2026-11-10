@@ -15,7 +15,7 @@ export default async function ReportingRoute({ searchParams }: PageProps<"/app/r
       sources={sources}
       initialSection={typeof section === "string" ? section : undefined}
       initialView={typeof view === "string" ? view : undefined}
-      preview="Reports read the records in each service. Files you import under Custom Data are read in your browser and never uploaded. Records are saved in this browser only and no summaries are emailed."
+      preview="Reports read the records in each service. Imported files are read in your browser and never uploaded, and no summaries are emailed."
     />
   ));
 }

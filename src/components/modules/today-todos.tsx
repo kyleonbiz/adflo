@@ -10,7 +10,7 @@ import { addTodo, newTodoId, laterCount, MAX_TITLE, pruneTodos, removeTodo, togg
 import { saveTodos, useTodos } from "@/lib/todos/storage";
 import { cn } from "@/lib/utils";
 
-/** Today's to-do list. Saved in this browser only; unfinished tasks roll over to the next day. */
+/** Today's to-do list. Saved in this browser only; unfinished to-dos roll over to the next day. */
 export function TodayTodos({ today }: { today: string }) {
   const stored = useTodos();
   const [adding, setAdding] = useState(false);
@@ -29,7 +29,7 @@ export function TodayTodos({ today }: { today: string }) {
     e.preventDefault();
     if (!title.trim()) return;
     commit(addTodo(stored, title, day < today ? today : day, newTodoId()));
-    setTitle(""); // stay open so several tasks can be added in a row
+    setTitle(""); // stay open so several to-dos can be added in a row
   };
 
   return (
@@ -41,21 +41,21 @@ export function TodayTodos({ today }: { today: string }) {
             {formatDayLong(today)} · {open === 0 ? "nothing left to do" : `${open} to do`}{later > 0 && ` · ${later} later`}
           </p>
         </div>
-        <Button type="button" size="icon" aria-label="Add a task" aria-expanded={adding} onClick={() => setAdding((a) => !a)}>
+        <Button type="button" size="icon" aria-label="Add a to-do" aria-expanded={adding} onClick={() => setAdding((a) => !a)}>
           {adding ? <X aria-hidden /> : <Plus aria-hidden />}
         </Button>
       </div>
 
       {adding && (
         <form onSubmit={submit} className="mt-3 flex flex-wrap gap-2">
-          <Input autoFocus value={title} maxLength={MAX_TITLE} onChange={(e) => setTitle(e.target.value)} placeholder="What needs doing?" aria-label="New task" className="min-w-48 flex-1" />
+          <Input autoFocus value={title} maxLength={MAX_TITLE} onChange={(e) => setTitle(e.target.value)} placeholder="What needs doing?" aria-label="New to-do" className="min-w-48 flex-1" />
           <Input type="date" value={day} min={today} onChange={(e) => setDay(e.target.value || today)} aria-label="Day" className="w-auto" />
           <Button type="submit" disabled={!title.trim()}>Add</Button>
         </form>
       )}
 
       {visible.length === 0 ? (
-        <p className="mt-3 text-sm text-muted-foreground">{list.length === 0 ? "No tasks yet. Press + to add one." : "All done for today."}</p>
+        <p className="mt-3 text-sm text-muted-foreground">{list.length === 0 ? "No to-dos yet. Press + to add one." : "All done for today."}</p>
       ) : (
         <ul className="mt-3 divide-y">
           {visible.map((t) => (

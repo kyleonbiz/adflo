@@ -19,7 +19,7 @@ export function DashboardHeader({
   return (
     <header className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Document Management</h1>
+        <h1 className="text-2xl font-bold tracking-tight sm:text-[28px]">Documents</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Organize, store, and manage your business documents securely.
         </p>

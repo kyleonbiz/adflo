@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { createWorkspaceSchema } from "@/lib/dms/validation";
 import type { z } from "zod";
 
@@ -23,7 +22,7 @@ export function OnboardingForm({ displayName, email }: { displayName: string; em
 
   const submit = handleSubmit(async ({ name }) => {
     setError("");
-    const { error: rpcError } = await createBrowserSupabase().rpc("create_workspace", {
+    const { error: rpcError } = await (await import("@/lib/supabase/browser")).createBrowserSupabase().rpc("create_workspace", {
       p_name: name,
       p_display_name: displayName,
       p_email: email,
