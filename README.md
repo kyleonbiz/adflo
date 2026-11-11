@@ -16,6 +16,37 @@ AdFlo is software, not a website: opening the site address goes straight into th
   development only and is refused in production unless `DMS_ALLOW_DEV_MODE=true`.
 * **Old demo links** – `/demo/...` redirects to the same page under `/app/...`.
 
+## About this app (read this first if you are reviewing it)
+
+**What it is.** A back-office tool for small businesses: one place for invoices, licenses and renewals, vendors,
+contacts, projects and tasks, forms, documents and reporting, with an AI assistant ("Addy"). It is built to remove
+admin busywork: reminders, duplicate checks and expiry tracking happen for you.
+
+**Choices made on purpose (please do not treat these as gaps).**
+
+* **No money handling.** No payments, banking details, bank-detail locks, quotes or three-way matching.
+* **No accounting-software sync** (QuickBooks, Xero) and no SSO.
+* **Email only.** Invoices, licenses, projects, contacts and documents are sent by opening your email app with the
+  message filled in. There is no text messaging.
+* **Database last.** Outside Documents, records live in the browser tab (preview mode) until the database is wired up;
+  that work and the final full test pass are deliberately scheduled at the end.
+* **Role view is a preview.** Owner / Admin / Contributor screens are switched with "View as" in the top bar; real
+  enforcement comes with sign-in roles and the database.
+
+**Built and working.** Invoice duplicate and unusual-amount warnings (opt-in, Settings > Invoice options); license
+Safe / Warning / Critical risk tiers with "depends on" links; vendor Non-compliant flag; role views; a shared email Send
+dialog on Invoices, Forms, Vendors, Licenses, Projects, Contacts and Documents. (The newest items are on the
+`invoice-checks` branch until it is merged.)
+
+**Not built yet.** Industry setup that renames screens (Construction, Healthcare, Property Management), the staff
+operations portal extras, chasing reminders, auto-saved drafts and a one-click audit ZIP.
+
+**Known issue.** The production build currently fails on `main`: the scanned-PDF reader (`@napi-rs/canvas`, imported
+from `src/lib/dms/extract/pdf.ts`) is pulled into the browser bundle. It is a loading problem, not a design one.
+
+**Where to look.** Screens: `src/components/<module>/`. Business rules: `src/lib/<module>/logic.ts` (each has unit tests
+in `tests/unit/`). Pages: `src/app/app/`. Database: `supabase/migrations/`.
+
 ## Control Center (staff console)
 
 `/control` is Aurum Ventura's own back office, separate from the client app: a client directory (status, plan, seats,
