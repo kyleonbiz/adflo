@@ -8,13 +8,7 @@ export const metadata: Metadata = { title: "Create account" };
 export default function SignupPage() {
   return (
     <AuthCard title="Create your account" subtitle="Start organizing documents securely.">
-      {getSupabaseEnv() ? (
-        <AuthForm mode="signup" />
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Sign-up is not available in this demo. Open the app to look around; your work is saved in this browser.
-        </p>
-      )}
+      <AuthForm mode="signup" demo={!getSupabaseEnv()} />
     </AuthCard>
   );
 }

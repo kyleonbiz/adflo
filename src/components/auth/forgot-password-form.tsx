@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 /** Asks for the account email and sends a reset link that lands on /reset-password. */
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({ demo = false }: { demo?: boolean }) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
@@ -18,6 +18,7 @@ export function ForgotPasswordForm() {
     e.preventDefault();
     const value = email.trim();
     if (!/^\S+@\S+\.\S+$/.test(value)) return setError("Enter a valid email address.");
+    if (demo) return setSent(true);
     const env = getSupabaseEnv();
     if (!env) return;
     setBusy(true);
@@ -36,7 +37,7 @@ export function ForgotPasswordForm() {
     return (
       <div className="space-y-4">
         <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          If an account exists for {email.trim()}, a reset link is on its way. Check your inbox and spam folder.
+          If an account exists for {email.trim()}, a reset link is on its way. {demo ? "This is a demo, so no email is actually sent." : "Check your inbox and spam folder."}
         </p>
         <Button asChild className="w-full"><Link href="/login">Back to log in</Link></Button>
       </div>

@@ -16,7 +16,8 @@ const signUpSchema = signInSchema.extend({ fullName: z.string().trim().min(2, "E
 type SignInValues = z.infer<typeof signInSchema>;
 type SignUpValues = z.infer<typeof signUpSchema>;
 
-export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: string }) {
+/** `demo` (no database connected): nothing is checked or sent anywhere; submitting just opens the in-browser demo workspace. */
+export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup"; next?: string; demo?: boolean }) {
   const router = useRouter();
   const [formError, setFormError] = useState("");
   const [info, setInfo] = useState("");
@@ -30,6 +31,10 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
   const submit = handleSubmit(async (values: SignInValues & Partial<SignUpValues>) => {
     setFormError("");
     setInfo("");
+    if (demo) {
+      router.replace(safeNext(next));
+      return;
+    }
     const { createBrowserSupabase } = await import("@/lib/supabase/browser"); // loaded on submit, so the page itself stays light
     const supabase = createBrowserSupabase();
     if (isSignup) {
@@ -53,6 +58,11 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
 
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
+      {demo && (
+        <p role="note" className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+          Demo mode: no real account is needed. Enter any email and a password of 8+ characters to look around. Your work stays in this browser.
+        </p>
+      )}
       {isSignup && (
         <Field id="fullName" label="Full name" error={formState.errors.fullName?.message}>
           <Input id="fullName" autoComplete="name" aria-invalid={!!formState.errors.fullName} {...register("fullName")} />

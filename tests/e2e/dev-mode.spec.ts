@@ -89,9 +89,36 @@ test.describe("server API (development store)", () => {
     expect((await request.get("/share/not-a-real-token-abcdefghijklmnop")).status()).toBe(503);
   });
 
-  test("login page explains that auth is not configured in dev mode", async ({ page }) => {
+  test("login works in demo mode: any email and password opens the app", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByText(/Sign-in is not available in this demo/)).toBeVisible();
+    await expect(page.getByText(/Demo mode: no real account is needed/)).toBeVisible();
+    await page.getByLabel("Email").fill("demo@example.com");
+    await page.getByLabel("Password").fill("anything");
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page).toHaveURL(/\/app\/overview$/);
+  });
+
+  test("demo login still asks for a valid email and password, and honours ?next=", async ({ page }) => {
+    await page.goto("/login?next=/app/vendors");
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page.getByRole("alert").first()).toBeVisible();
+    await page.getByLabel("Email").fill("demo@example.com");
+    await page.getByLabel("Password").fill("anything");
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page).toHaveURL(/\/app\/vendors$/);
+  });
+
+  test("sign-up and forgot-password also work in demo mode", async ({ page }) => {
+    await page.goto("/signup");
+    await page.getByLabel("Full name").fill("Demo User");
+    await page.getByLabel("Email").fill("demo@example.com");
+    await page.getByLabel("Password").fill("password123");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page).toHaveURL(/\/app\/overview$/);
+    await page.goto("/forgot-password");
+    await page.getByLabel("Email").fill("demo@example.com");
+    await page.getByRole("button", { name: "Send reset link" }).click();
+    await expect(page.getByText(/no email is actually sent/)).toBeVisible();
   });
 });
 
