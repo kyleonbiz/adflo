@@ -1,12 +1,19 @@
 import { Brand } from "@/components/brand";
+import { AuthBackdrop } from "@/components/auth/auth-backdrop";
 
 export function AuthCard({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
   return (
-    <div className="hero-gradient flex min-h-dvh flex-col items-center justify-center px-4 py-10">
-      <Brand wordmark light className="mb-6 w-56" />
-      <main className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-float sm:p-10">
-        <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-        <p className="mb-5 mt-1 text-sm text-muted-foreground">{subtitle}</p>
+    <div className="auth-scope relative isolate flex min-h-dvh flex-col items-center justify-center overflow-hidden px-4 py-10 text-white">
+      <AuthBackdrop />
+      <div className="auth-enter flex flex-col items-center">
+        <Brand wordmark light className="w-52 sm:w-60" />
+        <p className="mb-8 mt-3 text-center text-[0.65rem] font-medium uppercase tracking-[0.35em] text-white/60 sm:text-xs sm:tracking-[0.4em]">
+          Work smarter. Get more done.
+        </p>
+      </div>
+      <main className="auth-panel auth-enter-card w-full max-w-lg p-6 sm:p-10">
+        <h1 className="text-2xl font-semibold tracking-tight text-white">{title}</h1>
+        <p className="mb-6 mt-1 text-sm text-white/80">{subtitle}</p>
         {children}
       </main>
     </div>

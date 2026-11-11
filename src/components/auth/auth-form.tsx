@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ChevronRight, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -21,6 +22,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
   const router = useRouter();
   const [formError, setFormError] = useState("");
   const [info, setInfo] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const isSignup = mode === "signup";
   const form = useForm<SignUpValues>({
     // Demo mode checks nothing, so Log in can be pressed with the fields empty.
@@ -66,22 +68,39 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
       )}
       {isSignup && (
         <Field id="fullName" label="Full name" error={formState.errors.fullName?.message}>
-          <Input id="fullName" autoComplete="name" aria-invalid={!!formState.errors.fullName} {...register("fullName")} />
+          <IconInput icon={User}>
+            <Input id="fullName" placeholder="Full name" autoComplete="name" className="auth-input" aria-invalid={!!formState.errors.fullName} {...register("fullName")} />
+          </IconInput>
         </Field>
       )}
       <Field id="email" label="Email" error={formState.errors.email?.message}>
-        <Input id="email" type="email" autoComplete="email" aria-invalid={!!formState.errors.email} {...register("email")} />
+        <IconInput icon={Mail}>
+          <Input id="email" type="email" placeholder="Email" autoComplete="email" className="auth-input" aria-invalid={!!formState.errors.email} {...register("email")} />
+        </IconInput>
       </Field>
       <Field id="password" label="Password" error={formState.errors.password?.message}>
-        <Input
-          id="password"
-          type="password"
-          autoComplete={isSignup ? "new-password" : "current-password"}
-          aria-invalid={!!formState.errors.password}
-          {...register("password")}
-        />
+        <IconInput icon={Lock}>
+          <Input
+            id="password"
+            type={showPassword ? "text" : "password"}
+            placeholder="Password"
+            autoComplete={isSignup ? "new-password" : "current-password"}
+            className="auth-input pr-11"
+            aria-invalid={!!formState.errors.password}
+            {...register("password")}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Hide characters" : "Show characters"}
+            aria-pressed={showPassword}
+            className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-white/60 transition-colors hover:text-white"
+          >
+            {showPassword ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
+          </button>
+        </IconInput>
         {!isSignup && (
-          <Link href="/forgot-password" className="inline-block text-sm font-medium text-primary hover:underline">
+          <Link href="/forgot-password" className="inline-block pt-1 text-sm font-semibold text-sky-400 hover:text-sky-300 hover:underline">
             Forgot password?
           </Link>
         )}
@@ -96,13 +115,14 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
           {info}
         </p>
       )}
-      <Button type="submit" className="w-full" disabled={formState.isSubmitting}>
+      <Button type="submit" size="lg" className="auth-submit w-full" disabled={formState.isSubmitting}>
         {formState.isSubmitting ? "Please wait…" : isSignup ? "Create account" : "Log in"}
+        {!formState.isSubmitting && <ChevronRight className="size-4" aria-hidden="true" />}
       </Button>
       {!isSignup && <TroubleHelp />}
       <p className="text-center text-sm text-muted-foreground">
         {isSignup ? "Already have an account? " : "New to AdFlo? "}
-        <Link href={isSignup ? "/login" : "/signup"} className="font-medium text-primary hover:underline">
+        <Link href={isSignup ? "/login" : "/signup"} className="font-semibold text-sky-400 hover:text-sky-300 hover:underline">
           {isSignup ? "Sign in" : "Create an account"}
         </Link>
       </p>
@@ -115,18 +135,22 @@ function TroubleHelp() {
   const [open, setOpen] = useState(false);
   return (
     <div className="text-center text-sm">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="login-help" className="font-medium text-primary hover:underline">
-        Having trouble logging in?
-      </button>
+      <div className="flex items-center gap-4">
+        <span className="h-px flex-1 bg-white/20" aria-hidden="true" />
+        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="login-help" className="text-muted-foreground transition-colors hover:text-white">
+          Having trouble logging in?
+        </button>
+        <span className="h-px flex-1 bg-white/20" aria-hidden="true" />
+      </div>
       {open && (
         <ul id="login-help" className="mt-3 list-disc space-y-1.5 rounded-lg bg-muted px-4 py-3 pl-8 text-left text-muted-foreground">
           <li>Check that the email is the one your account was created with.</li>
           <li>
-            Passwords are case sensitive. <Link href="/forgot-password" className="font-medium text-primary hover:underline">Reset your password</Link> if you are unsure.
+            Passwords are case sensitive. <Link href="/forgot-password" className="font-medium text-sky-400 hover:underline">Reset your password</Link> if you are unsure.
           </li>
           <li>If you just signed up, confirm your email first using the link we sent you.</li>
           <li>
-            Still stuck? <Link href="/signup" className="font-medium text-primary hover:underline">Create an account</Link> or ask your workspace owner to invite you.
+            Still stuck? <Link href="/signup" className="font-medium text-sky-400 hover:underline">Create an account</Link> or ask your workspace owner to invite you.
           </li>
         </ul>
       )}
@@ -134,10 +158,20 @@ function TroubleHelp() {
   );
 }
 
+/** Input with a leading icon; children are the input (and any trailing control). */
+function IconInput({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      <Icon className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-white/60" />
+      {children}
+    </div>
+  );
+}
+
 function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="sr-only">{label}</Label>
       {children}
       {error && (
         <p role="alert" className="text-xs text-destructive">
