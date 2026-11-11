@@ -23,7 +23,8 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
   const [info, setInfo] = useState("");
   const isSignup = mode === "signup";
   const form = useForm<SignUpValues>({
-    resolver: zodResolver(isSignup ? signUpSchema : (signInSchema as unknown as typeof signUpSchema)),
+    // Demo mode checks nothing, so Log in can be pressed with the fields empty.
+    resolver: demo ? undefined : zodResolver(isSignup ? signUpSchema : (signInSchema as unknown as typeof signUpSchema)),
     defaultValues: { email: "", password: "", fullName: "" },
   });
   const { register, handleSubmit, formState } = form;
@@ -60,7 +61,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
     <form onSubmit={submit} noValidate className="space-y-4">
       {demo && (
         <p role="note" className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-          Demo mode: no real account is needed. Enter any email and a password of 8+ characters to look around. Your work stays in this browser.
+          Demo mode: no real account is needed. Just press {isSignup ? "Create account" : "Log in"} to look around. Your work stays in this browser.
         </p>
       )}
       {isSignup && (

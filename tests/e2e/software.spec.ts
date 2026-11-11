@@ -1,8 +1,10 @@
 import { expect, test } from "./fixtures";
 
 test.describe("Landing page and the app", () => {
-  test("the site address goes straight into the app", async ({ page }) => {
+  test("the site address opens the login screen, and Log in enters the demo app", async ({ page }) => {
     await page.goto("/");
+    await expect(page).toHaveURL(/\/login$/);
+    await page.getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/app\/overview$/);
   });
 

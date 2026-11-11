@@ -89,21 +89,20 @@ test.describe("server API (development store)", () => {
     expect((await request.get("/share/not-a-real-token-abcdefghijklmnop")).status()).toBe(503);
   });
 
-  test("login works in demo mode: any email and password opens the app", async ({ page }) => {
+  test("login works in demo mode: just press Log in, or fill anything in", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByText(/Demo mode: no real account is needed/)).toBeVisible();
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page).toHaveURL(/\/app\/overview$/);
+    await page.goto("/login");
     await page.getByLabel("Email").fill("demo@example.com");
-    await page.getByLabel("Password").fill("anything");
+    await page.getByLabel("Password").fill("x");
     await page.getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/app\/overview$/);
   });
 
-  test("demo login still asks for a valid email and password, and honours ?next=", async ({ page }) => {
+  test("demo login honours ?next=", async ({ page }) => {
     await page.goto("/login?next=/app/vendors");
-    await page.getByRole("button", { name: "Log in" }).click();
-    await expect(page.getByRole("alert").first()).toBeVisible();
-    await page.getByLabel("Email").fill("demo@example.com");
-    await page.getByLabel("Password").fill("anything");
     await page.getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/app\/vendors$/);
   });
