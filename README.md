@@ -6,8 +6,7 @@ XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
 Tailwind and shadcn/ui-style components.
 
-AdFlo is software, not a website: opening the site address goes straight into the app (`/` redirects to
-`/app/overview`, the Home screen).
+The site address (`/`) redirects into the app (`/app/overview`). The landing page is at `/landing` (`src/app/landing/page.tsx`: the hero, the demo workspace, then the story sections and a Book a demo form in `src/components/marketing/sections.tsx`; the form opens the visitor's email app, addressed to `NEXT_PUBLIC_SALES_EMAIL`); Open workspace goes into the app. The earlier marketing page (hero, features, plans) is in git history at commit `534795a`.
 
 * **With Supabase configured** – real sign-in, workspaces and (for Documents) a real database and storage.
 * **Without Supabase** – the app still opens, as a **preview** labelled "Preview" in the top
@@ -47,7 +46,7 @@ from `src/lib/dms/extract/pdf.ts`) is pulled into the browser bundle. It is a lo
 **Where to look.** Screens: `src/components/<module>/`. Business rules: `src/lib/<module>/logic.ts` (each has unit tests
 in `tests/unit/`). Pages: `src/app/app/`. Database: `supabase/migrations/`.
 
-## Control Center (staff console)
+## Control center (staff console)
 
 `/control` is Aurum Ventura's own back office, separate from the client app: a client directory (status, plan, seats,
 owner, notes) and an audit log of every staff change. It uses the same look as the app. Staff are rows in
@@ -88,16 +87,16 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
   class and route, never messages or client data, and needs `SUPABASE_SERVICE_ROLE_KEY` on the server to record anything.
   Clients also show last sign-in, and "Quiet" when an active client has not signed in for 30 days.
 
-Billing is deliberately later: the Control Center tracks plan and price only, with no invoicing or card payments.
+Billing is deliberately later: the Control center tracks plan and price only, with no invoicing or card payments.
 
 ## Platform modules
 
 The app is growing from a document manager into a client portal of eleven service modules
 (`src/lib/modules/registry.ts`). All ten exist: **01 Documents**, **02 Invoices**
-(`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & Renewals** (`src/lib/licenses/`,
+(`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
 **05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Tasks**
-(`src/lib/projects/`, `src/components/projects/`), **07 Forms & Paperwork**
+(`src/lib/projects/`, `src/components/projects/`), **07 Forms & paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
 (`src/lib/datasets/`, `src/components/reporting/`), **09 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **10 Settings**
 (`src/lib/setup/`, `src/components/setup/`). Every service starts empty and keeps its records in the browser until the database is
@@ -140,7 +139,7 @@ browser and never uploaded.
   modules with industry and team-size recommendations, templates, existing data, automatic checks). Progress
   is saved in the browser after every change (`localStorage`, validated and cleaned on load, so damaged or
   hand-edited data is ignored). Finishing installs the chosen templates for real: forms appear in Forms &
-  Paperwork and starter records in Licenses & Renewals. An unfinished or
+  Paperwork and starter records in Licenses & renewals. An unfinished or
   edited setup installs nothing. Choices are per browser, not per account, until the database is connected.
   Forms are built in the app and **sent** to anyone: Send gives a link (`/form/<token>`, which carries the whole form, so
   nothing is looked up or stored) and a ready-written email. The recipient fills it in on a plain public page and
@@ -452,4 +451,5 @@ See [SECURITY_REVIEW.md](SECURITY_REVIEW.md) for the pre-release review: fixed f
 
 **Demo switch.** To click through the screens before the database is set up, set `CONTROL_DEMO=true` on the server (Vercel →
 Settings → Environment Variables, then redeploy). `/control` then opens without sign-in and shows only built-in sample data;
-it never reads or writes the database and refuses every change. Remove the variable before real clients use the app.
+it never reads or writes the database and refuses every change. The switch is ignored as soon as Supabase is configured, so it
+cannot expose `/control` on a live deployment, but remove the variable before real clients use the app anyway.
