@@ -84,7 +84,7 @@ test.describe("Landing page and the app", () => {
 
   test("the sign-in page is still there for when a database is connected", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Log in to your account" })).toBeVisible();
     await expect(page.getByText("Access your AdFlo workspace.")).toBeVisible();
   });
 });

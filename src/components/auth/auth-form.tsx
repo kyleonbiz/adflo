@@ -69,6 +69,11 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
           aria-invalid={!!formState.errors.password}
           {...register("password")}
         />
+        {!isSignup && (
+          <Link href="/forgot-password" className="inline-block text-sm font-medium text-primary hover:underline">
+            Forgot password?
+          </Link>
+        )}
       </Field>
       {formError && (
         <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-destructive">
@@ -81,8 +86,9 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
         </p>
       )}
       <Button type="submit" className="w-full" disabled={formState.isSubmitting}>
-        {formState.isSubmitting ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
+        {formState.isSubmitting ? "Please wait…" : isSignup ? "Create account" : "Log in"}
       </Button>
+      {!isSignup && <TroubleHelp />}
       <p className="text-center text-sm text-muted-foreground">
         {isSignup ? "Already have an account? " : "New to AdFlo? "}
         <Link href={isSignup ? "/login" : "/signup"} className="font-medium text-primary hover:underline">
@@ -90,6 +96,30 @@ export function AuthForm({ mode, next }: { mode: "login" | "signup"; next?: stri
         </Link>
       </p>
     </form>
+  );
+}
+
+/** "Having trouble logging in?" opens a short checklist, like the help prompt on other sign-in screens. */
+function TroubleHelp() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="text-center text-sm">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="login-help" className="font-medium text-primary hover:underline">
+        Having trouble logging in?
+      </button>
+      {open && (
+        <ul id="login-help" className="mt-3 list-disc space-y-1.5 rounded-lg bg-muted px-4 py-3 pl-8 text-left text-muted-foreground">
+          <li>Check that the email is the one your account was created with.</li>
+          <li>
+            Passwords are case sensitive. <Link href="/forgot-password" className="font-medium text-primary hover:underline">Reset your password</Link> if you are unsure.
+          </li>
+          <li>If you just signed up, confirm your email first using the link we sent you.</li>
+          <li>
+            Still stuck? <Link href="/signup" className="font-medium text-primary hover:underline">Create an account</Link> or ask your workspace owner to invite you.
+          </li>
+        </ul>
+      )}
+    </div>
   );
 }
 
