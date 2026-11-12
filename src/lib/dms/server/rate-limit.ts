@@ -62,3 +62,6 @@ export const UPLOAD_RATE: RateRule = { name: "upload-init", max: 60, windowMs: 6
 export const SHARE_CREATE_RATE: RateRule = { name: "share-create", max: 20, windowMs: 60_000 };
 export const INVITE_RATE: RateRule = { name: "invite", max: 20, windowMs: 60 * 60_000 };
 export const PUBLIC_SHARE_RATE: RateRule = { name: "share-public", max: 60, windowMs: 60_000 };
+export const AUTH_CALLBACK_RATE: RateRule = { name: "auth-callback", max: 30, windowMs: 60_000 };
+export const RESET_EMAIL_STAFF_RATE: RateRule = { name: "reset-staff", max: 10, windowMs: 60 * 60_000 };
+export const RESET_EMAIL_TARGET_RATE: RateRule = { name: "reset-target", max: 3, windowMs: 60 * 60_000 };

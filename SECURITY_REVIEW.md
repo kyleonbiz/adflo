@@ -247,3 +247,8 @@ Fixed in migration `20261112000020_security_open_items.sql` and the app (tests: 
 | 19, 23 | Proposed: defer | CSP `script-src` needs a nonce-based policy tested against Next.js; do before public launch. | |
 | 28 | Accepted | Vercel caps request size; add a proxy limit if self-hosting. |  Accepted by owner, 2026-11-12 |
 | 22, 24, 25, 26 | Open: decision needed | Invoice link signing, browser-only modules (Phase 5 scope decision), agreement relay, daily Addy spend cap. | |
+
+### Repo checks, 2026-11-12
+- **Secrets:** pattern scan (Anthropic, GitHub, Supabase `sbp_`/`sb_secret_`/JWT, AWS, private keys) over every commit reachable from any ref: no matches (scan verified with a positive control). Only `.env.example` was ever committed as an env file.
+- **Dependencies:** `npm audit --omit=dev`: 0 vulnerabilities. `npm audit`: 8 moderate, all in the dev-only lint chain (unchanged from Addendum 2; nothing ships). Dependabot alerts still need turning on in the GitHub repository settings.
+- **Rate limits:** added per-instance limits to the auth callback (30/min per client) and staff password-reset emails (10/hour per staff member, 3/hour per address); license parsing already had one. Tests: `tests/unit/rate-limit-routes.test.ts`. Sign-in, sign-up and reset requests from the browser go straight to Supabase Auth, so its own rate limits (Authentication, Rate Limits) apply; the Book a demo form is a `mailto:` link with no server route. Same limits as finding 12: in-memory per instance, not a hard guarantee.

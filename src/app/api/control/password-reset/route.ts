@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { parseResetEmail } from "@/lib/control/validation";
+import { RESET_EMAIL_STAFF_RATE, RESET_EMAIL_TARGET_RATE, checkRate } from "@/lib/dms/server/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,10 @@ export function POST(req: Request) {
     const parsed = parseResetEmail(await req.json().catch(() => null));
     if (!parsed.ok) return fail(400, "invalid", parsed.errors.email);
     const { email } = parsed.value;
+    // Staff cannot flood a client's inbox or use this as an email cannon.
+    const byStaff = checkRate(staff.email, RESET_EMAIL_STAFF_RATE);
+    const toTarget = checkRate(email.toLowerCase(), RESET_EMAIL_TARGET_RATE);
+    if (!byStaff.ok || !toTarget.ok) return fail(429, "rate_limited", "Too many reset emails. Wait a while and try again.");
     const { data: clientId } = await supabase.rpc("control_reset_target", { p_email: email });
     if (!clientId) return fail(404, "not_a_client", "That email is not a client owner or member. Add it to the client first.");
     const env = getSupabaseEnv();
