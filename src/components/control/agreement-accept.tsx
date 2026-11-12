@@ -30,13 +30,13 @@ export function AcceptForm({ token }: { token: string }) {
         <div className="space-y-1.5"><Label htmlFor="ag-name">Your full name</Label><Input id="ag-name" autoComplete="name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} aria-invalid={!!errors.name} />{errors.name && <p role="alert" className="text-xs text-destructive">{errors.name}</p>}</div>
         <div className="space-y-1.5"><Label htmlFor="ag-email">Your email</Label><Input id="ag-email" type="email" autoComplete="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} aria-invalid={!!errors.email} />{errors.email && <p role="alert" className="text-xs text-destructive">{errors.email}</p>}</div>
       </div>
-      <div className="space-y-2.5 rounded-xl bg-muted p-3">
-        <label className="flex items-start gap-2.5 text-sm"><input type="checkbox" className="mt-0.5 size-4 accent-[var(--primary)]" checked={f.read} onChange={(e) => setF({ ...f, read: e.target.checked })} /> <span>I have read and understood this agreement.</span></label>
-        <label className="flex items-start gap-2.5 text-sm"><input type="checkbox" className="mt-0.5 size-4 accent-[var(--primary)]" checked={f.authorized} onChange={(e) => setF({ ...f, authorized: e.target.checked })} /> <span>I am authorized to accept it on behalf of my company, and I agree to it.</span></label>
+      <div className="space-y-2.5">
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-input bg-card p-3 text-sm transition-colors hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"><input type="checkbox" className="mt-0.5 size-5 shrink-0 cursor-pointer accent-[var(--primary)]" checked={f.read} onChange={(e) => setF({ ...f, read: e.target.checked })} /> <span>I have read and understood this agreement.</span></label>
+        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-input bg-card p-3 text-sm transition-colors hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring"><input type="checkbox" className="mt-0.5 size-5 shrink-0 cursor-pointer accent-[var(--primary)]" checked={f.authorized} onChange={(e) => setF({ ...f, authorized: e.target.checked })} /> <span>I am authorized to accept it on behalf of my company, and I agree to it.</span></label>
       </div>
       {errors.agree && <p role="alert" className="text-xs text-destructive">Tick both boxes to continue.</p>}
       {message && <p role="alert" className="text-sm text-destructive">{message}</p>}
-      <Button type="submit" disabled={busy}>{busy ? "Saving…" : "Accept agreement"}</Button>
+      <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={busy}>{busy ? "Saving…" : "Accept agreement"}</Button>
     </form>
   );
 }
