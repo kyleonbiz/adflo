@@ -232,7 +232,7 @@ seed more. They now assert on the plan the test creates. `test:db` is green agai
 ## Disposition of open findings (2026-11-12)
 
 Fixed in migration `20261112000020_security_open_items.sql` and the app (tests: `supabase/tests/mitigations.sql`,
-`tests/unit/service.test.ts`). **Acceptances below are proposed and need the owner's sign-off** (initial and date in the last column).
+`tests/unit/service.test.ts`). Findings 12, 13, 18 and 28 were accepted by the owner on 2026-11-12; the other proposed rows still need sign-off (initial and date in the last column).
 
 | # | Disposition | Detail | Owner sign-off |
 |---|-------------|--------|----------------|
@@ -241,9 +241,9 @@ Fixed in migration `20261112000020_security_open_items.sql` and the app (tests: 
 | 16 | Fixed | `dms_remove_member` revokes the member's live share links and audits the count. | n/a |
 | 17 | Fixed | Finalize rejects a stored Content-Type that the extension does not allow (octet-stream treated as unlabelled). | n/a |
 | 27 | Fixed (needs config) | Reset email uses `NEXT_PUBLIC_SITE_URL` when set. Set it in production and add the URL to Supabase's Redirect URLs. | |
-| 12 | Proposed: accept | In-memory limiter; 256-bit tokens make guessing infeasible. Revisit with a CDN/WAF limit (roadmap: rate limiting). | |
-| 13 | Proposed: accept | Design rule: no RPC may execute caller-supplied SQL. | |
-| 18 | Proposed: accept | CSV formula injection is a property of the uploader's own file. | |
+| 12 | Accepted | In-memory limiter; 256-bit tokens make guessing infeasible. Revisit with a CDN/WAF limit (roadmap: rate limiting). |  Accepted by owner, 2026-11-12 |
+| 13 | Accepted | Design rule: no RPC may execute caller-supplied SQL. |  Accepted by owner, 2026-11-12 |
+| 18 | Accepted | CSV formula injection is a property of the uploader's own file. |  Accepted by owner, 2026-11-12 |
 | 19, 23 | Proposed: defer | CSP `script-src` needs a nonce-based policy tested against Next.js; do before public launch. | |
-| 28 | Proposed: accept | Vercel caps request size; add a proxy limit if self-hosting. | |
+| 28 | Accepted | Vercel caps request size; add a proxy limit if self-hosting. |  Accepted by owner, 2026-11-12 |
 | 22, 24, 25, 26 | Open: decision needed | Invoice link signing, browser-only modules (Phase 5 scope decision), agreement relay, daily Addy spend cap. | |
