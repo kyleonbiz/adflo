@@ -27,7 +27,7 @@ import { LICENSE_UPLOAD_ACCEPT } from "@/lib/licenses/upload";
 import { LicenseFormDialog } from "./license-form-dialog";
 import { RenewDialog } from "./renew-dialog";
 import { SEVERITY_BADGE, STAGE_LABEL, STATUS_LABEL } from "./status";
-import { useRecordsState } from "@/lib/records/storage";
+import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 import { licenseRecords } from "@/lib/records/sources";
 
 const newId = () => `lic-${Math.random().toString(36).slice(2, 10)}`;
@@ -44,6 +44,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const today = useToday();
   const audit = useAudit();
   const uploadInput = useRef<HTMLInputElement>(null);
+  const loading = useRecordsLoading();
   const [edited, setEdited] = useRecordsState<License>("licenses");
   const [query, setQuery] = useState(initialQuery);
   const [statusFilter, setStatusFilter] = useState<Filter>("all");
@@ -71,7 +72,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   }, [notice]);
   const say = useCallback((text: string, undo?: () => void) => setNotice({ id: Date.now(), text, undo }), []);
 
-  if (!today) {
+  if (!today || loading) {
     return (
       <div className="space-y-4" aria-busy="true">
         <Skeleton className="h-10 w-64" />

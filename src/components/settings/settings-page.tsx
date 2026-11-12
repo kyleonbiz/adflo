@@ -19,14 +19,17 @@ export type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
 
 export const parseTab = (v: unknown): SettingsTab => SETTINGS_TABS.find((t) => t.id === v)?.id ?? "profile";
 
-export function SettingsPage({ tab, mode, base, preview }: { tab: SettingsTab; mode: "live" | "preview"; base: "/app"; preview?: string }) {
+export function SettingsPage({ tab: requested, mode, base, preview }: { tab: SettingsTab; mode: "live" | "preview"; base: "/app"; preview?: string }) {
+  // Sample data is for the browser-only preview: a real workspace's records are never replaced or wiped from here.
+  const tabs = mode === "live" ? SETTINGS_TABS.filter((t) => t.id !== "demo") : SETTINGS_TABS;
+  const tab = tabs.some((t) => t.id === requested) ? requested : "profile";
   const current = SETTINGS_TABS.find((t) => t.id === tab)!;
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
       <nav aria-label="Settings sections">
         <ul className="flex flex-wrap gap-2">
-          {SETTINGS_TABS.map((t) => (
+          {tabs.map((t) => (
             <li key={t.id}>
               <Link
                 href={`${base}/setup?tab=${t.id}`}

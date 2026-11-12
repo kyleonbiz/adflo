@@ -24,7 +24,7 @@ import { ProjectFormDialog, type ProjectDraft } from "./project-form-dialog";
 import { STATUS_LABEL, TASK_BADGE } from "./status";
 import { TasksView, type TaskFilter } from "./tasks-view";
 import { cn } from "@/lib/utils";
-import { useRecordsState } from "@/lib/records/storage";
+import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -59,7 +59,8 @@ export type ProjectsViewName = "tasks" | "projects";
 
 export function ProjectsPage({ preview, initialQuery = "", initialView = "tasks", startNew, draft }: { preview?: string; initialQuery?: string; initialView?: ProjectsViewName; startNew?: boolean; draft?: ProjectDraft }) {
   const today = useToday();
-  if (!today) {
+  const loading = useRecordsLoading(); // saved records are still arriving from the database
+  if (!today || loading) {
     return (
       <div className="space-y-4" aria-busy="true">
         <Skeleton className="h-10 w-64" />

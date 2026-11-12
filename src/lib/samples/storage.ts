@@ -1,4 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
+import { remoteActive } from "@/lib/records/remote";
 import { clearRecords, writeRecords, type RecordKind } from "@/lib/records/storage";
 import { SAMPLE_SETS, type SampleRecords, type SampleSetId } from "./data";
 
@@ -22,7 +23,7 @@ export function useLoadedSample(): SampleSetId | null {
 /** Replaces every service's records with the chosen sample set. */
 export function loadSample(id: SampleSetId, today: string): void {
   const set = SAMPLE_SETS.find((s) => s.id === id);
-  if (!set) return;
+  if (!set || remoteActive()) return; // never put sample records into a real workspace
   const data: SampleRecords = set.build(today);
   for (const kind of KINDS) writeRecords<unknown>(kind, data[kind]);
   try { window.localStorage.setItem(KEY, id); } catch { /* the marker is a convenience */ }
@@ -31,6 +32,7 @@ export function loadSample(id: SampleSetId, today: string): void {
 
 /** Empties every service and forgets the sample marker: back to the blank start. */
 export function clearAllRecords(): void {
+  if (remoteActive()) return;
   for (const kind of KINDS) clearRecords(kind);
   try { window.localStorage.removeItem(KEY); } catch { /* nothing to forget */ }
   window.dispatchEvent(new Event(EVENT));

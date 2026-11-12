@@ -10,7 +10,7 @@ import { industryLicenses } from "@/lib/setup/industries";
 import { useSetupConfig } from "@/lib/setup/storage";
 import type { SetupConfig } from "@/lib/setup/types";
 import { installedLicenses } from "@/lib/setup/templates";
-import { useStoredRecords } from "./storage";
+import { useRecordsLoading, useStoredRecords } from "./storage";
 
 /**
  * The licenses to show: your own saved records, or until you save any, the starter records that guided
@@ -38,11 +38,12 @@ export function useDashboardSources(today: string | null): DashboardSources & { 
   const vendors = useStoredRecords<Vendor>("vendors");
   const contacts = useStoredRecords<Contact>("contacts");
   const setup = useSetupConfig();
-  return useMemo(() => !today ? { invoices: [], licenses: [], projects: [], vendors: [], contacts: [] } : ({
+  const loading = useRecordsLoading();
+  return useMemo(() => !today || loading ? { invoices: [], licenses: [], projects: [], vendors: [], contacts: [] } : ({
     invoices: invoices ?? e2eSeed<Invoice>("invoices") ?? [],
     licenses: licenseRecords(licenses, today, setup),
     projects: projects ?? e2eSeed<Project>("projects") ?? [],
     vendors: vendors ?? e2eSeed<Vendor>("vendors") ?? [],
     contacts: contacts ?? e2eSeed<Contact>("contacts") ?? [],
-  }), [invoices, licenses, projects, vendors, contacts, setup, today]);
+  }), [invoices, licenses, projects, vendors, contacts, setup, today, loading]);
 }

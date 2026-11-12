@@ -5,7 +5,7 @@ Do these three together; each needs the others to test properly. The README has 
 ## 1. Database (Supabase)
 
 - [ ] Create a Supabase project.
-- [ ] Apply every file in `supabase/migrations`, in filename order (19 files at the time of writing).
+- [ ] Apply every file in `supabase/migrations`, in filename order (20 files at the time of writing).
 - [ ] Turn on **TOTP** under Authentication > Multi-Factor. Staff in the Control Center must use an authenticator app, and the database enforces it.
 - [ ] Set the auth **Site URL** and allowed **redirect URLs** to your hosted domain, including `/reset-password` and `/auth/callback`.
 - [ ] Sign up through `/signup`, then make yourself the first Owner (run once in the Supabase SQL editor):
@@ -50,4 +50,10 @@ Set these environment variables on the host (never commit real values; `.env.exa
 
 ## Know before you go live
 
-Connecting the database gives real sign-in, workspaces, Documents storage, share links and the Control Center. **Invoices, licenses, vendors, contacts, tasks and forms are still saved only in each visitor's browser**, and Home reads those browser records. They need their own tables and wiring before they are shared between people or devices.
+Connecting the database gives real sign-in, workspaces, Documents storage, share links and the Control Center. It also saves **licenses and tasks (projects)** to the workspace, shared by everyone on the team and kept across devices (table `workspace_records`, from the `workspace_records` migration; editors and above can change them, viewers can only read). Home, Reporting and the bell read those saved records.
+
+**Invoices, vendors, contacts and forms are still saved only in each visitor's browser.** They use the same save path and only need switching on (add the service to `PERSISTED_KINDS` in `src/lib/records/supabase-backend.ts`, then check it). Sample data is switched off for a connected workspace, so it can never replace real records.
+
+After the database is connected, also check:
+- [ ] Add a license, refresh the page, and it is still there. Open the app in a second browser signed in as a teammate: they see it too.
+- [ ] Sign in as a **viewer**: licenses and tasks show, and a change is refused with a "view-only" message rather than failing silently.

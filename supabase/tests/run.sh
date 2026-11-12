@@ -30,3 +30,4 @@ RUN "$PSQL -d dms -f '$HERE/control2.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CONTROL
 RUN "$PSQL -d dms -f '$HERE/control3.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CONTROL3|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/control4.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CONTROL4|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/control5.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CONTROL5|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/records.sql'" 2>&1 | grep -E "PASS|FAIL|ALL RECORDS|ERROR" | sed 's/^psql:[^ ]* //'

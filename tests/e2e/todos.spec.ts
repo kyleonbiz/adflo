@@ -3,6 +3,8 @@ import { expect, test } from "./fixtures";
 test.describe("today's to-do list", () => {
   test("+ adds a task, which can be completed, survives a reload and can be deleted", async ({ page }) => {
     await page.goto("/app/overview");
+    // The dev server refreshes the page once more right after its first load; a click made before that is lost.
+    await page.waitForLoadState("networkidle");
     const todos = page.getByTestId("today-todos");
     await expect(todos).toContainText("No to-dos yet");
 

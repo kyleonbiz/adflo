@@ -17,8 +17,10 @@ async function loadNotifications() {
   return { today: dayInZone((await headers()).get("x-vercel-ip-timezone")) };
 }
 
-function Frame({ topRight, userName, features = null, children }: { topRight: React.ReactNode; userName?: string; features?: string[] | null; children: React.ReactNode }) {
-  return <PlanFeaturesProvider features={features}><AppFrame base="/app" topRight={topRight}><CurrentUserProvider name={userName}>{children}</CurrentUserProvider></AppFrame></PlanFeaturesProvider>;
+function Frame({ topRight, userName, features = null, wrap, children }: { topRight: React.ReactNode; userName?: string; features?: string[] | null; wrap?: (children: React.ReactNode) => React.ReactNode; children: React.ReactNode }) {
+  // A signed-in workspace saves its records to the database (`wrap` adds that); the preview keeps them in this browser.
+  const body = wrap ? wrap(children) : children;
+  return <PlanFeaturesProvider features={features}><AppFrame base="/app" topRight={topRight}><CurrentUserProvider name={userName}>{body}</CurrentUserProvider></AppFrame></PlanFeaturesProvider>;
 }
 
 function NotInPlan() {
@@ -58,8 +60,10 @@ export async function renderAppShell(
     // Plan features: a failed lookup leaves everything available rather than locking a client out.
     const { data: planFeatures } = await supabase.rpc("workspace_features", { p_workspace: membership.workspaceId });
     const features = Array.isArray(planFeatures) ? (planFeatures as string[]) : null;
+    // Loaded only here, so the preview never downloads the database client it does not use.
+    const { RecordsProvider } = await import("@/components/records-provider");
     return (
-      <Frame userName={fullName} features={features} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} />}>
+      <Frame userName={fullName} features={features} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} />}>
         {pathAllowed(features, nextPath) ? content("live", { name: fullName }) : <NotInPlan />}
       </Frame>
     );
