@@ -235,6 +235,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
           {spend.count > 0 && <span data-testid="renewal-spend"> · {spend.count} to renew in 90 days{spend.dollars > 0 ? `, about $${spend.dollars.toLocaleString("en-US")}` : ""}{spend.unknown > 0 ? ` (${spend.unknown} without a fee entered)` : ""}</span>}
         </p>
       )}
+      {licenses.length > 0 && <p className="text-xs text-muted-foreground">Compliance scores and reminders are organizational aids, not legal or tax advice. Confirm requirements with a qualified professional.</p>}
 
       <section aria-labelledby="tasks-heading" className="rounded-2xl border bg-card p-4 shadow-panel">
         <h2 id="tasks-heading" className="text-base font-semibold">Renewal tasks</h2>

@@ -29,7 +29,8 @@ export default function HomePage() {
         </main>
       </div>
       <footer className="border-t border-indigo-100 bg-white/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Aurum Ventura Enterprise LLC · Business Administrative Services
+        © {new Date().getFullYear()} AdFlo · Business Administrative Services
+        <span className="mt-2 flex justify-center gap-4"><Link href="/terms" className="underline">Terms</Link><Link href="/privacy" className="underline">Privacy</Link><Link href="/subprocessors" className="underline">Sub-processors</Link></span>
       </footer>
     </div>
   );

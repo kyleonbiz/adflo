@@ -25,7 +25,7 @@ function NotInPlan() {
   return (
     <div className="mx-auto max-w-lg rounded-2xl border bg-card p-8 text-center shadow-panel">
       <h1 className="text-xl font-semibold tracking-tight">Not part of your plan</h1>
-      <p className="mt-2 text-sm text-muted-foreground">This service is not included in your current plan. Contact Aurum Ventura to add it.</p>
+      <p className="mt-2 text-sm text-muted-foreground">This service is not included in your current plan. Contact AdFlo to add it.</p>
     </div>
   );
 }

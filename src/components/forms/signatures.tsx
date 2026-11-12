@@ -79,7 +79,7 @@ function RequestDialog({ open, onOpenChange, submissions, today, by }: { open: b
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-w-lg">
         <DialogTitle>Request signatures</DialogTitle>
-        <DialogDescription className="mt-1">Choose what needs signing and who signs it. Each signer types their name and agrees; the signed copy carries a fingerprint of the document.</DialogDescription>
+        <DialogDescription className="mt-1">Choose what needs signing and who signs it. Each signer types their name and agrees; the signed copy carries a fingerprint of the document. This is not a certified e-signature service; use one where the law or the other party requires it.</DialogDescription>
         <form onSubmit={create} noValidate className="mt-4 space-y-3">
           <div className="space-y-1.5">
             <Label htmlFor="sign-title">Title</Label>
