@@ -252,3 +252,16 @@ Fixed in migration `20261112000020_security_open_items.sql` and the app (tests: 
 - **Secrets:** pattern scan (Anthropic, GitHub, Supabase `sbp_`/`sb_secret_`/JWT, AWS, private keys) over every commit reachable from any ref: no matches (scan verified with a positive control). Only `.env.example` was ever committed as an env file.
 - **Dependencies:** `npm audit --omit=dev`: 0 vulnerabilities. `npm audit`: 8 moderate, all in the dev-only lint chain (unchanged from Addendum 2; nothing ships). Dependabot alerts still need turning on in the GitHub repository settings.
 - **Rate limits:** added per-instance limits to the auth callback (30/min per client) and staff password-reset emails (10/hour per staff member, 3/hour per address); license parsing already had one. Tests: `tests/unit/rate-limit-routes.test.ts`. Sign-in, sign-up and reset requests from the browser go straight to Supabase Auth, so its own rate limits (Authentication, Rate Limits) apply; the Book a demo form is a `mailto:` link with no server route. Same limits as finding 12: in-memory per instance, not a hard guarantee.
+
+### Content Security Policy (findings 19 and 23), 2026-11-12
+`src/proxy.ts` now sets a per-request nonce CSP on every page (`src/lib/csp.ts`): `script-src 'self' 'nonce-…' 'strict-dynamic'`
+(no `unsafe-inline`, and `unsafe-eval` only in development), `connect-src`/`img-src`/`frame-src` limited to the app and your Supabase
+origin, `object-src 'none'`, `frame-ancestors 'none'`. The root layout stamps the nonce on the theme script; Next stamps its own.
+`/invoice/[token]` keeps `dangerouslySetInnerHTML` (HTML, not script): an escaping mistake there can no longer run script.
+- **Mode:** `CSP_MODE` is `report-only` by default (violations appear in the browser console, nothing is blocked). Set `CSP_MODE=enforce`
+  in production once your real flows have been tried against the hosted project.
+- **Verified:** production build with `CSP_MODE=enforce`, headless Chromium loading 14 pages (landing, sign-in/up, forgot password, app,
+  control): zero violations. A negative control (an injected `<script>` and `onerror=` handler in the served HTML) was blocked.
+- **Not verified:** document preview and upload against a hosted Supabase project, authenticator setup, the staff screens signed in.
+- **Cost:** pages that read the nonce render per request (the whole app is already dynamic). Styles keep `unsafe-inline` (React/Tailwind inline style attributes; not script-capable).
+- **Status of 19 and 23:** mitigated; closed once enforce is on in production.

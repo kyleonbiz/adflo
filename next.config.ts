@@ -7,7 +7,8 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-  // A full script-src needs per-request nonces with Next; these directives are safe without them.
+  // The script-src policy needs a per-request nonce, so the full Content-Security-Policy is set in src/proxy.ts
+  // (see src/lib/csp.ts). While it runs in report-only mode, keep these safe directives enforced here.
   {
     key: "Content-Security-Policy",
     value: "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
