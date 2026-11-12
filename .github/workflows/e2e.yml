@@ -1,0 +1,48 @@
+name: Browser tests
+
+# The full Playwright suite (about 11 minutes locally), run every night and on demand.
+# It is kept out of the per-push CI (ci.yml) so a push gets its answer in about two minutes.
+# To run it now: GitHub > Actions > "Browser tests" > Run workflow.
+on:
+  schedule:
+    - cron: "23 7 * * *" # 07:23 UTC every day, in the small hours in the US
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: Playwright (Chromium)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      # Traces go outside the project folder: files written inside it make the dev server reload pages in a loop.
+      - name: Run the browser tests
+        run: npx playwright test --output="$RUNNER_TEMP/pw-out"
+
+      - name: Keep traces of failures
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: ${{ runner.temp }}/pw-out
+          retention-days: 7
+          if-no-files-found: ignore
