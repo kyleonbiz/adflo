@@ -12,8 +12,8 @@ export function AuthCard({ title, subtitle, children }: { title: string; subtitl
         </p>
       </div>
       <main className="auth-panel auth-enter-card w-full max-w-lg p-6 sm:p-10">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">{title}</h1>
-        <p className="mb-6 mt-1 text-sm text-white/80">{subtitle}</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
+        <p className="mb-6 mt-1 text-sm text-muted-foreground">{subtitle}</p>
         {children}
       </main>
     </div>

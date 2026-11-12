@@ -94,13 +94,13 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
             onClick={() => setShowPassword((v) => !v)}
             aria-label={showPassword ? "Hide characters" : "Show characters"}
             aria-pressed={showPassword}
-            className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-white/60 transition-colors hover:text-white"
+            className="absolute right-2 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-slate-400 transition-colors hover:text-slate-700"
           >
             {showPassword ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
           </button>
         </IconInput>
         {!isSignup && (
-          <Link href="/forgot-password" className="inline-block pt-1 text-sm font-semibold text-sky-400 hover:text-sky-300 hover:underline">
+          <Link href="/forgot-password" className="inline-block pt-1 text-sm font-semibold text-primary hover:underline">
             Forgot password?
           </Link>
         )}
@@ -122,7 +122,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
       {!isSignup && <TroubleHelp />}
       <p className="text-center text-sm text-muted-foreground">
         {isSignup ? "Already have an account? " : "New to AdFlo? "}
-        <Link href={isSignup ? "/login" : "/signup"} className="font-semibold text-sky-400 hover:text-sky-300 hover:underline">
+        <Link href={isSignup ? "/login" : "/signup"} className="font-semibold text-primary hover:underline">
           {isSignup ? "Sign in" : "Create an account"}
         </Link>
       </p>
@@ -136,21 +136,21 @@ function TroubleHelp() {
   return (
     <div className="text-center text-sm">
       <div className="flex items-center gap-4">
-        <span className="h-px flex-1 bg-white/20" aria-hidden="true" />
-        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="login-help" className="text-muted-foreground transition-colors hover:text-white">
+        <span className="h-px flex-1 bg-slate-300" aria-hidden="true" />
+        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls="login-help" className="text-muted-foreground transition-colors hover:text-foreground">
           Having trouble logging in?
         </button>
-        <span className="h-px flex-1 bg-white/20" aria-hidden="true" />
+        <span className="h-px flex-1 bg-slate-300" aria-hidden="true" />
       </div>
       {open && (
         <ul id="login-help" className="mt-3 list-disc space-y-1.5 rounded-lg bg-muted px-4 py-3 pl-8 text-left text-muted-foreground">
           <li>Check that the email is the one your account was created with.</li>
           <li>
-            Passwords are case sensitive. <Link href="/forgot-password" className="font-medium text-sky-400 hover:underline">Reset your password</Link> if you are unsure.
+            Passwords are case sensitive. <Link href="/forgot-password" className="font-medium text-primary hover:underline">Reset your password</Link> if you are unsure.
           </li>
           <li>If you just signed up, confirm your email first using the link we sent you.</li>
           <li>
-            Still stuck? <Link href="/signup" className="font-medium text-sky-400 hover:underline">Create an account</Link> or ask your workspace owner to invite you.
+            Still stuck? <Link href="/signup" className="font-medium text-primary hover:underline">Create an account</Link> or ask your workspace owner to invite you.
           </li>
         </ul>
       )}
@@ -162,7 +162,7 @@ function TroubleHelp() {
 function IconInput({ icon: Icon, children }: { icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) {
   return (
     <div className="relative">
-      <Icon className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-white/60" />
+      <Icon className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-slate-400" />
       {children}
     </div>
   );
