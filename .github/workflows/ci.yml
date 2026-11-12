@@ -1,0 +1,39 @@
+name: CI
+
+# Runs the same checks you would run by hand: typecheck, lint, unit tests and a production build.
+# The build matters on its own: typecheck and tests can pass while `next build` still fails.
+# The browser tests (`npm run test:e2e`, about 11 minutes) are not run here.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# A newer push cancels the run for an older one on the same branch.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, lint, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck, lint and unit tests
+        run: npm run check
+
+      - name: Production build
+        run: npm run build
