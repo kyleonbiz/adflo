@@ -228,3 +228,22 @@ seed more. They now assert on the plan the test creates. `test:db` is green agai
 - Remove `CONTROL_DEMO` from production anyway; it is now ignored once Supabase is configured.
 - Supabase Auth: keep "Confirm email" on, add your production URL to the Redirect URL allow-list (item 27), and consider requiring
   MFA for staff accounts at enrolment time. These are hosted settings this review could not see.
+
+## Disposition of open findings (2026-11-12)
+
+Fixed in migration `20261112000020_security_open_items.sql` and the app (tests: `supabase/tests/mitigations.sql`,
+`tests/unit/service.test.ts`). **Acceptances below are proposed and need the owner's sign-off** (initial and date in the last column).
+
+| # | Disposition | Detail | Owner sign-off |
+|---|-------------|--------|----------------|
+| 14 | Fixed | `dms_begin_upload` takes the name from the member row; `p_user_name` is ignored. | n/a |
+| 15 | Fixed | At most 20 pending uploads per user per workspace (`too_many_pending`). | n/a |
+| 16 | Fixed | `dms_remove_member` revokes the member's live share links and audits the count. | n/a |
+| 17 | Fixed | Finalize rejects a stored Content-Type that the extension does not allow (octet-stream treated as unlabelled). | n/a |
+| 27 | Fixed (needs config) | Reset email uses `NEXT_PUBLIC_SITE_URL` when set. Set it in production and add the URL to Supabase's Redirect URLs. | |
+| 12 | Proposed: accept | In-memory limiter; 256-bit tokens make guessing infeasible. Revisit with a CDN/WAF limit (roadmap: rate limiting). | |
+| 13 | Proposed: accept | Design rule: no RPC may execute caller-supplied SQL. | |
+| 18 | Proposed: accept | CSV formula injection is a property of the uploader's own file. | |
+| 19, 23 | Proposed: defer | CSP `script-src` needs a nonce-based policy tested against Next.js; do before public launch. | |
+| 28 | Proposed: accept | Vercel caps request size; add a proxy limit if self-hosting. | |
+| 22, 24, 25, 26 | Open: decision needed | Invoice link signing, browser-only modules (Phase 5 scope decision), agreement relay, daily Addy spend cap. | |

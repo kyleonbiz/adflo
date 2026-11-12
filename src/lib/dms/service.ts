@@ -296,6 +296,16 @@ export class DocumentService {
       return fail("The uploaded file exceeds the size limit.", "validation");
     }
 
+    // Finding 17: the stored Content-Type must be one the extension allows (octet-stream is treated as unlabelled).
+    const stored = (stat.mimeType ?? "").toLowerCase().split(";")[0].trim();
+    if (stored && stored !== "application/octet-stream") {
+      const ext = getExtension(version.storageKey);
+      const accepted = this.limits.allowedTypes.filter((t) => t.extension === ext).flatMap((t) => t.mimeTypes);
+      if (!accepted.includes(stored)) {
+        return fail("The uploaded file's type does not match its extension.", "validation");
+      }
+    }
+
     const head = await this.storage.readHead(version.storageKey, 16);
     if (head && !magicBytesMatch(getExtension(version.storageKey), head)) {
       return fail("The file contents do not match its extension.", "validation");

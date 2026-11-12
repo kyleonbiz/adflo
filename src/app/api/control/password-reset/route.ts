@@ -21,7 +21,7 @@ export function POST(req: Request) {
     if (!env) return fail(503, "no_database", "The database is not connected.");
     // A stateless client, so the staff member's own session and cookies are never involved.
     const mailer = createClient(env.url, env.anonKey, { auth: { persistSession: false, autoRefreshToken: false, flowType: "implicit" } });
-    const { error } = await mailer.auth.resetPasswordForEmail(email, { redirectTo: `${new URL(req.url).origin}/reset-password` });
+    const { error } = await mailer.auth.resetPasswordForEmail(email, { redirectTo: `${(process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin).replace(/\/+$/, "")}/reset-password` });
     if (error) return fail(502, "email_failed", "The email could not be sent. Wait a minute and try again.");
     await supabase.rpc("control_log", { p_action: "password_reset.sent", p_entity: "password_reset", p_entity_id: email, p_detail: { client_id: clientId, by: staff.email } });
     return NextResponse.json({ ok: true });

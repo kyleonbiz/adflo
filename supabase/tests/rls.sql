@@ -250,4 +250,6 @@ reset role;
 reset role;
 \ir content.sql
 reset role;
+\ir mitigations.sql
+reset role;
 \echo ALL RLS TESTS PASSED

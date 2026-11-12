@@ -151,6 +151,13 @@ describe("upload validation and flow", () => {
     expect(await code(a.finalizeUpload(i.documentId, 1))).toBe("validation");
     expect(w.store.documents.has(i.documentId)).toBe(false);
   });
+  it("fails finalize when the stored Content-Type does not fit the extension (finding 17)", async () => {
+    const a = w.as(WS_A, "editor");
+    const i = await a.initiateUpload(init({ fileName: "a.png", mimeType: "image/png", size: PDF_BYTES.byteLength }));
+    const v = await w.repo.getVersion(WS_A, i.documentId, 1);
+    w.storage.put(v!.storageKey, PDF_BYTES, "application/pdf");
+    expect(await code(a.finalizeUpload(i.documentId, 1))).toBe("validation");
+  });
   it("lets only the uploader (or an admin) finish or cancel an upload", async () => {
     const i = await w.as(WS_A, "editor", "someone-else").initiateUpload(init());
     const mine = w.as(WS_A, "editor");
