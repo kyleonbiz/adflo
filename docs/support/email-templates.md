@@ -15,7 +15,7 @@ To get started:
 2. Upload your first document from Documents.
 3. Ask Addy to help set up your business.
 
-If you get stuck, reply to this email. We answer within {{response_target}} on {{support_days}}.
+If you get stuck, reply to this email or write to kyleonbiz@gmail.com. We answer within one business day on weekdays, 9am to 5pm Eastern.
 
 {{your_name}}
 Aurum Ventura Enterprise LLC
