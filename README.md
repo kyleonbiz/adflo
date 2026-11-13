@@ -83,11 +83,16 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
   class and route, never messages or client data, and needs `SUPABASE_SERVICE_ROLE_KEY` on the server to record anything.
   Clients also show last sign-in, and "Quiet" when an active client has not signed in for 30 days.
 
+**Demo switch.** To click through the screens before the database is set up, set `CONTROL_DEMO=true` on the server (Vercel →
+Settings → Environment Variables, then redeploy). `/control` then opens without sign-in and shows only built-in sample data;
+it never reads or writes the database and refuses every change. The switch is ignored as soon as Supabase is configured, so it
+cannot expose `/control` on a live deployment, but remove the variable before real clients use the app anyway.
+
 Billing is deliberately later: the Control center tracks plan and price only, with no invoicing or card payments.
 
 ## Platform modules
 
-The app is growing from a document manager into a client portal of eleven service modules
+The app is growing from a document manager into a client portal of ten service modules
 (`src/lib/modules/registry.ts`). All ten exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
@@ -111,7 +116,7 @@ browser and never uploaded.
 * **With a database connected, licenses and tasks (the Projects service) are saved to the workspace**: one row per record in `workspace_records`, read and written straight from the browser under the signed-in user's own access (members read; editors, admins and owners write; viewers are refused by the database, and the page says so). Changes show at once and are sent in the background, retried if the connection drops, and other people's changes appear when the tab is shown again. The other services use the same code and are switched on one at a time (`PERSISTED_KINDS`). Without a database, everything below stays in the browser as before.
 * **Invoices, vendors, contacts, forms and report data are not persisted yet.** They start empty and are held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
-  renewal tasks, overdue notices) but no email is sent yet. Licenses can be pre-filled from an uploaded PDF, Word, text or CSV file (`/api/licenses/parse` reads the number, issuer, holder and dates next to their labels; photos and scans are not read, and the file itself is not stored). Vendors get required documents by category, can only be
+  renewal tasks, overdue notices) but no email is sent yet. Licenses can be pre-filled from an uploaded PDF, Word, text or CSV file (`/api/licenses/parse` reads the number, issuer, holder and dates next to their labels; photos and scans are read with OCR on the Core + plan, and the file itself is not stored). Vendors get required documents by category, can only be
   activated once every required document is in and unexpired (there is no approval step: anyone on the team can act), and are checked for
   duplicates (normalized name, similar name, tax ID, contact email, shared company email domain) when
   added and across the list. CRM & Data imports in three steps (choose or paste a
@@ -175,8 +180,7 @@ npm install
 npm run dev          # http://localhost:3000  (opens the app in preview mode)
 ```
 
-Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app opens in an empty preview mode where
-records are held in the browser (they reset on refresh). Nothing is stored on the server.
+Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app opens in preview mode (see the top of this file).
 
 ## Supabase setup
 
@@ -214,12 +218,22 @@ records are held in the browser (they reset on refresh). Nothing is stored on th
 
 ## Environment variables
 
-See `.env.example`. Browser-visible: `NEXT_PUBLIC_SUPABASE_URL`,
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (RLS protects data). Server-only:
-`SUPABASE_SERVICE_ROLE_KEY` (share links and cleanup), `CRON_SECRET` (protects the cleanup
-route). Policy knobs: `DMS_PENDING_UPLOAD_MAX_AGE_HOURS` (default 24, minimum 3), `DMS_MAX_FILE_SIZE_MB`,
-`DMS_MAX_FILES_PER_BATCH`, `DMS_ALLOWED_EXTENSIONS`, `DMS_EXTRA_FILE_TYPES`,
-`DMS_ALLOW_DEV_MODE`.
+`.env.example` lists them all with comments. Never commit real values.
+
+| Variable | Notes |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL. Leave all Supabase variables unset to run in preview mode. |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable (anon) key. Safe in the browser: RLS protects the data. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only, never prefixed `NEXT_PUBLIC_`. Used for share links, the cleanup and reindex routes and Control center monitoring. |
+| `CRON_SECRET` | 16+ random characters, e.g. `openssl rand -hex 24`. Protects the cleanup and reindex routes. |
+| `NEXT_PUBLIC_SALES_EMAIL` | Optional. Where the landing page "Book a demo" form sends requests. |
+| `ANTHROPIC_API_KEY` | Optional, server only. Without it the assistant (Addy) answers with its built-in rules. Claude answers only for **Core +** workspaces. |
+| `ASSISTANT_MODEL` | Optional model override (default `claude-opus-5-5`). |
+| `DMS_PENDING_UPLOAD_MAX_AGE_HOURS` | Pending-upload cleanup age (default 24, minimum 3). |
+| `DMS_MAX_FILE_SIZE_MB`, `DMS_MAX_FILES_PER_BATCH` | Upload limits (defaults 50 MB, 10 files). |
+| `DMS_ALLOWED_EXTENSIONS`, `DMS_EXTRA_FILE_TYPES` | Narrow or extend the upload allow-list. |
+| `DMS_ALLOW_DEV_MODE` | Forces the server-memory development mode on in production. Do **not** set it for real client data. |
+| `CONTROL_DEMO` | `true` opens `/control` without sign-in on sample data (see the Control center). Ignored once Supabase is configured. |
 
 ## Architecture and security model
 
@@ -326,9 +340,9 @@ Extracted text is stored per document and searched with PostgreSQL full-text sea
 
 ```bash
 npm run typecheck && npm run lint
-npm test            # 276 unit/component tests (vitest)
-npm run test:db     # migrations + RLS against a throwaway local PostgreSQL 16 (237 PASS lines, including security and content-search regressions)
-npm run test:e2e    # Playwright: demo page, dev-mode server flows, content search, tablet/phone layout (32 tests)
+npm test            # unit/component tests (vitest)
+npm run test:db     # migrations + RLS against a throwaway local PostgreSQL 16 (includes security and content-search regressions)
+npm run test:e2e    # Playwright: demo page, dev-mode server flows, content search, tablet/phone layout
 ```
 
 * `tests/unit` – service rules (roles, **workspace isolation**, upload validation,
@@ -354,14 +368,9 @@ npm run test:e2e    # Playwright: demo page, dev-mode server flows, content sear
 
 ## Deployment
 
-Any Node host works (Vercel, Fly, Docker, …):
+Any Node host works (Vercel, Fly, Docker, …). Follow the [Go live checklist](#go-live-checklist): migrations and Auth, environment variables on the host (never `DMS_ALLOW_DEV_MODE`), then `npm run build && npm start` (Vercel: import the `document-management` directory).
 
-1. Apply the migrations and configure Auth as above.
-2. Set the environment variables on the host (do **not** set `DMS_ALLOW_DEV_MODE`).
-3. `npm run build && npm start` (Vercel: import the `document-management` directory).
-4. Smoke test with **two** accounts in two workspaces: sign up, create workspaces,
-   upload, download, preview, share link; confirm account B cannot see account A's
-   documents, and that `GET /api/dms/bootstrap` is 401 when signed out.
+Smoke test with **two** accounts in two workspaces: sign up, create workspaces, upload, download, preview, share link; confirm account B cannot see account A's documents, and that `GET /api/dms/bootstrap` is 401 when signed out.
 
 ### Scheduling the upload cleanup
 
@@ -439,7 +448,7 @@ abandoned uploads · per-user and per-address rate limiting.
   the full URL cannot be shown again after creation. Revocation is by link (no "revoke all
   for this document" button).
 * Expiration dates are informational (badge on cards); nothing enforces or notifies.
-* Previews: PDF, images, CSV, text only. No dark mode.
+* Previews: PDF, images, CSV, text only.
 * In preview mode, document search covers what you add in your own
   browser session. The Team screen needs a database and is not shown in the preview.
 * Styling follows the supplied reference screenshot (glass frame, centred document cards, floating upload and details panels) but is an interpretation, not a pixel match; fonts are Geist, bundled locally.
@@ -449,15 +458,6 @@ abandoned uploads · per-user and per-address rate limiting.
 * Dependencies were installed at current latest versions (Next 16.4, React 19, Tailwind 4,
   zod 4, Vitest 5; `fflate` for archives, `unpdf` for PDF text); `@hookform/resolvers` is pinned to v5 because v6 fails peer resolution.
 
-## Security
-
-See the [Security review](#security-review) section below for the pre-release review: fixed findings, open items and the deployment requirements it depends on (notably: keep Supabase Auth "Confirm email" on, set `CRON_SECRET`, apply migration `…0006_dms_security_hardening.sql`).
-
-**Demo switch.** To click through the screens before the database is set up, set `CONTROL_DEMO=true` on the server (Vercel →
-Settings → Environment Variables, then redeploy). `/control` then opens without sign-in and shows only built-in sample data;
-it never reads or writes the database and refuses every change. The switch is ignored as soon as Supabase is configured, so it
-cannot expose `/control` on a live deployment, but remove the variable before real clients use the app anyway.
-
 ## Go live checklist
 
 Do these three together; each needs the others to test properly. The sections above have the detail (Supabase setup, Environment variables, Deployment).
@@ -465,39 +465,23 @@ Do these three together; each needs the others to test properly. The sections ab
 ### 1. Database (Supabase)
 
 - [ ] Create a Supabase project.
-- [ ] Apply every file in `supabase/migrations`, in filename order (20 files at the time of writing).
+- [ ] Apply every file in `supabase/migrations`, in filename order.
 - [ ] Turn on **TOTP** under Authentication > Multi-Factor. Staff in the Control Center must use an authenticator app, and the database enforces it.
 - [ ] Set the auth **Site URL** and allowed **redirect URLs** to your hosted domain, including `/reset-password` and `/auth/callback`.
-- [ ] Sign up through `/signup`, then make yourself the first Owner (run once in the Supabase SQL editor):
-
-  ```sql
-  insert into public.staff_members (user_id, role, display_name, email)
-  select id, 'owner', 'Your Name', email from auth.users where email = 'you@example.com';
-  ```
+- [ ] Sign up through `/signup`, then make yourself the first Owner (the SQL is under [Control center](#control-center-staff-console)).
 - [ ] Copy from Project Settings > API: the project URL, the publishable (anon) key and the service-role key.
 - [ ] Optional: `npm run test:db` applies every migration to a throwaway local PostgreSQL 16 and runs the access-policy tests. It needs PostgreSQL 16 installed and does not touch your Supabase project.
 
 ### 2. Hosting (Vercel, or any Node host)
 
-Set these environment variables on the host (never commit real values; `.env.example` lists them all):
-
-| Variable | Notes |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable (anon) key. Safe in the browser. |
-| `SUPABASE_SERVICE_ROLE_KEY` | Server only. Used for share links and the cleanup job. Never prefix with `NEXT_PUBLIC_`. |
-| `CRON_SECRET` | 16+ random characters, e.g. `openssl rand -hex 24`. Protects the cleanup route. |
-| `NEXT_PUBLIC_SALES_EMAIL` | Optional. Where the landing page "Book a demo" form sends requests. |
+Set the variables in [Environment variables](#environment-variables) on the host: at least the two Supabase keys, `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET`.
 
 - [ ] Leave `DMS_ALLOW_DEV_MODE` unset. It must not be on for real client data.
 - [ ] `npm run build && npm start`, or import the repository into Vercel. `vercel.json` already schedules the nightly upload cleanup (03:17 UTC).
 
 ### 3. Assistant (Addy)
 
-- [ ] Set `ANTHROPIC_API_KEY` on the host. Without it Addy uses its built-in rules.
-- [ ] Optional: `ASSISTANT_MODEL` to change the model (default `claude-opus-5-5`).
-- [ ] Claude answers only for workspaces on the **Core +** plan. Core stays on the built-in rules.
-- [ ] Never paste the key into chat or commit it.
+- [ ] Set `ANTHROPIC_API_KEY` (and optionally `ASSISTANT_MODEL`) on the host; see Environment variables for what each does. Never paste the key into chat or commit it.
 
 ### After it is live: check these
 
@@ -814,16 +798,12 @@ Databases go last. Update this section in the same commit as the work.
 
 ## Working notes
 
-**Revision list (Kyle's 30 items):** the live list is the "Progress road map" section above. Branch `revision-part-1`, PR #22.
-Done without a database (everything keeps its records in the browser, like the rest of the app): icon sidebar, Contacts with Vendors tab, name greeting, home queue and where-to-begin, empty states, sentence-case labels, license templates/certifications/compliance/calendar/fees, invoice frequency label, Choose paperwork + print/PDF, signatures, onboarding packets, approval chains (Settings > Approvals), Reporting dropdown (scheduled reports, materials), custom project types, vendor follow-ups/notes/terms, stuck-approval flags, "Remind me", OCR for license and vendor-document photos, useful notifications, Contacts<->Forms bridge, assistant drafts with guardrails, motion.
-Waiting on a database or outside service (last): shared contact/vendor profiles, real vendor/contact record merge, emailing reminders and scheduled reports, naming an owner for stuck work, OCR of scanned PDFs and of the document index.
-To discuss first: setup for different industries, what the Projects module should include.
-Working notes for tests: run `npm run typecheck` before every push (the Vercel build type-checks tests). Run Playwright with `--output=/tmp/...` (traces written inside the project make the dev server reload pages in a loop and the first tests fail), and never leave a stray `next dev` running (a leaked one is reused and misbehaves).
+**Revision list (Kyle's 30 items):** see the "Progress road map" section above. Branch `revision-part-1`, PR #22.
+Working notes for tests: run `npm run typecheck` before every push (the Vercel build type-checks tests). A stale `next dev` or old `.next` makes pages reload in a loop and the first tests fail: kill any stray `next dev` (a leaked one is reused and misbehaves) and `rm -rf .next` before a run, and run Playwright with `--trace off` or `--output=/tmp/...` so traces are not written inside the project.
 
 ### Audit Edit Revisions (Nov 9)
 Invoices, licenses, vendors, contacts and projects now persist in localStorage (`src/lib/records/storage.ts`, keys `adflo.records.<kind>.v1`). Home, the bell and Reporting build from those records in the browser (`src/lib/records/sources.ts`), so `loadDashboardSources` on the server stays empty. Until the browser's day is known the hook returns empty, so hydration matches the server. AdFlo is not only for small businesses: keep that in mind when choosing demo sample data and product wording.
 Sample data: `src/lib/samples/data.ts` builds two sets from today's date (small shop, large regulated company), `storage.ts` loads or clears them, and `src/components/modules/sample-data.tsx` is the Home card and the Settings > Demo data tab. Add a set by adding an entry to `SAMPLE_SETS`. Sample records are written into the same browser storage as real ones, so the services treat them identically.
-Playwright tip: a stale `next dev` or old `.next` makes pages reload in a loop; kill it and `rm -rf .next` before a run.
 
 ### Design choices to review (change any of these)
 
@@ -838,21 +818,11 @@ Playwright tip: a stale `next dev` or old `.next` makes pages reload in a loop; 
 - License records from an industry are starting points that expire a term from today, with a note asking for the real numbers and dates. One that has the same name as a record the older "small-business" template already added is skipped.
 - Project templates: nine new ones (job closeout, inspection preparation, fleet compliance audit, new client matter, tax season prep, product launch, client project kickoff, enrollment period, production line audit). Each is tagged with the industries it suits and those are listed first in the New project template list.
 
-### To do
+### Open ideas
 - [ ] **Automation discovery** — go through every module and list what can be automated.
-- [~] **AI assistant** — live at `/app/assistant` (under Home). Claude-backed via `/api/assistant` once `ANTHROPIC_API_KEY` is set (tools: profile, recommend, deploy, status); until then the built-in rules answer. Untested against the real API. Next: let it open/fill modules.
-- [x] **Settings page** — renamed; tabs: Business profile, Team, Notifications, Appearance, Guided setup (`/app/setup?tab=...`).
 - [ ] **Admin research** — what else can an admin do?
-- [x] **Rename "Data Entry & Reporting" → "Reporting"** — already done (commit 87dacd6); verify no leftover labels.
-- [x] **Requests (was Admin Support)** — removed: it wasn't useful. Recurring work lives in Tasks (was Projects); approvals live in Forms and Vendors.
-- [x] **File reset** — now a one-time "Tidy up files" tool: out of the sidebar, linked from Documents and Guided setup.
-- [x] **Day/Night view switch** — done, in Settings › Appearance (Day, Night, Match my device).
-
-### Projects module (defaults chosen, change as you like)
-- A project has an owner, a progress bar from its tasks, milestones with dates, and a dated updates log (who, when, what).
-- A project can be linked to a contact or a vendor, so you can jump from the work to the person.
-- Recurring tasks moved out of Requests into a Recurring work project; Requests keeps requests and approvals.
-- Everything is kept in the browser, like the rest of the app, until the database is added.
+- [~] **AI assistant** — live at `/app/assistant` (under Home). Claude-backed via `/api/assistant` once `ANTHROPIC_API_KEY` is set (tools: profile, recommend, deploy, status); until then the built-in rules answer. Untested against the real API. Next: let it open/fill modules.
+- Settings (`/app/setup?tab=...`) has tabs Business profile, Team, Notifications, Appearance (Day, Night, Match my device) and Guided setup. File reset is now a one-time "Tidy up files" tool, linked from Documents and Guided setup.
 
 ### Merge of revision-part-1 into main (Nov 4)
 `main` had moved: another session removed Requests and approvals, renamed Projects to Tasks, redesigned Home and added form sending. Where the two disagreed, `main` won:
