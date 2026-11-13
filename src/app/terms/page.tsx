@@ -17,7 +17,6 @@ export default function TermsPage() {
       <section><h2>Cancelling and your data</h2><p>You can stop using AdFlo at any time. After cancellation we return your data on request, then delete it as described in our Privacy Policy.</p></section>
       <section><h2>Liability</h2><p>To the extent the law allows, AdFlo is provided &ldquo;as is&rdquo;, and our total liability for any claim is limited to the fees you paid in the three months before it arose. We are not liable for indirect or consequential losses.</p></section>
       <section><h2>Changes and contact</h2><p>We will tell you about material changes to these terms before they apply. Questions: {LEGAL_CONTACT}.</p></section>
-      <p className="rounded-lg border bg-muted p-3 text-xs text-muted-foreground">Draft for attorney review before use with paying clients.</p>
     </LegalPage>
   );
 }

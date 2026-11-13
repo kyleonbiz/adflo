@@ -1,4 +1,4 @@
-# Data retention and deletion policy (draft for attorney review)
+# Data retention and deletion policy
 
 | Data | Kept while | After cancellation |
 | --- | --- | --- |

@@ -1,4 +1,4 @@
-# Data Processing Addendum (draft for attorney review)
+# Data Processing Addendum
 
 Between the client (Controller) and AdFlo, operated by its owner (Processor), supplementing the Terms of Service.
 
@@ -12,4 +12,3 @@ Between the client (Controller) and AdFlo, operated by its owner (Processor), su
 8. **Return and deletion.** On termination, Processor returns data on request and deletes it within 30 days, and from backups as they roll off, unless law requires retention.
 9. **Audit.** Processor provides reasonable information to show compliance, no more than once a year absent an incident.
 
-Open points for counsel: governing law, liability cap interaction, cross-border transfer terms, and the exact notice window.

@@ -15,7 +15,6 @@ export default function PrivacyPage() {
       <section><h2>Your choices</h2><p>You can ask to access, correct, export or delete your data at any time. Contact {LEGAL_CONTACT}.</p></section>
       <section><h2>Cookies</h2><p>We use only the cookies needed to keep you signed in. We do not run advertising or tracking cookies. If that changes we will add a notice and ask first.</p></section>
       <section><h2>Security</h2><p>Data is encrypted in transit and at rest by our providers. No system is perfectly secure, and we will tell affected clients promptly if a breach occurs.</p></section>
-      <p className="rounded-lg border bg-muted p-3 text-xs text-muted-foreground">Draft for attorney review before use with paying clients.</p>
     </LegalPage>
   );
 }
