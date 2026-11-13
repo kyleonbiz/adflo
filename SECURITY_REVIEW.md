@@ -265,3 +265,15 @@ origin, `object-src 'none'`, `frame-ancestors 'none'`. The root layout stamps th
 - **Not verified:** document preview and upload against a hosted Supabase project, authenticator setup, the staff screens signed in.
 - **Cost:** pages that read the nonce render per request (the whole app is already dynamic). Styles keep `unsafe-inline` (React/Tailwind inline style attributes; not script-capable).
 - **Status of 19 and 23:** mitigated; closed once enforce is on in production.
+
+### Bot protection (2026-11-13)
+- **Sign-up, sign-in and password reset** (`auth-form.tsx`, `forgot-password-form.tsx`): optional Cloudflare Turnstile human check
+  (`src/components/auth/turnstile.tsx`), enabled by `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. The token goes to Supabase Auth, which verifies it
+  server-side once CAPTCHA is switched on in Supabase (Authentication → Attack Protection). **Both must be on together.** The sign-up form
+  also has a hidden trap field; a sign-up that fills it is dropped and shown the normal "check your email" message. The CSP allows
+  `challenges.cloudflare.com` only when the site key is set. Tests: `tests/unit/auth-form-bot.test.tsx`, `tests/unit/csp.test.ts`.
+- **Staff-sent password resets** are made server-side with no human-check token; with Supabase CAPTCHA on, those sends may be refused.
+  Test one after enabling, and tell me if it fails.
+- **Book a demo form** is a `mailto:` link: it submits nothing to the server, so there is nothing for a bot to flood and nothing to
+  protect. It only becomes a target once it posts to a server or an email service (roadmap: "Replace the Book a demo mailto form").
+  Add the human check and a rate limit at that point.

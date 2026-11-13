@@ -12,8 +12,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { safeNext } from "@/lib/safe-redirect";
 import { signInSchema } from "@/lib/dms/validation";
+import { TURNSTILE_SITE_KEY, Turnstile } from "./turnstile";
 
-const signUpSchema = signInSchema.extend({ fullName: z.string().trim().min(2, "Enter your name").max(80) });
+const signUpSchema = signInSchema.extend({ fullName: z.string().trim().min(2, "Enter your name").max(80), website: z.string().optional() });
 type SignInValues = z.infer<typeof signInSchema>;
 type SignUpValues = z.infer<typeof signUpSchema>;
 
@@ -24,10 +25,12 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
   const [info, setInfo] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const isSignup = mode === "signup";
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const form = useForm<SignUpValues>({
     // Demo mode checks nothing, so Log in can be pressed with the fields empty.
     resolver: demo ? undefined : zodResolver(isSignup ? signUpSchema : (signInSchema as unknown as typeof signUpSchema)),
-    defaultValues: { email: "", password: "", fullName: "" },
+    defaultValues: { email: "", password: "", fullName: "", website: "" },
   });
   const { register, handleSubmit, formState } = form;
 
@@ -38,6 +41,12 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
       router.replace(safeNext(next));
       return;
     }
+    // Honeypot: real people never see or fill this field. Pretend it worked so a bot learns nothing.
+    if (isSignup && values.website) return setInfo("Check your email to confirm your account, then sign in.");
+    if (TURNSTILE_SITE_KEY && !captcha) return setFormError("Please wait for the human check to finish, then try again.");
+    const captchaToken = captcha ?? undefined;
+    setCaptcha(null);
+    setCaptchaReset((n) => n + 1);
     const { createBrowserSupabase } = await import("@/lib/supabase/browser"); // loaded on submit, so the page itself stays light
     const supabase = createBrowserSupabase();
     if (isSignup) {
@@ -45,6 +54,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
         email: values.email,
         password: values.password,
         options: {
+          captchaToken,
           data: { full_name: values.fullName },
           emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -52,7 +62,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
       if (error) return setFormError(error.message);
       if (!data.session) return setInfo("Check your email to confirm your account, then sign in.");
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email: values.email, password: values.password });
+      const { error } = await supabase.auth.signInWithPassword({ email: values.email, password: values.password, options: { captchaToken } });
       if (error) return setFormError("Incorrect email or password.");
     }
     router.replace(safeNext(next));
@@ -105,6 +115,12 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
           </Link>
         )}
       </Field>
+      {isSignup && (
+        <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+          <label>Leave this field empty<input type="text" tabIndex={-1} autoComplete="off" {...register("website")} /></label>
+        </div>
+      )}
+      {!demo && <Turnstile onToken={setCaptcha} resetKey={captchaReset} />}
       {formError && (
         <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-destructive">
           {formError}

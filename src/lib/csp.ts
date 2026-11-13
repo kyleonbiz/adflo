@@ -36,20 +36,22 @@ function origin(url: string | undefined): string | null {
   }
 }
 
-export function buildCsp(nonce: string, opts: { dev?: boolean; supabaseUrl?: string } = {}): string {
+export function buildCsp(nonce: string, opts: { dev?: boolean; supabaseUrl?: string; turnstile?: boolean } = {}): string {
   const supa = origin(opts.supabaseUrl);
   const supaWs = supa ? supa.replace(/^http/, "ws") : null;
+  // Cloudflare Turnstile (sign-up human check) loads its script, a frame and a few requests from this host.
+  const ts = opts.turnstile ? "https://challenges.cloudflare.com" : null;
   const list = (...xs: (string | null | false | undefined)[]) => xs.filter(Boolean).join(" ");
   const directives = [
     "default-src 'self'",
     // 'unsafe-eval' only in development: React's dev tooling needs it.
-    `script-src ${list("'self'", `'nonce-${nonce}'`, "'strict-dynamic'", opts.dev && "'unsafe-eval'")}`,
+    `script-src ${list("'self'", `'nonce-${nonce}'`, "'strict-dynamic'", opts.dev && "'unsafe-eval'", ts)}`,
     "style-src 'self' 'unsafe-inline'",
     // Document previews load signed storage URLs; QR codes and small icons are data: URLs.
     `img-src ${list("'self'", "data:", "blob:", supa)}`,
     "font-src 'self' data:",
-    `connect-src ${list("'self'", supa, supaWs, opts.dev && "ws:")}`,
-    `frame-src ${list("'self'", "blob:", supa)}`,
+    `connect-src ${list("'self'", supa, supaWs, opts.dev && "ws:", ts)}`,
+    `frame-src ${list("'self'", "blob:", supa, ts)}`,
     "worker-src 'self' blob:",
     "manifest-src 'self'",
     "object-src 'none'",

@@ -23,6 +23,13 @@ describe("content security policy", () => {
     expect(dev).toContain("ws:");
     expect(dev).not.toContain("upgrade-insecure-requests");
   });
+  it("allows Cloudflare Turnstile only when the human check is switched on", () => {
+    expect(buildCsp("n", {})).not.toContain("cloudflare");
+    const on = buildCsp("n", { turnstile: true });
+    expect(on).toContain("frame-src 'self' blob: https://challenges.cloudflare.com");
+    expect(on).toContain("connect-src 'self' https://challenges.cloudflare.com");
+    expect(on).toContain("'strict-dynamic' https://challenges.cloudflare.com");
+  });
   it("generates a different unguessable nonce each time", () => {
     const a = newNonce(), b = newNonce();
     expect(a).not.toBe(b);

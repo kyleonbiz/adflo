@@ -9,7 +9,7 @@ export async function proxy(request: NextRequest) {
   const mode = cspMode();
   const headerName = cspHeaderName(mode);
   const nonce = newNonce();
-  const csp = buildCsp(nonce, { dev: process.env.NODE_ENV !== "production", supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL });
+  const csp = buildCsp(nonce, { dev: process.env.NODE_ENV !== "production", supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL, turnstile: !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY });
 
   // Next reads the nonce from the request's CSP header and stamps it on its own scripts; the layout reads x-nonce.
   if (headerName) request.headers.set(headerName, csp);
