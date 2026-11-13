@@ -13,7 +13,7 @@ import type { Industry, SetupConfig } from "./types";
 /**
  * What choosing an industry sets up. Every row says which template library to draw from and the few
  * numbers and names that differ; the libraries themselves live with their services. Change a row here
- * to change what that industry gets (the choices are listed in NOTES.md).
+ * to change what that industry gets (the choices are listed under "Working notes" in README.md).
  */
 export interface IndustryPreset {
   /** Which licenses library to draw from. */

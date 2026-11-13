@@ -1,4 +1,4 @@
--- Security hardening from the pre-release review (see SECURITY_REVIEW.md).
+-- Security hardening from the pre-release review (see the Security review section of README.md).
 
 -- 1. Quota bypass: dms_complete_upload trusted a caller-supplied size and never
 --    looked at the stored object. An editor could declare 1 byte, upload a 50 MB

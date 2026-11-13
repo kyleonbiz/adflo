@@ -34,14 +34,10 @@ admin busywork: reminders, duplicate checks and expiry tracking happen for you.
 
 **Built and working.** Invoice duplicate and unusual-amount warnings (opt-in, Settings > Invoice options); license
 Safe / Warning / Critical risk tiers with "depends on" links; vendor Non-compliant flag; role views; a shared email Send
-dialog on Invoices, Forms, Vendors, Licenses, Projects, Contacts and Documents. (The newest items are on the
-`invoice-checks` branch until it is merged.)
+dialog on Invoices, Forms, Vendors, Licenses, Projects, Contacts and Documents.
 
 **Not built yet.** Industry setup that renames screens (Construction, Healthcare, Property Management), the staff
 operations portal extras, chasing reminders, auto-saved drafts and a one-click audit ZIP.
-
-**Known issue.** The production build currently fails on `main`: the scanned-PDF reader (`@napi-rs/canvas`, imported
-from `src/lib/dms/extract/pdf.ts`) is pulled into the browser bundle. It is a loading problem, not a design one.
 
 **Where to look.** Screens: `src/components/<module>/`. Business rules: `src/lib/<module>/logic.ts` (each has unit tests
 in `tests/unit/`). Pages: `src/app/app/`. Database: `supabase/migrations/`.
@@ -164,6 +160,13 @@ browser and never uploaded.
 6. [Deployment](#deployment)
 7. [Implemented features](#implemented-features)
 8. [Limitations and what is not verified](#limitations-and-what-is-not-verified)
+9. [Go live checklist](#go-live-checklist)
+10. [Security review](#security-review)
+11. [Progress road map](#progress-road-map)
+12. [Working notes](#working-notes)
+13. [Changelog](#changelog)
+
+Support and operations material (email templates, onboarding runbook, help articles, support policy) stays in `docs/support/`. Instructions for coding assistants are in `CLAUDE.md` and `AGENTS.md`.
 
 ## Quick start (no credentials)
 
@@ -448,9 +451,418 @@ abandoned uploads · per-user and per-address rate limiting.
 
 ## Security
 
-See [SECURITY_REVIEW.md](SECURITY_REVIEW.md) for the pre-release review: fixed findings, open items and the deployment requirements it depends on (notably: keep Supabase Auth "Confirm email" on, set `CRON_SECRET`, apply migration `…0006_dms_security_hardening.sql`).
+See the [Security review](#security-review) section below for the pre-release review: fixed findings, open items and the deployment requirements it depends on (notably: keep Supabase Auth "Confirm email" on, set `CRON_SECRET`, apply migration `…0006_dms_security_hardening.sql`).
 
 **Demo switch.** To click through the screens before the database is set up, set `CONTROL_DEMO=true` on the server (Vercel →
 Settings → Environment Variables, then redeploy). `/control` then opens without sign-in and shows only built-in sample data;
 it never reads or writes the database and refuses every change. The switch is ignored as soon as Supabase is configured, so it
 cannot expose `/control` on a live deployment, but remove the variable before real clients use the app anyway.
+
+## Go live checklist
+
+Do these three together; each needs the others to test properly. The sections above have the detail (Supabase setup, Environment variables, Deployment).
+
+### 1. Database (Supabase)
+
+- [ ] Create a Supabase project.
+- [ ] Apply every file in `supabase/migrations`, in filename order (20 files at the time of writing).
+- [ ] Turn on **TOTP** under Authentication > Multi-Factor. Staff in the Control Center must use an authenticator app, and the database enforces it.
+- [ ] Set the auth **Site URL** and allowed **redirect URLs** to your hosted domain, including `/reset-password` and `/auth/callback`.
+- [ ] Sign up through `/signup`, then make yourself the first Owner (run once in the Supabase SQL editor):
+
+  ```sql
+  insert into public.staff_members (user_id, role, display_name, email)
+  select id, 'owner', 'Your Name', email from auth.users where email = 'you@example.com';
+  ```
+- [ ] Copy from Project Settings > API: the project URL, the publishable (anon) key and the service-role key.
+- [ ] Optional: `npm run test:db` applies every migration to a throwaway local PostgreSQL 16 and runs the access-policy tests. It needs PostgreSQL 16 installed and does not touch your Supabase project.
+
+### 2. Hosting (Vercel, or any Node host)
+
+Set these environment variables on the host (never commit real values; `.env.example` lists them all):
+
+| Variable | Notes |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable (anon) key. Safe in the browser. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server only. Used for share links and the cleanup job. Never prefix with `NEXT_PUBLIC_`. |
+| `CRON_SECRET` | 16+ random characters, e.g. `openssl rand -hex 24`. Protects the cleanup route. |
+| `NEXT_PUBLIC_SALES_EMAIL` | Optional. Where the landing page "Book a demo" form sends requests. |
+
+- [ ] Leave `DMS_ALLOW_DEV_MODE` unset. It must not be on for real client data.
+- [ ] `npm run build && npm start`, or import the repository into Vercel. `vercel.json` already schedules the nightly upload cleanup (03:17 UTC).
+
+### 3. Assistant (Addy)
+
+- [ ] Set `ANTHROPIC_API_KEY` on the host. Without it Addy uses its built-in rules.
+- [ ] Optional: `ASSISTANT_MODEL` to change the model (default `claude-opus-5-5`).
+- [ ] Claude answers only for workspaces on the **Core +** plan. Core stays on the built-in rules.
+- [ ] Never paste the key into chat or commit it.
+
+### After it is live: check these
+
+- [ ] Sign up, create a workspace, sign out and back in.
+- [ ] Upload a document, search for text inside it, create and open a share link.
+- [ ] `/control`: sign in as the Owner with an authenticator code; a non-staff account gets a 404.
+- [ ] Send a password reset from the Control Center and follow the link to `/reset-password`.
+- [ ] Ask Addy to set up a business; confirm it asks before deploying and that it refuses card numbers and passwords.
+- [ ] Monitoring page in the Control Center: every health check green.
+
+### Know before you go live
+
+Connecting the database gives real sign-in, workspaces, Documents storage, share links and the Control Center. It also saves **licenses and tasks (projects)** to the workspace, shared by everyone on the team and kept across devices (table `workspace_records`, from the `workspace_records` migration; editors and above can change them, viewers can only read). Home, Reporting and the bell read those saved records.
+
+**Invoices, vendors, contacts and forms are still saved only in each visitor's browser.** They use the same save path and only need switching on (add the service to `PERSISTED_KINDS` in `src/lib/records/supabase-backend.ts`, then check it). Sample data is switched off for a connected workspace, so it can never replace real records.
+
+After the database is connected, also check:
+- [ ] Add a license, refresh the page, and it is still there. Open the app in a second browser signed in as a teammate: they see it too.
+- [ ] Sign in as a **viewer**: licenses and tasks show, and a change is refused with a "view-only" message rather than failing silently.
+
+## Security review
+
+Scope: everything under `document-management/` (Next.js routes, service layer, Supabase adapters,
+SQL migrations 1–6, proxy, config). Migration 7 and the content-search pipeline were added afterwards and
+are covered in the addendum at the end; the findings table below predates them. The Python
+repo root is out of scope.
+
+Method: manual read of every API route, `proxy.ts`, the auth routes, the service and adapters, and all
+SQL (RLS, `SECURITY DEFINER` functions, storage policies), plus `npm audit` and live probes of the
+suspected issues. Confirmed Critical/High/Medium findings were fixed with regression tests.
+
+**Not verified against a hosted Supabase project.** Behaviour of Supabase Auth, PostgREST, Storage
+(signed upload URL semantics, `storage.objects.metadata`, `Content-Disposition` handling) is
+inferred from documentation and the local PostgreSQL harness with stubbed `auth`/`storage` schemas.
+See "Needs a hosted project" at the end.
+
+### Summary
+
+| # | Severity | Finding | Status |
+|---|----------|---------|--------|
+| 1 | Medium | Open redirect in `/auth/callback?next=` via tab/newline (`/%09/evil.com`) | Fixed |
+| 2 | Medium | Storage-quota bypass: `dms_complete_upload` trusted a caller-supplied size | Fixed |
+| 3 | Medium | Share links could be minted with any expiry through the API (7-day cap bypass) | Fixed |
+| 4 | Medium | Unlimited self-service workspaces, each with its own default quota | Fixed (cap of 5 owned) |
+| 5 | Medium | Operator-configurable upload types could enable HTML/SVG/JS (stored XSS on inline serving) | Fixed (blocklist) |
+| 6 | Low | `/auth/signout` accepted cross-site POST (logout CSRF) | Fixed |
+| 7 | Low | Origin check tolerated a missing header with `Sec-Fetch-Site: cross-site` | Fixed |
+| 8 | Low | File names written directly through the API bypass the sanitiser; used in `Content-Disposition` | Fixed (DB check + re-sanitise) |
+| 9 | Low | `create_workspace` stored a client-supplied email on the member row | Fixed |
+| 10 | Low | JSON bodies parsed with no size cap | Fixed (256 KB) |
+| 11 | Info | Missing HSTS / clickjacking / base-uri / form-action headers | Fixed (see note on CSP) |
+| 12–19 | Low/Info | Open, see "Open items" | Open |
+
+No Critical or High findings were confirmed.
+
+### Fixed findings
+
+#### 1. Open redirect after sign-in — Medium
+`src/lib/safe-redirect.ts` (was lines 2–4); used by `src/app/auth/callback/route.ts:9,13` and `src/components/auth/auth-form.tsx:50`.
+`safeNext` rejected `//` and `\` but not tab/CR/LF. The WHATWG URL parser strips those, so
+`next=/%09/evil.com` → `new URL("/\t/evil.com", origin)` → `https://evil.com`. Reproduced with Node before the fix.
+Exploit: attacker sends a victim a callback link carrying a valid code (e.g. their own) and a hostile `next`;
+the victim is signed in (login CSRF) and bounced to a phishing page that looks like the post-login screen.
+Fix: accept only visible ASCII, no backslash, no leading `//`, and confirm by parsing that the result stays on the
+same origin; return the re-serialised path. Tests: `tests/unit/security.test.ts` (14 hostile inputs + a 3,000-case fuzz).
+
+#### 2. Storage quota bypass in `dms_complete_upload` — Medium
+`supabase/migrations/…0003_dms_functions.sql:185-206` (replaced in `…0006_dms_security_hardening.sql`).
+The function wrote the **caller-supplied** `p_size` into `document_versions` / `documents` and never looked at the
+stored object. Quota is checked against the size *declared* at `dms_begin_upload`. An editor calling the RPC directly could
+declare 1 byte, upload a 50 MB object (the bucket only enforces a per-object limit), then complete with `p_size = 1`,
+repeating without ever consuming quota. The app's own `finalizeUpload` compared sizes, but the database did not.
+Fix: the function now ignores `p_size`/`p_mime`, requires the object to exist in `storage.objects`, and requires its stored
+size to equal the declared (quota-checked) size. SQL tests: object missing, size mismatch, lying `p_size`, version stays pending.
+
+#### 3. Share-link lifetime cap bypass — Medium
+`supabase/migrations/…0002_dms_rls.sql:105-106` (insert policy), `src/lib/dms/supabase/repository.ts:293`.
+The 7-day cap lived only in the service layer; the table accepts client inserts, so an editor could insert a link row
+with `expires_at` 100 years out (and arbitrary `created_at`/`revoked_at`), creating a permanent public URL to a
+client document that outlives the member's access.
+Fix: `BEFORE INSERT` trigger `dms_share_links_guard` (for the `authenticated` role) forces `created_at = now()`, clears
+`revoked_at`, and rejects `expires_at` beyond 7 days. SQL tests cover 30 days, "never", exactly 7 days, forged timestamps.
+
+#### 4. Unlimited workspaces → unlimited quota — Medium
+`supabase/migrations/…0003_dms_functions.sql:110-131`.
+Any authenticated user could call `create_workspace` repeatedly, each workspace getting the default 5 GB quota.
+Fix: a user may own at most 5 workspaces (`workspace_limit`, mapped to a friendly error). Product decision to confirm:
+the number, and whether self-created workspaces should get a smaller default quota than paid ones.
+
+#### 5. Active-content file types could be enabled by configuration — Medium
+`src/lib/dms/config.ts` (`DMS_EXTRA_FILE_TYPES`).
+An operator (or a mistake) adding `html=text/html` or `svg=image/svg+xml` would let users store files that execute script
+when opened inline (the dev download route serves same-origin; Supabase serves from its storage origin).
+Fix: `BLOCKED_EXTENSIONS` / `BLOCKED_MIME_PATTERNS` are applied to extra types and cannot be overridden by env. The default allow-list
+(pdf, docx, xlsx, pptx, csv, jpg, jpeg, png, txt) is also asserted to contain none. Note the storage bucket's own
+`allowed_mime_types` (migration 4) already fails closed for any type not listed there.
+
+#### 6–7. Cross-site request handling — Low
+`src/app/auth/signout/route.ts` had no origin check, and `sameOrigin()` (`src/lib/dms/server/respond.ts`) allowed a request with no
+`Origin` even when the browser said `Sec-Fetch-Site: cross-site`. JSON-only bodies are required and `@supabase/ssr` cookies are expected to be `SameSite=Lax`
+(unverified, see the last section), so exploitability was low; both now reject cross-site requests, and sign-out reuses the same check.
+
+#### 8. File names bypassing the sanitiser — Low
+Editors can `PATCH` `documents.display_name` through PostgREST directly. That value reaches `Content-Disposition` via the
+signed-URL `download` option (`src/lib/dms/supabase/storage.ts`, `src/app/share/[token]/route.ts`).
+Fix: `NOT VALID` CHECK constraints reject control characters and `/` `\` in `display_name`/`original_name` for new and updated
+rows, and both download paths re-sanitise the name. (Run `ALTER TABLE … VALIDATE CONSTRAINT` after cleaning any legacy rows.)
+
+#### 9–10. Smaller hardening — Low
+`create_workspace` now reads the member email from `auth.users` instead of a client argument (spoofed emails could confuse the
+"already a member" check and the team list). `readJson` refuses bodies over 256 KB before parsing.
+
+#### 11. Headers — Info
+Added `Strict-Transport-Security`, `Cross-Origin-Opener-Policy`, and a CSP limited to `frame-ancestors 'none'; base-uri 'self';
+form-action 'self'; object-src 'none'`. A full `script-src` policy needs per-request nonces with this Next version and was
+not attempted; React escapes all file-derived text and there is no `dangerouslySetInnerHTML`/`innerHTML` in `src/`.
+
+### Reviewed and found sound
+
+- **Authn on every route.** All `/api/dms/*` handlers run through `route()` → `getDms()` → `auth.getUser()` (validated with the auth
+  server, not just the cookie); `proxy.ts` additionally 401s unauthenticated `/api/dms` calls. Dev routes return 404 unless dev mode is
+  allowed, which requires Supabase to be unconfigured and `NODE_ENV !== "production"` (or an explicit `DMS_ALLOW_DEV_MODE=true`).
+- **Tenant isolation.** The workspace id is derived server-side from the caller's membership, never from the request. Every repository
+  query is scoped by workspace *and* runs as the user, so RLS applies. All helper/RPC functions are `search_path = ''`; `SECURITY DEFINER`
+  functions check roles explicitly; cross-workspace composite FKs prevent a row referencing another workspace's folder/document/tag.
+  Grants: `anon` has no table privileges; sensitive RPCs (`dms_resolve_share`, `dms_cleanup_stale_uploads`, `dms_audit_write`) are
+  `service_role`/internal only.
+- **Storage.** Keys are generated by the database from validated parts (`<ws>/<doc>/v<n>-<nonce>.<ext>`), so path traversal is impossible;
+  the insert policy only allows an object for a pending version the caller opened; ready objects cannot be deleted or overwritten
+  (no update policy), which closes the finalize TOCTOU for the content that was verified.
+- **Invites and roles.** Acceptance requires `email_confirmed_at`; admins cannot create/modify/remove admins or owners; no self role
+  change; last-owner rule serialised with row locks.
+- **Share links.** 256-bit random token, only the SHA-256 is stored, 60-second signed redirect, `no-referrer`, revocation and
+  use auditing, service-role key used only in `/share/[token]` and the cleanup route and never imported by client code.
+- **Cleanup route.** Constant-time comparison (hashes both sides), requires a ≥16-character `CRON_SECRET`, fails closed if unset.
+- **Logging.** Only error class names and Postgres error codes are logged; no file names, tokens or document contents.
+- **Dependencies.** `npm audit` reports 0 vulnerabilities (prod and dev).
+- **DoS bounds.** Page size ≤ 100 (zod and SQL), search ≤ 100 chars, tags ≤ 20 per document, per-user rate limits on writes, uploads, shares, invites.
+
+### Open items (not fixed)
+
+| # | Sev | Item | Why / mitigation |
+|---|-----|------|------------------|
+| 12 | Low | Rate limiting is in memory per instance and the public-share limiter keys on the first `X-Forwarded-For` entry, which a client can spoof on hosts that append rather than overwrite it. | Tokens are 256-bit so guessing is infeasible; the limiter only blunts noise. Needs a shared limiter (CDN/WAF/Redis) for a hard guarantee. |
+| 13 | Low | Guard bypass relies on a transaction-local GUC (`dms.rpc`). Safe today because PostgREST cannot run `set_config`, but any future SQL-executing RPC would defeat it. | Design hardening; do not add RPCs that execute caller-supplied SQL. |
+| 14 | Low | Editors can still edit `uploaded_by_name`, `category`, `starred` etc. directly, and pass `p_user_name` to `dms_begin_upload`, so the "uploaded by" label is spoofable (the real `uploaded_by` uuid and audit actor are not). | Integrity of a display label; fix by reading the name from `workspace_members` in the RPC. |
+| 15 | Low | An editor can create many pending uploads that reserve quota until the 24 h cleanup (rate-limited at 60/min). | Insider self-DoS of shared quota; lower `DMS_PENDING_UPLOAD_MAX_AGE_HOURS` or add a per-user pending cap. |
+| 16 | Low | Share links outlive the member who created them; removing a member does not revoke their links. | By design (links are workspace assets); admins can revoke from the document panel. Consider auto-revoking on member removal. |
+| 17 | Low | Finalize compares size and magic bytes but not the stored `Content-Type` against the extension; a `.png` could be stored as `application/pdf` (both allowed by the bucket). | No script-capable type is allowed, so impact is a mislabelled download. |
+| 18 | Info | CSV/Excel "formula injection" if a downloaded CSV is opened in a spreadsheet. | Content is the uploader's own; out of scope for storage. |
+| 19 | Info | No CSP `script-src`. | See finding 11. |
+
+### Deployment requirements this review depends on
+
+- Supabase Auth **"Confirm email" must stay enabled**; otherwise anyone can sign up with an invited address and be auto-joined.
+- Set `CRON_SECRET` (≥16 chars); keep `SUPABASE_SERVICE_ROLE_KEY` server-side only and never prefix it `NEXT_PUBLIC_`.
+- Apply migration `20261023000006_dms_security_hardening.sql`, then validate the new CHECK constraints.
+- Do not set `DMS_ALLOW_DEV_MODE=true` in production.
+
+### Needs a hosted project to verify
+
+1. `storage.objects.metadata->>'size'` is populated for objects uploaded through signed upload URLs (migration 6 depends on it).
+2. A signed upload URL cannot be replayed to overwrite an existing object (we rely on `upsert` being off and no update policy).
+3. How Supabase Storage renders the `download=` name in `Content-Disposition` for unusual names.
+4. Auth cookie attributes (`SameSite`, `Secure`) set by `@supabase/ssr` in production.
+5. End-to-end behaviour of every RLS policy through real PostgREST (the harness exercises them at the SQL layer only).
+
+### Addendum: content search (migration 7, `src/lib/dms/extract/`)
+
+Reviewed by reading the code and exercising it with tests; **not** penetration-tested, and not run against a hosted
+Supabase project. No Critical/High findings. Design choices and residual risks:
+
+| Area | What was done | Residual risk |
+|------|---------------|---------------|
+| Parsing hostile files | Only whitelisted extensions are parsed. Input ≤ 25 MB; archives ≤ 3,000 entries, 40 MB/entry, 80 MB total, 150× ratio, enforced on bytes actually inflated (headers are not trusted); a 20 s deadline checked between units of work plus a hard race; PDFs ≤ 300 pages with scripts/XFA/font loading off; OOXML read by a minimal tag scanner (no DOM, no DOCTYPE, no external entities, only the five XML entities). Tests cover zip bombs (size and ratio), too many entries, truncated/corrupt/lying archives, encrypted entries, DOCTYPE entities, shared-string amplification, garbage PDFs and the deadline. | Parsing runs in the Next.js server process, not a sandbox. A parser bug in PDF.js or fflate would run with the app's privileges; the timeout cannot interrupt a synchronous CPU loop inside a library. Run behind a platform function limit, and consider a separate worker if untrusted users can upload. |
+| Who can write text | `content_*` columns are protected by the existing guard trigger; the only writers are `dms_set_document_content` (editor+, current version only) and a service-role twin used by the reindex route. | An editor can call the RPC directly and store text that is **not** in the file (search poisoning inside their own workspace). They can already upload any file, so no boundary is crossed; admins can re-run the extraction by uploading a new version. |
+| Stale / racing writes | A write must name the document's current version, so a slow extraction cannot overwrite a newer version; a new version clears old text in the same transaction as completion. | None known. |
+| Tenant isolation | Search is SECURITY INVOKER (RLS applies), queue RPCs filter by workspace and role, service-role functions are not executable by `anon`/`authenticated`. Tested: a member of another workspace sees no text, no matches, no queue entries. | Text is as visible as the document row to every member who can read it, including viewers. |
+| Snippet injection | Snippets are plain text from `ts_headline` (which drops tags) with U+E000/U+E001 as highlight delimiters; those and control characters are stripped before storage. The UI only renders them as React text nodes; there is still no `dangerouslySetInnerHTML`. | None known. |
+| Resource limits | Stored text ≤ 400,000 characters (also keeps the tsvector under PostgreSQL's 1 MB limit); search input ≤ 100 characters; `ts_headline` runs on the returned page only, on at most 200,000 characters per row; reindex is bounded per call (≤ 100 documents, 45 s) and gated by `CRON_SECRET`. | A query over a very large workspace is limited by the GIN index and `ts_rank_cd`; not load-tested. |
+| Background work | `after()` indexing never affects the upload response; errors are swallowed and leave the document `pending`/`failed`. Bootstrap indexes ≤ 5 pending documents for editors only. | Many concurrent bootstraps can index the same document more than once (idempotent, wasteful). |
+| Logging | Nothing about file names, keys or text is logged; the reindex route returns counts only. | — |
+
+Deployment note: apply migration `20261023000007_dms_content_search.sql`. It drops and recreates the generated
+`search_vector` column (content only) and resets nothing else; existing documents become `pending` and are indexed
+by the backfill described in the README.
+
+
+### Addendum 2 (2026-11-05): control center, agreements, assistant, licenses, public pages
+
+Scope: everything added after the first review: migrations 8–19, the staff Control Center and its API, the public agreement
+flow, the Claude assistant, license parsing/OCR, the public invoice page, plan gating, and a dependency and git-history scan.
+Method: read every new route, helper and SQL function (grants, `SECURITY DEFINER` bodies, RLS policies); ran the full SQL
+suite, typecheck, lint, unit and e2e tests; reproduced each fixed issue against the old code before fixing it.
+**Not** a penetration test and **not** run against a hosted Supabase project (same limits as above).
+
+| # | Severity | Finding | Status |
+|---|----------|---------|--------|
+| 20 | Medium | The stored agreement-link hash was itself a credential: `agreement_public_accept(hash, …)` is callable by `anon`, and every staff role (including read-only billing) can `SELECT` `token_hash`. Anyone able to read that column, a backup or a query result could record a client's legal acceptance without the link. | Fixed (migration 19) |
+| 21 | Low–Med | `CONTROL_DEMO=true` left on after Supabase was connected removed the sign-in redirect for `/control` (the proxy returned 200 to anonymous users; sample data only). The proxy clause only ever took effect in that exact combination. | Fixed |
+| 22 | Medium (design) | `/invoice/[token]` carries the whole invoice, unsigned, in the URL and renders it on the app's own origin. XSS is not possible today (every string is escaped, dates pass a strict anchored regex), but anyone can mint an "invoice from AdFlo" with their own payment details on your domain. | **Open: decision needed** |
+| 23 | Medium (defence in depth) | No CSP `script-src` (item 19). More relevant now: `invoice/[token]` uses `dangerouslySetInnerHTML` on a cookie-bearing origin, so a single future escaping mistake there is script execution. | **Open: decision needed** |
+| 24 | Medium (architecture) | Many modules (todos, approvals, signing, audit, reminders, packets, settings, and staff billing in `lib/control/billing-storage.ts`) persist business data in the browser's `localStorage`: no server auth, no RLS, no audit trail, readable by any script on the origin, and left on shared computers. | **Open: decision needed** |
+| 25 | Low | Agreement acceptance proves possession of the link, not who the signer is. Staff who relay the link (the UI shows it to them) can accept it. | Open: send the link to the client from the server and record IP / user agent. |
+| 26 | Low | Assistant spend is capped only by the per-instance in-memory limiter (20 messages/min/user, up to 6 model calls each). | Open: add a per-user daily cap in the database. |
+| 27 | Low | Password-reset `redirectTo` is built from the request origin. | Open: set `NEXT_PUBLIC_SITE_URL` and rely on Supabase's Redirect URL allow-list. |
+| 28 | Low | `/api/licenses/parse` buffers a multipart body before the size check when no `Content-Length` is sent. Vercel's request-size cap hides this; a self-hosted deployment needs a proxy limit. | Open |
+| 29 | Info | `planIncludes()` fails open when it cannot tell (by design). Plan gating is a billing control, not a security boundary. | Accepted |
+
+#### 20. Agreement hash as bearer credential: fixed
+Before: the app hashed the secret and passed the hash to `agreement_public_view/accept`. After (`…0019_agreement_verify_secret_in_db.sql`):
+both functions take the 43-character secret and hash it in the database, so the stored hash matches nothing if replayed.
+Tests: `supabase/tests/control4.sql` (billing reads the hash and cannot accept with it; the hash shows nothing to anon; malformed
+and wrong-length secrets are refused), `tests/unit/agreement-accept-route.test.ts` (the route sends the secret, never a hash).
+Reproduced first: against the old functions the billing-forgery assertion fails. **Deploy the app and the migration together**;
+until both are live, links fail closed ("not valid").
+Residual: see item 25.
+
+#### 21. Demo switch: fixed
+`controlDemoActive()` (`src/lib/supabase/env.ts`) is true only when `CONTROL_DEMO=true` **and** Supabase is not configured; the
+proxy no longer consults the variable. Tests in `tests/unit/auth.test.ts`; reproduced first (old proxy answered 200 for `/control`).
+
+#### Reviewed and found sound
+- **Database authorization.** Every `SECURITY DEFINER` function sets `search_path = ''`; execute is revoked from `public`/`anon`
+  everywhere except the two agreement functions that are meant to be public; every staff function checks `is_staff(...)` itself, and
+  `staff_role()` requires `aal2`, so the second factor is enforced by the database, not only the app. Role changes are owner-only, the
+  last-owner rule is a trigger, `app_errors` is written only by the service role. All 11 new tables have RLS enabled.
+- **Staff API.** Each route goes through `staffRoute`: same-origin check, active staff row, `aal2`, then role. Password-reset email
+  only goes to an address that belongs to a client and is audit-logged.
+- **Assistant.** It never reads server data. It edits a setup config the client sent (re-validated on return) and can only emit
+  same-origin "draft" links built from fixed paths and allow-listed, length- and shape-checked fields; it rejects card, SSN and
+  password-like values and cannot save, send, approve or delete. Prompt injection therefore cannot reach another tenant or any record.
+- **Maintenance routes** (`CRON_SECRET`, constant-time compare, fail closed), **share links** (service-role RPC only) and **auth callback**
+  unchanged and sound.
+- **Dependencies.** `npm audit --omit=dev`: 0 vulnerabilities. Eight *moderate* findings exist in the dev-only lint chain
+  (`minimatch` ReDoS via `typescript-eslint`); nothing ships. `npm audit fix` would downgrade `eslint-config-next` by a major
+  version, so it was not applied.
+- **Secrets.** Pattern scan (Anthropic and GitHub tokens, Supabase JWTs and `sbp_` tokens, AWS keys, private keys) over the tree and all 81
+  commits found nothing; the scan was checked with a positive control. `.env` files were never committed (only `.env.example`).
+
+#### Test-suite repairs (no behaviour change)
+`supabase/tests/control2.sql` had two stale assertions that failed on `main` and stopped `test:db` before the control, agreement and
+monitoring suites ran: it counted exactly one `plan.insert` audit row and exactly two visible plans, but the tier migrations (15, 17)
+seed more. They now assert on the plan the test creates. `test:db` is green again (355 assertions).
+
+#### Deployment requirements added
+- Apply `20261105000019_agreement_verify_secret_in_db.sql` together with this release.
+- Remove `CONTROL_DEMO` from production anyway; it is now ignored once Supabase is configured.
+- Supabase Auth: keep "Confirm email" on, add your production URL to the Redirect URL allow-list (item 27), and consider requiring
+  MFA for staff accounts at enrolment time. These are hosted settings this review could not see.
+
+## Progress road map
+
+Kyle's list, in the order it was given. `[x]` done, `[~]` partly done, `[ ]` not started.
+Databases go last. Update this section in the same commit as the work.
+
+- [x] Task reminders so admin work doesn't fall through cracks ("Remind me" on project tasks puts them in the bell and the home feed; Requests no longer exists on main)
+- [x] "+" under Projects to add your own project types (in the new-project template dropdown; saved in this browser)
+- [x] Sidebar minimizes to icons only
+- [x] Home screen: more innovative (queue, day summary, where-to-begin cards while empty)
+- [x] Make the app feel alive (pages rise into place in turn, the bell pulses for new items, progress bars animate, home suggests where to begin; all motion off for reduced-motion settings)
+- [x] AI agent can complete tasks in any module, with per-module guardrails (prepares drafts in invoices, requests, contacts, vendors, projects and licenses that open prefilled for you to save; cannot save, delete, approve, pay, send or sign; refuses card numbers, SSNs, passwords and tax IDs; max 3 drafts a turn)
+- [x] Addressed by your name in the app
+- [x] Invoice tracking: frequency choice, stays open until paid (one-time to yearly, shown on each invoice; stays Sent or Overdue until marked paid)
+- [x] Licenses & Renewals: templates by business (vehicle registration, tags, insurance, inspection, and 7 other business types)
+- [x] Pages stop opening to bare home screens (each module explains itself with a first step when empty; home suggests where to begin)
+- [x] Explore more of Licenses & Renewals (templates, certification and policy types, compliance score, add renewals to your calendar, renewal fees with what is coming up in 90 days)
+- [x] Vendors: deeper dive (payment terms, how critical, contract end alerts, yearly spend with a 1099 and W-9 check, rating, reminders and notes log, CSV columns)
+- [x] Queue on the home dashboard
+- [~] Bridge Vendors -> Contacts (menu merged; records still separate, needs database)
+- [x] Discuss: what the Projects module should include (built with defaults: owner, progress bar, milestones, dated updates log, link to a contact or vendor, project types; recurring tasks moved here from Requests)
+- [x] Discuss: setup for different industries (built with defaults, 17 industries, tick-box bundles in setup, follows industry changes in Settings; every choice is written up in the README working notes for Kyle to adjust)
+- [x] Forms & Paperwork: pick paperwork by business type (28 forms, repeating ones flagged; print, PDF or download after filling in)
+- [x] Reporting: dropdown with Reports, Scheduled reports, Materials (scheduled: due banner, print or PDF, no email yet; materials: summary plus per-service PDF and CSV)
+- [x] Remove anything that looks AI-coded (Title Case labels now sentence case, blue-to-violet gradients and gradient buttons gone, flat navy sign-in)
+- [ ] Approval chain (built, then removed: main dropped approvals from Forms and Vendors, so it was not carried over)
+- [~] Fix for invisible admin bottlenecks (approvals unanswered for 5 days and unstarted work with no due date now flagged in the digest, bell and home feed; escalating to a named owner needs team data)
+- [x] Document signing (in Forms: typed-name signatures with an explicit agreement, several signers, SHA-256 fingerprint and signed-copy PDF; not a certified e-signature service)
+- [x] "Needs your attention" feed
+- [x] OCR (photos and scans of licenses and certificates are read: license upload fills the form, and attaching a certificate to a vendor document reads its expiry date; scanned PDFs and the document index are not OCR'd yet)
+- [x] Bridge gaps between Contacts and Forms (fill out a form for a contact with their details already in; add the person from a filled-in form to Contacts)
+- [x] CRM renamed to Contacts
+- [x] Notifications made very useful (bell respects the Settings choices, marks what is new, snoozes per item, lists what is waiting on you and for how long)
+- [x] Certifications and compliance tracking for licenses and policies (Certification and Policy types with templates, review cycle = renewal term with reminders, document checklist, compliance score)
+- [x] Onboarding packets (in Forms: new employee, vendor and client packets of forms, documents and signatures; progress bar, stale flag after 7 days, print or PDF checklist)
+- [~] Ghosting fix: automated vendor compliance reminders + comments/notes log for updates and CYA (due-reminder rules, escalating wording, ghosted flag after 3 and a dated notes log done; sending opens your email app until a mail service exists)
+- [ ] Contact / vendor profile with all their documents and notes in one place (needs database)
+- [ ] Databases (last)
+
+### Round 2 (your newer list, plus what did not survive the merge)
+
+- [x] Licenses & Renewals gets its own tab on the dashboard (counts by state, what expires next, good-standing percent)
+- [x] Audit trail: who did what and when (new Activity page: the person's name, what they did, the time; filter by area; saved in this browser)
+- [x] Calendar page in the navigation menu (month grid and agenda; invoices due, license expiries and renewals, tasks, milestones, vendor documents, reminders; filter by kind)
+- [x] Fix the Reporting page: it is just a bunch of boxes (overview now leads with headline numbers, a ranked where-to-look-first list, a records-by-service chart and a service-by-service table; each service report has one key-numbers panel)
+- [x] Dropdowns on service tabs where they make sense (sidebar now opens Contacts, Tasks and Reporting to their sections; Add license, Add contact and New form each have an arrow with the other ways to add; Reporting has one Export menu for CSV or Excel)
+- [x] Rename the AI assistant to Addy
+- [x] Send a form after creating it (main already had a Send button on each form; now the Send dialog also opens right after you create a new form)
+- [x] Make the app feel alive: pages ease in again
+- [x] "Remind me" on the flat Tasks list too, not only inside Projects (the alarm-clock button on each open task; the reminder shows in the bell, on Home and on the calendar)
+- [x] AI assistant completes a task in any service, within its limits (Addy now adds to your to-do list, sets reminders and ticks off to-dos by itself, each with Undo; everything else is still a draft you save)
+- [x] OCR for scanned PDFs (a PDF with no text layer now has its first 3 pages drawn and read like photos, wherever the text reader is turned on; the document index still skips OCR)
+- [ ] Sending email for vendor reminders and scheduled reports (needs a mail service)
+
+### Audit Edit Revisions (from the 5 Nov demo audit)
+- [x] Invoices, licenses, vendors, contacts and projects are saved in this browser and survive leaving the page or a reload
+- [x] Home, the bell and Reporting read those saved records, so they agree with each service
+- [x] Cheap fixes: casing leftovers, Documents h1, friendlier sign-in message, unused logo removed, wordmarks resized
+- [x] Remaining Title Case labels now sentence case (form fields, dropdown options, dialog titles, document type labels); module and product names such as Licenses & Renewals and Control Center keep their capitals, and the unused `titleCase` helper is gone
+- [x] Demo opens blank with a "See AdFlo with sample data" card on Home: a small shop set and a large regulated company set (Settings > Demo data loads or clears them; loading over saved records asks first)
+- [x] Accessibility: contrast and tap targets fixed and guarded by tests/e2e/accessibility.spec.ts (axe on 17 pages, desktop and phone)
+- [ ] Addy's live Claude mode untested; browsers other than Chromium not tried
+- [x] Landing page at /landing is the original hero with the demo workspace (my longer marketing page is in git history, commit 534795a)
+
+## Working notes
+
+**Revision list (Kyle's 30 items):** the live list is the "Progress road map" section above. Branch `revision-part-1`, PR #22.
+Done without a database (everything keeps its records in the browser, like the rest of the app): icon sidebar, Contacts with Vendors tab, name greeting, home queue and where-to-begin, empty states, sentence-case labels, license templates/certifications/compliance/calendar/fees, invoice frequency label, Choose paperwork + print/PDF, signatures, onboarding packets, approval chains (Settings > Approvals), Reporting dropdown (scheduled reports, materials), custom project types, vendor follow-ups/notes/terms, stuck-approval flags, "Remind me", OCR for license and vendor-document photos, useful notifications, Contacts<->Forms bridge, assistant drafts with guardrails, motion.
+Waiting on a database or outside service (last): shared contact/vendor profiles, real vendor/contact record merge, emailing reminders and scheduled reports, naming an owner for stuck work, OCR of scanned PDFs and of the document index.
+To discuss first: setup for different industries, what the Projects module should include.
+Working notes for tests: run `npm run typecheck` before every push (the Vercel build type-checks tests). Run Playwright with `--output=/tmp/...` (traces written inside the project make the dev server reload pages in a loop and the first tests fail), and never leave a stray `next dev` running (a leaked one is reused and misbehaves).
+
+### Audit Edit Revisions (Nov 9)
+Invoices, licenses, vendors, contacts and projects now persist in localStorage (`src/lib/records/storage.ts`, keys `adflo.records.<kind>.v1`). Home, the bell and Reporting build from those records in the browser (`src/lib/records/sources.ts`), so `loadDashboardSources` on the server stays empty. Until the browser's day is known the hook returns empty, so hydration matches the server. AdFlo is not only for small businesses: keep that in mind when choosing demo sample data and product wording.
+Sample data: `src/lib/samples/data.ts` builds two sets from today's date (small shop, large regulated company), `storage.ts` loads or clears them, and `src/components/modules/sample-data.tsx` is the Home card and the Settings > Demo data tab. Add a set by adding an entry to `SAMPLE_SETS`. Sample records are written into the same browser storage as real ones, so the services treat them identically.
+Playwright tip: a stale `next dev` or old `.next` makes pages reload in a loop; kill it and `rm -rf .next` before a run.
+
+### Design choices to review (change any of these)
+
+**Industry setup** (`src/lib/setup/industries.ts` holds the table; the libraries it draws from live with their services)
+- 17 industries. The 8 original ones plus Auto & fleet, Home services, Beauty & wellness, Legal, Accounting & tax, Trucking & logistics, Education & childcare, Manufacturing, Tech & agency.
+- Choosing an industry does not install anything by itself. The Templates step shows "What we'll set up for a <industry> business" with seven tick boxes (license records, paperwork, project templates, vendor documents, approval chain, reminder lead time, home starting points). Every box starts ticked for the services you chose; untick what you do not want.
+- The boxes are saved as `bundle:...` ids beside the template ids. What each one puts in place is worked out from the industry each time, so changing the industry in Settings > Business profile changes the licenses, forms, project templates, vendor documents, approval chain and home cards straight away, with no re-install.
+- Several industries share a library: Auto & fleet and Trucking use the vehicle one, Home services uses construction, Tech & agency uses professional. Beauty, childcare, manufacturing, legal and accounting got libraries of their own (about 4 license items and 3 forms each).
+- Approval chains: an industry's chain is only a default. Any chain set by hand in Settings > Approvals wins. Larger or regulated businesses get two steps (for example Project manager then Owner); small ones get one.
+- Reminder lead time is written into Settings > Notifications when setup is finished, and again when the industry is changed. After that you can change it freely.
+- Vendor documents: new vendors get the standard documents for their category plus the industry's extras (for example a workers' compensation certificate for construction). Existing vendors are not changed.
+- License records from an industry are starting points that expire a term from today, with a note asking for the real numbers and dates. One that has the same name as a record the older "small-business" template already added is skipped.
+- Project templates: nine new ones (job closeout, inspection preparation, fleet compliance audit, new client matter, tax season prep, product launch, client project kickoff, enrollment period, production line audit). Each is tagged with the industries it suits and those are listed first in the New project template list.
+
+### To do
+- [ ] **Automation discovery** — go through every module and list what can be automated.
+- [~] **AI assistant** — live at `/app/assistant` (under Home). Claude-backed via `/api/assistant` once `ANTHROPIC_API_KEY` is set (tools: profile, recommend, deploy, status); until then the built-in rules answer. Untested against the real API. Next: let it open/fill modules.
+- [x] **Settings page** — renamed; tabs: Business profile, Team, Notifications, Appearance, Guided setup (`/app/setup?tab=...`).
+- [ ] **Admin research** — what else can an admin do?
+- [x] **Rename "Data Entry & Reporting" → "Reporting"** — already done (commit 87dacd6); verify no leftover labels.
+- [x] **Requests (was Admin Support)** — removed: it wasn't useful. Recurring work lives in Tasks (was Projects); approvals live in Forms and Vendors.
+- [x] **File reset** — now a one-time "Tidy up files" tool: out of the sidebar, linked from Documents and Guided setup.
+- [x] **Day/Night view switch** — done, in Settings › Appearance (Day, Night, Match my device).
+
+### Projects module (defaults chosen, change as you like)
+- A project has an owner, a progress bar from its tasks, milestones with dates, and a dated updates log (who, when, what).
+- A project can be linked to a contact or a vendor, so you can jump from the work to the person.
+- Recurring tasks moved out of Requests into a Recurring work project; Requests keeps requests and approvals.
+- Everything is kept in the browser, like the rest of the app, until the database is added.
+
+### Merge of revision-part-1 into main (Nov 4)
+`main` had moved: another session removed Requests and approvals, renamed Projects to Tasks, redesigned Home and added form sending. Where the two disagreed, `main` won:
+- Not carried over: approval chains (Settings > Approvals), the Requests page and its reminders and recurring-task dialog, the "Waiting on you" queue, the "Where to begin" home cards, and vendor approval states.
+- Kept from revision-part-1: Contacts name with Vendors as a tab, icon-only sidebar minimize, licenses templates and compliance, OCR, vendor follow-ups and extras, paperwork picker with print/PDF, signing, onboarding packets, the Contacts and Forms bridge, industry setup, assistant guardrails and drafts, Reporting dropdown, notifications, and project owner, milestones, updates log and contact or vendor link.
+- Task reminders ("Remind me") still show in the bell and the home feed.
+
+## Changelog
+
+Notable changes clients may care about. Newest first.
+
+### Unreleased
+- Support and operations material added under `docs/support/`: email templates, onboarding runbook and help articles.
