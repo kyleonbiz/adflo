@@ -23,8 +23,19 @@ const nextConfig: NextConfig = {
   ...(process.env.NODE_ENV === "production"
     ? {
         outputFileTracingIncludes: {
-          "/api/licenses/parse": ["./node_modules/tesseract.js/**/*", "./node_modules/tesseract.js-core/**/*", "./node_modules/@tesseract.js-data/eng/4.0.0/**/*"],
+          // Only the engine builds (.js loader + .wasm) are read at run time. The single-file "*.wasm.js" copies are browser
+          // bundles that this server code never loads (~25 MB saved), so they are left out.
+          "/api/licenses/parse": [
+            "./node_modules/tesseract.js/**/*",
+            "./node_modules/tesseract.js-core/package.json",
+            "./node_modules/tesseract.js-core/index.js",
+            "./node_modules/tesseract.js-core/tesseract-core*.wasm",
+            ...["", "-lstm", "-simd", "-simd-lstm", "-relaxedsimd", "-relaxedsimd-lstm"].map((v) => `./node_modules/tesseract.js-core/tesseract-core${v}.js`),
+            "./node_modules/@tesseract.js-data/eng/4.0.0/**/*",
+          ],
         },
+        // Vercel runs glibc Linux, so the musl build of the PDF page renderer is never loaded (~33 MB saved per function).
+        outputFileTracingExcludes: { "*": ["./node_modules/@napi-rs/canvas-linux-x64-musl/**/*"] },
       }
     : {}),
   // Old shared links to the public demo still work: they now open the same screen inside the app.

@@ -244,14 +244,4 @@ export function addUpdate(p: Project, u: { text: string; by: string; on: string 
 
 /** The one project where repeating work lives. Every repeating task added from the project page or installed by setup goes here. */
 export const RECURRING_PROJECT_ID = "recurring-work";
-export const RECURRING_PROJECT_NAME = "Recurring work";
-
-export function recurringProject(tasks: Task[], today: string): Project {
-  return {
-    id: RECURRING_PROJECT_ID, name: RECURRING_PROJECT_NAME, client: "", status: "active", startOn: today, dueOn: addDays(today, 365),
-    description: "Work that comes round again: monthly reconciliations, weekly agendas, quarterly reviews. Completing a task schedules the next one.",
-    tasks,
-  };
-}
-
 export const isRecurringProject = (p: Project) => p.id === RECURRING_PROJECT_ID;
