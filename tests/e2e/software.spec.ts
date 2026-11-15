@@ -1,22 +1,23 @@
 import { expect, test } from "./fixtures";
 
 test.describe("Landing page and the app", () => {
-  test("the site address opens the login screen, and Log in enters the demo app", async ({ page }) => {
+  test("the site address shows the landing page, and /login Log in enters the demo app", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place" })).toBeVisible();
+    await page.goto("/login");
     await page.getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/app\/overview$/);
   });
 
-  test("the landing page at /landing shows the hero, and Open workspace goes into the app", async ({ page }) => {
-    await page.goto("/landing");
+  test("the landing page at / shows the hero, and Open workspace goes into the app", async ({ page }) => {
+    await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place" })).toBeVisible();
     await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Open workspace" }).click();
     await expect(page).toHaveURL(/\/app$/);
   });
 
   test("the landing page keeps its hero and demo, and adds the story and demo request form below", async ({ page }) => {
-    await page.goto("/landing");
+    await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "Your back office, in one place" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI does the repetitive work. Your people stay in control." })).toBeVisible();
     await page.getByRole("link", { name: "Book a demo" }).first().click();
@@ -28,7 +29,7 @@ test.describe("Landing page and the app", () => {
   });
 
   test("the landing page has an admin cost calculator that works out the visitor's own numbers", async ({ page }) => {
-    await page.goto("/landing");
+    await page.goto("/");
     const section = page.locator("#admin-cost");
     await expect(section.getByRole("heading", { name: "How much time are you losing to admin work?" })).toBeVisible();
     // 10 hours a week at $100 an hour, 48 weeks: $48,000; 40% freed, half of it used: $9,600.

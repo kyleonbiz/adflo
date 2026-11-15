@@ -6,7 +6,7 @@ XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
 Tailwind and shadcn/ui-style components.
 
-The site address (`/`) redirects into the app (`/app/overview`). The landing page is at `/landing` (`src/app/landing/page.tsx`: the hero, the demo workspace, then the story sections and a Book a demo form in `src/components/marketing/sections.tsx`; the form opens the visitor's email app, addressed to `NEXT_PUBLIC_SALES_EMAIL`); Open workspace goes into the app. The earlier marketing page (hero, features, plans) is in git history at commit `534795a`.
+The site address (`/`) is the landing page (`src/app/page.tsx`; the old `/landing` redirects to it; sign-in is at `/login` and the app at `/app`): the hero, the demo workspace, then the story sections and a Book a demo form in `src/components/marketing/sections.tsx`; the form opens the visitor's email app, addressed to `NEXT_PUBLIC_SALES_EMAIL`); Open workspace goes into the app. The earlier marketing page (hero, features, plans) is in git history at commit `534795a`.
 
 * **With Supabase configured** – real sign-in, workspaces and (for Documents) a real database and storage.
 * **Without Supabase** – the app still opens, as a **preview** labelled "Preview" in the top
@@ -794,7 +794,7 @@ Databases go last. Update this section in the same commit as the work.
 - [x] Demo opens blank with a "See AdFlo with sample data" card on Home: a small shop set and a large regulated company set (Settings > Demo data loads or clears them; loading over saved records asks first)
 - [x] Accessibility: contrast and tap targets fixed and guarded by tests/e2e/accessibility.spec.ts (axe on 17 pages, desktop and phone)
 - [ ] Addy's live Claude mode untested; browsers other than Chromium not tried
-- [x] Landing page at /landing is the original hero with the demo workspace (my longer marketing page is in git history, commit 534795a)
+- [x] Landing page at / is the original hero with the demo workspace (my longer marketing page is in git history, commit 534795a)
 
 ## Working notes
 

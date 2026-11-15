@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
   // Old shared links to the public demo still work: they now open the same screen inside the app.
   async redirects() {
     return [
+      { source: "/landing", destination: "/", permanent: true },
       { source: "/demo", destination: "/app/overview", permanent: true },
       { source: "/demo/documents", destination: "/app", permanent: true },
       { source: "/demo/:path*", destination: "/app/:path*", permanent: true },
