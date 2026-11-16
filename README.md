@@ -88,7 +88,24 @@ Settings → Environment Variables, then redeploy). `/control` then opens withou
 it never reads or writes the database and refuses every change. The switch is ignored as soon as Supabase is configured, so it
 cannot expose `/control` on a live deployment, but remove the variable before real clients use the app anyway.
 
-Billing is deliberately later: the Control center tracks plan and price only, with no invoicing or card payments.
+**Client profile.** Each client has a page (`/control/clients/<id>`) with a summary (price, seats, what they owe, open tickets) and
+every part of their account: onboarding, their AdFlo workspace, invoices, agreements, password reset, tickets and history.
+
+**Setting up a client's account.** The *AdFlo account* card creates an empty workspace for the client (with the standard folders)
+and invites the owner's email as its owner, or connects a workspace they already made. Nobody from staff is added to it. The
+owner joins automatically when they sign up with that verified email; AdFlo does not send email yet, so use *Copy welcome
+message*. Both tick the onboarding steps and are audit logged (`supabase/migrations/20261116170000_control_workspace_link.sql`).
+
+**Suspend lock.** The *Account on* switch on a client's profile turns their access on and off. Turning it off (or cancelling the
+client) locks their people out of the workspace at once: the database refuses their documents, folders, records, files and shared
+links, the app shows a plain "account paused" notice, and they cannot start a fresh workspace to get around it. Nothing is
+deleted, and turning the switch back on restores access immediately. It applies only to workspaces connected to a client
+record; trials and active clients are in service. See `supabase/migrations/20261116180000_suspend_lock.sql` and
+`supabase/tests/suspend.sql`.
+
+**Billing** (`/control/billing`) is manual invoicing: create invoices (or this month's drafts for every active client at their plan
+or override price), mark them sent and paid, void them, export CSV. Invoices are saved in the staff member's browser only; there
+is no payment processor, no email and no database table yet.
 
 ## Platform modules
 
