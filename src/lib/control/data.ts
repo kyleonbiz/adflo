@@ -1,7 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { TIERS } from "./tiers";
-import type { AuditEntry, ClientRecord, ClientStatus, DirectoryEntry, Plan, StaffMember, StaffRole, Ticket, TicketNote, TimelineEvent, AgreementTemplate, SentAgreement, AppError } from "./types";
+import type { AuditEntry, ClientRecord, ClientStatus, DirectoryEntry, Plan, StaffMember, StaffRole, Ticket, TicketNote, TimelineEvent, AgreementTemplate, SentAgreement, AppError, UnlinkedWorkspace } from "./types";
 
 interface ClientRow {
   id: string; name: string; status: ClientStatus; plan: string; seats_limit: number; owner_name: string;
@@ -40,6 +40,14 @@ export async function loadPlans(supabase: SupabaseClient): Promise<Plan[]> {
 }
 
 /** Owner only: other staff see just their own row. */
+/** Workspaces nobody has connected to a client yet (support and owner only; anyone else gets an empty list). */
+export async function loadUnlinkedWorkspaces(supabase: SupabaseClient): Promise<UnlinkedWorkspace[]> {
+  const { data, error } = await supabase.rpc("control_unlinked_workspaces");
+  if (error) throw new Error("Could not load workspaces.");
+  return ((data ?? []) as { id: string; name: string; created_at: string; members: number | string; owner_email: string }[])
+    .map((r) => ({ id: r.id, name: r.name, createdAt: r.created_at, members: Number(r.members), ownerEmail: r.owner_email }));
+}
+
 export async function loadStaff(supabase: SupabaseClient): Promise<StaffMember[]> {
   const { data, error } = await supabase.from("staff_members").select("user_id, role, display_name, email, active").order("created_at");
   if (error) throw new Error("Could not load the team.");

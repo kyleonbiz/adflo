@@ -133,6 +133,9 @@ export function parseChecklistInput(raw: unknown): Parsed<{ step: ChecklistStep;
 export function describeAudit(action: string, detail: Record<string, unknown>): string {
   if (action === "client.created") return `Created ${String(detail.name ?? "a client")} (${String(detail.plan ?? "")}, ${String(detail.seats_limit ?? "")} seats)`;
   if (action === "client.deleted") return `Deleted ${String(detail.name ?? "a client")}`;
+  if (action === "client.workspace_linked") return `Connected workspace ${String(detail.workspace ?? "")}`.trim();
+  if (action === "client.workspace_unlinked") return "Disconnected the workspace";
+  if (action === "client.owner_invited") return `Invited ${String(detail.email ?? "the owner")} as workspace owner`;
   if (!action.startsWith("client.")) return describeGeneric(action, detail);
   const parts = Object.entries(detail).filter(([k]) => k !== "client_id").map(([k, v]) => {
     const label = k === "seats_limit" ? "Seats" : k === "owner_email" ? "Owner email" : k.charAt(0).toUpperCase() + k.slice(1);

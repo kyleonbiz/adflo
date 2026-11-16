@@ -60,6 +60,7 @@ test("control center API refuses plan, team and checklist writes without a datab
   expect((await request.post("/api/control/agreements/send", { data: {} })).status()).toBe(503);
   expect((await request.patch("/api/control/errors/1", { data: { resolved: true } })).status()).toBe(503);
   expect((await request.post("/api/control/staff", { data: { email: "a@b.co", role: "support" } })).status()).toBe(503);
+  expect((await request.post("/api/control/clients/00000000-0000-4000-8000-000000000000/workspace", { data: { action: "provision" } })).status()).toBe(503);
   expect((await request.post("/api/control/clients/00000000-0000-4000-8000-000000000000/checklist", { data: { step: "workspace", done: true } })).status()).toBe(503);
 });
 

@@ -141,4 +141,9 @@ describe("quiet clients", () => {
     expect(isQuiet({ status: "suspended", workspaceId: "w", lastActive: null }, now)).toBe(false);
     expect(isQuiet({ status: "active", workspaceId: null, lastActive: null }, now)).toBe(false);
   });
+  it("reads the workspace steps", () => {
+    expect(describeAudit("client.workspace_linked", { client_id: "x", workspace: "Acme" })).toBe("Connected workspace Acme");
+    expect(describeAudit("client.workspace_unlinked", { client_id: "x" })).toBe("Disconnected the workspace");
+    expect(describeAudit("client.owner_invited", { client_id: "x", email: "pat@acme.test" })).toBe("Invited pat@acme.test as workspace owner");
+  });
 });

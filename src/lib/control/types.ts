@@ -47,6 +47,8 @@ export type ChecklistStep = (typeof CHECKLIST_STEPS)[number]["key"];
 export interface Plan { id: string; name: string; priceCents: number; seatsIncluded: number; active: boolean;
   /** Feature keys the plan includes (see tiers.ts); null means everything. */
   features?: string[] | null }
+/** A workspace no client record is connected to yet. */
+export interface UnlinkedWorkspace { id: string; name: string; createdAt: string; members: number; ownerEmail: string }
 export interface StaffMember { userId: string; role: StaffRole; displayName: string; email: string; active: boolean }
 
 export const formatMoney = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
