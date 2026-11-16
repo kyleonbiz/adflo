@@ -277,3 +277,16 @@ origin, `object-src 'none'`, `frame-ancestors 'none'`. The root layout stamps th
 - **Book a demo form** is a `mailto:` link: it submits nothing to the server, so there is nothing for a bot to flood and nothing to
   protect. It only becomes a target once it posts to a server or an email service (roadmap: "Replace the Book a demo mailto form").
   Add the human check and a rate limit at that point.
+
+### Hosted tenant-isolation check, 2026-11-16 (project `adflo-test`, migrations 1–20)
+Two throwaway users and workspaces were created inside a single transaction that was deliberately aborted, so nothing was kept
+(afterwards: 0 test users, 0 test workspaces, the project's 2 original workspaces untouched). Run against the real hosted PostgREST roles
+(`authenticated`, `anon`) with JWT claims set; **29 checks, all behaved as intended**:
+- A sees its own folders and quota; B reads **0 rows** of A's workspace, members, folders, documents, versions, audit log, share links and invites.
+- B is refused (`forbidden` or row-level security) when starting an upload in A, inviting, removing A's owner, changing roles, inserting
+  a share link, inserting a document, or writing an audit row for A. `dms_usage(A)` as B returns zeros (invoker function, RLS applies).
+- A non-staff user sees 0 rows of `staff_members`, `clients`, `staff_audit_log`, `support_tickets`, `app_errors`; the staff directory and
+  client-usage functions return 0 rows; `control_add_staff` is refused ("Only the Owner manages staff").
+- A signed-out visitor gets `permission denied` on workspaces, documents, staff members, `create_workspace` and `dms_begin_upload`.
+Not covered: the signed-in staff path with a real authenticator, Storage and signed-URL behaviour, and the Auth cookie settings (still
+"Needs a hosted project to verify" items 1–4). This was the test project, not production: repeat the same checks there once it exists.
