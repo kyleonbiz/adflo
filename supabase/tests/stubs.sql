@@ -28,4 +28,6 @@ grant usage on schema public, auth, storage, extensions to anon, authenticated, 
 grant execute on function auth.uid(), auth.jwt() to anon, authenticated, service_role;
 grant select, insert, update, delete on storage.objects to authenticated, service_role;
 grant select on storage.buckets to authenticated, service_role;
-alter default privileges in schema public grant all on tables to postgres, service_role;
+-- Supabase gives every new table in public all privileges for anon, authenticated and service_role. Mirror that, so
+-- the tests see what a real project sees and a migration that forgets to narrow the grants is caught.
+alter default privileges in schema public grant all on tables to postgres, anon, authenticated, service_role;
