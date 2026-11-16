@@ -3,6 +3,7 @@ import { ApprovalsSection } from "./approvals-section";
 import { NotificationsSection } from "./notifications-section";
 import { ProfileSection } from "./profile-section";
 import { DemoDataSection } from "@/components/modules/sample-data";
+import { ImportSection } from "./import-section";
 import { TeamSection } from "./team-section";
 import { SetupPage } from "@/components/setup/setup-page";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,7 @@ export const SETTINGS_TABS = [
   { id: "approvals", label: "Approvals", blurb: "Who signs off, in what order, before a request or form goes ahead." },
   { id: "setup", label: "Guided setup", blurb: "Five short steps to get your services, templates and checks in place." },
   { id: "demo", label: "Demo data", blurb: "Try AdFlo with sample records, or clear everything back to a blank start." },
+  { id: "import", label: "Import from this browser", blurb: "Bring records kept in this browser from before your workspace was connected into the workspace." },
 ] as const;
 export type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
 
@@ -21,7 +23,8 @@ export const parseTab = (v: unknown): SettingsTab => SETTINGS_TABS.find((t) => t
 
 export function SettingsPage({ tab: requested, mode, base, preview }: { tab: SettingsTab; mode: "live" | "preview"; base: "/app"; preview?: string }) {
   // Sample data is for the browser-only preview: a real workspace's records are never replaced or wiped from here.
-  const tabs = mode === "live" ? SETTINGS_TABS.filter((t) => t.id !== "demo") : SETTINGS_TABS;
+  // Importing is the other way round: it only makes sense where there is a workspace to import into.
+  const tabs = SETTINGS_TABS.filter((t) => (mode === "live" ? t.id !== "demo" : t.id !== "import"));
   const tab = tabs.some((t) => t.id === requested) ? requested : "profile";
   const current = SETTINGS_TABS.find((t) => t.id === tab)!;
   return (
@@ -53,6 +56,7 @@ export function SettingsPage({ tab: requested, mode, base, preview }: { tab: Set
       {tab === "approvals" && <ApprovalsSection />}
       {tab === "setup" && <SetupPage base={base} preview={preview} />}
       {tab === "demo" && <DemoDataSection />}
+      {tab === "import" && <ImportSection />}
     </div>
   );
 }

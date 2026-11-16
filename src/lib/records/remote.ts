@@ -163,3 +163,15 @@ export async function refreshRemote(): Promise<void> {
     } catch { /* a failed refresh is silent; the next one tries again */ }
   }
 }
+
+/**
+ * Waits until everything sent to the database so far, for these services, has been answered, and says which ones ran
+ * into a problem ("denied": not allowed to change this; "failed": will be retried). For actions that must report an
+ * outcome (an import) instead of just showing the change at once.
+ */
+export async function remoteSettled(kinds: readonly RecordKind[]): Promise<Partial<Record<RecordKind, SyncProblem>>> {
+  await Promise.all(kinds.map((k) => states.get(k)?.chain));
+  const out: Partial<Record<RecordKind, SyncProblem>> = {};
+  for (const k of kinds) { const problem = states.get(k)?.problem; if (problem) out[k] = problem; }
+  return out;
+}

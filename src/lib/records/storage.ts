@@ -106,12 +106,32 @@ export function clearSingle(kind: RecordKind): void {
   window.dispatchEvent(new Event(EVENT));
 }
 
+/**
+ * What this browser still holds for a service under its old key, even when a database is connected (which ignores it).
+ * Used only to offer to import it into the workspace.
+ */
+export function readBrowserCopy(kind: RecordKind): string {
+  return readLocal(kind);
+}
+
+/** Removes this browser's old copy of a service (after it was imported), leaving the database alone. */
+export function clearBrowserCopy(kind: RecordKind): void {
+  memory.delete(kind);
+  try { window.localStorage.removeItem(key(kind)); } catch { /* nothing to remove */ }
+  window.dispatchEvent(new Event(EVENT));
+}
+
 /** Forgets a service's saved records, so it starts blank again. */
 export function clearRecords(kind: RecordKind): void {
   if (isRemote(kind)) return; // records in the database are never wiped by a helper
   memory.delete(kind);
   try { window.localStorage.removeItem(key(kind)); } catch { /* nothing to remove */ }
   window.dispatchEvent(new Event(EVENT));
+}
+
+/** Calls `onChange` when records change in this tab or another (also used by the import screen). */
+export function subscribeRecords(onChange: () => void) {
+  return subscribe(onChange);
 }
 
 function subscribe(onChange: () => void) {

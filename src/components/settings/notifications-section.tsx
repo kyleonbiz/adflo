@@ -3,12 +3,14 @@
 import { BellRing } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { useRecordsInDatabase } from "@/lib/records/storage";
 import { saveSettings, useSettings } from "@/lib/settings/storage";
 import { LEAD_DAYS, NOTIFICATION_INFO, NOTIFICATION_KEYS } from "@/lib/settings/types";
 import { cn } from "@/lib/utils";
 
 export function NotificationsSection() {
   const settings = useSettings();
+  const inDatabase = useRecordsInDatabase();
   const { enabled, leadDays } = settings.notifications;
   const update = (n: Partial<typeof settings.notifications>) => saveSettings({ ...settings, notifications: { ...settings.notifications, ...n } });
 
@@ -43,7 +45,7 @@ export function NotificationsSection() {
       </div>
       <p className="flex items-start gap-2 text-xs text-muted-foreground">
         <BellRing className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-        Your choices are saved in this browser. Emails start going out once email delivery is connected.
+        Your choices are saved {inDatabase ? "to your workspace and shared with your team" : "in this browser"}. Emails start going out once email delivery is connected.
       </p>
     </section>
   );

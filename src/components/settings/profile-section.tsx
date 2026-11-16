@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { industryLeadDays } from "@/lib/setup/industries";
+import { useRecordsInDatabase } from "@/lib/records/storage";
 import { saveConfig, useSetupConfig } from "@/lib/setup/storage";
 import { INDUSTRIES, TEAM_SIZES, emptyConfig, type Industry, type TeamSize } from "@/lib/setup/types";
 import { saveSettings, useSettings } from "@/lib/settings/storage";
@@ -17,6 +18,7 @@ import { TIMEZONES, type BusinessDetails } from "@/lib/settings/types";
 type Draft = BusinessDetails & { name: string; industry: Industry | ""; teamSize: TeamSize | "" };
 
 function Form({ initial }: { initial: Draft }) {
+  const inDatabase = useRecordsInDatabase();
   const settings = useSettings();
   const setup = useSetupConfig();
   const [draft, setDraft] = useState<Draft>(initial);
@@ -86,7 +88,7 @@ function Form({ initial }: { initial: Draft }) {
         <Button type="submit" disabled={emailBad}>Save profile</Button>
         {saved && <span role="status" className="inline-flex items-center gap-1 text-sm text-emerald-600"><Check className="size-4" aria-hidden /> Saved</span>}
       </div>
-      <p className="text-xs text-muted-foreground">Saved in this browser until the database is connected.</p>
+      <p className="text-xs text-muted-foreground">{inDatabase ? "Saved to your workspace and shared with your team." : "Saved in this browser until the database is connected."}</p>
     </form>
   );
 }

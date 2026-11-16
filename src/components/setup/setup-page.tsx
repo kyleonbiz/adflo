@@ -15,6 +15,7 @@ import { MODULES, moduleHref } from "@/lib/modules/registry";
 import { AVAILABLE_MODULE_IDS, IMPORTABLE, canFinish, recommendModules, runSetupChecks, setupScore } from "@/lib/setup/logic";
 import { BUNDLES, bundlesFor, defaultBundles, describeBundle, industryLeadDays } from "@/lib/setup/industries";
 import { saveSettings, useSettings } from "@/lib/settings/storage";
+import { useRecordsInDatabase } from "@/lib/records/storage";
 import { clearConfig, saveConfig, useSetupConfig } from "@/lib/setup/storage";
 import { TEMPLATES, templateById, templatesFor } from "@/lib/setup/templates";
 import { INDUSTRIES, STEPS, TEAM_SIZES, emptyConfig, type CheckStatus, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
@@ -28,6 +29,7 @@ const moduleName = (id: string) => MODULES.find((m) => m.id === id)?.name ?? id;
 const moduleSummary = (id: string) => MODULES.find((m) => m.id === id)?.summary ?? "";
 
 function Wizard({ initial, today, base }: { initial: SetupConfig; today: string; base: "/app" }) {
+  const inDatabase = useRecordsInDatabase();
   const [config, setConfig] = useState<SetupConfig>(initial);
   const settings = useSettings();
 
@@ -107,7 +109,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
             </ul>
           </div>
         )}
-        <p className="text-xs text-muted-foreground">Saved in this browser until the database is connected. Installed templates now show up inside their services. Editing the setup takes it back to a draft until you finish it again.</p>
+        <p className="text-xs text-muted-foreground">{inDatabase ? "Saved to your workspace and shared with your team." : "Saved in this browser until the database is connected."} Installed templates now show up inside their services. Editing the setup takes it back to a draft until you finish it again.</p>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => update((c) => ({ ...c, step: 0, completedOn: null }))}>Edit setup</Button>
           <Button variant="ghost" onClick={() => { clearConfig(); setConfig(emptyConfig()); }}>Start over</Button>
