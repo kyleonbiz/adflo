@@ -11,7 +11,7 @@ export default async function LicensesRoute({ searchParams }: PageProps<"/app/li
   const { q } = params;
   const startNew = params.new === "1";
   const draft = startNew ? draftFromParams("licenses", (k) => (typeof params[k] === "string" ? (params[k] as string) : undefined)) : undefined;
-  return renderAppShell("/app/licenses", () => (
-    <LicensesPage startNew={startNew} draft={draft} initialQuery={typeof q === "string" ? q : ""} preview="Records are saved in this browser only, not shared with other people or devices." />
+  return renderAppShell("/app/licenses", (mode) => (
+    <LicensesPage startNew={startNew} draft={draft} initialQuery={typeof q === "string" ? q : ""} preview={mode === "preview" ? "Records are saved in this browser only, not shared with other people or devices." : undefined} />
   ));
 }

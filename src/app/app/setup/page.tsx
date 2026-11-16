@@ -12,7 +12,7 @@ export default async function SetupRoute({ searchParams }: PageProps<"/app/setup
       tab={parseTab(Array.isArray(tab) ? tab[0] : tab)}
       mode={mode}
       base="/app"
-      preview="Your choices are saved in this browser only and never leave it."
+      preview={mode === "preview" ? "Your choices are saved in this browser only and never leave it." : undefined}
     />
   ));
 }

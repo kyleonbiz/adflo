@@ -10,7 +10,7 @@ export default async function VendorsRoute({ searchParams }: PageProps<"/app/ven
   const params = await searchParams;
   const startNew = params.new === "1";
   const draft = startNew ? draftFromParams("vendors", (k) => (typeof params[k] === "string" ? (params[k] as string) : undefined)) : undefined;
-  return renderAppShell("/app/vendors", () => (
-    <VendorsPage startNew={startNew} draft={draft} preview="Records are saved in this browser only, not shared with other people or devices. No notifications are sent." />
+  return renderAppShell("/app/vendors", (mode) => (
+    <VendorsPage startNew={startNew} draft={draft} preview={mode === "preview" ? "Records are saved in this browser only, not shared with other people or devices. No notifications are sent." : undefined} />
   ));
 }

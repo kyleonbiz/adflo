@@ -12,7 +12,7 @@ export default async function ContactsRoute({ searchParams }: PageProps<"/app/co
   const { q } = params;
   const one = (k: string) => (typeof params[k] === "string" ? (params[k] as string) : undefined);
   const person = params.add === "1" ? { ...personFromParams(one), ...draftFromParams("contacts", one) } : undefined;
-  return renderAppShell("/app/contacts", () => (
-    <ContactsPage initialAdd={person} initialQuery={typeof q === "string" ? q : ""} preview="Records are saved in this browser only, not shared with other people or devices. Imported files never leave your browser." />
+  return renderAppShell("/app/contacts", (mode) => (
+    <ContactsPage initialAdd={person} initialQuery={typeof q === "string" ? q : ""} preview={mode === "preview" ? "Records are saved in this browser only, not shared with other people or devices. Imported files never leave your browser." : undefined} />
   ));
 }
