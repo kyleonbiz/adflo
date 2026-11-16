@@ -9,10 +9,12 @@ vi.mock("@supabase/ssr", () => ({
 const supa = {
   user: null as null | { id: string; email: string },
   membership: null as null | { workspace_id: string; role: string; display_name: string },
+  standing: "ok" as string | null,
 };
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabase: async () => ({
     auth: { getUser: async () => ({ data: { user: supa.user }, error: null }) },
+    rpc: async () => ({ data: supa.standing, error: null }),
     from: () => {
       const chain: Record<string, unknown> = {};
       for (const m of ["select", "eq", "order", "limit"]) chain[m] = () => chain;
@@ -36,6 +38,7 @@ beforeEach(() => {
   currentUser = null;
   supa.user = null;
   supa.membership = null;
+  supa.standing = "ok";
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -145,6 +148,17 @@ describe("getDms (request authentication)", () => {
     withSupabase();
     supa.user = { id: "u1", email: "a@b.co" };
     supa.membership = { workspace_id: "00000000-0000-4000-8000-000000000001", role: "viewer", display_name: "A" };
+    expect((await getDms()).mode).toBe("live");
+  });
+  it("refuses a member of a paused or closed workspace, with a plain message", async () => {
+    withSupabase();
+    supa.user = { id: "u1", email: "a@b.co" };
+    supa.membership = { workspace_id: "00000000-0000-4000-8000-000000000001", role: "owner", display_name: "A" };
+    for (const standing of ["suspended", "cancelled"]) {
+      supa.standing = standing;
+      await expect(getDms()).rejects.toMatchObject({ code: "forbidden", message: expect.stringContaining("Contact AdFlo") });
+    }
+    supa.standing = "ok";
     expect((await getDms()).mode).toBe("live");
   });
   it("is unavailable in production without Supabase", async () => {

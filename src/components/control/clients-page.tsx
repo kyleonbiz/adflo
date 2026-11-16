@@ -66,7 +66,7 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
           <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
               <p id="c-on-label" className="text-sm font-medium">Account on</p>
-              <p className="text-xs text-muted-foreground">{STATUS_LABEL[form.status]}. Turn off to suspend: nothing is deleted, and it is recorded in the audit log.</p>
+              <p className="text-xs text-muted-foreground">{STATUS_LABEL[form.status]}. Turn off to suspend: their people can no longer open their workspace. Nothing is deleted, and it is recorded in the audit log.</p>
             </div>
             <Switch aria-labelledby="c-on-label" checked={isAccountOn(form.status)} onCheckedChange={(on) => setForm((f) => ({ ...f, status: statusAfterSwitch(client?.status ?? "trial", on) }))} />
           </div>

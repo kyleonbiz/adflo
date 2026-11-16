@@ -1,4 +1,5 @@
 import "server-only";
+import { isPaused, parseStanding, pausedText, type Standing } from "@/lib/dms/standing";
 import { DocumentService } from "../service";
 import { DmsError } from "../errors";
 import { loadUploadLimits } from "../config";
@@ -55,6 +56,12 @@ export async function acceptPendingInvites(
  * the auth server (never trusted from a cookie alone) and all data access runs
  * under their session, so RLS applies.
  */
+/** 'ok', 'suspended' or 'cancelled' for the caller's workspace. A failed lookup reads as 'ok'; the database enforces the lock regardless. */
+export async function getWorkspaceStanding(supabase: Awaited<ReturnType<typeof createServerSupabase>>, workspaceId: string): Promise<Standing> {
+  const { data, error } = await supabase.rpc("workspace_standing", { p_workspace: workspaceId });
+  return error ? "ok" : parseStanding(data);
+}
+
 export async function getDms(): Promise<Dms> {
   if (getSupabaseEnv()) {
     const supabase = await createServerSupabase();
@@ -62,6 +69,8 @@ export async function getDms(): Promise<Dms> {
     if (error || !data.user) throw new DmsError("unauthenticated", "Please sign in.");
     const membership = await findMembership(supabase, data.user.id);
     if (!membership) throw new DmsError("not_found", "You do not belong to a workspace yet.");
+    const standing = await getWorkspaceStanding(supabase, membership.workspaceId);
+    if (isPaused(standing)) throw new DmsError("forbidden", pausedText(standing).body);
     const email = data.user.email ?? "";
     const repo = new SupabaseRepository(supabase);
     return {

@@ -77,7 +77,7 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
       </div>
       {confirming && (
         <div role="alertdialog" aria-label="Confirm" className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          {confirming === "suspend" ? "Suspend this client? It is recorded in the audit log, and nothing is deleted." : "Cancel this client? Their data is kept."}
+          {confirming === "suspend" ? "Suspend this client? Their people lose access to their workspace right away. It is recorded in the audit log, and nothing is deleted. Turn the switch back on to restore it." : "Cancel this client? Their people lose access to their workspace. Their data is kept."}
           <Button variant="destructive" size="sm" disabled={busy === "status"} onClick={() => changeStatus(confirming === "suspend" ? "suspended" : "cancelled")}>{confirming === "suspend" ? "Suspend" : "Cancel client"}</Button>
           <Button variant="outline" size="sm" onClick={() => setConfirming(null)}>Keep</Button>
         </div>

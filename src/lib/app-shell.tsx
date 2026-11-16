@@ -8,7 +8,9 @@ import { OnboardingForm } from "@/components/auth/onboarding-form";
 import { AppFrame } from "@/components/modules/app-frame";
 import { pathAllowed } from "@/lib/control/gating";
 import { dayInZone } from "@/lib/dashboard/logic";
-import { acceptPendingInvites, findMembership } from "@/lib/dms/server/context";
+import { PausedNotice } from "@/components/auth/paused-notice";
+import { acceptPendingInvites, findMembership, getWorkspaceStanding } from "@/lib/dms/server/context";
+import { isPaused } from "@/lib/dms/standing";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -56,6 +58,9 @@ export async function renderAppShell(
         </AuthCard>
       );
     }
+    // A client switched off in the Control Center sees a plain notice instead of the app. Nothing is deleted.
+    const standing = await getWorkspaceStanding(supabase, membership.workspaceId);
+    if (isPaused(standing)) return <PausedNotice standing={standing} email={email} />;
     const { data: ws } = await supabase.from("workspaces").select("name").eq("id", membership.workspaceId).maybeSingle();
     // Plan features: a failed lookup leaves everything available rather than locking a client out.
     const { data: planFeatures } = await supabase.rpc("workspace_features", { p_workspace: membership.workspaceId });
