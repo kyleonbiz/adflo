@@ -113,7 +113,7 @@ browser and never uploaded.
 * **Navigation:** a left sidebar on wide screens (logo, one icon per module, the current module highlighted,
   Settings apart at the bottom) and a menu button that opens the same list as a drawer on a phone.
 * **Pages:** `/app/overview` (Home), `/app` (Documents), `/app/invoices`, `/app/licenses`, `/app/vendors`, `/app/contacts`, `/app/projects`, `/app/forms`, `/app/reporting`, `/app/file-reset`, `/app/setup`. With a database they sit behind sign-in; without one they open as a preview.
-* **With a database connected, licenses and tasks (the Projects service) are saved to the workspace**: one row per record in `workspace_records`, read and written straight from the browser under the signed-in user's own access (members read; editors, admins and owners write; viewers are refused by the database, and the page says so). Changes show at once and are sent in the background, retried if the connection drops, and other people's changes appear when the tab is shown again. The other services use the same code and are switched on one at a time (`PERSISTED_KINDS`). Without a database, everything below stays in the browser as before.
+* **With a database connected, licenses, tasks (the Projects service), invoices, vendors and contacts are saved to the workspace**: one row per record in `workspace_records`, read and written straight from the browser under the signed-in user's own access (members read; editors, admins and owners write; viewers are refused by the database, and the page says so). Changes show at once and are sent in the background, retried if the connection drops, and other people's changes appear when the tab is shown again. The remaining services (forms, to-dos, reminders, signing, packets, approvals, the activity trail and settings) are still saved in the browser and move to the database next; the services that are saved there are listed in `PERSISTED_KINDS`. Without a database, everything below stays in the browser as before.
 * **Invoices, vendors, contacts, forms and report data are not persisted yet.** They start empty and are held in component state; there is no
   table or API for them until the database step. Reminders are *computed* (next reminder date, alerts,
   renewal tasks, overdue notices) but no email is sent yet. Licenses can be pre-filled from an uploaded PDF, Word, text or CSV file (`/api/licenses/parse` reads the number, issuer, holder and dates next to their labels; photos and scans are read with OCR on the Core + plan, and the file itself is not stored). Vendors get required documents by category, can only be
@@ -494,13 +494,13 @@ Set the variables in [Environment variables](#environment-variables) on the host
 
 ### Know before you go live
 
-Connecting the database gives real sign-in, workspaces, Documents storage, share links and the Control Center. It also saves **licenses and tasks (projects)** to the workspace, shared by everyone on the team and kept across devices (table `workspace_records`, from the `workspace_records` migration; editors and above can change them, viewers can only read). Home, Reporting and the bell read those saved records.
+Connecting the database gives real sign-in, workspaces, Documents storage, share links and the Control Center. It also saves **licenses, tasks (projects), invoices, vendors and contacts** to the workspace, shared by everyone on the team and kept across devices (table `workspace_records`, from the `workspace_records` migration; editors and above can change them, viewers can only read). Home, Reporting and the bell read those saved records.
 
-**Invoices, vendors, contacts and forms are still saved only in each visitor's browser.** They use the same save path and only need switching on (add the service to `PERSISTED_KINDS` in `src/lib/records/supabase-backend.ts`, then check it). Sample data is switched off for a connected workspace, so it can never replace real records.
+**Forms, to-dos, reminders, signing, packets, approvals, the activity trail and settings are still saved only in each visitor's browser.** They need their own place in the database first (the `workspace_records` table accepts only licenses, projects, invoices, vendors and contacts), and then a service is switched on by adding it to `PERSISTED_KINDS` in `src/lib/records/supabase-backend.ts`. Sample data is switched off for a connected workspace, so it can never replace real records.
 
 After the database is connected, also check:
-- [ ] Add a license, refresh the page, and it is still there. Open the app in a second browser signed in as a teammate: they see it too.
-- [ ] Sign in as a **viewer**: licenses and tasks show, and a change is refused with a "view-only" message rather than failing silently.
+- [ ] Add a license, an invoice, a vendor and a contact, refresh the page, and each is still there. Open the app in a second browser signed in as a teammate: they see it too.
+- [ ] Sign in as a **viewer**: licenses, tasks, invoices, vendors and contacts show, and a change is refused with a "view-only" message rather than failing silently.
 
 ## Security review
 

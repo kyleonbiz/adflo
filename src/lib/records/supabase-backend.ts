@@ -3,7 +3,7 @@ import type { Rec } from "./diff";
 import { RecordsSyncError, type RecordsBackend } from "./remote";
 
 /** The services saved to the database so far. The rest still live in the browser (see `storage.ts`). */
-export const PERSISTED_KINDS = ["licenses", "projects"] as const;
+export const PERSISTED_KINDS = ["licenses", "projects", "invoices", "vendors", "contacts"] as const;
 
 const PAGE = 1000; // the database returns at most this many rows per request
 const CHUNK = 200;

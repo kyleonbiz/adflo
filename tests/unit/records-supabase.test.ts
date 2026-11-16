@@ -31,8 +31,8 @@ function fakeClient(answer: (c: Call) => Answer) {
 const WS = "11111111-1111-4111-8111-111111111111";
 
 describe("PERSISTED_KINDS", () => {
-  it("starts with licenses and projects (tasks live inside projects)", () => {
-    expect([...PERSISTED_KINDS]).toEqual(["licenses", "projects"]);
+  it("saves licenses, projects (tasks live inside projects), invoices, vendors and contacts to the database", () => {
+    expect([...PERSISTED_KINDS]).toEqual(["licenses", "projects", "invoices", "vendors", "contacts"]);
   });
 });
 

@@ -29,7 +29,7 @@ import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { SEVERITY_BADGE, STATUS_LABEL } from "./status";
 import { VendorCard, type VendorActions } from "./vendor-card";
 import { VendorFormDialog, type VendorDraft } from "./vendor-form-dialog";
-import { useRecordsState } from "@/lib/records/storage";
+import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 
 type SortKey = "name" | "status" | "newest";
 const STATUS_ORDER: VendorStatus[] = ["onboarding", "active", "inactive"];
@@ -71,6 +71,7 @@ function downloadCsv(text: string, name: string) {
  */
 export function VendorsPage({ preview, startNew, draft }: { preview?: string; startNew?: boolean; draft?: VendorDraft }) {
   const today = useToday();
+  const loading = useRecordsLoading(); // saved vendors are still arriving from the database
   const audit = useAudit();
   const me = useCurrentUserName();
   const [edited, setEdited] = useRecordsState<Vendor>("vendors");
@@ -117,7 +118,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash}`);
   }, [query, statusFilter, categoryFilter, sort, issuesOnly]);
 
-  if (!today || !summary) {
+  if (!today || loading || !summary) {
     return (
       <div className="space-y-4" aria-busy="true">
         <Skeleton className="h-10 w-64" />

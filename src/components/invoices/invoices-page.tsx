@@ -23,7 +23,7 @@ import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog, type InvoiceDraft } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
-import { useRecordsState } from "@/lib/records/storage";
+import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
 type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
@@ -49,6 +49,7 @@ function downloadCsv(text: string, name: string) {
  */
 export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { preview?: string; startNew?: boolean; draft?: InvoiceDraft; initialQuery?: string }) {
   const today = useToday();
+  const loading = useRecordsLoading(); // saved invoices are still arriving from the database
   const audit = useAudit();
   const [edited, setEdited] = useRecordsState<Invoice>("invoices");
   const [query, setQuery] = useState(initialQuery);
@@ -63,7 +64,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
 
   const invoices = useMemo(() => edited ?? e2eSeed<Invoice>("invoices") ?? [], [edited]);
 
-  if (!today) {
+  if (!today || loading) {
     return (
       <div className="space-y-4" aria-busy="true">
         <Skeleton className="h-10 w-64" />

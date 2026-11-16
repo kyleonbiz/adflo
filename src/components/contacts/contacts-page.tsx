@@ -25,7 +25,7 @@ import { ContactsTabs } from "./contacts-tabs";
 import { ContactFormDialog } from "./contact-form-dialog";
 import { ImportDialog } from "./import-dialog";
 import { MergeDialog } from "./merge-dialog";
-import { useRecordsState } from "@/lib/records/storage";
+import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 
 const rid = () => `c-${Math.random().toString(36).slice(2, 10)}`;
 const CATEGORY_BADGE: Record<ContactCategory, "success" | "default" | "warning" | "muted" | "outline"> = {
@@ -51,6 +51,7 @@ const linkClass = "inline-block py-2 -my-2 rounded underline-offset-2 hover:text
  */
 export function ContactsPage({ preview, initialQuery = "", initialAdd }: { preview?: string; initialQuery?: string; initialAdd?: Partial<Person> }) {
   const today = useToday();
+  const loading = useRecordsLoading(); // saved contacts are still arriving from the database
   const audit = useAudit();
   const [edited, setEdited] = useRecordsState<Contact>("contacts");
   const [query, setQuery] = useState(initialQuery);
@@ -102,7 +103,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
         : byName(a, b));
   }, [contacts, category, q, quick, sort, duplicateIds, today]);
 
-  if (!today || !summary) {
+  if (!today || loading || !summary) {
     return (
       <div className="space-y-4" aria-busy="true">
         <Skeleton className="h-10 w-64" />

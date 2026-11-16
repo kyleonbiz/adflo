@@ -27,7 +27,7 @@ function SaveProblem() {
 }
 
 /**
- * Saves the workspace's records (licenses and tasks so far) to the database instead of this browser. It connects on the
+ * Saves the workspace's records (licenses, tasks, invoices, vendors and contacts so far) to the database instead of this browser. It connects on the
  * first client render, so pages never show the browser's old copy first, and it picks up other people's changes when
  * the tab is shown again. Only rendered for a signed-in workspace; the preview keeps everything in the browser.
  */
