@@ -96,6 +96,11 @@ staff sign-in. The client login does not link to it.
 **Client profile.** Each client has a page (`/control/clients/<id>`) with a summary (price, seats, what they owe, open tickets) and
 every part of their account: onboarding, their AdFlo workspace, invoices, agreements, password reset, tickets and history.
 
+**Onboarding guide.** On each client's page, the *Onboarding guide* walks through setting a client up in eight steps: details,
+workspace, owner invite, welcome message, agreement, plan and seats, first sign-in, then active with a first invoice. Each step opens
+to plain instructions and a button to the right place, and is ticked off (some tick themselves). The *Onboarding* tab in the menu
+shows every client's progress. Migration `20261117090000_onboarding_steps.sql` allows the three new steps.
+
 **Setting up a client's account.** The *AdFlo account* card creates an empty workspace for the client (with the standard folders)
 and invites the owner's email as its owner, or connects a workspace they already made. Nobody from staff is added to it. The
 owner joins automatically when they sign up with that verified email; AdFlo does not send email yet, so use *Copy welcome

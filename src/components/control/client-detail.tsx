@@ -3,13 +3,13 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { isAccountOn, statusAfterSwitch } from "@/lib/control/status";
-import { CHECKLIST_STEPS, effectivePriceCents, formatMoney, type ClientRecord, type Plan } from "@/lib/control/types";
-import { cn } from "@/lib/utils";
+import { effectivePriceCents, formatMoney, type ClientRecord, type Plan } from "@/lib/control/types";
 import { ClientTiles } from "./client-billing";
+import { OnboardingGuide } from "./onboarding-guide";
 import { ClientDialog } from "./clients-page";
 import { StatusBadge } from "./status-badge";
 
@@ -25,22 +25,12 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
   const price = effectivePriceCents(client, plans);
-  const done = CHECKLIST_STEPS.filter((s) => client.checklist.includes(s.key)).length;
-
+  
   async function changeStatus(to: ClientRecord["status"]) {
     setBusy("status"); setError(""); setConfirming(null);
     try {
       const res = await fetch(`/api/control/clients/${client.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: to }) });
       if (!res.ok) setError((await res.json().catch(() => null))?.error?.message ?? "Could not change the status.");
-      else router.refresh();
-    } catch { setError("Could not reach the server. Try again."); } finally { setBusy(null); }
-  }
-
-  async function toggle(step: string, on: boolean) {
-    setBusy(step); setError("");
-    try {
-      const res = await fetch(`/api/control/clients/${client.id}/checklist`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ step, done: on }) });
-      if (!res.ok) setError((await res.json().catch(() => null))?.error?.message ?? "Could not save that step.");
       else router.refresh();
     } catch { setError("Could not reach the server. Try again."); } finally { setBusy(null); }
   }
@@ -83,6 +73,8 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
         </div>
       )}
 
+      {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-destructive">{error}</p>}
+
       <ClientTiles client={client} plans={plans} today={today} sample={sample} openTickets={openTickets} />
 
       <nav aria-label="On this page" className="flex flex-wrap gap-2">
@@ -96,25 +88,7 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
         {client.notes && <p className="mt-4 whitespace-pre-wrap border-t pt-4 text-sm text-muted-foreground">{client.notes}</p>}
       </section>
 
-      <section id="onboarding" className="scroll-mt-4 rounded-2xl border bg-card p-5 shadow-panel" aria-label="Onboarding">
-        <div className="flex items-baseline justify-between gap-2"><h2 className="font-semibold">Onboarding</h2><span className="text-sm text-muted-foreground tabular-nums">{done} of {CHECKLIST_STEPS.length} done</span></div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${(done / CHECKLIST_STEPS.length) * 100}%` }} /></div>
-        <ul className="mt-4 space-y-1">
-          {CHECKLIST_STEPS.map((s) => {
-            const on = client.checklist.includes(s.key);
-            return (
-              <li key={s.key}>
-                <button type="button" disabled={!canEdit || busy === s.key} onClick={() => toggle(s.key, !on)} aria-pressed={on}
-                  className="flex min-h-10 w-full items-center gap-3 rounded-lg px-2 text-left text-sm outline-none enabled:hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default">
-                  <span aria-hidden className={cn("grid size-5 shrink-0 place-items-center rounded-full border", on ? "border-emerald-500 bg-emerald-500 text-white" : "border-input")}>{on && <Check className="size-3.5" />}</span>
-                  <span className={cn(on && "text-muted-foreground")}>{s.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
-      </section>
+      <OnboardingGuide client={client} canEdit={canEdit} onEdit={() => setEditing(true)} />
 
       {children}
       {editing && <ClientDialog client={client} plans={plans} isOwner={isOwner} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); router.refresh(); }} />}

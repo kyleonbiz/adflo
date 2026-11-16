@@ -174,7 +174,14 @@ test("client profile: everything about a client in one place, and New invoice op
   await expect(page.getByText("Open tickets")).toBeVisible();
   const jump = page.getByRole("navigation", { name: "On this page" });
   for (const name of ["Details", "Onboarding", "Account", "Billing", "Agreements", "Support", "History"]) await expect(jump.getByRole("link", { name })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Onboarding" })).toBeVisible();
+  // The onboarding guide: eight steps, the finished ones ticked, each with instructions.
+  const guide = page.getByRole("region", { name: "Onboarding" });
+  await expect(guide.getByRole("heading", { name: "Onboarding guide" })).toBeVisible();
+  await expect(guide).toContainText("8 of 8 done");
+  await expect(guide.getByRole("checkbox", { checked: true })).toHaveCount(8);
+  await guide.getByRole("button", { name: /Step 2.*Workspace created/ }).click();
+  await expect(guide.getByText("Click Create workspace and invite owner")).toBeVisible();
+  await expect(guide.getByRole("link", { name: "Go to AdFlo account" })).toHaveAttribute("href", "#account");
   await expect(page.getByRole("region", { name: "AdFlo account" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Tickets" })).toContainText("Cannot upload a PDF");
 
@@ -203,8 +210,8 @@ test("onboarding tab: every client's setup progress, stalled ones flagged, rows 
   // The sample trial client is not finished, so it is listed under "In progress" with its next step.
   const birch = page.getByRole("link", { name: /Sample: Birch & Co/ });
   await expect(birch).toBeVisible();
-  await expect(birch).toContainText("Next: Terms and agreement sent");
-  await expect(birch).toContainText("2 of 5");
+  await expect(birch).toContainText("Next: Welcome message sent");
+  await expect(birch).toContainText("3 of 8");
   // The fully set up one only shows under Complete.
   await expect(page.getByRole("link", { name: /Sample: Acme Roofing/ })).toHaveCount(0);
   await page.getByRole("button", { name: /^Complete/ }).click();

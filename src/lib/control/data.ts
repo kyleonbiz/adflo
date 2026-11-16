@@ -63,8 +63,8 @@ export async function loadAudit(supabase: SupabaseClient, limit = 100): Promise<
 
 /** Labelled examples for the development preview, so the screens show what they will hold. */
 export const SAMPLE_CLIENTS: ClientRecord[] = [
-  { id: "sample-1", name: "Sample: Acme Roofing", status: "active", plan: "standard", seatsLimit: 5, ownerName: "Pat Example", ownerEmail: "pat@example.com", notes: "", workspaceId: null, startedOn: "2026-09-01", createdAt: "2026-09-01T00:00:00Z", priceOverrideCents: null, priceNote: "", seatsUsed: 4, lastActive: "2026-11-02T15:00:00Z", checklist: ["workspace", "owner_invited", "agreement_sent", "plan_set", "first_login"] },
-  { id: "sample-2", name: "Sample: Birch & Co", status: "trial", plan: "standard", seatsLimit: 3, ownerName: "Lee Example", ownerEmail: "lee@example.com", notes: "", workspaceId: null, startedOn: "2026-10-20", createdAt: "2026-10-20T00:00:00Z", priceOverrideCents: 4900, priceNote: "Intro rate", seatsUsed: 1, lastActive: "2026-11-03T09:00:00Z", checklist: ["workspace", "owner_invited"] },
+  { id: "sample-1", name: "Sample: Acme Roofing", status: "active", plan: "standard", seatsLimit: 5, ownerName: "Pat Example", ownerEmail: "pat@example.com", notes: "", workspaceId: null, startedOn: "2026-09-01", createdAt: "2026-09-01T00:00:00Z", priceOverrideCents: null, priceNote: "", seatsUsed: 4, lastActive: "2026-11-02T15:00:00Z", checklist: ["details", "workspace", "owner_invited", "welcome_sent", "agreement_sent", "plan_set", "first_login", "live"] },
+  { id: "sample-2", name: "Sample: Birch & Co", status: "trial", plan: "standard", seatsLimit: 3, ownerName: "Lee Example", ownerEmail: "lee@example.com", notes: "", workspaceId: null, startedOn: "2026-10-20", createdAt: "2026-10-20T00:00:00Z", priceOverrideCents: 4900, priceNote: "Intro rate", seatsUsed: 1, lastActive: "2026-11-03T09:00:00Z", checklist: ["details", "workspace", "owner_invited"] },
 ];
 
 export const SAMPLE_PLANS: Plan[] = [
