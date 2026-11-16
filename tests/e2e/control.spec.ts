@@ -163,3 +163,32 @@ test("billing: create, send and pay an invoice by hand, saved in this browser, e
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Export CSV" }).click()]);
   expect(download.suggestedFilename()).toMatch(/^adflo-invoices-\d{4}-\d{2}-\d{2}\.csv$/);
 });
+
+test("client profile: everything about a client in one place, and New invoice opens for that client", async ({ page }) => {
+  await page.goto("/control/clients");
+  await page.getByRole("link", { name: "Sample: Acme Roofing" }).click();
+  await expect(page.getByRole("heading", { name: "Sample: Acme Roofing", level: 1 })).toBeVisible();
+
+  // The summary, the jump links and each section.
+  await expect(page.getByText("Per month · standard")).toBeVisible();
+  await expect(page.getByText("Open tickets")).toBeVisible();
+  const jump = page.getByRole("navigation", { name: "On this page" });
+  for (const name of ["Details", "Onboarding", "Account", "Billing", "Agreements", "Support", "History"]) await expect(jump.getByRole("link", { name })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Onboarding" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "AdFlo account" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Tickets" })).toContainText("Cannot upload a PDF");
+
+  // This client's invoices only (the examples have two for Acme and one for Birch).
+  const billing = page.getByRole("region", { name: "Billing" });
+  await expect(billing.getByText("AF-0001")).toBeVisible();
+  await expect(billing.getByText("AF-0003")).toHaveCount(0);
+
+  // Read-only staff and the preview see no status switch.
+  await expect(page.getByRole("switch", { name: "Account on" })).toHaveCount(0);
+
+  // New invoice goes to Billing with this client already chosen.
+  await billing.getByRole("link", { name: "New invoice" }).click();
+  await expect(page.getByRole("heading", { name: "New invoice" })).toBeVisible();
+  await expect(page.getByLabel("Client")).toHaveValue("sample-1");
+  await expect(page.getByLabel("Amount ($)")).toHaveValue("99.00");
+});

@@ -37,13 +37,13 @@ export function ClientExtras({ clientId, ownerEmail, tickets, timeline, canEdit 
           {status && <p role={status.ok ? "status" : "alert"} className={status.ok ? "mt-2 text-sm text-emerald-700" : "mt-2 text-sm text-destructive"}>{status.text}</p>}
         </section>
       )}
-      <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Tickets">
+      <section id="support" className="scroll-mt-4 rounded-2xl border bg-card p-5 shadow-panel" aria-label="Tickets">
         <div className="flex items-baseline justify-between gap-2"><h2 className="font-semibold">Tickets</h2><Link href="/control/support" className="text-sm text-primary hover:underline">Open the queue</Link></div>
         {tickets.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No tickets for this client.</p> : (
           <ul className="mt-2 divide-y">{tickets.map((t) => (<li key={t.id}><Link href={`/control/support/${t.id}`} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm hover:underline"><span className="min-w-0 truncate">{t.subject} <span className="text-xs text-muted-foreground">· {when(t.createdAt)}</span></span><TicketBadges t={t} /></Link></li>))}</ul>
         )}
       </section>
-      <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Timeline">
+      <section id="history" className="scroll-mt-4 rounded-2xl border bg-card p-5 shadow-panel" aria-label="Timeline">
         <h2 className="font-semibold">Timeline</h2>
         {timeline.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">Nothing recorded yet for client {clientId.slice(0, 8)}.</p> : (
           <ul className="mt-2 divide-y">{timeline.map((e, i) => (<li key={i} className="flex flex-wrap items-baseline justify-between gap-x-4 py-2 text-sm"><span>{describeAudit(e.action, e.detail)}</span><span className="text-xs text-muted-foreground">{e.staffEmail || "System"} · {stamp(e.at)}</span></li>))}</ul>

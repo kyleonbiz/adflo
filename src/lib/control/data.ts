@@ -112,6 +112,8 @@ export const SAMPLE_TICKETS: Ticket[] = [
   { id: "sample-t2", clientId: "sample-2", clientName: "Sample: Birch & Co", subject: "Add a seat for a new hire", body: "", status: "pending", priority: "normal", assignee: null, createdAt: "2026-11-02T10:00:00Z", updatedAt: "2026-11-02T10:00:00Z" },
 ];
 
+export const SAMPLE_TEMPLATES: AgreementTemplate[] = [{ id: "sample-a1", title: "Terms of Service", version: 2, body: "# Terms of Service\nSample text. The real agreement appears here once the Owner publishes it.\n\n## What you agree to\n- Pay invoices when they are due\n- Keep your account details up to date\n\n## Next steps\n1. Read the terms\n2. Tick both boxes and accept", createdAt: "2026-10-01T00:00:00Z" }];
+
 export async function loadTemplates(supabase: SupabaseClient): Promise<AgreementTemplate[]> {
   const { data, error } = await supabase.from("agreement_templates").select("id, title, version, body, created_at").order("title").order("version", { ascending: false });
   if (error) throw new Error("Could not load agreements.");

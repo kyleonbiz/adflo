@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { isAccountOn, statusAfterSwitch } from "@/lib/control/status";
 import { CLIENT_STATUSES, STATUS_LABEL, effectivePriceCents, formatMoney, isQuiet, type ClientRecord, type ClientStatus, type Plan } from "@/lib/control/types";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "./status-badge";
@@ -61,10 +63,14 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
         <DialogDescription>{client ? "Changes are recorded in the audit log." : "Creates the client's record. Onboarding steps come next."}</DialogDescription>
         <form onSubmit={submit} className="space-y-4" noValidate>
           <Field id="c-name" label="Client name" error={errors.name}><Input id="c-name" value={form.name} onChange={set("name")} aria-invalid={!!errors.name} autoFocus /></Field>
+          <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+            <div className="min-w-0">
+              <p id="c-on-label" className="text-sm font-medium">Account on</p>
+              <p className="text-xs text-muted-foreground">{STATUS_LABEL[form.status]}. Turn off to suspend: nothing is deleted, and it is recorded in the audit log.</p>
+            </div>
+            <Switch aria-labelledby="c-on-label" checked={isAccountOn(form.status)} onCheckedChange={(on) => setForm((f) => ({ ...f, status: statusAfterSwitch(client?.status ?? "trial", on) }))} />
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="c-status" label="Status" error={errors.status}>
-              <select id="c-status" value={form.status} onChange={set("status")} className={SELECT}>{CLIENT_STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}</select>
-            </Field>
             <Field id="c-plan" label="Plan" error={errors.plan}>
               <select id="c-plan" value={form.plan} onChange={set("plan")} className={SELECT}>
                 {[...new Set([form.plan, ...plans.filter((p) => p.active).map((p) => p.name)])].map((n) => <option key={n} value={n}>{n}</option>)}
@@ -148,7 +154,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }
             <tbody className="divide-y">
               {rows.map((c) => (
                 <tr key={c.id}>
-                  <td className="px-4 py-3 font-medium">{c.id.startsWith("sample-") ? c.name : <Link href={`/control/clients/${c.id}`} className="rounded outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">{c.name}</Link>}</td>
+                  <td className="px-4 py-3 font-medium"><Link href={`/control/clients/${c.id}`} className="rounded outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">{c.name}</Link></td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                   <td className="px-4 py-3 capitalize">{c.plan}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{c.seatsUsed ?? "—"} / {c.seatsLimit}</td>

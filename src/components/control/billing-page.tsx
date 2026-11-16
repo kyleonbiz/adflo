@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { AlertTriangle, CheckCircle2, CircleDollarSign, Download, FilePlus2, Hourglass, NotebookPen, Plus } from "lucide-react";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { Badge } from "@/components/ui/badge";
@@ -31,11 +32,12 @@ function Field({ id, label, error, children }: { id: string; label: string; erro
   );
 }
 
-function InvoiceDialog({ invoice, clients, plans, today, onClose, onSave }: { invoice: BillingInvoice | null; clients: ClientRecord[]; plans: Plan[]; today: string; onClose: () => void; onSave: (f: ReturnType<typeof okValue>) => void }) {
-  const first = clients[0];
+function InvoiceDialog({ invoice, clients, plans, today, defaultClientId, onClose, onSave }: { invoice: BillingInvoice | null; clients: ClientRecord[]; plans: Plan[]; today: string; defaultClientId?: string; onClose: () => void; onSave: (f: ReturnType<typeof okValue>) => void }) {
+  const first = clients.find((c) => c.id === defaultClientId) ?? clients[0];
+  const suggested = !invoice && first ? effectivePriceCents(first, plans) : null;
   const [f, setF] = useState<InvoiceForm>(invoice
     ? { clientId: invoice.clientId, description: invoice.description, amount: (invoice.amountCents / 100).toFixed(2), issuedOn: invoice.issuedOn, dueOn: invoice.dueOn, note: invoice.note }
-    : { clientId: first?.id ?? "", description: "", amount: "", issuedOn: today, dueOn: addDays(today, 14), note: "" });
+    : { clientId: first?.id ?? "", description: defaultClientId && first && suggested ? `AdFlo ${first.plan} · ${monthLabel(today)}` : "", amount: defaultClientId && suggested ? (suggested / 100).toFixed(2) : "", issuedOn: today, dueOn: addDays(today, 14), note: "" });
   const [errors, setErrors] = useState<Partial<Record<keyof InvoiceForm, string>>>({});
   const set = (k: keyof InvoiceForm) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF((s) => ({ ...s, [k]: e.target.value }));
 
@@ -131,12 +133,12 @@ function ViewDialog({ invoice, today, onClose }: { invoice: BillingInvoice; toda
 type Dlg = { kind: "new" } | { kind: "edit"; inv: BillingInvoice } | { kind: "paid"; inv: BillingInvoice } | { kind: "view"; inv: BillingInvoice } | null;
 
 /** Manual billing: invoices you create and track by hand. Saved in this browser only; no payments are taken and nothing is emailed. */
-export function BillingPage({ clients, plans, today, sample }: { clients: ClientRecord[]; plans: Plan[]; today: string; sample: boolean }) {
+export function BillingPage({ clients, plans, today, sample, newForClient }: { clients: ClientRecord[]; plans: Plan[]; today: string; sample: boolean; newForClient?: string }) {
   const saved = useSavedInvoices();
   // A first visit in the preview starts with a few labelled examples; the first change saves the list.
   const list = useMemo(() => saved ?? (sample ? SAMPLE_INVOICES(today) : []), [saved, sample, today]);
   const [filter, setFilter] = useState<Filter>("all");
-  const [dlg, setDlg] = useState<Dlg>(null);
+  const [dlg, setDlg] = useState<Dlg>(newForClient && clients.some((c) => c.id === newForClient) ? { kind: "new" } : null);
   const [notice, setNotice] = useState("");
 
   const summary = useMemo(() => summarize(list, today), [list, today]);
@@ -233,7 +235,7 @@ export function BillingPage({ clients, plans, today, sample }: { clients: Client
                 return (
                   <tr key={i.id}>
                     <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">{i.number}</td>
-                    <td className="px-4 py-3 font-medium">{i.clientName}</td>
+                    <td className="px-4 py-3 font-medium">{clients.some((c) => c.id === i.clientId) ? <Link href={`/control/clients/${i.clientId}`} className="rounded outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">{i.clientName}</Link> : i.clientName}</td>
                     <td className="px-4 py-3 text-muted-foreground">{i.description}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{formatMoney(i.amountCents)}</td>
                     <td className="whitespace-nowrap px-4 py-3 tabular-nums">{i.dueOn}</td>
@@ -247,7 +249,7 @@ export function BillingPage({ clients, plans, today, sample }: { clients: Client
         </div>
       )}
 
-      {dlg && (dlg.kind === "new" || dlg.kind === "edit") && <InvoiceDialog invoice={dlg.kind === "edit" ? dlg.inv : null} clients={clients} plans={plans} today={today} onClose={() => setDlg(null)} onSave={save} />}
+      {dlg && (dlg.kind === "new" || dlg.kind === "edit") && <InvoiceDialog invoice={dlg.kind === "edit" ? dlg.inv : null} clients={clients} plans={plans} today={today} defaultClientId={dlg.kind === "new" ? newForClient : undefined} onClose={() => setDlg(null)} onSave={save} />}
       {dlg?.kind === "paid" && <PaidDialog invoice={dlg.inv} today={today} onClose={() => setDlg(null)} onPaid={(paidOn, method) => { update(dlg.inv.id, { status: "paid", paidOn, method }, `${dlg.inv.number} marked paid.`); setDlg(null); }} />}
       {dlg?.kind === "view" && <ViewDialog invoice={dlg.inv} today={today} onClose={() => setDlg(null)} />}
     </div>
