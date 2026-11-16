@@ -1,12 +1,9 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
+import { useSingleRaw, writeSingle } from "@/lib/records/storage";
 import { LEAD_DAYS, NOTIFICATION_KEYS, TIMEZONES, defaultSettings, type AppSettings } from "./types";
 
+/** Where the preview keeps the settings in this browser (the records layer uses it; with a database they are saved to the workspace). */
 export const SETTINGS_KEY = "adflo.settings.v1";
-const EVENT = "adflo-settings-change";
-
-function read(): string {
-  try { return window.localStorage.getItem(SETTINGS_KEY) ?? ""; } catch { return ""; }
-}
 
 /** Saved settings, with anything unknown, oversized or of the wrong type replaced by the default. */
 export function parseSettings(raw: string): AppSettings {
@@ -35,20 +32,12 @@ export function parseSettings(raw: string): AppSettings {
   } catch { return base; }
 }
 
+/** Saves the settings: to the workspace database when one is connected, otherwise in this browser. */
 export function saveSettings(settings: AppSettings): void {
-  try {
-    window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    window.dispatchEvent(new Event(EVENT));
-  } catch { /* storage blocked: the change applies until the page is closed */ }
-}
-
-function subscribe(onChange: () => void) {
-  window.addEventListener(EVENT, onChange);
-  window.addEventListener("storage", onChange);
-  return () => { window.removeEventListener(EVENT, onChange); window.removeEventListener("storage", onChange); };
+  writeSingle("settings", settings);
 }
 
 export function useSettings(): AppSettings {
-  const raw = useSyncExternalStore(subscribe, read, () => "");
+  const raw = useSingleRaw("settings");
   return useMemo(() => parseSettings(raw), [raw]);
 }

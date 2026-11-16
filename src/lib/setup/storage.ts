@@ -1,13 +1,10 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
+import { clearSingle, useSingleRaw, writeSingle } from "@/lib/records/storage";
 import { sanitizeConfig } from "./logic";
 import type { SetupConfig } from "./types";
 
+/** Where the preview keeps the setup in this browser (the records layer uses it; with a database it is saved to the workspace). */
 export const STORAGE_KEY = "aurum.setup.v1";
-const EVENT = "aurum-setup-change";
-
-function read(): string {
-  try { return window.localStorage.getItem(STORAGE_KEY) ?? ""; } catch { return ""; }
-}
 
 /** The saved setup, or null. Anything unreadable, unknown or tampered with is cleaned or ignored. */
 export function parseStored(raw: string): SetupConfig | null {
@@ -15,25 +12,18 @@ export function parseStored(raw: string): SetupConfig | null {
   try { return sanitizeConfig(JSON.parse(raw)); } catch { return null; }
 }
 
+/** Saves the setup: to the workspace database when one is connected, otherwise in this browser. */
 export function saveConfig(config: SetupConfig): void {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-    window.dispatchEvent(new Event(EVENT));
-  } catch { /* storage unavailable (private window, blocked): setup still works for this visit only */ }
+  writeSingle("setup", config);
 }
 
+/** "Start over": forgets the saved setup. */
 export function clearConfig(): void {
-  try { window.localStorage.removeItem(STORAGE_KEY); window.dispatchEvent(new Event(EVENT)); } catch { /* nothing to clear */ }
-}
-
-function subscribe(onChange: () => void) {
-  window.addEventListener(EVENT, onChange);
-  window.addEventListener("storage", onChange);
-  return () => { window.removeEventListener(EVENT, onChange); window.removeEventListener("storage", onChange); };
+  clearSingle("setup");
 }
 
 /** The saved setup, kept in step across tabs and components. Null on the server and when nothing is saved. */
 export function useSetupConfig(): SetupConfig | null {
-  const raw = useSyncExternalStore(subscribe, read, () => "");
+  const raw = useSingleRaw("setup");
   return useMemo(() => parseStored(raw), [raw]);
 }

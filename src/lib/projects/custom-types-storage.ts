@@ -1,27 +1,15 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
+import { useRecordsRaw, writeRecords } from "@/lib/records/storage";
 import { parseCustomTypes } from "./custom-types";
 import type { ProjectTemplate } from "./templates";
 
-const KEY = "adflo.project-types.v1";
-const EVENT = "adflo-project-types-change";
-
-const read = () => { try { return window.localStorage.getItem(KEY) ?? ""; } catch { return ""; } };
-
+/** Saves the project types you added: to the workspace database when one is connected, otherwise in this browser. */
 export function saveCustomTypes(list: ProjectTemplate[]): void {
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(list));
-    window.dispatchEvent(new Event(EVENT));
-  } catch { /* storage unavailable: the types last until the page is closed */ }
-}
-
-function subscribe(onChange: () => void) {
-  window.addEventListener(EVENT, onChange);
-  window.addEventListener("storage", onChange);
-  return () => { window.removeEventListener(EVENT, onChange); window.removeEventListener("storage", onChange); };
+  writeRecords("projecttypes", list);
 }
 
 /** The project types you added yourself. Empty on the server. */
 export function useCustomTypes(): ProjectTemplate[] {
-  const raw = useSyncExternalStore(subscribe, read, () => "");
+  const raw = useRecordsRaw("projecttypes");
   return useMemo(() => parseCustomTypes(raw), [raw]);
 }

@@ -2,8 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Rec } from "./diff";
 import { RecordsSyncError, type RecordsBackend } from "./remote";
 
-/** The services saved to the database so far. The rest still live in the browser (see `storage.ts`). */
-export const PERSISTED_KINDS = ["licenses", "projects", "invoices", "vendors", "contacts"] as const;
+/** The services saved to the database. (The activity trail is kept apart, in its own append-only table: see `audit/remote.ts`.) */
+export const PERSISTED_KINDS = [
+  "licenses", "projects", "invoices", "vendors", "contacts",
+  "todos", "reminders", "signing", "packets", "schedules", "projecttypes",
+  "settings", "setup", "chains",
+] as const;
 
 const PAGE = 1000; // the database returns at most this many rows per request
 const CHUNK = 200;

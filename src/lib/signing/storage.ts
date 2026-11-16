@@ -1,10 +1,6 @@
-import { useMemo, useSyncExternalStore } from "react";
+import { useMemo } from "react";
+import { useRecordsRaw, writeRecords } from "@/lib/records/storage";
 import type { SigningRequest } from "./logic";
-
-const KEY = "adflo.signing.v1";
-const EVENT = "adflo-signing-change";
-
-const read = () => { try { return window.localStorage.getItem(KEY) ?? ""; } catch { return ""; } };
 
 export function parseRequests(raw: string): SigningRequest[] {
   try {
@@ -16,21 +12,13 @@ export function parseRequests(raw: string): SigningRequest[] {
   } catch { return []; }
 }
 
+/** Saves the signature requests: to the workspace database when one is connected, otherwise in this browser. */
 export function saveRequests(list: SigningRequest[]): void {
-  try {
-    window.localStorage.setItem(KEY, JSON.stringify(list));
-    window.dispatchEvent(new Event(EVENT));
-  } catch { /* storage unavailable: requests last until the page is closed */ }
+  writeRecords("signing", list);
 }
 
-function subscribe(onChange: () => void) {
-  window.addEventListener(EVENT, onChange);
-  window.addEventListener("storage", onChange);
-  return () => { window.removeEventListener(EVENT, onChange); window.removeEventListener("storage", onChange); };
-}
-
-/** The signature requests saved in this browser. Empty on the server. */
+/** The saved signature requests. Empty on the server. */
 export function useSigningRequests(): SigningRequest[] {
-  const raw = useSyncExternalStore(subscribe, read, () => "");
+  const raw = useRecordsRaw("signing");
   return useMemo(() => parseRequests(raw), [raw]);
 }

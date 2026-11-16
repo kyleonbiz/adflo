@@ -1,11 +1,12 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { remoteActive } from "@/lib/records/remote";
-import { clearRecords, writeRecords, type RecordKind } from "@/lib/records/storage";
+import { clearRecords, writeRecords } from "@/lib/records/storage";
 import { SAMPLE_SETS, type SampleRecords, type SampleSetId } from "./data";
 
 const KEY = "adflo.sample-set.v1";
 const EVENT = "adflo-sample-change";
-const KINDS: RecordKind[] = ["invoices", "licenses", "vendors", "contacts", "projects"];
+/** The services a sample set fills (the others, like to-dos and settings, are never sample data). */
+const KINDS: (keyof SampleRecords)[] = ["invoices", "licenses", "vendors", "contacts", "projects"];
 
 const read = () => { try { return window.localStorage.getItem(KEY) ?? ""; } catch { return ""; } };
 function subscribe(onChange: () => void) {
