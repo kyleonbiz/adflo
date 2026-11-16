@@ -27,7 +27,9 @@ export async function updateSession(request: NextRequest) {
   const isApi = path.startsWith("/api/dms") || path.startsWith("/api/control");
   // With a database configured the staff screens always need sign-in. CONTROL_DEMO is deliberately not consulted here:
   // it only applies when no database is connected, and this code does not run then.
-  const isPrivate = path === "/app" || path.startsWith("/app/") || path === "/control" || path.startsWith("/control/") || isApi;
+  const isStaffLogin = path === "/control/login";
+  const isControl = (path === "/control" || path.startsWith("/control/")) && !isStaffLogin;
+  const isPrivate = path === "/app" || path.startsWith("/app/") || isControl || isApi;
 
   if (!data.user && isPrivate) {
     if (isApi) {
@@ -37,7 +39,8 @@ export async function updateSession(request: NextRequest) {
       );
     }
     const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    // Staff get their own sign-in; clients get the normal one.
+    url.pathname = isControl ? "/control/login" : "/login";
     url.search = "";
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);

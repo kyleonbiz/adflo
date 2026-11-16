@@ -10,5 +10,7 @@ export async function POST(request: Request) {
     const supabase = await createServerSupabase();
     await supabase.auth.signOut();
   }
-  return NextResponse.redirect(new URL("/login", request.url), { status: 303 });
+  // Staff signing out of the Control center come back to the staff sign-in, not the client one.
+  const to = await request.formData().then((f) => f.get("to")).catch(() => null);
+  return NextResponse.redirect(new URL(to === "control" ? "/control/login" : "/login", request.url), { status: 303 });
 }

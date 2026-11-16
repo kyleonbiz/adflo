@@ -88,6 +88,11 @@ Settings → Environment Variables, then redeploy). `/control` then opens withou
 it never reads or writes the database and refuses every change. The switch is ignored as soon as Supabase is configured, so it
 cannot expose `/control` on a live deployment, but remove the variable before real clients use the app anyway.
 
+**Staff sign-in.** Staff sign in at `/control/login` (email and password, then the two-factor code), separate from the client login.
+A signed-out visit to any Control center page goes there and comes back to the page asked for; the return path can only point inside
+`/control`. Someone signed in with a non-staff account is told so and can sign out. Signing out of the Control center returns to the
+staff sign-in. The client login does not link to it.
+
 **Client profile.** Each client has a page (`/control/clients/<id>`) with a summary (price, seats, what they owe, open tickets) and
 every part of their account: onboarding, their AdFlo workspace, invoices, agreements, password reset, tickets and history.
 

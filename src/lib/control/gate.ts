@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { controlDemoActive, devModeAllowed, getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { staffLoginHref } from "./login";
 import { STAFF_ROLES, type StaffRole } from "./types";
 
 export interface Staff { userId: string; name: string; email: string; role: StaffRole }
@@ -37,7 +38,7 @@ export async function requireStaff(nextPath: string, opts: { allowPasswordOnly?:
   if (getSupabaseEnv()) {
     const supabase = await createServerSupabase();
     const { data } = await supabase.auth.getUser();
-    if (!data.user) redirect(`/login?next=${nextPath}`);
+    if (!data.user) redirect(staffLoginHref(nextPath));
     const staff = await findStaff(supabase);
     if (!staff) notFound();
     if (!opts.allowPasswordOnly) {

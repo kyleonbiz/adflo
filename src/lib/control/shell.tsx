@@ -10,7 +10,7 @@ export async function renderControlShell(nextPath: string, content: (ctx: Contro
   const access = await requireStaff(nextPath);
   const body = await content(access);
   const topRight = access.mode === "live"
-    ? <AppTopBar userLabel={access.staff.name} workspaceName={`Staff · ${access.staff.role}`} />
+    ? <AppTopBar userLabel={access.staff.name} workspaceName={`Staff · ${access.staff.role}`} signOutTo="control" />
     : <AppTopBar badge={controlDemoEnabled() ? "Demo · sample data, nothing saved" : "Preview"} />;
   return <AppFrame base="/control" variant="control" topRight={topRight}>{body}</AppFrame>;
 }

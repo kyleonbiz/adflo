@@ -215,3 +215,15 @@ test("onboarding tab: every client's setup progress, stalled ones flagged, rows 
   await expect(page).toHaveURL(/\/control\/clients\/sample-2#onboarding$/);
   await expect(page.getByRole("heading", { name: "Sample: Birch & Co", level: 1 })).toBeVisible();
 });
+
+test("staff sign-in page: with no database there is nobody to sign in, so it opens the page asked for", async ({ page }) => {
+  await page.goto("/control/login?next=/control/billing");
+  await expect(page).toHaveURL(/\/control\/billing$/);
+  await expect(page.getByRole("heading", { name: "Billing", level: 1 })).toBeVisible();
+});
+
+test("staff sign-in page: a return path outside the Control center is ignored", async ({ page }) => {
+  await page.goto("/control/login?next=/app/overview");
+  await expect(page).toHaveURL(/\/control$/);
+  await expect(page.getByRole("heading", { name: "Control center", level: 1 })).toBeVisible();
+});

@@ -81,8 +81,16 @@ describe("proxy / route gating", () => {
     for (const path of ["/control", "/control/clients", "/control/billing"]) {
       const res = await updateSession(req(path));
       expect(res.status, path).toBe(307);
-      expect(new URL(res.headers.get("location")!).pathname).toBe("/login");
+      const loc = new URL(res.headers.get("location")!);
+      expect(loc.pathname).toBe("/control/login");
+      expect(loc.searchParams.get("next")).toBe(path);
     }
+  });
+  it("leaves the staff sign-in page itself open to signed-out visitors", async () => {
+    withSupabase();
+    const res = await updateSession(req("/control/login"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
   });
   it("answers anonymous /api/control calls with a 401 even with CONTROL_DEMO on", async () => {
     withSupabase();
