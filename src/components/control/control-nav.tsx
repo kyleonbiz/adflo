@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, Building2, FileSignature, Home, LifeBuoy, Receipt, ScrollText, Tag, UsersRound } from "lucide-react";
+import { Activity, Building2, ClipboardCheck, FileSignature, Home, LifeBuoy, Receipt, ScrollText, Tag, UsersRound } from "lucide-react";
 import { AdFloMark, Brand } from "@/components/brand";
 import { NavLink, isActive, type NavItem } from "@/components/modules/sidebar-nav";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 const ITEMS: NavItem[] = [
   { id: "overview", label: "Overview", href: "/control", icon: Home },
   { id: "clients", label: "Clients", href: "/control/clients", icon: Building2 },
+  { id: "onboarding", label: "Onboarding", href: "/control/onboarding", icon: ClipboardCheck },
   { id: "support", label: "Support", href: "/control/support", icon: LifeBuoy },
   { id: "agreements", label: "Agreements", href: "/control/agreements", icon: FileSignature },
   { id: "billing", label: "Billing", href: "/control/billing", icon: Receipt },

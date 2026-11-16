@@ -192,3 +192,26 @@ test("client profile: everything about a client in one place, and New invoice op
   await expect(page.getByLabel("Client")).toHaveValue("sample-1");
   await expect(page.getByLabel("Amount ($)")).toHaveValue("99.00");
 });
+
+test("onboarding tab: every client's setup progress, stalled ones flagged, rows open the profile", async ({ page }) => {
+  await page.goto("/control");
+  await page.getByRole("navigation", { name: "Control center" }).getByRole("link", { name: "Onboarding" }).click();
+  await expect(page).toHaveURL(/\/control\/onboarding$/);
+  await expect(page.getByRole("heading", { name: "Onboarding", level: 1 })).toBeVisible();
+  await expect(page.getByText("Being set up")).toBeVisible();
+
+  // The sample trial client is not finished, so it is listed under "In progress" with its next step.
+  const birch = page.getByRole("link", { name: /Sample: Birch & Co/ });
+  await expect(birch).toBeVisible();
+  await expect(birch).toContainText("Next: Terms and agreement sent");
+  await expect(birch).toContainText("2 of 5");
+  // The fully set up one only shows under Complete.
+  await expect(page.getByRole("link", { name: /Sample: Acme Roofing/ })).toHaveCount(0);
+  await page.getByRole("button", { name: /^Complete/ }).click();
+  await expect(page.getByRole("link", { name: /Sample: Acme Roofing/ })).toContainText("All steps done");
+
+  await page.getByRole("button", { name: /^In progress/ }).click();
+  await birch.click();
+  await expect(page).toHaveURL(/\/control\/clients\/sample-2#onboarding$/);
+  await expect(page.getByRole("heading", { name: "Sample: Birch & Co", level: 1 })).toBeVisible();
+});
