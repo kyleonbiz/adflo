@@ -15,6 +15,7 @@ import { LiveIndustries } from "@/components/live-industries";
 import { loadLiveIndustries } from "@/lib/setup/live-server";
 import { FALLBACK_LIVE } from "@/lib/setup/types";
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import { findStaff } from "@/lib/control/gate";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 /** The visitor's day for the bell in the top bar; the bell works out its own list from the records in the browser. */
@@ -71,7 +72,7 @@ export async function renderAppShell(
     // Loaded only here, so the preview never downloads the database client it does not use.
     const { RecordsProvider } = await import("@/components/records-provider");
     return (
-      <Frame userName={fullName} features={features} industries={await loadLiveIndustries(supabase)} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} />}>
+      <Frame userName={fullName} features={features} industries={await loadLiveIndustries(supabase)} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} isStaff={!!(await findStaff(supabase))} />}>
         {pathAllowed(features, nextPath) ? content("live", { name: fullName }) : <NotInPlan />}
       </Frame>
     );

@@ -1,15 +1,20 @@
 import Link from "next/link";
-import { CircleHelp, LogOut } from "lucide-react";
+import { CircleHelp, LogOut, ShieldCheck } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
 import { Button } from "@/components/ui/button";
 
 /** The right-hand side of the top bar for signed-in pages: workspace name, mode badge, who is signed in. */
-export function AppTopBar({ workspaceName, userLabel, badge, notifications, signOutTo }: { workspaceName?: string; userLabel?: string; badge?: string; signOutTo?: "control"; notifications?: { today: string } }) {
+export function AppTopBar({ workspaceName, userLabel, badge, notifications, signOutTo, isStaff }: { workspaceName?: string; userLabel?: string; badge?: string; signOutTo?: "control"; notifications?: { today: string }; isStaff?: boolean }) {
   return (
     <>
       {notifications && (
         <Link href="/app/help" className="inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-brand-sky">
           <CircleHelp className="size-4" aria-hidden /> <span className="hidden sm:inline">Help &amp; Training</span><span className="sr-only sm:hidden">Help &amp; Training</span>
+        </Link>
+      )}
+      {isStaff && (
+        <Link href="/control" className="inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-brand-sky">
+          <ShieldCheck className="size-4" aria-hidden /> <span className="hidden sm:inline">Control center</span><span className="sr-only sm:hidden">Control center</span>
         </Link>
       )}
       {notifications && <NotificationBell serverToday={notifications.today} />}
