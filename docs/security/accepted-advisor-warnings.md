@@ -16,4 +16,4 @@ Last reviewed: 2026-11-17 against the `adflo-test` project. Re-run both advisors
 | Warning | Decision | Why |
 |---|---|---|
 | Unindexed foreign keys | **Fixed** for the growing tables in `20261117130000_foreign_key_indexes.sql`. The rest are **accepted** | The remaining ones are on small staff-only tables (agreements, support tickets, error log, clients, audit log). Revisit when any passes a few thousand rows. |
-| Unused indexes (8) | **Accepted** | The test project has almost no data, so the planner does not use the document search, star and tag indexes yet. Re-check on real data before dropping any. |
+| Unused indexes (17, including the nine added in `20261117130000_foreign_key_indexes.sql`) | **Accepted** | The test project has almost no data, so the planner does not use the document search, star, tag and foreign-key indexes yet. Re-check on real data before dropping any. |
