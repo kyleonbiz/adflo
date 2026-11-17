@@ -42,7 +42,7 @@ not a CRM: the module is called Contacts (its internal id is still `crm`, kept s
 `NEXT_PUBLIC_LIVE_INDUSTRIES` (`all`, or names separated by `|`) is only the fallback when nothing is saved, and what the tests use.
 
 **Not built yet.** Screens that rename themselves per industry, the staff
-operations portal extras, chasing reminders, auto-saved drafts and a one-click audit ZIP.
+operations portal extras, chasing reminders for licenses and forms (vendors and overdue invoices have them), auto-saved drafts and a one-click audit ZIP.
 
 **Where to look.** Screens: `src/components/<module>/`. Business rules: `src/lib/<module>/logic.ts` (each has unit tests
 in `tests/unit/`). Pages: `src/app/app/`. Database: `supabase/migrations/`.

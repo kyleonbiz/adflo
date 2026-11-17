@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle2, Copy, Download, Eye, Link2, Mail, MoreHorizontal, Pencil, Repeat, Send, Trash2, Undo2 } from "lucide-react";
+import { Ban, BellRing, CheckCircle2, Copy, Download, Eye, Link2, Mail, MoreHorizontal, Pencil, Repeat, Send, Trash2, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -9,6 +9,8 @@ import { formatMoney, invoiceAlerts, invoiceState } from "@/lib/invoices/logic";
 import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
 import { downloadInvoice } from "./download";
 import { SEVERITY_BADGE, STATE_BADGE, STATE_LABEL } from "./status";
+
+import { canChase } from "@/lib/invoices/chase";
 
 export interface InvoiceActions {
   onView: (invoice: Invoice) => void;
@@ -19,6 +21,7 @@ export interface InvoiceActions {
   onVoid: (invoice: Invoice) => void;
   onNext: (invoice: Invoice) => void;
   onEmail: (invoice: Invoice) => void;
+  onChase: (invoice: Invoice) => void;
   onReopen: (invoice: Invoice) => void;
   onCopyLink: (invoice: Invoice) => void;
 }
@@ -67,6 +70,9 @@ export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; tod
       <div className="flex items-center gap-2 sm:w-72 sm:shrink-0 sm:justify-end">
         {invoice.status === "draft" && (
           <Button size="sm" onClick={() => actions.onEmail(invoice)}><Mail /> Send</Button>
+        )}
+        {canChase(invoice, today) && (
+          <Button size="sm" variant="outline" aria-label={`Send payment reminder for ${invoice.number}`} onClick={() => actions.onChase(invoice)}><BellRing /> Remind</Button>
         )}
         {invoice.status === "sent" && (
           <Button size="sm" onClick={() => actions.onPay(invoice)}><CheckCircle2 /> Mark paid</Button>

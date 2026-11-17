@@ -17,7 +17,9 @@ import { e2eSeed } from "@/lib/e2e-seed";
 import {
   formatMoney, describeItems, groupInvoices, hasNextInvoice, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent,   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
+import { chaseEmail } from "@/lib/invoices/chase";
 import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
+import { mailtoLink } from "@/lib/vendors/follow-up";
 import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
@@ -93,6 +95,12 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
       if (i.status === "draft") patch(i.id, markSent);
       audit("emailed", `invoice ${i.number}`, "Invoices", "/app/invoices");
       setNotice(`Opened your email app for ${i.number}${i.clientEmail ? ` to ${i.clientEmail}` : ""}${i.status === "draft" ? "; marked as sent." : "."}`);
+    },
+    onChase: (i) => {
+      const mail = chaseEmail(i, today);
+      window.location.href = mailtoLink(mail);
+      audit("sent a payment reminder for", `invoice ${i.number}`, "Invoices", "/app/invoices");
+      setNotice(`Opened your email app with a payment reminder for ${i.number}${i.clientEmail ? ` to ${i.clientEmail}` : ""}.`);
     },
     onCopyLink: async (i) => {
       const link = `${window.location.origin}${invoicePath(i)}`;

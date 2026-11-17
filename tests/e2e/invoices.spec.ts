@@ -9,6 +9,15 @@ async function menu(page: Page, card: Locator, number: string, item: string) {
 }
 
 test.describe("invoices module", () => {
+  test("late invoices offer a payment reminder, and ones not yet due do not", async ({ page }) => {
+    await page.goto("/app/invoices");
+    const late = page.getByTestId("invoice-card").filter({ hasText: "INV-0041" });
+    await expect(late.getByRole("button", { name: "Send payment reminder for INV-0041" })).toBeVisible();
+    await expect(page.getByTestId("invoice-card").filter({ hasText: "INV-0044" }).getByRole("button", { name: /payment reminder/ })).toHaveCount(0);
+    await expect(page.getByTestId("invoice-card").filter({ hasText: "INV-0045" }).getByRole("button", { name: /payment reminder/ })).toHaveCount(0); // a draft
+    await late.getByRole("button", { name: "Send payment reminder for INV-0041" }).click();
+    await expect(page.getByText(/payment reminder for INV-0041/)).toBeVisible();
+  });
   test("summary, attention list and status filter", async ({ page }) => {
     await page.goto("/app/invoices");
     await expect(page.getByRole("note")).toContainText("saved in this browser only");
