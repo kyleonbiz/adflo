@@ -17,7 +17,7 @@ The site address (`/`) is the landing page (`src/app/page.tsx`; the old `/landin
 
 ## About this app (read this first if you are reviewing it)
 
-**What it is.** A back-office tool for property managers and contractors (setup offers Property management, Construction & trades and Home services, plus Other): one place for invoices, licenses and renewals, vendors,
+**What it is.** The Administrative Management Platform for Contractors & Property Managers. It sits alongside accounting, construction and property management software rather than replacing it, and organizes the administrative work scattered across spreadsheets, email and folders. It is a back-office tool for property managers and contractors (setup offers Property management, Construction & trades and Home services, plus Other): one place for invoices, licenses and renewals, vendors,
 contacts, projects and tasks, forms, documents and reporting, with an AI assistant ("Addy"). It is built to remove
 admin busywork: reminders, duplicate checks and expiry tracking happen for you.
 
