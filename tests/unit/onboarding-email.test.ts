@@ -72,3 +72,41 @@ describe("parseSendAllInput", () => {
     expect(parseSendAllInput({ clientId: "x", templateIds: [id] }).ok).toBe(false);
   });
 });
+
+import { CANONICAL_ORIGIN, siteOrigin } from "@/lib/site-url";
+
+describe("siteOrigin", () => {
+  const url = "https://adflo-abc123-team.vercel.app/api/control/agreements/send";
+  it("is the canonical address on the live production site, whatever address the request used", () => {
+    expect(siteOrigin(url, { VERCEL_ENV: "production" })).toBe(CANONICAL_ORIGIN);
+    expect(CANONICAL_ORIGIN).toBe("https://www.adflo.pro");
+  });
+  it("uses the request address in previews and development", () => {
+    expect(siteOrigin(url, { VERCEL_ENV: "preview" })).toBe("https://adflo-abc123-team.vercel.app");
+    expect(siteOrigin("http://localhost:3000/x", {})).toBe("http://localhost:3000");
+  });
+  it("lets NEXT_PUBLIC_SITE_URL override it, and ignores a malformed one", () => {
+    expect(siteOrigin(url, { VERCEL_ENV: "production", NEXT_PUBLIC_SITE_URL: "https://example.com/" })).toBe("https://example.com");
+    expect(siteOrigin(url, { VERCEL_ENV: "production", NEXT_PUBLIC_SITE_URL: "javascript:alert(1)" })).toBe(CANONICAL_ORIGIN);
+  });
+});
+
+import { canonicalControlUrl } from "@/lib/canonical-host";
+
+describe("canonicalControlUrl", () => {
+  const live = { VERCEL_ENV: "production" };
+  it("sends Control center pages on any other address to www.adflo.pro, keeping path and query", () => {
+    expect(canonicalControlUrl(new URL("https://adflo.pro/control"), live)?.href).toBe("https://www.adflo.pro/control");
+    expect(canonicalControlUrl(new URL("https://adflo-xyz.vercel.app/control/clients/abc?tab=1"), live)?.href).toBe("https://www.adflo.pro/control/clients/abc?tab=1");
+  });
+  it("leaves the canonical address, other pages, the API, previews and development alone", () => {
+    expect(canonicalControlUrl(new URL("https://www.adflo.pro/control/clients"), live)).toBeNull();
+    expect(canonicalControlUrl(new URL("https://adflo.pro/app/overview"), live)).toBeNull();
+    expect(canonicalControlUrl(new URL("https://adflo-xyz.vercel.app/api/control/agreements"), live)).toBeNull();
+    expect(canonicalControlUrl(new URL("https://adflo-xyz.vercel.app/control"), { VERCEL_ENV: "preview" })).toBeNull();
+    expect(canonicalControlUrl(new URL("http://localhost:3000/control"), {})).toBeNull();
+  });
+  it("does not treat /controls or /control-x as the Control center", () => {
+    expect(canonicalControlUrl(new URL("https://adflo.pro/controls"), live)).toBeNull();
+  });
+});

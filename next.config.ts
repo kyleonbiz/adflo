@@ -41,6 +41,8 @@ const nextConfig: NextConfig = {
   // Old shared links to the public demo still work: they now open the same screen inside the app.
   async redirects() {
     return [
+      // The bare domain always goes to the www address, where the app and the Control center (/control) live.
+      { source: "/:path*", has: [{ type: "host", value: "adflo.pro" }], destination: "https://www.adflo.pro/:path*", permanent: true },
       { source: "/landing", destination: "/", permanent: true },
       { source: "/demo", destination: "/app/overview", permanent: true },
       { source: "/demo/documents", destination: "/app", permanent: true },

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { siteOrigin } from "@/lib/site-url";
 import { fail, staffRoute } from "@/lib/control/api";
 import { hashToken, newToken } from "@/lib/control/token";
 import { parseSendAllInput } from "@/lib/control/validation";
@@ -21,7 +22,7 @@ export function POST(req: Request) {
     const { data: templates } = await supabase.from("agreement_templates").select("id, title").in("id", templateIds);
     if (!templates || templates.length !== templateIds.length) return fail(404, "not_found", "Client or agreement not found.");
     const titleOf = new Map(templates.map((t) => [String(t.id), String(t.title)]));
-    const origin = new URL(req.url).origin;
+    const origin = siteOrigin(req.url);
     const items: { id: string; title: string; link: string }[] = [];
     for (const id of templateIds) {
       const token = newToken();

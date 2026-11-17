@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { siteOrigin } from "@/lib/site-url";
 import { fail, staffRoute } from "@/lib/control/api";
 import { hashToken, newToken } from "@/lib/control/token";
 import { parseSendInput } from "@/lib/control/validation";
@@ -22,7 +23,7 @@ export function POST(req: Request) {
       if (error.code === "23503") return fail(404, "not_found", "Client or agreement not found.");
       throw error;
     }
-    const link = `${new URL(req.url).origin}/agreement/${token}`;
+    const link = `${siteOrigin(req.url)}/agreement/${token}`;
     const body: { ok: true; link: string; emailedTo?: string; emailError?: string } = { ok: true, link };
     if (parsed.value.email) {
       const { data: client } = await supabase.from("clients").select("name, owner_name, owner_email").eq("id", parsed.value.clientId).maybeSingle();

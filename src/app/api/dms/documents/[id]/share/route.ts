@@ -3,6 +3,7 @@ import { SHARE_CREATE_RATE } from "@/lib/dms/server/rate-limit";
 import { readJson, route } from "@/lib/dms/server/respond";
 import { shareLinkSchema, uuid } from "@/lib/dms/validation";
 import { getServiceRoleKey } from "@/lib/supabase/env";
+import { siteOrigin } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export async function GET(req: Request, ctx: RouteContext<"/api/dms/documents/[i
 export async function POST(req: Request, ctx: RouteContext<"/api/dms/documents/[id]/share">) {
   const { id } = await ctx.params;
   const body = await readJson(req);
-  const origin = new URL(req.url).origin;
+  const origin = siteOrigin(req.url);
   return route(req, async ({ service, mode }) => {
     if (mode !== "live" || !getServiceRoleKey()) {
       throw new DmsError("unavailable", "Share links need Supabase with SUPABASE_SERVICE_ROLE_KEY configured.");

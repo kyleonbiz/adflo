@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { siteOrigin } from "@/lib/site-url";
 import { fail, staffRoute } from "@/lib/control/api";
 import { isUuid, welcomeEmailSubject, welcomeMessage } from "@/lib/control/workspace";
 import { onboardingMailReady, sendOnboardingEmail } from "@/lib/mail/onboarding";
@@ -20,7 +21,7 @@ export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/
     if (!EMAIL.test(to)) return fail(409, "no_owner_email", "Add the owner's email to the client first (Edit).");
     if (!client.workspace_id) return fail(409, "no_workspace", "Create or connect the workspace first, so the owner has somewhere to land.");
     if (!onboardingMailReady()) return fail(503, "mail_off", "Email is not switched on yet (SMTP_USER and SMTP_PASSWORD are not set). Use Copy welcome message instead.");
-    const text = welcomeMessage({ clientName: String(client.name ?? ""), ownerName: String(client.owner_name ?? ""), ownerEmail: to, signupUrl: `${new URL(req.url).origin}/signup` });
+    const text = welcomeMessage({ clientName: String(client.name ?? ""), ownerName: String(client.owner_name ?? ""), ownerEmail: to, signupUrl: `${siteOrigin(req.url)}/signup` });
     try {
       await sendOnboardingEmail({ to, subject: welcomeEmailSubject(String(client.name ?? "")), text });
     } catch {
