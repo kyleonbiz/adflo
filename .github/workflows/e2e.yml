@@ -56,6 +56,18 @@ jobs:
       - name: Run the browser tests
         run: npx playwright test --output="$RUNNER_TEMP/pw-out" --shard=${{ matrix.shard }}
 
+      # A failed test saves a text snapshot of the page (error-context.md). Print them here so a failure can be diagnosed
+      # from this log alone, without downloading the trace.
+      - name: Show what the page looked like at each failure
+        if: failure()
+        run: |
+          for f in "$RUNNER_TEMP"/pw-out/*/error-context.md; do
+            [ -f "$f" ] || continue
+            echo "::group::$(basename "$(dirname "$f")")"
+            head -n 120 "$f"
+            echo "::endgroup::"
+          done
+
       - name: Keep traces of failures
         if: failure()
         uses: actions/upload-artifact@v4
