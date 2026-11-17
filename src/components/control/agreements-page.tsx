@@ -31,21 +31,23 @@ export function SentList({ sent, showClient }: { sent: SentAgreement[]; showClie
 }
 
 /** Send an agreement to one client and copy the link. */
-export function SendAgreement({ clientId, templates, sent, canEdit }: { clientId: string; templates: AgreementTemplate[]; sent: SentAgreement[]; canEdit: boolean }) {
+export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail = "" }: { clientId: string; templates: AgreementTemplate[]; sent: SentAgreement[]; canEdit: boolean; ownerEmail?: string }) {
   const router = useRouter();
   const latest = templates.filter((t) => !templates.some((o) => o.title === t.title && o.version > t.version));
   const [templateId, setTemplateId] = useState(latest[0]?.id ?? "");
   const [link, setLink] = useState("");
+  const [emailIt, setEmailIt] = useState(!!ownerEmail);
+  const [emailNote, setEmailNote] = useState("");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function send(e: React.FormEvent) {
-    e.preventDefault(); setBusy(true); setError(""); setLink(""); setCopied(false);
+    e.preventDefault(); setBusy(true); setError(""); setLink(""); setCopied(false); setEmailNote("");
     try {
-      const res = await fetch("/api/control/agreements/send", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, templateId }) });
+      const res = await fetch("/api/control/agreements/send", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, templateId, email: emailIt && !!ownerEmail }) });
       const json = await res.json().catch(() => null);
-      if (res.ok && json?.link) { setLink(json.link); router.refresh(); } else setError(json?.error?.message ?? "Could not create the link. Try again.");
+      if (res.ok && json?.link) { setLink(json.link); setEmailNote(json.emailedTo ? `Emailed to ${json.emailedTo} from onboarding@adflo.pro.` : json.emailError ?? ""); router.refresh(); } else setError(json?.error?.message ?? "Could not create the link. Try again.");
     } catch { setError("Could not reach the server. Try again."); } finally { setBusy(false); }
   }
   async function copy() {
@@ -58,12 +60,14 @@ export function SendAgreement({ clientId, templates, sent, canEdit }: { clientId
       {canEdit && (latest.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No agreements are published yet. The Owner can add one under Agreements.</p> : (
         <form onSubmit={send} className="mt-3 flex flex-wrap items-end gap-3">
           <div className="min-w-56 flex-1 space-y-1.5"><Label htmlFor="ag-template">Agreement</Label><select id="ag-template" value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30">{latest.map((t) => <option key={t.id} value={t.id}>{t.title} (v{t.version})</option>)}</select></div>
-          <Button type="submit" variant="outline" disabled={busy || !templateId}>{busy ? "Creating…" : "Create link"}</Button>
+          {ownerEmail && <label className="flex w-full items-center gap-2 text-sm"><input type="checkbox" checked={emailIt} onChange={(e) => setEmailIt(e.target.checked)} /> Also email it to {ownerEmail} from onboarding@adflo.pro</label>}
+          <Button type="submit" variant="outline" disabled={busy || !templateId}>{busy ? "Working…" : emailIt && ownerEmail ? "Create link and email it" : "Create link"}</Button>
         </form>
       ))}
       {link && (
         <div className="mt-3 space-y-2 rounded-xl bg-accent p-3 text-sm">
-          <p className="font-medium">Send this link to the client. It is shown only once and works for 30 days.</p>
+          <p className="font-medium">{emailNote.startsWith("Emailed") ? "The client has the link by email. You can also copy it here." : "Send this link to the client."} It is shown only once and works for 30 days.</p>
+          {emailNote && <p role="status" className="text-muted-foreground">{emailNote}</p>}
           <div className="flex flex-wrap items-center gap-2"><Input readOnly aria-label="Agreement link" value={link} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 font-mono text-xs" /><Button type="button" size="sm" onClick={copy}>{copied ? "Copied" : "Copy"}</Button></div>
         </div>
       )}

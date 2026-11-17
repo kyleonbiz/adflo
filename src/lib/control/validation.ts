@@ -208,10 +208,10 @@ export function parseAgreementInput(raw: unknown): Parsed<{ title: string; body:
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { title, body } };
 }
 
-export function parseSendInput(raw: unknown): Parsed<{ clientId: string; templateId: string }> {
+export function parseSendInput(raw: unknown): Parsed<{ clientId: string; templateId: string; email: boolean }> {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   if (!isUuid(r.clientId) || !isUuid(r.templateId)) return { ok: false, errors: { templateId: "Choose a client and an agreement." } };
-  return { ok: true, value: { clientId: r.clientId, templateId: r.templateId } };
+  return { ok: true, value: { clientId: r.clientId, templateId: r.templateId, email: r.email === true } };
 }
 
 export const isAgreementToken = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9_-]{43}$/.test(v);

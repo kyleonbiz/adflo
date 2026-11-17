@@ -42,7 +42,7 @@ export default async function ClientRoute({ params }: PageProps<"/control/client
       <ClientDetail client={client} plans={plans} canEdit={canEdit} isOwner={ctx.staff.role === "owner"} today={today} sample={false} openTickets={tickets.filter((t) => isOpen(t.status)).length}>
         <div id="account" className="scroll-mt-4"><WorkspaceCard client={client} unlinked={unlinked} canEdit={canEdit} /></div>
         <ClientBilling client={client} today={today} sample={false} />
-        <div id="agreements" className="scroll-mt-4"><SendAgreement clientId={id} templates={templates} sent={sent} canEdit={canEdit} /></div>
+        <div id="agreements" className="scroll-mt-4"><SendAgreement clientId={id} templates={templates} sent={sent} canEdit={canEdit} ownerEmail={client.ownerEmail} /></div>
         <ClientExtras clientId={id} ownerEmail={client.ownerEmail} tickets={tickets} timeline={timeline} canEdit={canEdit} />
       </ClientDetail>
     );

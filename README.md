@@ -80,8 +80,7 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
   Site URL and allowed redirect URLs so `/reset-password` on your domain is permitted.
 
 * **Agreements**: the Owner publishes terms as versioned, never-edited text; staff create a one-time link for a client
-  (shown once; only its hash is stored; valid 30 days; AdFlo does not send email itself yet, so staff paste the link into
-  their own email). The client opens `/agreement/<secret>`, types their name and email and accepts; the acceptance, who
+  (shown once; only its hash is stored; valid 30 days). Staff can tick "Also email it" to send it to the client's owner from `onboarding@adflo.pro`; if email is not set up, they copy the link into their own email instead. The client opens `/agreement/<secret>`, types their name and email and accepts; the acceptance, who
   and when, is recorded and shown on the client's timeline. Sending also ticks the onboarding step.
 
 * **Monitoring**: health checks (database answers, error logging, cron secret, assistant key, dev mode), a log of server
@@ -263,6 +262,8 @@ Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app 
 | `DEMO_REQUEST_TO` / `DEMO_REQUEST_FROM` | Optional. Inbox that receives requests (default `sales@adflo.pro`) and the sender name. |
 | `ANTHROPIC_API_KEY` | Optional, server only. Without it the assistant (Addy) answers with its built-in rules. Claude answers only for **Core +** workspaces. |
 | `ASSISTANT_MODEL` | Optional model override (default `claude-opus-5-5`). |
+| `SMTP_USER`, `SMTP_PASSWORD` | Optional. A Google Workspace mailbox and its app password. Sends the landing page demo requests and, from the Control center, agreement links to new clients. |
+| `ONBOARDING_FROM` | Optional. Sender of onboarding emails (default `AdFlo Onboarding <onboarding@adflo.pro>`). Add that alias under Gmail > Settings > Accounts > "Send mail as" for `SMTP_USER`, or Gmail sends from `SMTP_USER` itself. |
 | `DMS_PENDING_UPLOAD_MAX_AGE_HOURS` | Pending-upload cleanup age (default 24, minimum 3). |
 | `DMS_MAX_FILE_SIZE_MB`, `DMS_MAX_FILES_PER_BATCH` | Upload limits (defaults 50 MB, 10 files). |
 | `DMS_ALLOWED_EXTENSIONS`, `DMS_EXTRA_FILE_TYPES` | Narrow or extend the upload allow-list. |
