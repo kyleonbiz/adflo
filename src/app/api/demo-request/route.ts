@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       from: process.env.DEMO_REQUEST_FROM || `AdFlo <${user}>`,
       to: process.env.DEMO_REQUEST_TO || user,
       replyTo: d.email,
-      subject: `AdFlo demo request: ${d.company}`,
+      subject: `AdFlo Demo Request: ${d.company}`,
       text: demoRequestText(d),
     });
   } catch {
