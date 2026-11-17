@@ -37,3 +37,26 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+  # Applies every migration to a throwaway PostgreSQL 16 and runs the access-policy tests (npm run test:db).
+  # supabase/tests/run.sh only prints PASS/FAIL lines and exits 0 either way, so this job fails on any FAIL or ERROR line,
+  # or if the run printed no PASS lines at all.
+  database:
+    name: Database policy tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make sure PostgreSQL 16 is installed
+        run: |
+          if [ ! -x /usr/lib/postgresql/16/bin/initdb ]; then
+            sudo apt-get update
+            sudo apt-get install -y postgresql-16
+          fi
+
+      - name: Run the database tests
+        run: |
+          bash supabase/tests/run.sh | tee "$RUNNER_TEMP/db-tests.log"
+          if grep -Eq "FAIL|ERROR" "$RUNNER_TEMP/db-tests.log"; then echo "A database test failed"; exit 1; fi
+          grep -q "PASS" "$RUNNER_TEMP/db-tests.log" || { echo "No tests ran"; exit 1; }
