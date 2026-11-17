@@ -6,8 +6,20 @@ Status: proposal, 2026-11-17. Prices, mix and conversion rates are assumptions t
 
 - **Niche:** contractors. The lead product is **subcontractor compliance**: collect and track each sub's license, insurance certificate (COI), W-9 and safety paperwork, and flag non-compliant subs before they go on site.
 - **Lead buyer:** general contractors and larger specialty contractors (30-300 staff) who manage many subs. A lapsed sub certificate exposes them to claims, and they often employ people just to chase the paperwork.
+- **Second niche, run in parallel: property managers.** Same product ("vendor and subcontractor compliance, handled"), two front doors. Property managers collect licenses and certificates of insurance from the vendors they hire, so the vendor-compliance workflow is shared. Contractors and property managers also refer each other: a property manager that requires compliance sends its vendors to AdFlo, and a contractor already in AdFlo can share its file with property-manager clients.
 - **Software first, service later.** The done-for-you service is offered only when clients ask for it (see below).
-- **Broader vision later:** other industries get their own packs once contractors prove the model.
+- **Broader vision later:** other industries get their own packs once these two prove the model.
+
+### Running two niches
+
+- One product, one onboarding process, two templates (document checklists, license types, reminders), two landing pages and two price sheets. Wording changes ("subs" vs "vendors"), the engine does not.
+- Fixed weekly split of selling time (for example 3 days contractors, 2 days property managers) so neither is ignored.
+- Pilots in both: 2-3 contractor and 2-3 property-manager pilots.
+- Contractors lead the product work. Property managers use the existing vendor-compliance workflow first.
+- Build nothing niche-specific (leases, work orders, per-project views) until 2-3 paying clients in that niche ask for the same thing.
+- Track each niche separately: conversion, sales cycle, onboarding hours, churn. Review after 6 months and shift effort to the one that earns more.
+- Property managers hold tenant data: have privacy terms and a security review in place before their first contract.
+- Position against incumbents as a compliance layer that works alongside their property-management system, not a replacement.
 
 ## Pricing: by active subcontractors, not seats
 
@@ -37,6 +49,17 @@ Illustrative path to $1M (mix is a guess):
 | Total recurring | 64 | ~$912k |
 | Onboarding fees (first year) | | ~$136k |
 
+### Property manager pricing: by units (doors) under management
+
+| Tier | Portfolio | Monthly | Onboarding |
+|---|---|---|---|
+| Starter | up to 100 units | $399 | $1,500 |
+| Growth | up to 500 units | $1,500 | $3,000 |
+| Portfolio | up to 2,000 units | $3,000 | $5,000 |
+| Enterprise | 2,000+ units | $6,000+ | $7,500+ |
+
+Assumptions to test in discovery calls, including the per-unit price implied by each tier. The $1M illustration above uses only contractor tiers; property managers add to it.
+
 Margin guards: track support hours per client (over about 6 hours a month on a Compliance client erodes margin), and measure AI cost per client before launch (COI reading uses it).
 
 ## What to build, in order (let paying pilots reorder this)
@@ -59,7 +82,7 @@ Only items 1-3 before the first pilots. Do not build 4-6 until paying clients as
 5. Demo-and-onboarding flow for the larger tiers (self-serve signup matters only for Core / Core +).
 6. Replace the temporary support address in `docs/support/support-policy.md`.
 
-## Validate first (15-20 conversations with GCs and compliance or project managers)
+## Validate first (15-20 conversations per niche: GCs and compliance or project managers; property managers and their operations leads)
 
 1. How many subs do you track, and who does it?
 2. What happened the last time a sub's insurance lapsed?
