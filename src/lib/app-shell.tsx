@@ -11,6 +11,9 @@ import { dayInZone } from "@/lib/dashboard/logic";
 import { PausedNotice } from "@/components/auth/paused-notice";
 import { acceptPendingInvites, findMembership, getWorkspaceStanding } from "@/lib/dms/server/context";
 import { isPaused } from "@/lib/dms/standing";
+import { LiveIndustries } from "@/components/live-industries";
+import { loadLiveIndustries } from "@/lib/setup/live-server";
+import { FALLBACK_LIVE } from "@/lib/setup/types";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { createServerSupabase } from "@/lib/supabase/server";
 
@@ -19,10 +22,10 @@ async function loadNotifications() {
   return { today: dayInZone((await headers()).get("x-vercel-ip-timezone")) };
 }
 
-function Frame({ topRight, userName, features = null, wrap, children }: { topRight: React.ReactNode; userName?: string; features?: string[] | null; wrap?: (children: React.ReactNode) => React.ReactNode; children: React.ReactNode }) {
+function Frame({ topRight, userName, features = null, industries = FALLBACK_LIVE, wrap, children }: { topRight: React.ReactNode; userName?: string; features?: string[] | null; industries?: typeof FALLBACK_LIVE; wrap?: (children: React.ReactNode) => React.ReactNode; children: React.ReactNode }) {
   // A signed-in workspace saves its records to the database (`wrap` adds that); the preview keeps them in this browser.
   const body = wrap ? wrap(children) : children;
-  return <PlanFeaturesProvider features={features}><AppFrame base="/app" topRight={topRight}><CurrentUserProvider name={userName}>{body}</CurrentUserProvider></AppFrame></PlanFeaturesProvider>;
+  return <PlanFeaturesProvider features={features}><LiveIndustries industries={industries}><AppFrame base="/app" topRight={topRight}><CurrentUserProvider name={userName}>{body}</CurrentUserProvider></AppFrame></LiveIndustries></PlanFeaturesProvider>;
 }
 
 function NotInPlan() {
@@ -68,7 +71,7 @@ export async function renderAppShell(
     // Loaded only here, so the preview never downloads the database client it does not use.
     const { RecordsProvider } = await import("@/components/records-provider");
     return (
-      <Frame userName={fullName} features={features} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} />}>
+      <Frame userName={fullName} features={features} industries={await loadLiveIndustries(supabase)} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} />}>
         {pathAllowed(features, nextPath) ? content("live", { name: fullName }) : <NotInPlan />}
       </Frame>
     );

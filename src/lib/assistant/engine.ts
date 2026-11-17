@@ -2,7 +2,7 @@ import { MODULES, moduleHref } from "@/lib/modules/registry";
 import { AVAILABLE_MODULE_IDS, IMPORTABLE, canFinish, recommendModules, runSetupChecks, setupScore } from "@/lib/setup/logic";
 import { templatesFor } from "@/lib/setup/templates";
 import { DRAFT_SERVICES } from "./guardrails";
-import { LIVE_INDUSTRIES, TEAM_SIZES, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
+import { liveIndustries, TEAM_SIZES, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
 
 export interface Link { label: string; href: string }
 export interface Turn { role: "assistant" | "user"; text: string; chips?: string[]; links?: Link[]; download?: { name: string; headers: string[]; rows: (string | number)[][] } }
@@ -36,7 +36,7 @@ export function greeting(config: SetupConfig): Turn {
 function askNext(config: SetupConfig): Reply {
   const b = config.business;
   if (b.name.trim().length < 2) return { turns: [{ role: "assistant", text: "What is your business called?" }], config, pending: "name" };
-  if (!b.industry) return { turns: [{ role: "assistant", text: `Nice to meet you, ${b.name.trim()}. What kind of business is it?`, chips: [...LIVE_INDUSTRIES] }], config, pending: "industry" };
+  if (!b.industry) return { turns: [{ role: "assistant", text: `Nice to meet you, ${b.name.trim()}. What kind of business is it?`, chips: [...liveIndustries()] }], config, pending: "industry" };
   if (!b.teamSize) return { turns: [{ role: "assistant", text: "How big is the team?", chips: [...TEAM_SIZES] }], config, pending: "size" };
   const recs = recommendModules(b.industry, b.teamSize).filter((r) => AVAILABLE_MODULE_IDS.includes(r.id));
   const next = { ...config, modules: recs.map((r) => r.id), completedOn: null };
@@ -111,8 +111,8 @@ export function respond(config: SetupConfig, pending: Pending, input: string, to
     return wrap(askNext({ ...config, business: { ...config.business, name: text } }));
   }
   if (pending === "industry") {
-    const industry = choose<Industry>(text, LIVE_INDUSTRIES);
-    if (!industry) return wrap({ turns: [{ role: "assistant", text: "Please pick one of these.", chips: [...LIVE_INDUSTRIES] }], config, pending });
+    const industry = choose<Industry>(text, liveIndustries());
+    if (!industry) return wrap({ turns: [{ role: "assistant", text: "Please pick one of these.", chips: [...liveIndustries()] }], config, pending });
     return wrap(askNext({ ...config, business: { ...config.business, industry } }));
   }
   if (pending === "size") {

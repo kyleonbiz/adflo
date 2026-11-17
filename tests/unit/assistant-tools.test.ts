@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runTool, type ToolState } from "@/lib/assistant/tools";
-import { INDUSTRIES, LIVE_INDUSTRIES, emptyConfig, selectableIndustries } from "@/lib/setup/types";
+import { INDUSTRIES, emptyConfig, liveFromRows, liveIndustries, selectableIndustries, setLiveIndustries, toggleError } from "@/lib/setup/types";
 import { PRESETS } from "@/lib/setup/industries";
 
 const fresh = (): ToolState => ({ config: emptyConfig(), today: "2026-01-15", links: [] });
@@ -22,13 +22,23 @@ describe("assistant tools", () => {
     expect(s.config.modules).toContain("licenses");
     expect(s.links.length).toBeGreaterThan(0);
   });
-  it("only accepts live industries, while every industry stays built", () => {
+  it("only accepts open industries, while every industry stays built", () => {
     const s = fresh();
     expect(JSON.parse(runTool(s, "set_business_profile", { industry: "Real estate" })).error).toBeDefined();
-    expect(LIVE_INDUSTRIES).toEqual(["Construction & trades"]);
+    expect(liveIndustries()).toEqual(["Construction & trades"]);
     expect(selectableIndustries("Real estate")).toEqual(["Construction & trades", "Real estate"]);
     expect(selectableIndustries("")).toEqual(["Construction & trades"]);
     expect(INDUSTRIES.every((i) => i in PRESETS)).toBe(true);
+    setLiveIndustries(["Construction & trades", "Real estate"]);
+    try { expect(JSON.parse(runTool(s, "set_business_profile", { industry: "Real estate" })).error).toBeUndefined(); } finally { setLiveIndustries(null); }
+  });
+  it("works out the open list from saved rows and refuses to close the last one", () => {
+    expect(liveFromRows([])).toEqual(["Construction & trades"]);
+    expect(liveFromRows([{ industry: "Legal", live: true }, { industry: "Construction & trades", live: true }, { industry: "Nope", live: true }])).toEqual(["Construction & trades", "Legal"]);
+    expect(liveFromRows([{ industry: "Legal", live: false }])).toEqual(["Construction & trades"]);
+    expect(toggleError(["Legal"], "Legal", false)).toMatch(/at least one/i);
+    expect(toggleError(["Legal", "Nonprofit"], "Legal", false)).toBeNull();
+    expect(toggleError(["Legal"], "Spaceships", true)).toMatch(/unknown/i);
   });
   it("ignores unknown service ids and tools", () => {
     const s = fresh();

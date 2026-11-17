@@ -234,3 +234,12 @@ test("staff sign-in page: a return path outside the Control center is ignored", 
   await expect(page).toHaveURL(/\/control$/);
   await expect(page.getByRole("heading", { name: "Control center", level: 1 })).toBeVisible();
 });
+
+test("control center preview: the industries page lists every industry with switches the preview cannot change", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/control/industries");
+  await expect(page.getByRole("heading", { name: "Industries" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("industry-row")).toHaveCount(17);
+  await expect(page.getByRole("switch", { name: "Construction & trades open to new sign-ups" })).toBeDisabled();
+  await expect(page.getByText("Sample view")).toBeVisible();
+});

@@ -37,9 +37,9 @@ Safe / Warning / Critical risk tiers with "depends on" links; vendor Non-complia
 dialog on Invoices, Forms, Vendors, Licenses, Projects, Contacts and Documents.
 
 **Industries.** All 17 industries are built (presets, templates, recommendations, samples; see Working notes). Only
-contractors are open to new sign-ups for now: `LIVE_INDUSTRIES` in `src/lib/setup/types.ts` (or the
-`NEXT_PUBLIC_LIVE_INDUSTRIES` variable: `all`, or names separated by `|`) is what the setup wizard, Settings profile,
-Addy and the paperwork picker offer. An account already set to another industry keeps it. To open one, add it there.
+contractors are open to new sign-ups for now. The Owner opens others with a switch in Control center > Industries. AdFlo is
+not a CRM: the module is called Contacts (its internal id is still `crm`, kept so saved setups keep working).
+`NEXT_PUBLIC_LIVE_INDUSTRIES` (`all`, or names separated by `|`) is only the fallback when nothing is saved, and what the tests use.
 
 **Not built yet.** Screens that rename themselves per industry, the staff
 operations portal extras, chasing reminders, auto-saved drafts and a one-click audit ZIP.
@@ -69,6 +69,7 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
 * **Clients**: status, plan, seats in use (counted by a database function that exposes only counts and last sign-in),
   price, and a detail page with the onboarding checklist.
 * **Plans & pricing**: the Owner sets plan prices and seats; only the Owner can give a client their own price.
+* **Industries** (`/control/industries`): the Owner switches each industry open or closed to new sign-ups (saved in `live_industries`; at least one stays open). It drives the setup wizard, Settings profile, Addy and the paperwork picker; accounts already on an industry keep it. Without a database the page is a sample and the default (contractors) applies.
 * **Team**: the Owner adds people (who must already have an AdFlo account), changes roles, and turns access off. There is
   always at least one active Owner.
 
@@ -128,7 +129,7 @@ The app is growing from a document manager into a client portal of ten service m
 (`src/lib/modules/registry.ts`). All ten exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
-**05 CRM & Data** (`src/lib/contacts/`, `src/components/contacts/`), **06 Tasks**
+**05 Contacts** (`src/lib/contacts/`, `src/components/contacts/`), **06 Tasks**
 (`src/lib/projects/`, `src/components/projects/`), **07 Forms & paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
 (`src/lib/datasets/`, `src/components/reporting/`), **09 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **10 Settings**
@@ -138,7 +139,7 @@ connected (see the limits below).
 **Shared import engine** (`src/lib/import/`): `parseCsv` (RFC 4180 quoting, BOM, CRLF, comma/semicolon/tab,
 limits of 5,000 rows, 50 columns and 2,000 characters per cell, control characters stripped, line numbers
 kept for error reports), `suggestMapping` / `mapRows` (match source columns to target fields by name and
-alias), and `runImport` (validate each row, then sort into accepted, rejected and duplicate). CRM & Data is
+alias), and `runImport` (validate each row, then sort into accepted, rejected and duplicate). Contacts is
 its first user; modules 08 (Data Entry) and 10 (File Reset) are meant to reuse it. Files are read in the
 browser and never uploaded.
 
@@ -151,7 +152,7 @@ browser and never uploaded.
   renewal tasks, overdue notices) but no email is sent yet. Licenses can be pre-filled from an uploaded PDF, Word, text or CSV file (`/api/licenses/parse` reads the number, issuer, holder and dates next to their labels; photos and scans are read with OCR on the Core + plan, and the file itself is not stored). Vendors get required documents by category, can only be
   activated once every required document is in and unexpired (there is no approval step: anyone on the team can act), and are checked for
   duplicates (normalized name, similar name, tax ID, contact email, shared company email domain) when
-  added and across the list. CRM & Data imports in three steps (choose or paste a
+  added and across the list. Contacts imports in three steps (choose or paste a
   file, map columns, review) and shows every rejected row by file line before anything changes; matching
   contacts are skipped or updated, and the contact list can be de-duplicated and exported. Scheduled
   synchronization with other systems needs the backend and is not built. Reporting
