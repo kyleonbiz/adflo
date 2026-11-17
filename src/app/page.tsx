@@ -8,8 +8,8 @@ import { LandingSections } from "@/components/marketing/sections";
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <div className="hero-gradient relative isolate flex-1 overflow-hidden">
+    <div className="flex min-h-dvh flex-col bg-[#040826]">
+      <div className="hero-gradient relative isolate overflow-hidden">
         {/* The same ribbons, skyline and waves as the sign-in screen, behind the top of the page and fading out below it. */}
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[860px] overflow-hidden [mask-image:linear-gradient(to_bottom,#000_78%,transparent)]">
           <AuthBackdrop />
@@ -30,12 +30,15 @@ export default function HomePage() {
               <DemoWorkspace />
             </div>
           </div>
-          <LandingSections />
         </main>
       </div>
-      <footer className="border-t border-indigo-100 bg-white/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} AdFlo · Business Administrative Services
-      </footer>
+      {/* Below the demo the page switches to the app's own look: the light blue mesh with white glass cards. */}
+      <div className="landing-light relative -mt-10 flex-1 rounded-t-[2.5rem] text-foreground">
+        <LandingSections />
+        <footer className="border-t border-brand-blue/10 bg-white/50 py-6 text-center text-xs text-muted-foreground">
+          © {new Date().getFullYear()} AdFlo · Business Administrative Services
+        </footer>
+      </div>
     </div>
   );
 }

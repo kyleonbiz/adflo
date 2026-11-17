@@ -137,6 +137,15 @@
   background: linear-gradient(180deg, #0a1a5c 0, #060d38 900px, #040826 100%);
 }
 
+/* Lower part of the public page: the app's light blue mesh behind white glass cards. */
+.landing-light {
+  background:
+    radial-gradient(60rem 38rem at 8% 0%, rgb(49 168 255 / 0.32), transparent 60%),
+    radial-gradient(46rem 34rem at 96% 14%, rgb(101 85 244 / 0.20), transparent 62%),
+    radial-gradient(52rem 36rem at 70% 100%, rgb(40 124 255 / 0.24), transparent 62%),
+    linear-gradient(180deg, #e6efff, #dde8fb);
+}
+
 /* Translucent frame that holds the dashboard card on the public page. */
 .glass-frame {
   background: rgb(255 255 255 / 0.14);
