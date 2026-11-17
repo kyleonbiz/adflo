@@ -398,7 +398,7 @@ npm run test:e2e    # Playwright: demo page, dev-mode server flows, content sear
   server binaries (`PG_BIN` overrides the path).
 * `tests/e2e` – needs a Chromium; set `PLAYWRIGHT_CHROMIUM_PATH` or run
   `npx playwright install chromium`. Locally only Chromium runs. Set `E2E_BROWSERS=all` (or a list such as
-  `webkit,mobile-safari`) to add Firefox, WebKit (the engine Safari uses) and WebKit on an iPhone-sized screen; first run
+  `webkit,ios-safari`) to add Firefox, WebKit (the engine Safari uses, with reduced motion and no backdrop blur) and WebKit on an iPhone-sized screen (only the tests whose titles mention a phone, mobile, touch or tablet); first run
   `npx playwright install firefox webkit`. The nightly workflow runs all four, each as its own job. `layout.spec.ts` checks 820 px and 360 px for page
   overflow, panel fit and touch-target size, and writes screenshots to `test-results/layout/`.
   The first visit to each page compiles it in the dev server, so a cold run is slower.
