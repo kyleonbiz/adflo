@@ -14,7 +14,7 @@ describe("assistant tools", () => {
   it("validates the profile, then deploys the recommended services", () => {
     const s = fresh();
     expect(JSON.parse(runTool(s, "set_business_profile", { industry: "Spaceships" })).error).toBeDefined();
-    runTool(s, "set_business_profile", { name: "Acme", industry: "Real estate", team_size: "2-5 people" });
+    runTool(s, "set_business_profile", { name: "Acme", industry: "Property management", team_size: "2-5 people" });
     const out = JSON.parse(runTool(s, "deploy_services", {}));
     expect(out.deployed).toBe(true);
     expect(s.config.completedOn).toBe("2026-01-15");

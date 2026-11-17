@@ -32,22 +32,9 @@ const chain = (requests: string[], forms: string[] = []): ChainConfig => ({ requ
 const two = (a: string, b: string) => chain([a, b]);
 
 export const PRESETS: Record<Industry, IndustryPreset> = {
-  "Professional services": { licenses: "professional", paperwork: "professional", vendorDocs: ["Signed contract"], chains: chain(["Office manager"]), leadDays: 30 },
-  "Retail & e-commerce": { licenses: "retail", paperwork: "retail", vendorDocs: ["Resale certificate"], chains: chain(["Store manager"]), leadDays: 30 },
+  "Property management": { licenses: "realestate", paperwork: "realestate", vendorDocs: ["Certificate of insurance", "Signed contract", "W-9"], chains: two("Property manager", "Owner"), leadDays: 60 },
   "Construction & trades": { licenses: "construction", paperwork: "construction", vendorDocs: ["Workers' compensation certificate", "Lien waiver"], chains: two("Project manager", "Owner"), leadDays: 30 },
-  "Healthcare practice": { licenses: "health", paperwork: "health", vendorDocs: ["Business associate agreement"], chains: two("Practice manager", "Owner"), leadDays: 60 },
-  "Restaurant & hospitality": { licenses: "food", paperwork: "food", vendorDocs: ["Food safety certificate"], chains: chain(["General manager"]), leadDays: 60 },
-  Nonprofit: { licenses: "general", paperwork: "general", vendorDocs: [], chains: two("Program director", "Treasurer"), leadDays: 30 },
-  "Real estate": { licenses: "realestate", paperwork: "realestate", vendorDocs: ["Signed contract"], chains: chain(["Managing broker"]), leadDays: 60 },
-  "Auto & fleet": { licenses: "vehicle", paperwork: "vehicle", vendorDocs: ["Garage liability certificate"], chains: two("Fleet manager", "Owner"), leadDays: 30 },
   "Home services": { licenses: "construction", paperwork: "construction", vendorDocs: ["Workers' compensation certificate"], chains: two("Office manager", "Owner"), leadDays: 30 },
-  "Beauty & wellness": { licenses: "beauty", paperwork: "beauty", vendorDocs: ["Product safety data sheet"], chains: chain(["Owner"]), leadDays: 30 },
-  Legal: { licenses: "legal", paperwork: "legal", vendorDocs: ["Confidentiality agreement"], chains: { requests: ["Office manager", "Managing partner"], forms: ["Managing partner"] }, leadDays: 60 },
-  "Accounting & tax": { licenses: "accounting", paperwork: "accounting", vendorDocs: ["Confidentiality agreement"], chains: two("Office manager", "Partner"), leadDays: 60 },
-  "Trucking & logistics": { licenses: "vehicle", paperwork: "vehicle", vendorDocs: ["Operating authority (MC number)", "Driver list"], chains: two("Dispatch manager", "Owner"), leadDays: 60 },
-  "Education & childcare": { licenses: "childcare", paperwork: "childcare", vendorDocs: ["Background check confirmation"], chains: two("Director", "Owner"), leadDays: 60 },
-  Manufacturing: { licenses: "manufacturing", paperwork: "manufacturing", vendorDocs: ["Quality certification", "Safety data sheets"], chains: two("Plant manager", "Finance manager"), leadDays: 60 },
-  "Tech & agency": { licenses: "professional", paperwork: "professional", vendorDocs: ["Master services agreement", "Security questionnaire"], chains: chain(["Operations lead"]), leadDays: 30 },
   Other: { licenses: "general", paperwork: "general", vendorDocs: [], chains: chain(["Operations manager"]), leadDays: 30 },
 };
 

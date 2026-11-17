@@ -17,7 +17,7 @@ The site address (`/`) is the landing page (`src/app/page.tsx`; the old `/landin
 
 ## About this app (read this first if you are reviewing it)
 
-**What it is.** A back-office tool for small businesses: one place for invoices, licenses and renewals, vendors,
+**What it is.** A back-office tool for property managers and contractors (setup offers Property management, Construction & trades and Home services, plus Other): one place for invoices, licenses and renewals, vendors,
 contacts, projects and tasks, forms, documents and reporting, with an AI assistant ("Addy"). It is built to remove
 admin busywork: reminders, duplicate checks and expiry tracking happen for you.
 
@@ -36,7 +36,7 @@ admin busywork: reminders, duplicate checks and expiry tracking happen for you.
 Safe / Warning / Critical risk tiers with "depends on" links; vendor Non-compliant flag; role views; a shared email Send
 dialog on Invoices, Forms, Vendors, Licenses, Projects, Contacts and Documents.
 
-**Not built yet.** Industry setup that renames screens (Construction, Healthcare, Property Management), the staff
+**Not built yet.** Industry setup that renames screens, the staff
 operations portal extras, chasing reminders, auto-saved drafts and a one-click audit ZIP.
 
 **Where to look.** Screens: `src/components/<module>/`. Business rules: `src/lib/<module>/logic.ts` (each has unit tests

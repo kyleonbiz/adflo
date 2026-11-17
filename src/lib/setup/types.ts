@@ -1,8 +1,4 @@
-export const INDUSTRIES = [
-  "Professional services", "Retail & e-commerce", "Construction & trades", "Healthcare practice",
-  "Restaurant & hospitality", "Nonprofit", "Real estate", "Auto & fleet", "Home services", "Beauty & wellness",
-  "Legal", "Accounting & tax", "Trucking & logistics", "Education & childcare", "Manufacturing", "Tech & agency", "Other",
-] as const;
+export const INDUSTRIES = ["Property management", "Construction & trades", "Home services", "Other"] as const;
 export type Industry = (typeof INDUSTRIES)[number];
 
 export const TEAM_SIZES = ["Just me", "2-5 people", "6-20 people", "21+ people"] as const;

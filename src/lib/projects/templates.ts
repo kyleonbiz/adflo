@@ -129,6 +129,8 @@ const tasks = (items: [string, number][]): TemplateTask[] => items.map(([title, 
 
 /** Starting points for particular kinds of business. They sit in the same list as the general ones. */
 PROJECT_TEMPLATES.push(
+  { id: "unit-turnover", name: "Unit Turnover", summary: "Get a vacated unit rent-ready.", description: "Inspect the unit, handle repairs and cleaning, and relist it quickly.", durationDays: 14, bestFor: ["Property management"],
+    tasks: tasks([["Move-out inspection and photos", 1], ["Account for the security deposit", 3], ["Schedule repairs and paint", 4], ["Deep clean and re-key", 9], ["Final inspection", 11], ["Update the listing and book showings", 12]]) },
   { id: "job-closeout", name: "Job Closeout", summary: "Finish a job cleanly: punch list, final invoice, paperwork.", description: "Walk the site, fix what is left, collect final paperwork and invoice.", durationDays: 14, bestFor: ["Construction & trades", "Home services"],
     tasks: tasks([["Final walk-through with the customer", 1], ["Complete the punch list", 5], ["Collect lien waivers and warranties", 7], ["Send the final invoice", 8], ["Request a review or reference", 12], ["File job records", 14]]) },
   { id: "inspection-prep", name: "Inspection Preparation", summary: "Get ready for a health, fire or licensing inspection.", description: "Check the things inspectors check, fix gaps, and have the paperwork ready.", durationDays: 21, bestFor: ["Restaurant & hospitality", "Healthcare practice", "Education & childcare", "Beauty & wellness", "Manufacturing"],

@@ -4,7 +4,7 @@ import type { Page } from "@playwright/test";
 async function fillProfile(page: Page, name = "Acme Studio") {
   await page.getByLabel("Business name").fill(name);
   await page.getByRole("combobox", { name: "Industry" }).click();
-  await page.getByRole("option", { name: "Professional services" }).click();
+  await page.getByRole("option", { name: "Property management" }).click();
   await page.getByRole("combobox", { name: "Team size" }).click();
   await page.getByRole("option", { name: "2-5 people" }).click();
 }
@@ -40,18 +40,18 @@ test.describe("back office setup module", () => {
     await fillProfile(page);
     await next(page).click();
     const list = page.getByTestId("module-choices");
-    await expect(list.getByText("Recommended", { exact: true })).toHaveCount(6);
-    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) {
+    await expect(list.getByText("Recommended", { exact: true })).toHaveCount(7);
+    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "Contacts", "Licenses & Renewals", "Vendors"]) {
       await expect(moduleBox(page, name)).toBeChecked();
     }
-    for (const name of ["Vendors", "Reporting"]) await expect(moduleBox(page, name)).not.toBeChecked();
-    await expect(list).toContainText("Client work needs tasks, deadlines and status reports.");
+    await expect(moduleBox(page, "Reporting")).not.toBeChecked();
+    await expect(list).toContainText("Maintenance vendors need insurance certificates and W-9s on file.");
 
     await moduleBox(page, "Documents").uncheck();
     await page.getByRole("button", { name: "Use recommended" }).click();
     await expect(moduleBox(page, "Documents")).toBeChecked();
 
-    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "Contacts", "Licenses & Renewals"]) await moduleBox(page, name).uncheck();
+    for (const name of ["Documents", "Invoices", "Tasks", "Forms & Paperwork", "Contacts", "Licenses & Renewals", "Vendors"]) await moduleBox(page, name).uncheck();
     await expect(next(page)).toBeDisabled();
   });
 
@@ -94,9 +94,9 @@ test.describe("back office setup module", () => {
     await expect(page.getByRole("heading", { name: "Expense reimbursement" })).toBeVisible();
     await expect(page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" })).toContainText("sent 0 times");
 
-    // Licenses: 5 samples + 4 starter records + 5 that come with the industry.
+    // Licenses: 5 samples + 4 starter records + 4 that come with the industry.
     await page.goto("/app/licenses");
-    await expect(page.getByTestId("license-card")).toHaveCount(14);
+    await expect(page.getByTestId("license-card")).toHaveCount(13);
     await expect(page.getByTestId("license-card").filter({ hasText: "Local business permit" })).toBeVisible();
   });
 

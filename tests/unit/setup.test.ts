@@ -10,7 +10,7 @@ import { emptyConfig, type SetupConfig } from "@/lib/setup/types";
 
 const TODAY = "2026-10-25";
 const config = (over: Partial<SetupConfig> = {}): SetupConfig => ({
-  ...emptyConfig(), business: { name: "Acme Studio", industry: "Professional services", teamSize: "2-5 people" }, ...over,
+  ...emptyConfig(), business: { name: "Acme Studio", industry: "Property management", teamSize: "2-5 people" }, ...over,
 });
 
 describe("recommendModules", () => {
@@ -21,17 +21,17 @@ describe("recommendModules", () => {
   });
   it("adds modules for the industry", () => {
     expect(ids("Construction & trades")).toEqual(["documents", "invoices", "licenses", "vendors", "projects", "forms"]);
-    expect(ids("Nonprofit")).toContain("crm");
-    expect(ids("Restaurant & hospitality")).toContain("reporting");
+    expect(ids("Property management")).toContain("crm");
+    expect(ids("Construction & trades")).toContain("licenses");
   });
   it("gives bigger teams forms, once", () => {
     expect(ids("Other")).not.toContain("forms");
     expect(ids("Other", "6-20 people")).toContain("forms");
-    expect(ids("Professional services", "21+ people").filter((x) => x === "forms")).toHaveLength(1);
+    expect(ids("Property management", "21+ people").filter((x) => x === "forms")).toHaveLength(1);
     expect(ids("Other", "Just me")).not.toContain("forms");
   });
   it("only recommends modules that exist and gives every one a reason", () => {
-    for (const industry of ["", "Professional services", "Retail & e-commerce", "Construction & trades", "Healthcare practice", "Restaurant & hospitality", "Nonprofit", "Real estate", "Other"] as const) {
+    for (const industry of ["", "Property management", "Construction & trades", "Home services", "Other"] as const) {
       const recs = recommendModules(industry, "21+ people");
       expect(new Set(recs.map((r) => r.id)).size).toBe(recs.length);
       for (const r of recs) {

@@ -10,7 +10,7 @@ const done = (industry: Industry, extra: string[] = defaultBundles(AVAILABLE_MOD
 
 describe("industry presets", () => {
   it("offers the wider list of industries and gives every one a preset, recommendations and real library content", () => {
-    expect(INDUSTRIES).toEqual(expect.arrayContaining(["Auto & fleet", "Home services", "Beauty & wellness", "Legal", "Accounting & tax", "Trucking & logistics", "Education & childcare", "Manufacturing", "Tech & agency"]));
+    expect(INDUSTRIES).toEqual(["Property management", "Construction & trades", "Home services", "Other"]);
     for (const i of INDUSTRIES) {
       expect(PRESETS[i]).toBeDefined();
       expect(recommendModules(i, "2-5 people").length).toBeGreaterThan(3);
@@ -23,21 +23,18 @@ describe("industry presets", () => {
     }
   });
 
-  it("suits each industry: vehicle items for fleets and trucking, bar and CLE for legal, a childcare license for childcare", () => {
-    expect(licensesFor("Auto & fleet").map((l) => l.name.toLowerCase()).join("|")).toContain("registration");
-    expect(licensesFor("Trucking & logistics").map((l) => l.name)).toContain("USDOT number / motor carrier registration");
-    expect(licensesFor("Legal").map((l) => l.name)).toEqual(expect.arrayContaining(["Bar admission", "Continuing legal education hours"]));
-    expect(licensesFor("Education & childcare").map((l) => l.name)).toContain("Child care facility license");
+  it("suits each industry: unit turnovers for property managers, job closeout for contractors", () => {
+    expect(licensesFor("Property management").map((l) => l.name)).toContain("Errors and omissions insurance");
+    expect(projectsFor("Property management").map((p) => p.id)).toContain("unit-turnover");
     expect(projectsFor("Construction & trades").map((p) => p.id)).toContain("job-closeout");
-    expect(projectsFor("Accounting & tax").map((p) => p.id)).toContain("tax-season");
   });
 
   it("puts nothing in place until setup is finished and the bundle is ticked", () => {
-    const unfinished = { ...done("Legal"), completedOn: null };
+    const unfinished = { ...done("Property management"), completedOn: null };
     expect(industryLicenses(unfinished, T)).toEqual([]);
     expect(industryForms(unfinished)).toEqual([]);
     expect(industryLicenses(null, T)).toEqual([]);
-    const off = done("Legal", []);
+    const off = done("Property management", []);
     expect(industryLicenses(off, T)).toEqual([]);
     expect(industryChains(off)).toEqual({ requests: [], forms: [] });
     expect(industryBegin(off)).toBeNull();
@@ -56,20 +53,20 @@ describe("industry presets", () => {
     expect(industryProjects(c).map((p) => p.id)).toContain("job-closeout");
     expect(industryBegin(c)?.[0]).toBe("licenses");
     expect(industryLeadDays(c)).toBe(30);
-    expect(industryLeadDays(done("Healthcare practice"))).toBe(60);
+    expect(industryLeadDays(done("Property management"))).toBe(60);
   });
 
   it("follows a change of industry, because the bundles are derived from it", () => {
-    const before = done("Legal");
-    const after = { ...before, business: { ...before.business, industry: "Auto & fleet" as Industry } };
+    const before = done("Property management");
+    const after = { ...before, business: { ...before.business, industry: "Construction & trades" as Industry } };
     expect(industryForms(after).map((f) => f.name)).not.toEqual(industryForms(before).map((f) => f.name));
-    expect(industryChains(after).requests).toEqual(["Fleet manager", "Owner"]);
+    expect(industryChains(after).requests).toEqual(["Project manager", "Owner"]);
   });
 
   it("only offers bundles for services that are on, and keeps bundle ids through a save and load", () => {
     expect(bundlesFor(["invoices"]).map((b) => b.id)).toEqual(["bundle:home"]);
     expect(bundlesFor(["licenses", "forms", "projects"]).map((b) => b.id)).toEqual(expect.arrayContaining(["bundle:licenses", "bundle:paperwork", "bundle:projects", "bundle:approvals", "bundle:reminders"]));
-    const round = sanitizeConfig(JSON.parse(JSON.stringify(done("Legal", ["bundle:licenses", "bundle:nonsense"]))));
+    const round = sanitizeConfig(JSON.parse(JSON.stringify(done("Property management", ["bundle:licenses", "bundle:nonsense"]))));
     expect(round?.templates).toEqual(["bundle:licenses"]);
   });
 });

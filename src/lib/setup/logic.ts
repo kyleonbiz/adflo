@@ -10,17 +10,12 @@ const BASE: Recommendation[] = [
 ];
 
 const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
-  "Professional services": [
-    { id: "projects", reason: "Client work needs tasks, deadlines and status reports." },
-    { id: "forms", reason: "Intake forms for new clients." },
-    { id: "crm", reason: "Keep client contacts clean and de-duplicated." },
-    { id: "licenses", reason: "Professional licenses and insurance expire." },
-  ],
-  "Retail & e-commerce": [
-    { id: "vendors", reason: "Suppliers need their documents collected." },
-    { id: "reporting", reason: "Turn sales exports into reports." },
-    { id: "licenses", reason: "Sales tax registration and permits renew." },
-    { id: "crm", reason: "Customer lists need cleaning." },
+  "Property management": [
+    { id: "vendors", reason: "Maintenance vendors need insurance certificates and W-9s on file." },
+    { id: "forms", reason: "Maintenance requests, move-in checklists and applications." },
+    { id: "crm", reason: "Owners, tenants and prospects in one clean list." },
+    { id: "licenses", reason: "Broker licenses, rental registrations and insurance renew." },
+    { id: "projects", reason: "Unit turnovers and renovations have tasks and deadlines." },
   ],
   "Construction & trades": [
     { id: "licenses", reason: "Trade licenses, bonds and insurance must stay current." },
@@ -28,82 +23,11 @@ const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
     { id: "projects", reason: "Jobs have tasks and deadlines." },
     { id: "forms", reason: "Change orders and job forms." },
   ],
-  "Healthcare practice": [
-    { id: "licenses", reason: "Practitioner licenses and certifications renew." },
-    { id: "forms", reason: "Patient and staff paperwork." },
-    { id: "vendors", reason: "Suppliers and service providers." },
-  ],
-  "Restaurant & hospitality": [
-    { id: "licenses", reason: "Health, liquor and business permits renew." },
-    { id: "vendors", reason: "Food and supply vendors." },
-    { id: "reporting", reason: "Weekly sales and cost reports." },
-    { id: "forms", reason: "Staff time-off and incident forms." },
-  ],
-  Nonprofit: [
-    { id: "crm", reason: "Donors and volunteers are your contact list." },
-    { id: "projects", reason: "Programs and events have deadlines." },
-    { id: "forms", reason: "Volunteer sign-ups and grant paperwork." },
-    { id: "reporting", reason: "Reports for funders and the board." },
-  ],
-  "Real estate": [
-    { id: "crm", reason: "Clients, owners and tenants." },
-    { id: "forms", reason: "Applications and disclosures." },
-    { id: "licenses", reason: "Agent and brokerage licenses renew." },
-    { id: "projects", reason: "Listings and renovations." },
-  ],
-  "Auto & fleet": [
-    { id: "licenses", reason: "Registrations, tags, inspections and insurance expire vehicle by vehicle." },
-    { id: "vendors", reason: "Parts suppliers and repair shops need insurance on file." },
-    { id: "forms", reason: "Inspection checklists and accident reports." },
-    { id: "projects", reason: "Fleet audits and service schedules." },
-  ],
   "Home services": [
     { id: "licenses", reason: "Contractor licenses, bonds and insurance must stay current." },
     { id: "projects", reason: "Every job has steps and a finish date." },
     { id: "vendors", reason: "Subcontractors and suppliers." },
     { id: "crm", reason: "Customers and repeat clients." },
-  ],
-  "Beauty & wellness": [
-    { id: "licenses", reason: "Individual licenses and the shop permit renew on different dates." },
-    { id: "forms", reason: "Consent, allergy and patch-test records." },
-    { id: "crm", reason: "Clients and their last visit." },
-    { id: "vendors", reason: "Product suppliers." },
-  ],
-  Legal: [
-    { id: "licenses", reason: "Bar admissions, CLE hours and malpractice cover renew." },
-    { id: "forms", reason: "Matter intake and conflict checks." },
-    { id: "crm", reason: "Clients and opposing contacts." },
-    { id: "projects", reason: "Matters have deadlines." },
-  ],
-  "Accounting & tax": [
-    { id: "projects", reason: "Tax season is a deadline-driven project for every client." },
-    { id: "forms", reason: "Engagement letters and document checklists." },
-    { id: "licenses", reason: "CPA license, PTIN and CPE hours renew." },
-    { id: "crm", reason: "Clients and their filing history." },
-  ],
-  "Trucking & logistics": [
-    { id: "licenses", reason: "USDOT, driver licenses, medical cards and insurance expire." },
-    { id: "vendors", reason: "Carriers and repair vendors need insurance on file." },
-    { id: "forms", reason: "Inspection and accident paperwork." },
-    { id: "reporting", reason: "Cost and compliance reports." },
-  ],
-  "Education & childcare": [
-    { id: "licenses", reason: "Facility license, background checks and first-aid cards renew." },
-    { id: "forms", reason: "Enrollment, pickup authorization and incident reports." },
-    { id: "crm", reason: "Families and emergency contacts." },
-    { id: "projects", reason: "Enrollment periods and inspections." },
-  ],
-  Manufacturing: [
-    { id: "licenses", reason: "Environmental, fire and safety permits renew." },
-    { id: "vendors", reason: "Suppliers need quality and insurance documents." },
-    { id: "forms", reason: "Nonconformance and maintenance logs." },
-    { id: "projects", reason: "Audits and line changes." },
-  ],
-  "Tech & agency": [
-    { id: "projects", reason: "Client work runs on projects and milestones." },
-    { id: "crm", reason: "Clients and leads." },
-    { id: "forms", reason: "Intake and sign-off." },
-    { id: "vendors", reason: "Contractors and software vendors." },
   ],
   Other: [
     { id: "crm", reason: "Keep your contacts in one clean list." },

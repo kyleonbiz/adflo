@@ -67,8 +67,8 @@ const HOW = [
 ];
 
 const AUDIENCE = [
-  "Small and medium-sized businesses", "Growing companies", "Administrative departments", "Operations managers",
-  "Business owners", "Professional service organizations", "Multi-department organizations",
+  "Property management companies", "Landlords with growing portfolios", "General contractors", "Specialty trade contractors",
+  "Home service companies", "Office managers and operations leads", "Owners juggling vendors, licenses and jobs",
 ];
 
 const VALUE = [
@@ -191,8 +191,8 @@ export function LandingSections() {
         <div className="grid gap-10 lg:grid-cols-2">
           <div>
             <p className={eyebrow}>Who it’s for</p>
-            <h2 id="who-title" className={h2}>Built for businesses that have outgrown disorganized operations.</h2>
-            <p className="mt-3 text-white/75">AdFlo supports businesses that want more organized, efficient and scalable administrative operations.</p>
+            <h2 id="who-title" className={h2}>Built for property managers and contractors who have outgrown spreadsheets and inboxes.</h2>
+            <p className="mt-3 text-white/75">AdFlo handles the paperwork both trades share: vendor and subcontractor insurance, licenses and renewals, maintenance requests, change orders, lien waivers and invoices.</p>
           </div>
           <ul className="flex flex-wrap content-start gap-2.5" aria-label="Who AdFlo is for">
             {AUDIENCE.map((a) => (
@@ -219,9 +219,9 @@ export function LandingSections() {
       <section id="demo" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="cta-title">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <div>
-            <h2 id="cta-title" className={h2}>Take control of your business operations.</h2>
+            <h2 id="cta-title" className={h2}>Take control of your properties and your jobs.</h2>
             <p className="mt-3 text-white/80">
-              Discover how AdFlo can help your organization simplify administrative work, streamline workflows and operate more efficiently.
+              Discover how AdFlo can help your property management or contracting company simplify administrative work, streamline workflows and operate more efficiently.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a href="#demo-form" className={`rounded-lg px-5 py-3 font-medium ${gradientBtn}`}>Schedule your AdFlo demo</a>
