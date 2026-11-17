@@ -180,7 +180,7 @@ export function LandingSections() {
         <ol className="mt-8 grid gap-8 md:grid-cols-3">
           {HOW.map((s) => (
             <li key={s.n} className="flex gap-4">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-brand-violet/60 bg-brand-purple/20 text-sm font-semibold text-brand-indigo">{s.n}</span>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-violet text-sm font-semibold text-white shadow-md shadow-brand-purple/30">{s.n}</span>
               <div><h3 className="font-semibold">{s.title}</h3><p className="mt-1 text-sm text-muted-foreground">{s.text}</p></div>
             </li>
           ))}
