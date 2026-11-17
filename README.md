@@ -27,8 +27,8 @@ admin busywork: reminders, duplicate checks and expiry tracking happen for you.
 * **No accounting-software sync** (QuickBooks, Xero) and no SSO.
 * **Email only.** Invoices, licenses, projects, contacts and documents are sent by opening your email app with the
   message filled in. There is no text messaging.
-* **Database last.** Outside Documents, records live in the browser tab (preview mode) until the database is wired up;
-  that work and the final full test pass are deliberately scheduled at the end.
+* **Database-backed once signed in.** With Supabase connected, every shared service is saved to the workspace (see "With a
+  database connected" below). Only the no-database preview keeps records in the browser tab.
 * **Role view is a preview.** Owner / Admin / Contributor screens are switched with "View as" in the top bar; real
   enforcement comes with sign-in roles and the database.
 
@@ -396,7 +396,9 @@ npm run test:e2e    # Playwright: demo page, dev-mode server flows, content sear
   included from `rls.sql`. Needs the PostgreSQL 16
   server binaries (`PG_BIN` overrides the path).
 * `tests/e2e` – needs a Chromium; set `PLAYWRIGHT_CHROMIUM_PATH` or run
-  `npx playwright install chromium`. `layout.spec.ts` checks 820 px and 360 px for page
+  `npx playwright install chromium`. Locally only Chromium runs. Set `E2E_BROWSERS=all` (or a list such as
+  `webkit,mobile-safari`) to add Firefox, WebKit (the engine Safari uses) and WebKit on an iPhone-sized screen; first run
+  `npx playwright install firefox webkit`. The nightly workflow runs all four, each as its own job. `layout.spec.ts` checks 820 px and 360 px for page
   overflow, panel fit and touch-target size, and writes screenshots to `test-results/layout/`.
   The first visit to each page compiles it in the dev server, so a cold run is slower.
 
@@ -487,7 +489,7 @@ abandoned uploads · per-user and per-address rate limiting.
   browser session. The Team screen needs a database and is not shown in the preview.
 * Styling follows the supplied reference screenshot (glass frame, centred document cards, floating upload and details panels) but is an interpretation, not a pixel match; fonts are Geist, bundled locally.
   Responsive behaviour is checked at 1440, 820, 390 and 360 px in Chromium (Playwright layout
-  specs plus a manual look at the screenshots), not across other browsers or real devices;
+  specs plus a manual look at the screenshots); the nightly run also covers Firefox, WebKit and an iPhone-sized WebKit, but not real devices;
   there is no visual-regression testing.
 * Dependencies were installed at current latest versions (Next 16.4, React 19, Tailwind 4,
   zod 4, Vitest 5; `fflate` for archives, `unpdf` for PDF text); `@hookform/resolvers` is pinned to v5 because v6 fails peer resolution.
@@ -828,7 +830,8 @@ Databases go last. Update this section in the same commit as the work.
 - [x] Remaining Title Case labels now sentence case (form fields, dropdown options, dialog titles, document type labels); module and product names such as Licenses & Renewals and Control Center keep their capitals, and the unused `titleCase` helper is gone
 - [x] Demo opens blank with a "See AdFlo with sample data" card on Home: a small shop set and a large regulated company set (Settings > Demo data loads or clears them; loading over saved records asks first)
 - [x] Accessibility: contrast and tap targets fixed and guarded by tests/e2e/accessibility.spec.ts (axe on 17 pages, desktop and phone)
-- [ ] Addy's live Claude mode untested; browsers other than Chromium not tried
+- [ ] Addy's live Claude mode untested
+- [ ] Firefox, WebKit and mobile Safari now run in the nightly browser tests; fix whatever the first runs turn up
 - [x] Landing page at / is the original hero with the demo workspace (my longer marketing page is in git history, commit 534795a)
 
 ## Working notes

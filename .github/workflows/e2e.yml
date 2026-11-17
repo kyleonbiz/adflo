@@ -1,6 +1,8 @@
 name: Browser tests
 
-# The full Playwright suite (about 11 minutes locally), run every night and on demand.
+# The full Playwright suite (about 11 minutes locally), run every night and on demand in four browsers:
+# Chromium, Firefox, WebKit (the engine Safari uses) and WebKit on an iPhone-sized screen (mobile Safari).
+# Each browser is its own job, so one failing browser does not hide the others.
 # It is kept out of the per-push CI (ci.yml) so a push gets its answer in about two minutes.
 # To run it now: GitHub > Actions > "Browser tests" > Run workflow.
 on:
@@ -17,9 +19,15 @@ concurrency:
 
 jobs:
   e2e:
-    name: Playwright (Chromium)
+    name: Playwright (${{ matrix.browser }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit, mobile-safari]
+    env:
+      E2E_BROWSERS: ${{ matrix.browser }}
     steps:
       - uses: actions/checkout@v4
 
@@ -32,7 +40,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Install the browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps ${{ matrix.browser == 'mobile-safari' && 'webkit' || matrix.browser }}
 
       # Traces go outside the project folder: files written inside it make the dev server reload pages in a loop.
       - name: Run the browser tests
@@ -42,7 +50,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces
+          name: playwright-traces-${{ matrix.browser }}
           path: ${{ runner.temp }}/pw-out
           retention-days: 7
           if-no-files-found: ignore
