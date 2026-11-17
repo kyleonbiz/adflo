@@ -28,6 +28,23 @@ test.describe("Landing page and the app", () => {
     }
   });
 
+  test("the demo request form sends to the server and confirms on the page", async ({ page }) => {
+    let posted: Record<string, string> | null = null;
+    await page.route("**/api/demo-request", async (route) => {
+      posted = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ok: true }) });
+    });
+    await page.goto("/");
+    const form = page.getByRole("form", { name: "Request a demo" });
+    await form.getByLabel("Full name").fill("Pat Lee");
+    await form.getByLabel("Business email").fill("pat@example.com");
+    await form.getByLabel("Company name").fill("Lee Co");
+    await form.getByLabel("Company size").selectOption("1–10");
+    await form.getByRole("button", { name: "Schedule your AdFlo demo" }).click();
+    await expect(form.getByRole("status")).toContainText("We received your request");
+    expect(posted).toMatchObject({ name: "Pat Lee", email: "pat@example.com", company: "Lee Co" });
+  });
+
   test("the landing page has an admin cost calculator that works out the visitor's own numbers", async ({ page }) => {
     await page.goto("/");
     const section = page.locator("#admin-cost");
