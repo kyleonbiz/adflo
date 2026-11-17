@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 
 test("the top bar search jumps to a service and fills in its own search", async ({ page }) => {
-  await page.goto("/app/overview");
+  await page.goto("/app/overview", { waitUntil: "networkidle" }); // typing before the page is interactive does nothing
   const box = page.getByRole("combobox", { name: "Search Adflo" });
   await box.fill("projects");
   await page.getByRole("option", { name: /Search tasks and projects for/ }).click();
@@ -10,7 +10,7 @@ test("the top bar search jumps to a service and fills in its own search", async 
 });
 
 test("the filter menu limits the search to one service", async ({ page }) => {
-  await page.goto("/app/overview");
+  await page.goto("/app/overview", { waitUntil: "networkidle" }); // typing before the page is interactive does nothing
   await page.getByRole("button", { name: "Choose where to search" }).click();
   await page.getByRole("menuitem", { name: "Invoices" }).click();
   const box = page.getByRole("combobox", { name: "Search Adflo" });
@@ -21,7 +21,7 @@ test("the filter menu limits the search to one service", async ({ page }) => {
 });
 
 test("searching documents from the top bar fills in the document search", async ({ page }) => {
-  await page.goto("/app/overview");
+  await page.goto("/app/overview", { waitUntil: "networkidle" }); // typing before the page is interactive does nothing
   await page.getByRole("combobox", { name: "Search Adflo" }).fill("lease");
   await page.getByRole("option", { name: /Search documents for/ }).click();
   await expect(page).toHaveURL(/\/app\?q=lease/);
@@ -29,7 +29,7 @@ test("searching documents from the top bar fills in the document search", async 
 });
 
 test("pressing / focuses the search box", async ({ page }) => {
-  await page.goto("/app/overview");
+  await page.goto("/app/overview", { waitUntil: "networkidle" }); // typing before the page is interactive does nothing
   await page.locator("body").press("/");
   await expect(page.getByRole("combobox", { name: "Search Adflo" })).toBeFocused();
 });
@@ -37,7 +37,7 @@ test("pressing / focuses the search box", async ({ page }) => {
 test.describe("on a phone", () => {
   test.use({ viewport: { width: 360, height: 740 } });
   test("the search box sits under the top bar without sideways scrolling", async ({ page }) => {
-    await page.goto("/app/overview");
+    await page.goto("/app/overview", { waitUntil: "networkidle" }); // typing before the page is interactive does nothing
     const box = page.getByRole("combobox", { name: "Search Adflo" });
     await expect(box).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

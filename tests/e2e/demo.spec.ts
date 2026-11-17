@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { expect, renderOptions, softenWebkit, test } from "./fixtures";
 import { addDocuments } from "./docs";
 
 test.describe("documents preview", () => {
@@ -49,8 +49,9 @@ test.describe("documents preview", () => {
     await expect(page.getByRole("button", { name: /Open e2e-demo.pdf/ })).toBeVisible();
   });
 
-  test("mobile layout: single column, full-height details sheet, no horizontal scroll", async ({ browser }) => {
-    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+  test("mobile layout: single column, full-height details sheet, no horizontal scroll", async ({ browser, browserName }) => {
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, ...renderOptions(browserName) });
+    await softenWebkit(ctx, browserName);
     const page = await ctx.newPage();
     await page.goto("/app");
     await addDocuments(page);
