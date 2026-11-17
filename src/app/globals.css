@@ -132,8 +132,9 @@
   }
 }
 
+/* Public page: the sign-in screen's deep blue, so the landing page and the app read as one product. */
 .hero-gradient {
-  background: #0b1430;
+  background: linear-gradient(180deg, #0a1a5c 0, #060d38 900px, #040826 100%);
 }
 
 /* Translucent frame that holds the dashboard card on the public page. */
