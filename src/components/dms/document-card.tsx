@@ -1,6 +1,7 @@
 "use client";
 
-import { Clock, Star, Undo2 } from "lucide-react";
+import { Clock, Download, MoreHorizontal, Send, Star, Trash2, Undo2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_LABELS, type DocumentRecord } from "@/lib/dms/types";
@@ -20,6 +21,9 @@ export function DocumentCard({
   onOpen,
   onToggleStar,
   onRestore,
+  onDownload,
+  onSend,
+  onDelete,
 }: {
   doc: DocumentRecord;
   folderName?: string;
@@ -28,6 +32,9 @@ export function DocumentCard({
   onOpen: () => void;
   onToggleStar: () => void;
   onRestore: () => void;
+  onDownload: () => void;
+  onSend: () => void;
+  onDelete: () => void;
 }) {
   const kind = fileKindOf(doc.mimeType, doc.originalName);
   const expiring = doc.expiresAt ? daysUntil(doc.expiresAt) : null;
@@ -93,6 +100,22 @@ export function DocumentCard({
         )}
       </button>
 
+      {!inTrash && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" aria-label={`Quick actions for ${doc.displayName}`} className="absolute left-2.5 top-2.5 flex size-9 items-center justify-center rounded-full text-muted-foreground/60 outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">
+              <MoreHorizontal className="size-[18px]" aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onSelect={onOpen}>Open</DropdownMenuItem>
+            <DropdownMenuItem onSelect={onDownload}><Download /> Download</DropdownMenuItem>
+            <DropdownMenuItem onSelect={onSend}><Send /> Send</DropdownMenuItem>
+            {canEdit && <DropdownMenuItem onSelect={onToggleStar}><Star /> {doc.starred ? "Unstar" : "Star"}</DropdownMenuItem>}
+            {canEdit && !doc.starred && <DropdownMenuItem onSelect={onDelete}><Trash2 /> Move to trash</DropdownMenuItem>}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
       {inTrash ? (
         canEdit && (
           <Button variant="outline" size="sm" className="absolute right-2.5 top-2.5" onClick={onRestore}>

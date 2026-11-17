@@ -1,6 +1,6 @@
 export const FIELD_TYPES = [
-  { value: "text", label: "Short text" },
-  { value: "longtext", label: "Long text" },
+  { value: "text", label: "Short Text" },
+  { value: "longtext", label: "Long Text" },
   { value: "email", label: "Email" },
   { value: "number", label: "Number" },
   { value: "date", label: "Date" },

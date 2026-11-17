@@ -234,6 +234,10 @@ export function useDocumentManager(api: DmsApi, initialSearch = "") {
 
   const remove = useCallback(
     async (doc: DocumentRecord, permanent: boolean) => {
+      if (doc.starred) {
+        notify("error", "Starred documents can't be deleted. Remove the star first.");
+        return false;
+      }
       try {
         if (permanent) await api.purgeDocument(doc.id);
         else await api.deleteDocument(doc.id);
@@ -249,6 +253,51 @@ export function useDocumentManager(api: DmsApi, initialSearch = "") {
       }
     },
     [api, notify, openDocument, refreshMeta, selectedId],
+  );
+
+  /** Permanently deletes everything in Trash. Starred documents are kept. */
+  const emptyTrash = useCallback(async () => {
+    try {
+      const base = { ...query, view: "trash" as const, folderId: null, search: "", category: null, fileType: null, tag: null, pageSize: 50 };
+      let removed = 0;
+      let page = 1;
+      // Purged items drop out of the list, so the same page is read again until nothing more can go; starred ones stay put.
+      for (let guard = 0; guard < 500; guard++) {
+        const res = await api.listDocuments({ ...base, page });
+        const doomed = res.items.filter((d) => !d.starred);
+        for (const d of doomed) await api.purgeDocument(d.id);
+        removed += doomed.length;
+        if (res.items.length === 0 || (doomed.length === 0 && res.items.length < base.pageSize)) break;
+        if (doomed.length === 0) page++;
+      }
+      notify("success", removed === 1 ? "Deleted 1 document permanently." : `Deleted ${removed} documents permanently.`);
+      await reload();
+      void refreshMeta();
+      return true;
+    } catch (e) {
+      notify("error", toDmsError(e).message);
+      return false;
+    }
+  }, [api, notify, query, reload, refreshMeta]);
+
+  /** Opens the person's email app with the document's name and a 7-day link when links are available. */
+  const send = useCallback(
+    async (doc: DocumentRecord) => {
+      let line = "";
+      if (api.capabilities.share) {
+        try {
+          const link = await api.createShareLink(doc.id, 60 * 24 * 7);
+          line = `\r\n\r\nView or download it here (link expires in 7 days): ${link.url}`;
+        } catch (e) {
+          notify("error", toDmsError(e).message);
+          return;
+        }
+      }
+      const subject = `Document: ${doc.displayName}`;
+      const body = `Hi,\r\n\r\nI'm sending you "${doc.displayName}".${line}\r\n\r\nThank you!`;
+      window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    },
+    [api, notify],
   );
 
   const restore = useCallback(
@@ -371,6 +420,8 @@ export function useDocumentManager(api: DmsApi, initialSearch = "") {
     update,
     toggleStar,
     remove,
+    emptyTrash,
+    send,
     restore,
     download,
     createFolder,

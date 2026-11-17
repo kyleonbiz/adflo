@@ -7,10 +7,13 @@ test.describe("tasks view", () => {
     await expect(page.getByRole("tab", { name: "Tasks" })).toHaveAttribute("aria-selected", "true");
     const rows = page.getByTestId("task-row");
     await expect(rows).toHaveCount(8);
-    await expect(rows.first()).toContainText("Import vendor list");
-    await expect(rows.first()).toContainText("Client onboarding: Northwind");
-    await expect(rows.nth(1)).toContainText("Submit city permit renewal");
-    await expect(rows.last()).toContainText("Update insurance certificate");
+    // Tasks that belong to a project sit in that project's labelled container, most urgent first within it.
+    const groups = page.getByTestId("project-group");
+    await expect(groups.first()).toContainText("Project");
+    await expect(groups.first()).toContainText("Client onboarding: Northwind");
+    await expect(groups.first().getByTestId("task-row").first()).toContainText("Import vendor list");
+    await expect(rows.filter({ hasText: "Submit city permit renewal" })).toHaveCount(1);
+    await expect(rows.filter({ hasText: "Update insurance certificate" })).toHaveCount(1);
     await expect(page.getByTestId("project-card")).toHaveCount(0);
   });
 
@@ -54,7 +57,7 @@ test.describe("tasks view", () => {
     await form.getByRole("combobox", { name: "Project" }).click();
     await page.getByRole("option", { name: "Data cleanup" }).click();
     await form.getByRole("button", { name: "Add task" }).click();
-    await expect(page.getByTestId("task-row").filter({ hasText: "Book the venue" })).toContainText("Data cleanup");
+    await expect(page.getByTestId("project-group").filter({ hasText: "Data cleanup" }).getByTestId("task-row").filter({ hasText: "Book the venue" })).toHaveCount(1);
     await page.getByRole("tab", { name: "Projects" }).click();
     await expect(page.getByTestId("project-card").filter({ hasText: "Data cleanup" })).toContainText("0 of 3 tasks");
   });
@@ -167,14 +170,14 @@ test.describe("projects view", () => {
     await expect(dialog.getByText(/^Checklist/)).toHaveCount(0);
 
     await dialog.getByRole("combobox", { name: "Start from a template" }).click();
-    await page.getByRole("option", { name: "Vendor onboarding" }).click();
-    await expect(dialog.getByLabel("Project name")).toHaveValue("Vendor onboarding");
+    await page.getByRole("option", { name: "Vendor Onboarding" }).click();
+    await expect(dialog.getByLabel("Project name")).toHaveValue("Vendor Onboarding");
     await expect(dialog).toContainText("7 of 7 tasks will be added");
     await dialog.getByRole("checkbox", { name: /Collect business license copy/ }).uncheck();
     await expect(dialog).toContainText("6 of 7 tasks will be added");
     await dialog.getByRole("button", { name: "Create project" }).click();
 
-    const card = page.getByTestId("project-card").filter({ hasText: "Vendor onboarding" });
+    const card = page.getByTestId("project-card").filter({ hasText: "Vendor Onboarding" });
     await expect(card).toContainText("0 of 6 tasks");
     await expect(page.getByRole("status")).toContainText("created with 6 tasks");
     // The new project opens so the checklist is visible straight away.
@@ -262,6 +265,7 @@ test.describe("projects view", () => {
     await page.goto("/app/projects?view=projects");
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Status report" }).click();
+    await page.getByRole("menuitem", { name: "Download as TXT" }).click();
     const file = await download;
     expect(file.suggestedFilename()).toMatch(/^status-report-\d{4}-\d{2}-\d{2}\.txt$/);
     let text = "";
@@ -269,6 +273,16 @@ test.describe("projects view", () => {
     expect(text).toContain("PROJECT STATUS REPORT");
     expect(text).toContain("CLIENT ONBOARDING: NORTHWIND");
     expect(text).toContain("Health: At risk");
+  });
+
+  test("offers the status report as PDF, TXT and CSV", async ({ page }) => {
+    await page.goto("/app/projects?view=projects");
+    for (const [label, ext] of [["PDF", "pdf"], ["CSV", "csv"]] as const) {
+      const download = page.waitForEvent("download");
+      await page.getByRole("button", { name: "Status report" }).click();
+      await page.getByRole("menuitem", { name: `Download as ${label}` }).click();
+      expect((await download).suggestedFilename()).toMatch(new RegExp(`^status-report-\\d{4}-\\d{2}-\\d{2}\\.${ext}$`));
+    }
   });
 
   test("fits a phone screen without horizontal scroll, tasks expanded", async ({ page }) => {

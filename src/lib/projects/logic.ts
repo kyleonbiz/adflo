@@ -1,5 +1,6 @@
 import { addDays, addMonths, advanceDay, daysBetween, formatDayLong, isDay } from "@/lib/dates";
 import type { Milestone, Project, ProjectHealth, Task, TaskRepeat, TaskState } from "./types";
+import { toCsv } from "@/lib/csv";
 
 /** Tasks that belong to no project live in this built-in project. It is created on first use and never listed as a project. */
 export const GENERAL_PROJECT_ID = "general";
@@ -245,3 +246,13 @@ export function addUpdate(p: Project, u: { text: string; by: string; on: string 
 /** The one project where repeating work lives. Every repeating task added from the project page or installed by setup goes here. */
 export const RECURRING_PROJECT_ID = "recurring-work";
 export const isRecurringProject = (p: Project) => p.id === RECURRING_PROJECT_ID;
+
+/** The status report as a spreadsheet: one row per task, with its project's details alongside. */
+export function projectsReportCsv(projects: Project[], today: string): string {
+  const rows: (string | number)[][] = [["Project", "Client", "Project status", "Starts", "Due", "Task", "Assignee", "Task due", "Task state"]];
+  for (const p of projects) {
+    if (p.tasks.length === 0) rows.push([p.name, p.client, p.status.replace("_", " "), p.startOn, p.dueOn, "", "", "", ""]);
+    for (const t of p.tasks) rows.push([p.name, p.client, p.status.replace("_", " "), p.startOn, p.dueOn, t.title, t.assignee, t.dueOn ?? "", taskState(t, today).replace("_", " ")]);
+  }
+  return toCsv(rows);
+}

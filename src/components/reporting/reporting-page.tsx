@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { CustomDataReport } from "./custom-data-report";
 import { ModuleReportView } from "./module-report-view";
 import { Materials } from "./materials";
+import { Metrics } from "./metrics";
 import { Overview } from "./overview";
 import { ScheduledReports } from "./scheduled-reports";
 
@@ -33,6 +34,7 @@ function withLive(src: ReportSources, live: DashboardSources & { contacts: Conta
 
 const SECTIONS = [
   { id: "reports", label: "Reports" },
+  { id: "metrics", label: "Metrics" },
   { id: "scheduled", label: "Scheduled reports" },
   { id: "materials", label: "Materials" },
 ] as const;
@@ -55,6 +57,7 @@ function Body({ sources, today, view, onView, section, onSection }: { sources: R
       </Select>
     </div>
   );
+  if (section === "metrics") return <div className="space-y-5">{picker}<Metrics reports={reports} onOpen={(id) => { onSection("reports"); onView(id); }} /></div>;
   if (section === "scheduled") return <div className="space-y-5">{picker}<ScheduledReports reports={reports} today={today} /></div>;
   if (section === "materials") return <div className="space-y-5">{picker}<Materials reports={reports} today={today} /></div>;
 

@@ -1,12 +1,8 @@
-import { invoiceHtml } from "@/lib/invoices/share";
-import type { Invoice } from "@/lib/invoices/types";
+import { downloadFile } from "@/lib/download";
+import { textToPdf } from "@/lib/forms/pdf";
+import { invoiceText, type SharedInvoice } from "@/lib/invoices/share";
 
-/** Saves the plain invoice layout to the user's computer as `invoice-<number>.html`. */
-export function downloadInvoice(inv: Invoice) {
-  const url = URL.createObjectURL(new Blob([invoiceHtml(inv)], { type: "text/html;charset=utf-8" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `invoice-${inv.number.replace(/[^\w.-]+/g, "_")}.html`;
-  a.click();
-  URL.revokeObjectURL(url);
+/** Saves the invoice to the user's computer as a real PDF named `invoice-<number>.pdf`. */
+export function downloadInvoice(inv: SharedInvoice) {
+  downloadFile(`invoice-${inv.number.replace(/[^\w.-]+/g, "_")}.pdf`, textToPdf(invoiceText(inv)) as BlobPart, "application/pdf");
 }

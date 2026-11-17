@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Check, Download, FolderInput, Pencil, Share2, Star, Trash2, Undo2, Upload, X } from "lucide-react";
+import { Check, Download, Send, FolderInput, Pencil, Share2, Star, Trash2, Undo2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { formatBytes } from "@/lib/dms/validation";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
+import { DocumentReminder } from "./document-reminder";
 import { DocumentMetadata, FileDetails, SectionLabel } from "./document-metadata";
 import { FolderPicker } from "./folder-picker";
 import { DocumentPreview } from "./document-preview";
@@ -163,6 +164,9 @@ export function DocumentDetailsPanel({
                   >
                     <Share2 />
                   </Button>
+                  <Button variant="ghost" size="icon-sm" aria-label="Send" title="Send by email" onClick={() => void manager.send(doc)}>
+                    <Send />
+                  </Button>
                 </div>
               )}
             </div>
@@ -177,7 +181,7 @@ export function DocumentDetailsPanel({
                         <Undo2 /> Restore
                       </Button>
                     )}
-                    {perms.purge && (
+                    {perms.purge && !doc.starred && (
                       <Button variant="destructive" onClick={() => setConfirmDelete(true)}>
                         <Trash2 /> Delete permanently
                       </Button>
@@ -239,12 +243,18 @@ export function DocumentDetailsPanel({
                           New version
                         </ActionRow>
                       )}
-                      <ActionRow icon={Trash2} danger disabled={!perms.delete} onClick={() => setConfirmDelete(true)}>
+                      <ActionRow icon={Send} onClick={() => void manager.send(doc)}>
+                        Send
+                      </ActionRow>
+                      <ActionRow icon={Trash2} danger disabled={!perms.delete || doc.starred} onClick={() => setConfirmDelete(true)}>
                         Delete File
                       </ActionRow>
+                      {doc.starred && <p className="px-1 text-[11px] text-muted-foreground">Starred documents can&apos;t be deleted. Unstar it first.</p>}
                     </div>
                   </section>
                 )}
+
+                {!inTrash && <DocumentReminder docId={doc.id} docName={doc.displayName} />}
 
                 <DocumentMetadata
                   doc={doc}

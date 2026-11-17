@@ -49,7 +49,7 @@ test.describe("reporting module", () => {
     await expect(report).toContainText("Billed by client");
     expect(await page.getByTestId("report-record").count()).toBeGreaterThan(0);
 
-    for (const name of ["Licenses & renewals", "Vendors", "Contacts", "Tasks", "Forms & paperwork"]) {
+    for (const name of ["Licenses & Renewals", "Vendors", "Contacts", "Tasks", "Forms & Paperwork"]) {
       await page.getByRole("tab", { name }).click();
       await expect(page.getByTestId("module-report")).toContainText(name);
       expect(await page.getByTestId("report-metric").count()).toBe(4);
@@ -63,7 +63,7 @@ test.describe("reporting module", () => {
   test("a service report exports its records as CSV and Excel, and a service with no records says so", async ({ page }) => {
     await page.goto("/app/reporting?view=vendors");
     let download = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Export" }).click();
+    await page.getByRole("button", { name: "Download" }).click();
     await page.getByRole("menuitem", { name: "CSV" }).click();
     let file = await download;
     expect(file.suggestedFilename()).toMatch(/^vendors-report-\d{4}-\d{2}-\d{2}\.csv$/);
@@ -71,7 +71,7 @@ test.describe("reporting module", () => {
     expect(lines[0]).toBe("Name,Category,Status,Contact,Email,Required documents received,Required documents");
     expect(lines.length).toBeGreaterThan(1);
     download = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Export" }).click();
+    await page.getByRole("button", { name: "Download" }).click();
     await page.getByRole("menuitem", { name: "Excel" }).click();
     file = await download;
     expect(file.suggestedFilename()).toMatch(/\.xlsx$/);

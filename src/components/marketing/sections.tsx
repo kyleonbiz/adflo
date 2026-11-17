@@ -27,7 +27,7 @@ const CAPABILITIES = [
     time: "Due dates in view, so no more chasing spreadsheets.", money: "Catch late payments and avoid missed or late-fee bills.", flow: "Everyone works from the same up-to-date status." },
   { icon: Store, name: "Vendors", best: "Keeping suppliers, terms and contracts under control.",
     time: "Payment terms and tax-form checks in one profile.", money: "Contract end alerts stop unwanted auto-renewals.", flow: "A dated notes log keeps the whole team in the loop." },
-  { icon: BadgeCheck, name: "Licenses & renewals", best: "Never letting a license or permit lapse.",
+  { icon: BadgeCheck, name: "Licenses & Renewals", best: "Never letting a license or permit lapse.",
     time: "Expiry dates tracked for you, ahead of the deadline.", money: "Avoid fines, lapses and rush renewal fees.", flow: "A compliance score shows what needs attention first." },
   { icon: FolderKanban, name: "Projects & tasks", best: "Getting work done with clear owners and deadlines.",
     time: "Recurring tasks and Remind me on every task.", money: "Fewer dropped balls means less costly rework.", flow: "Milestones and progress visible without status meetings." },

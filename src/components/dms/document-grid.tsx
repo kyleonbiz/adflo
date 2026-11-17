@@ -16,6 +16,9 @@ export function DocumentGrid({
   onOpen,
   onToggleStar,
   onRestore,
+  onDownload,
+  onSend,
+  onDelete,
   onLoadMore,
 }: {
   items: DocumentRecord[];
@@ -28,6 +31,9 @@ export function DocumentGrid({
   onOpen: (id: string) => void;
   onToggleStar: (doc: DocumentRecord) => void;
   onRestore: (doc: DocumentRecord) => void;
+  onDownload: (doc: DocumentRecord) => void;
+  onSend: (doc: DocumentRecord) => void;
+  onDelete: (doc: DocumentRecord) => void;
   onLoadMore: () => void;
 }) {
   const folderName = new Map(folders.map((f) => [f.id, f.name]));
@@ -48,6 +54,9 @@ export function DocumentGrid({
                 onOpen={() => onOpen(doc.id)}
                 onToggleStar={() => onToggleStar(doc)}
                 onRestore={() => onRestore(doc)}
+                onDownload={() => onDownload(doc)}
+                onSend={() => onSend(doc)}
+                onDelete={() => onDelete(doc)}
               />
             </div>
           </li>

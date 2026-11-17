@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
-import { Pencil, Plus, Repeat, X } from "lucide-react";
+import { FolderKanban, Pencil, Plus, Repeat, X } from "lucide-react";
 import { RemindMenu } from "@/components/modules/remind-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -109,6 +109,49 @@ export function TasksView({ projects, today, query, filter, onFilter, showDone, 
   const all = useMemo(() => taskList(projects, today, showDone), [projects, today, showDone]);
   const items = useMemo(() => all.filter((i) => matches(i, filter, query, today)), [all, filter, query, today]);
   const filtered = filter !== "all" || query !== "";
+  const loose = items.filter((i) => isGeneral(i.project));
+  const groups = useMemo(() => {
+    const map = new Map<string, { project: Project; items: TaskItem[] }>();
+    for (const i of items) {
+      if (isGeneral(i.project)) continue;
+      const g = map.get(i.project.id) ?? { project: i.project, items: [] };
+      g.items.push(i);
+      map.set(i.project.id, g);
+    }
+    return [...map.values()];
+  }, [items]);
+
+  const renderRow = ({ project, task, state }: TaskItem) => {
+    if (editing === task.id) {
+      return (
+        <li key={task.id} className="py-2">
+          <TaskForm project={project} task={task} onCancel={() => setEditing(null)} onSubmit={(v) => { actions.onEditTask(project, task, v); setEditing(null); }} />
+        </li>
+      );
+    }
+    return (
+      <li
+        key={task.id}
+        data-testid="task-row"
+        onClick={(e) => { if (!(e.target as HTMLElement).closest("a,button,input,label,[role=menu]")) setEditing(task.id); }}
+        className="flex cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 py-2 hover:bg-muted/30"
+      >
+        <div className="flex min-w-0 flex-1 basis-56 items-center gap-2 text-sm">
+          <input type="checkbox" aria-labelledby={`task-title-${task.id}`} checked={task.done} onChange={() => actions.onToggleTask(project, task)} className="size-4 shrink-0 cursor-pointer rounded border-input accent-primary" />
+          <span id={`task-title-${task.id}`} className={cn("break-words", task.done && "text-muted-foreground line-through")}>
+            {task.title}
+            {task.dueOn && <span className="sr-only">, {dueText(task, today)}</span>}
+          </span>
+          {task.repeat !== "none" && <Repeat role="img" className="size-3.5 shrink-0 text-muted-foreground" aria-label={`Repeats ${task.repeat}`} />}
+        </div>
+        {task.assignee && <span className="text-xs text-muted-foreground">{task.assignee}</span>}
+        {task.dueOn && <Badge variant={TASK_BADGE[state] ?? "muted"} aria-hidden>{dueText(task, today)}</Badge>}
+        {!task.done && <RemindMenu kind="task" id={task.id} text={isGeneral(project) ? task.title : `${task.title} · ${project.name}`} area="Tasks" href="/app/projects" today={today} />}
+        <Button size="icon-sm" variant="ghost" aria-label={`Edit task ${task.title}`} title="Edit task" onClick={() => setEditing(task.id)}><Pencil /></Button>
+        <Button size="icon-sm" variant="ghost" aria-label={`Remove task ${task.title}`} title="Remove task" onClick={() => actions.onRemoveTask(project, task)}><X /></Button>
+      </li>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -141,39 +184,19 @@ export function TasksView({ projects, today, query, filter, onFilter, showDone, 
             {all.length > 0 && filtered && <Button variant="outline" onClick={() => onFilter("all")}>Clear filter</Button>}
           </div>
         ) : (
-          <ul className="divide-y rounded-2xl border bg-card px-3 shadow-panel" data-testid="task-list">
-            {items.map(({ project, task, state }) => {
-              if (editing === task.id) {
-                return (
-                  <li key={task.id} className="py-2">
-                    <TaskForm project={project} task={task} onCancel={() => setEditing(null)} onSubmit={(v) => { actions.onEditTask(project, task, v); setEditing(null); }} />
-                  </li>
-                );
-              }
-              return (
-                <li key={task.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-2" data-testid="task-row">
-                  <label className="flex min-w-0 flex-1 basis-56 cursor-pointer items-center gap-2 text-sm">
-                    <input type="checkbox" checked={task.done} onChange={() => actions.onToggleTask(project, task)} className="size-4 shrink-0 rounded border-input accent-primary" />
-                    <span className={cn("break-words", task.done && "text-muted-foreground line-through")}>
-                      {task.title}
-                      {task.dueOn && <span className="sr-only">, {dueText(task, today)}</span>}
-                    </span>
-                    {task.repeat !== "none" && <Repeat role="img" className="size-3.5 shrink-0 text-muted-foreground" aria-label={`Repeats ${task.repeat}`} />}
-                  </label>
-                  {!isGeneral(project) && (
-                    <button type="button" onClick={() => onOpenProject(project.id)} className="rounded py-1.5 -my-1.5 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                      {project.name}
-                    </button>
-                  )}
-                  {task.assignee && <span className="text-xs text-muted-foreground">{task.assignee}</span>}
-                  {task.dueOn && <Badge variant={TASK_BADGE[state] ?? "muted"} aria-hidden>{dueText(task, today)}</Badge>}
-                  {!task.done && <RemindMenu kind="task" id={task.id} text={isGeneral(project) ? task.title : `${task.title} · ${project.name}`} area="Tasks" href="/app/projects" today={today} />}
-                  <Button size="icon-sm" variant="ghost" aria-label={`Edit task ${task.title}`} title="Edit task" onClick={() => setEditing(task.id)}><Pencil /></Button>
-                  <Button size="icon-sm" variant="ghost" aria-label={`Remove task ${task.title}`} title="Remove task" onClick={() => actions.onRemoveTask(project, task)}><X /></Button>
-                </li>
-              );
-            })}
-          </ul>
+          <div className="space-y-4">
+            {loose.length > 0 && <ul className="divide-y rounded-2xl border bg-card px-3 shadow-panel" data-testid="task-list">{loose.map(renderRow)}</ul>}
+            {groups.map(({ project, items: rows }) => (
+              <section key={project.id} aria-label={`Project: ${project.name}`} data-testid="project-group" className="rounded-2xl border-2 border-primary/20 bg-primary/[0.03] p-3 shadow-panel">
+                <div className="mb-1 flex flex-wrap items-center gap-2 px-1">
+                  <Badge variant="default"><FolderKanban className="size-3" aria-hidden /> Project</Badge>
+                  <button type="button" onClick={() => onOpenProject(project.id)} className="rounded text-sm font-semibold underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{project.name}</button>
+                  <span className="text-xs text-muted-foreground">{rows.length} {rows.length === 1 ? "task" : "tasks"}</span>
+                </div>
+                <ul className="divide-y rounded-xl bg-card px-3">{rows.map(renderRow)}</ul>
+              </section>
+            ))}
+          </div>
         )}
       </section>
     </div>

@@ -1,4 +1,5 @@
-import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { CircleHelp, LogOut } from "lucide-react";
 import { NotificationBell } from "@/components/notification-bell";
 import { Button } from "@/components/ui/button";
 
@@ -6,6 +7,11 @@ import { Button } from "@/components/ui/button";
 export function AppTopBar({ workspaceName, userLabel, badge, notifications, signOutTo }: { workspaceName?: string; userLabel?: string; badge?: string; signOutTo?: "control"; notifications?: { today: string } }) {
   return (
     <>
+      {notifications && (
+        <Link href="/app/help" className="inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-brand-sky">
+          <CircleHelp className="size-4" aria-hidden /> <span className="hidden sm:inline">Help &amp; Training</span><span className="sr-only sm:hidden">Help &amp; Training</span>
+        </Link>
+      )}
       {notifications && <NotificationBell serverToday={notifications.today} />}
       {workspaceName && (
         <span className="hidden truncate rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground sm:inline">{workspaceName}</span>

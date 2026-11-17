@@ -14,6 +14,7 @@ import { formatDayLong } from "@/lib/dates";
 import { createSubmission, generateDocument, markDone, submissionsToCsv, summarize } from "@/lib/forms/logic";
 import { textToPdf } from "@/lib/forms/pdf";
 import { printText } from "@/lib/forms/print";
+import { blankDocument } from "@/lib/forms/layout";
 import { PAPERWORK, type Paperwork } from "@/lib/forms/paperwork";
 import { industryForms } from "@/lib/setup/industries";
 import { addContactLink, personFromSubmission, prefillFromPerson, type Person } from "@/lib/bridge";
@@ -47,7 +48,7 @@ function download(text: string | Uint8Array, name: string, type: string) {
 }
 
 /**
- * Forms & paperwork. Forms and submissions live in this component's state (starting empty)
+ * Forms & Paperwork. Forms and submissions live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
 export function FormsPage({ preview, initialQuery = "", initialFill }: { preview?: string; initialQuery?: string; initialFill?: { formId: string; person: Partial<Person> } }) {
@@ -91,6 +92,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   const actions: FormActions = {
     onSend: (f) => setSending(f),
     onFill: (f) => setFilling(f),
+    onBlank: (f) => download(textToPdf(blankDocument(f.name, f.documentTemplate)), `${slug(f.name)}-blank.pdf`, "application/pdf"),
     onAddResponses: (f) => setAdding(f),
     onEdit: (f) => setBuilderFor(f),
     onDelete: (f) => setDeleting(f),
@@ -136,7 +138,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Forms &amp; paperwork</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Forms &amp; Paperwork</h1>
           <p className="text-sm text-muted-foreground">Build the forms you need, send them to anyone and collect the answers.</p>
         </div>
         <div className="flex flex-wrap gap-2">

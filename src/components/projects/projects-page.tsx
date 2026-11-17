@@ -14,12 +14,15 @@ import { EmptyState } from "@/components/modules/empty-state";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
-import { GENERAL_PROJECT_ID, addMilestone, addUpdate, completeTask, generalProject, isGeneral, overdueTasks, projectsReport, removeMilestone, reopenTask, sortProjects, summarize, taskAlerts, toggleMilestone, type ProjectSort } from "@/lib/projects/logic";
+import { GENERAL_PROJECT_ID, addMilestone, addUpdate, completeTask, generalProject, isGeneral, overdueTasks, projectsReport, projectsReportCsv, removeMilestone, reopenTask, sortProjects, summarize, taskAlerts, toggleMilestone, type ProjectSort } from "@/lib/projects/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import { buildTasks, type TemplateTask } from "@/lib/projects/templates";
 import { PROJECT_STATUSES, type Project, type ProjectStatus, type Task } from "@/lib/projects/types";
 import type { ProjectFormValues, TaskFormValues } from "@/lib/projects/validation";
-import { ProjectCard, type ProjectActions } from "./project-card";
+import { ProjectCard, type ProjectActions, type ReportFormat } from "./project-card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { downloadFile } from "@/lib/download";
+import { textToPdf } from "@/lib/forms/pdf";
 import { ProjectFormDialog, type ProjectDraft } from "./project-form-dialog";
 import { STATUS_LABEL, TASK_BADGE } from "./status";
 import { TasksView, type TaskFilter } from "./tasks-view";
@@ -28,14 +31,11 @@ import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 
 const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 
-function downloadText(text: string, name: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
-  // Some browsers cancel the download if the URL is revoked straight away.
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+/** Saves a status report in the chosen format: PDF, plain text or a CSV spreadsheet. */
+function downloadReport(projects: Project[], today: string, format: ReportFormat, name: string) {
+  if (format === "pdf") downloadFile(`${name}.pdf`, textToPdf(projectsReport(projects, today)) as BlobPart, "application/pdf");
+  else if (format === "csv") downloadFile(`${name}.csv`, projectsReportCsv(projects, today), "text/csv;charset=utf-8");
+  else downloadFile(`${name}.txt`, projectsReport(projects, today), "text/plain;charset=utf-8");
 }
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "project";
@@ -142,7 +142,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
       if (status === "completed" && p.tasks.some((t) => !t.done)) setCompleting(p);
       else applyStatus(p, status);
     },
-    onReport: (p) => downloadText(projectsReport([p], today), `status-${slug(p.name)}-${today}.txt`),
+    onReport: (p, format) => downloadReport([p], today, format, `status-${slug(p.name)}-${today}`),
     onToggleTask: (p, t: Task) => {
       if (t.done) {
         patch(p.id, (x) => ({ ...x, tasks: reopenTask(x.tasks, t.id) }));
@@ -251,14 +251,18 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
         </div>
         <div className="flex gap-2">
           {view === "projects" && (
-            <Button
-              variant="outline"
-              onClick={() => downloadText(projectsReport(visible, today), `status-report-${today}.txt`)}
-              disabled={visible.length === 0}
-              title={filtered ? "Only the projects matching your filters are included" : undefined}
-            >
-              <Download /> {filtered ? `Report for ${plural(visible.length, "project")}` : "Status report"}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={visible.length === 0} title={filtered ? "Only the projects matching your filters are included" : undefined}>
+                  <Download /> {filtered ? `Report for ${plural(visible.length, "project")}` : "Status report"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => downloadReport(visible, today, "pdf", `status-report-${today}`)}>Download as PDF</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => downloadReport(visible, today, "txt", `status-report-${today}`)}>Download as TXT</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => downloadReport(visible, today, "csv", `status-report-${today}`)}>Download as CSV</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <Button variant={view === "tasks" ? "outline" : "default"} onClick={() => setFormFor("new")}><Plus /> New project</Button>
         </div>

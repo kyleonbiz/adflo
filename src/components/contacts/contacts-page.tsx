@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
+import { ChevronDown, Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
   const [importing, setImporting] = useState(false);
   const [deleting, setDeleting] = useState<Contact[] | null>(null);
   const [merging, setMerging] = useState<[Contact, Contact] | null>(null);
+  const [open, setOpen] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState("");
   const [undo, setUndo] = useState<Contact[] | null>(null);
 
@@ -147,6 +148,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
 
   const selectedContacts = contacts.filter((c) => selected.has(c.id));
   const allShownSelected = visible.length > 0 && visible.every((c) => selected.has(c.id));
+  const toggleOpen = (id: string) => setOpen((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const exportCsv = () => {
@@ -319,10 +321,24 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
               {rows.map((c) => {
                 const stale = isStale(c, today);
                 const ago = c.lastContacted ? daysBetween(c.lastContacted, today) : null;
+                const isOpen = open.has(c.id);
                 return (
-                  <li key={c.id} data-testid="contact-row" className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[1.5rem_minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,1.6fr)_7rem_7.5rem_5.5rem]">
+                  <li
+                    key={c.id}
+                    data-testid="contact-row"
+                    onClick={(e) => { if (!(e.target as HTMLElement).closest("a,button,input,label")) toggleOpen(c.id); }}
+                    className="cursor-pointer grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-3 md:grid-cols-[1.5rem_minmax(0,2fr)_minmax(0,1.3fr)_minmax(0,1.6fr)_7rem_7.5rem_5.5rem]">
                     <input type="checkbox" aria-label={`Select ${c.name}`} checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="size-4 accent-primary" />
                     <div className="flex min-w-0 items-center gap-3">
+                      <button
+                        type="button"
+                        aria-expanded={isOpen}
+                        aria-label={`${isOpen ? "Hide" : "Show"} details for ${c.name}`}
+                        onClick={() => toggleOpen(c.id)}
+                        className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <ChevronDown className={`size-4 transition-transform ${isOpen ? "rotate-180" : ""}`} aria-hidden />
+                      </button>
                       <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">{initials(c.name)}</span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -357,6 +373,21 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
                         Log today
                       </button>
                     </p>
+                    {isOpen && (
+                      <dl data-testid="contact-details" className="col-span-full grid gap-x-6 gap-y-2 rounded-xl bg-muted/40 p-4 text-sm sm:grid-cols-2">
+                        <div><dt className="text-xs text-muted-foreground">Category</dt><dd>{c.category}</dd></div>
+                        <div><dt className="text-xs text-muted-foreground">Company</dt><dd>{c.company || "—"}</dd></div>
+                        <div><dt className="text-xs text-muted-foreground">Email</dt><dd>{c.email || "—"}</dd></div>
+                        <div><dt className="text-xs text-muted-foreground">Phone</dt><dd>{c.phone || "—"}</dd></div>
+                        <div><dt className="text-xs text-muted-foreground">Added</dt><dd>{formatDayShort(c.createdOn)}</dd></div>
+                        <div><dt className="text-xs text-muted-foreground">Last contact</dt><dd>{c.lastContacted ? formatDayShort(c.lastContacted) : "Never"}</dd></div>
+                        <div className="sm:col-span-2"><dt className="text-xs text-muted-foreground">Notes</dt><dd className="whitespace-pre-line">{c.notes || "—"}</dd></div>
+                        <div className="flex gap-2 sm:col-span-2">
+                          <Button size="sm" variant="outline" onClick={() => setFormFor(c)}><Pencil /> Edit</Button>
+                          <Button size="sm" variant="outline" onClick={() => setSendingTo(c)}><FileText /> Send a form</Button>
+                        </div>
+                      </dl>
+                    )}
                   </li>
                 );
               })}

@@ -6,6 +6,7 @@ import { FlaskConical, Info } from "lucide-react";
 import type { DmsApi } from "@/lib/dms/client/api";
 import { toDmsError } from "@/lib/dms/errors";
 import { DashboardHeader } from "./dashboard-header";
+import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { DocumentDetailsPanel } from "./document-details-panel";
 import { DocumentGrid } from "./document-grid";
 import { DocumentToolbar } from "./document-toolbar";
@@ -29,6 +30,7 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
   const [uploadOpen, setUploadOpen] = useState(!!startUpload);
   const [uploadFolder, setUploadFolder] = useState<string | null>(null);
   const [teamOpen, setTeamOpen] = useState(false);
+  const [emptying, setEmptying] = useState(false);
 
   const openUpload = () => {
     setUploadFolder(m.query.folderId);
@@ -115,6 +117,7 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
                 tags={boot?.tags ?? []}
                 trashCount={boot?.trashCount ?? 0}
                 onChange={m.patchQuery}
+                onEmptyTrash={m.perms.purge ? () => setEmptying(true) : undefined}
               />
 
               {m.listState === "loading" && <LoadingSkeleton />}
@@ -138,6 +141,9 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
                   onOpen={(id) => void m.openDocument(id)}
                   onToggleStar={m.toggleStar}
                   onRestore={m.restore}
+                  onDownload={(d) => void m.download(d)}
+                  onSend={(d) => void m.send(d)}
+                  onDelete={(d) => void m.remove(d, false)}
                   onLoadMore={m.loadMore}
                 />
               )}
@@ -169,6 +175,14 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
           onNotify={m.notify}
         />
       )}
+      <DeleteConfirmationDialog
+        open={emptying}
+        onOpenChange={setEmptying}
+        title="Empty trash?"
+        description="Every document in Trash is deleted permanently, along with its versions. Starred documents are kept. This cannot be undone."
+        confirmLabel="Empty trash"
+        onConfirm={m.emptyTrash}
+      />
       <DocumentDetailsPanel manager={m} onUploadVersion={uploadVersion} />
       <Toaster notices={m.notices} onDismiss={m.dismissNotice} />
     </div>

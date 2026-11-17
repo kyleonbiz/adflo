@@ -119,3 +119,22 @@ ${invoiceBodyHtml(inv)}
 </body></html>
 `;
 }
+
+/** The invoice as plain lines of text, used to build the PDF copy. */
+export function invoiceText(inv: SharedInvoice): string {
+  const { subtotalCents, taxCents, totalCents } = invoiceTotals(inv.items, inv.taxRate);
+  const out: string[] = [
+    "INVOICE", `Number: ${inv.number}`, `Status: ${STATUS[inv.status]}`, `Issue date: ${inv.issuedOn}`, `Due date: ${inv.dueOn}`, "",
+    "FROM", ...[inv.sender.name, inv.sender.address, inv.sender.phone, inv.sender.email].filter(Boolean), "",
+    "BILL TO", ...[inv.client, inv.clientEmail].filter(Boolean), "",
+    "ITEMS",
+    ...inv.items.map((i) => `${i.description} - ${i.qty} x ${formatMoney(i.rateCents)} = ${formatMoney(lineCents(i))}`), "",
+    `Subtotal: ${formatMoney(subtotalCents)}`,
+    ...(inv.taxRate > 0 ? [`Tax (${inv.taxRate}%): ${formatMoney(taxCents)}`] : []),
+    `TOTAL: ${formatMoney(totalCents)}`,
+  ];
+  if (inv.paymentMethods.length) out.push("", "PAYMENT", `Please pay by ${inv.dueOn}.`, ...inv.paymentMethods.map((m) => `- ${m}`));
+  if (inv.paidOn) out.push("", `Paid on ${inv.paidOn}.`);
+  if (inv.notes) out.push("", "NOTES", inv.notes);
+  return out.join("\n");
+}

@@ -43,8 +43,8 @@ export function NavLink({ item, active, onNavigate, collapsed }: { item: Item; a
 /** Where it helps, a service opens to the parts of it you can jump straight to. Services with one screen have none. */
 const SUB_ITEMS: Record<string, { label: string; path: string; query?: string }[]> = {
   crm: [{ label: "People", path: "contacts" }, { label: "Vendors", path: "vendors" }],
-  projects: [{ label: "Task list", path: "projects" }, { label: "Projects", path: "projects", query: "view=projects" }],
-  reporting: [{ label: "Reports", path: "reporting" }, { label: "Scheduled reports", path: "reporting", query: "section=scheduled" }, { label: "Materials", path: "reporting", query: "section=materials" }],
+  projects: [{ label: "Task List", path: "projects" }, { label: "Projects", path: "projects", query: "view=projects" }],
+  reporting: [{ label: "Reports", path: "reporting" }, { label: "Metrics", path: "reporting", query: "section=metrics" }, { label: "Scheduled Reports", path: "reporting", query: "section=scheduled" }, { label: "Materials", path: "reporting", query: "section=materials" }],
 };
 
 function NavGroup({ item, base, active, onNavigate, collapsed }: { item: Item; base: string; active: boolean; onNavigate?: () => void; collapsed: boolean }) {
@@ -120,7 +120,7 @@ export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/ap
         <Brand wordmark light href={`${base}/overview`} className="w-44 px-1" />
       )}
       <nav aria-label="Services" className="flex min-h-0 w-full flex-1 flex-col">
-        <ul className="min-h-0 space-y-1 overflow-y-auto">
+        <ul className="min-h-0 space-y-2 overflow-y-auto">
           {[overview, assistant, ...modules, calendar, activity].filter((item) => itemAllowed(features, item.id)).map((item) => (
             <li key={item.id}><NavGroup item={item} base={base} active={isActive(pathname, item.href, base) || (item.id === "crm" && isActive(pathname, `${base}/vendors`, base))} onNavigate={onNavigate} collapsed={collapsed} /></li>
           ))}

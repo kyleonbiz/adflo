@@ -1,3 +1,4 @@
+import { layoutTemplate } from "./layout";
 import type { FormField, FormTemplate } from "./types";
 
 const f = (id: string, label: string, type: FormField["type"], required = true, options: string[] = []): FormField => ({
@@ -6,7 +7,7 @@ const f = (id: string, label: string, type: FormField["type"], required = true, 
 
 /** The built-in form templates every workspace starts with. */
 export function starterForms(): FormTemplate[] {
-  return [
+  const forms: FormTemplate[] = [
     {
       id: "form-vendor", name: "New vendor intake", description: "Collect the basics before you start working with a supplier.",
       sentCount: 0,
@@ -34,4 +35,6 @@ export function starterForms(): FormTemplate[] {
       documentTemplate: "",
     },
   ];
+  // Forms without a layout of their own get the standard one, so every form makes a finished document.
+  return forms.map((x) => (x.documentTemplate ? x : { ...x, documentTemplate: layoutTemplate(x.description, x.fields) }));
 }

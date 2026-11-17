@@ -13,6 +13,7 @@ import { SUBMISSION_BADGE, SUBMISSION_LABEL } from "./status";
 export interface FormActions {
   onSend: (form: FormTemplate) => void;
   onFill: (form: FormTemplate) => void;
+  onBlank: (form: FormTemplate) => void;
   onEdit: (form: FormTemplate) => void;
   onDelete: (form: FormTemplate) => void;
   onAddResponses: (form: FormTemplate) => void;
@@ -71,6 +72,7 @@ export function FormCard({ form, submissions, actions }: { form: FormTemplate; s
         <div className="flex shrink-0 flex-wrap items-center gap-2">
           <Button size="sm" onClick={() => actions.onSend(form)}><Send /> Send</Button>
           <Button size="sm" variant="outline" onClick={() => actions.onFill(form)}><Play /> Fill out</Button>
+          <Button size="sm" variant="outline" aria-label={`Download a blank PDF of ${form.name}`} onClick={() => actions.onBlank(form)}><Download /> Blank PDF</Button>
           <Button size="icon-sm" variant="ghost" aria-label={`Edit ${form.name}`} onClick={() => actions.onEdit(form)}><Pencil /></Button>
           <Button size="icon-sm" variant="ghost" aria-label={`Delete ${form.name}`} onClick={() => actions.onDelete(form)}><Trash2 /></Button>
         </div>

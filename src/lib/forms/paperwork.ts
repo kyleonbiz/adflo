@@ -1,3 +1,4 @@
+import { layoutTemplate } from "./layout";
 import type { FormField, FormTemplate } from "./types";
 
 export const INDUSTRIES = [
@@ -37,7 +38,7 @@ function paper(
     industry, use, repeats: opts.repeats,
     form: {
       id: `pw-${id}`, name, description: use, fields, sentCount: 0,
-      documentTemplate: opts.doc ?? "",
+      documentTemplate: opts.doc ?? layoutTemplate(use, fields),
     },
   };
 }

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Download, FileSpreadsheet, SearchX } from "lucide-react";
+import { useState } from "react";
+import { Download, FileSpreadsheet, FileText, Play, SearchX, Table2 } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
 import { IconSquare } from "@/components/modules/icon-square";
 import { MODULE_ICONS } from "@/components/modules/module-icons";
@@ -10,6 +11,9 @@ import { ExportMenu } from "@/components/ui/split-button";
 import { toCsv } from "@/lib/csv";
 import { datasetToXlsx } from "@/lib/datasets/xlsx";
 import type { ModuleReport, ReportTone } from "@/lib/reporting/logic";
+import { textToPdf } from "@/lib/forms/pdf";
+import { downloadFile } from "@/lib/download";
+import { reportText } from "@/lib/reporting/schedule";
 import { ReportBars } from "./report-bars";
 
 const TONE: Record<ReportTone, string> = { neutral: "", warning: "text-amber-600", danger: "text-red-600" };
@@ -33,6 +37,23 @@ function downloadXlsx(report: ModuleReport, name: string) {
 export function ModuleReportView({ report, today }: { report: ModuleReport; today: string }) {
   const Icon = MODULE_ICONS[report.id];
   const file = `${slug(report.name)}-report-${today}`;
+  const [lastRun, setLastRun] = useState<string | null>(null);
+  const [sheetsNote, setSheetsNote] = useState("");
+
+  /** Rebuilds the report from the latest records and stamps when it was run. */
+  const run = () => setLastRun(new Date().toLocaleString([], { dateStyle: "medium", timeStyle: "short" }));
+  /** Google Sheets cannot take a file from here, so the rows go to the clipboard and a new sheet opens to paste them into. */
+  const toSheets = async () => {
+    const tsv = [report.table.headers, ...report.table.rows].map((r) => r.map((c) => String(c).replace(/[\t\r\n]+/g, " ")).join("\t")).join("\n");
+    try {
+      await navigator.clipboard.writeText(tsv);
+      setSheetsNote("Copied. A new Google Sheet is opening: click cell A1 and paste.");
+    } catch {
+      downloadText(toCsv([report.table.headers, ...report.table.rows]), `${file}.csv`);
+      setSheetsNote("Could not copy, so a CSV was saved. In Google Sheets choose File, then Import, and upload it.");
+    }
+    window.open("https://sheets.new", "_blank", "noopener");
+  };
 
   if (report.count === 0) {
     return (
@@ -54,12 +75,21 @@ export function ModuleReportView({ report, today }: { report: ModuleReport; toda
         </h2>
         <div className="flex flex-wrap gap-2">
           <Button asChild size="sm" variant="outline"><Link href={report.href}>Open {report.name}</Link></Button>
-          <ExportMenu actions={[
-            { label: "CSV", icon: <Download />, onSelect: () => downloadText(toCsv([report.table.headers, ...report.table.rows]), `${file}.csv`) },
+          <Button size="sm" onClick={run}><Play /> Run report</Button>
+          <ExportMenu label="Download" actions={[
+            { label: "PDF", icon: <FileText />, onSelect: () => downloadFile(`${file}.pdf`, textToPdf(reportText(report, today)) as BlobPart, "application/pdf") },
             { label: "Excel", icon: <FileSpreadsheet />, onSelect: () => downloadXlsx(report, `${file}.xlsx`) },
+            { label: "Google Sheets", icon: <Table2 />, onSelect: () => void toSheets() },
+            { label: "CSV", icon: <Download />, onSelect: () => downloadText(toCsv([report.table.headers, ...report.table.rows]), `${file}.csv`) },
           ]} />
         </div>
       </div>
+
+      {(lastRun || sheetsNote) && (
+        <p role="status" className="text-xs text-muted-foreground" data-testid="report-run-status">
+          {lastRun && <>Last run {lastRun}: {report.count} {report.noun} included. </>}{sheetsNote}
+        </p>
+      )}
 
       <section aria-label="Key numbers" className="rounded-2xl border bg-card shadow-panel">
         <dl className="grid grid-cols-2 lg:grid-cols-4 [&>div]:border-b [&>div]:p-4 lg:[&>div]:border-b-0 lg:[&>div:not(:first-child)]:border-l [&>div:nth-child(even)]:border-l lg:[&>div:nth-child(even)]:border-l">

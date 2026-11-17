@@ -31,7 +31,7 @@ export function DashboardHeader({
           </div>
         )}
         <Button variant="outline" asChild className="w-full sm:w-auto">
-          <Link href="/app/file-reset"><FolderTree /> Tidy up files</Link>
+          <Link href="/app/file-reset"><FolderTree /> Tidy Up Files</Link>
         </Button>
         {onTeam && (
           <Button variant="outline" onClick={onTeam} className="w-full sm:w-auto">

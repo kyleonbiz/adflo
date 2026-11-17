@@ -18,11 +18,13 @@ import { taskFormSchema, type TaskFormValues } from "@/lib/projects/validation";
 import { cn } from "@/lib/utils";
 import { HEALTH_BADGE, HEALTH_LABEL, STATUS_LABEL, TASK_BADGE } from "./status";
 
+export type ReportFormat = "pdf" | "txt" | "csv";
+
 export interface ProjectActions {
   onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
   onStatus: (project: Project, status: ProjectStatus) => void;
-  onReport: (project: Project) => void;
+  onReport: (project: Project, format: ReportFormat) => void;
   onToggleTask: (project: Project, task: Task) => void;
   onAddTask: (project: Project, values: TaskFormValues) => void;
   onEditTask: (project: Project, task: Task, values: TaskFormValues) => void;
@@ -225,7 +227,9 @@ export function ProjectCard({ project, today, actions, open, onOpenChange }: {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={() => actions.onEdit(project)}><Pencil /> Edit project</DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => actions.onReport(project)}><Download /> Download report</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => actions.onReport(project, "pdf")}><Download /> Download report (PDF)</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => actions.onReport(project, "txt")}><Download /> Download report (TXT)</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => actions.onReport(project, "csv")}><Download /> Download report (CSV)</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem destructive onSelect={() => actions.onDelete(project)}><Trash2 /> Delete</DropdownMenuItem>
             </DropdownMenuContent>

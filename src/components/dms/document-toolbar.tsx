@@ -1,6 +1,7 @@
 "use client";
 
 import { Clock, FileStack, Star, Trash2, type LucideIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CATEGORIES, CATEGORY_LABELS, type DocumentQuery, type DocumentSort, type DocumentView } from "@/lib/dms/types";
 import { FILE_TYPE_GROUPS } from "@/lib/dms/validation";
@@ -32,11 +33,13 @@ export function DocumentToolbar({
   tags,
   trashCount,
   onChange,
+  onEmptyTrash,
 }: {
   query: DocumentQuery;
   tags: string[];
   trashCount: number;
   onChange: (patch: Partial<DocumentQuery>) => void;
+  onEmptyTrash?: () => void;
 }) {
   return (
     <div className="space-y-3" role="search" aria-label="Filter documents">
@@ -68,6 +71,11 @@ export function DocumentToolbar({
             );
           })}
         </div>
+        {query.view === "trash" && trashCount > 0 && onEmptyTrash && (
+          <Button variant="outline" size="sm" className="text-destructive" onClick={onEmptyTrash}>
+            <Trash2 /> Empty trash
+          </Button>
+        )}
         <div className="lg:w-[28rem]">
           <DocumentSearch value={query.search} onChange={(search) => onChange({ search })} />
         </div>

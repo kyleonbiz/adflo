@@ -77,7 +77,7 @@ test.describe("invoices module", () => {
     await expect(view).toContainText("$1,375.55");
     const download = page.waitForEvent("download");
     await view.getByRole("button", { name: "Download invoice" }).click();
-    expect((await download).suggestedFilename()).toMatch(/^invoice-INV-.*\.html$/);
+    expect((await download).suggestedFilename()).toMatch(/^invoice-INV-.*\.pdf$/);
     await view.getByRole("button", { name: "Close" }).click();
     await expect(view).toBeHidden();
 
@@ -109,7 +109,7 @@ test.describe("invoices module", () => {
     await page.goto("/app/invoices");
     const download = page.waitForEvent("download");
     await page.getByTestId("invoice-card").filter({ hasText: "INV-0041" }).getByRole("button", { name: "Download" }).click();
-    expect((await download).suggestedFilename()).toBe("invoice-INV-0041.html");
+    expect((await download).suggestedFilename()).toBe("invoice-INV-0041.pdf");
   });
 
   test("exports the filtered list as CSV", async ({ page }) => {

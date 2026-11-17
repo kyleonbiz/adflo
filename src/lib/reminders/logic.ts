@@ -9,7 +9,7 @@ export interface Reminder {
   /** Stable per thing, so asking again moves the date instead of adding a second one. */
   id: string;
   text: string;
-  area: "Tasks";
+  area: "Tasks" | "Documents";
   href: string;
   /** The first day it shows, `YYYY-MM-DD`. */
   on: string;
@@ -24,10 +24,16 @@ export const REMIND_CHOICES = [
   { label: "Next week", days: 7 },
 ] as const;
 
-export const reminderId = (kind: "request" | "task", id: string) => `${REMINDER_PREFIX}${kind}-${id}`;
+export const reminderId = (kind: "request" | "task" | "document", id: string) => `${REMINDER_PREFIX}${kind}-${id}`;
 
 export function setReminder(list: Reminder[], r: Omit<Reminder, "on">, today: string, days: number): Reminder[] {
   const next: Reminder = { ...r, text: r.text.slice(0, 160), on: addDays(today, days) };
+  return [...list.filter((x) => x.id !== r.id), next].slice(-MAX_REMINDERS);
+}
+
+/** A reminder on a day the person picked themselves. */
+export function setReminderOn(list: Reminder[], r: Omit<Reminder, "on">, on: string): Reminder[] {
+  const next: Reminder = { ...r, text: r.text.slice(0, 160), on };
   return [...list.filter((x) => x.id !== r.id), next].slice(-MAX_REMINDERS);
 }
 
@@ -47,8 +53,8 @@ export function parseReminders(raw: string): Reminder[] {
     if (!Array.isArray(data)) return [];
     return data
       .filter((r): r is Reminder =>
-        !!r && typeof r.id === "string" && r.id.startsWith(REMINDER_PREFIX) && typeof r.text === "string" && r.area === "Tasks" &&
-        typeof r.href === "string" && r.href.startsWith("/app/") && typeof r.on === "string" && isDay(r.on))
+        !!r && typeof r.id === "string" && r.id.startsWith(REMINDER_PREFIX) && typeof r.text === "string" && (r.area === "Tasks" || r.area === "Documents") &&
+        typeof r.href === "string" && (r.href === "/app" || r.href.startsWith("/app/")) && typeof r.on === "string" && isDay(r.on))
       .slice(0, MAX_REMINDERS);
   } catch { return []; }
 }
