@@ -27,7 +27,7 @@ const SEVERITY_ICON: Record<Severity, { Icon: LucideIcon; tone: string }> = {
   warning: { Icon: Clock, tone: "text-amber-600" },
   info: { Icon: Info, tone: "text-brand-blue" },
 };
-const AREAS: Area[] = ["Invoices", "Licenses", "Tasks"];
+const AREAS: Area[] = ["Invoices", "Licenses", "Vendors", "Tasks"];
 const SHOWN = 5;
 
 function Attention({ items, today }: { items: AttentionItem[]; today: string }) {

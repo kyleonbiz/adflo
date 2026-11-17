@@ -5,7 +5,7 @@ import { compliance, daysLeft, licenseStatus, needsReview, summarize as licenseS
 import type { License } from "@/lib/licenses/types";
 import { summarize as projectSummary, taskAlerts } from "@/lib/projects/logic";
 import type { Project } from "@/lib/projects/types";
-import { summarize as vendorSummary } from "@/lib/vendors/logic";
+import { needsAttention as vendorsNeedingAttention } from "@/lib/vendors/logic";
 import type { Vendor } from "@/lib/vendors/types";
 
 /** Everything the dashboard reads. It is empty until the services are stored in the database; fill `loadDashboardSources` for the database. */
@@ -17,7 +17,7 @@ export interface DashboardSources {
 }
 
 export type Severity = "critical" | "warning" | "info";
-export type Area = "Invoices" | "Licenses" | "Tasks" | "Documents";
+export type Area = "Invoices" | "Licenses" | "Vendors" | "Tasks" | "Documents";
 
 /** One headline card: a number, where it links, and a one-line status under it. */
 export interface Kpi {
@@ -99,14 +99,24 @@ function licenseItems(licenses: License[], today: string, base: string): Attenti
   return out;
 }
 
+/** Vendors with an expired or expiring document (an insurance certificate, say) or a contract about to end: one line per vendor. */
+function vendorItems(vendors: Vendor[], today: string, base: string): AttentionItem[] {
+  return vendorsNeedingAttention(vendors, today).map(({ vendor, alert, more }): AttentionItem => ({
+    id: `ven-${vendor.id}`, area: "Vendors", href: `${base}/vendors`,
+    severity: alert.severity === "critical" ? "critical" : "warning",
+    label: alert.severity === "critical" ? "Action needed" : "Coming up",
+    text: `${vendor.name} · ${alert.message}${more > 0 ? ` (+${more} more)` : ""}`,
+  }));
+}
+
 /** The numbers and the action list for the dashboard, computed once for a given day. */
 export function buildDashboard(src: DashboardSources, today: string, base = "/app"): DashboardData {
   const inv = invoiceSummary(src.invoices, today);
   const proj = projectSummary(src.projects, today);
-  const ven = vendorSummary(src.vendors, today);
   const items: AttentionItem[] = [
     ...invoiceItems(src.invoices, today, base),
     ...licenseItems(src.licenses, today, base),
+    ...vendorItems(src.vendors, today, base),
     ...taskAlerts(src.projects, today).map((a): AttentionItem => ({
       id: `task-${a.task.id}`, area: "Tasks", href: `${base}/projects`,
       severity: a.state === "overdue" ? "critical" : "warning",
@@ -119,7 +129,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
   const workload: WorkloadRow[] = [
     { label: "Invoices", open: src.invoices.filter((i) => i.status === "sent").length, attention: count("Invoices") },
     { label: "Licenses", open: src.licenses.length, attention: count("Licenses") },
-    { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive").length, attention: ven.documentIssues },
+    { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive").length, attention: count("Vendors") },
     { label: "Tasks", open: proj.openTasks, attention: count("Tasks") },
   ];
 

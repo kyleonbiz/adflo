@@ -41,6 +41,14 @@ describe("buildDashboard", () => {
     expect(new Set(d.items.map((i) => i.id)).size).toBe(d.items.length);
     expect(d.items.some((i) => i.area === "Invoices" && i.label === "Overdue")).toBe(true);
   });
+  it("lists vendors with an expired or expiring document or a contract ending, one line each, linking to Vendors", () => {
+    const d = buildDashboard(sources(), T);
+    const vendorLines = d.items.filter((i) => i.area === "Vendors");
+    expect(vendorLines.length).toBeGreaterThan(0);
+    expect(vendorLines.every((i) => i.href === "/app/vendors" && i.id.startsWith("ven-") && i.severity !== "info")).toBe(true);
+    expect(d.workload.find((w) => w.label === "Vendors")?.attention).toBe(vendorLines.length);
+    expect(buildDashboard({ ...sources(), vendors: [] }, T).items.some((i) => i.area === "Vendors")).toBe(false);
+  });
   it("counts what falls due over the next seven days, with anything late on today", () => {
     const up = upcomingLoad(sources(), T);
     expect(up).toHaveLength(7);
