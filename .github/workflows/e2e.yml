@@ -2,7 +2,9 @@ name: Browser tests
 
 # The full Playwright suite (about 11 minutes locally), run every night and on demand in four browsers:
 # Chromium, Firefox, WebKit (the engine Safari uses) and WebKit on an iPhone-sized screen (mobile Safari).
-# Each browser is its own job, so one failing browser does not hide the others.
+# Each browser is its own job, so one failing browser does not hide the others. WebKit and mobile Safari are slower
+# (about 5 times Chromium, and each failing test waits out a 30 second timeout), so each is split into four parallel
+# parts ("shards"); one unsplit job ran past its time limit. Playwright splits by test file.
 # It is kept out of the per-push CI (ci.yml) so a push gets its answer in about two minutes.
 # To run it now: GitHub > Actions > "Browser tests" > Run workflow.
 on:
@@ -19,13 +21,23 @@ concurrency:
 
 jobs:
   e2e:
-    name: Playwright (${{ matrix.browser }})
+    name: Playwright (${{ matrix.browser }} ${{ matrix.shard }})
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit, mobile-safari]
+        include:
+          - { browser: chromium, shard: "1/1" }
+          - { browser: firefox, shard: "1/1" }
+          - { browser: webkit, shard: "1/4" }
+          - { browser: webkit, shard: "2/4" }
+          - { browser: webkit, shard: "3/4" }
+          - { browser: webkit, shard: "4/4" }
+          - { browser: mobile-safari, shard: "1/4" }
+          - { browser: mobile-safari, shard: "2/4" }
+          - { browser: mobile-safari, shard: "3/4" }
+          - { browser: mobile-safari, shard: "4/4" }
     env:
       E2E_BROWSERS: ${{ matrix.browser }}
     steps:
@@ -44,13 +56,13 @@ jobs:
 
       # Traces go outside the project folder: files written inside it make the dev server reload pages in a loop.
       - name: Run the browser tests
-        run: npx playwright test --output="$RUNNER_TEMP/pw-out"
+        run: npx playwright test --output="$RUNNER_TEMP/pw-out" --shard=${{ matrix.shard }}
 
       - name: Keep traces of failures
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces-${{ matrix.browser }}
+          name: playwright-traces-${{ matrix.browser }}-${{ strategy.job-index }}
           path: ${{ runner.temp }}/pw-out
           retention-days: 7
           if-no-files-found: ignore
