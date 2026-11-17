@@ -7,10 +7,10 @@ import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculato
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
-const card = "rounded-2xl border border-white/15 bg-white/[0.07] p-5 backdrop-blur-sm transition duration-200 hover:border-brand-violet/60 hover:bg-brand-purple/15";
-const eyebrow = "text-sm font-medium text-[#b9a2ff]"
+const card = "rounded-2xl border border-white/80 bg-white/70 p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/40 hover:bg-white/85";
+const eyebrow = "text-sm font-semibold text-brand-indigo"
 const gradientBtn = "bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-lg shadow-brand-purple/30 transition hover:brightness-110";
-const h2 = "mt-2 text-3xl font-semibold tracking-tight text-white sm:text-4xl";
+const h2 = "mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl";
 
 const PROBLEMS = [
   "Important information scattered across different systems",
@@ -83,22 +83,22 @@ const VALUE = [
 /** The longer marketing story that sits under the hero and demo workspace on the landing page. */
 export function LandingSections() {
   return (
-    <div className="text-white">
+    <div className="text-foreground">
       <section id="platform" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="problem-title">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <div>
             <p className={eyebrow}>The problem</p>
             <h2 id="problem-title" className={h2}>Running a business shouldn’t mean managing endless administrative work.</h2>
-            <ul className="mt-6 space-y-3 text-white/80">
+            <ul className="mt-6 space-y-3 text-foreground/80">
               {PROBLEMS.map((p) => (
-                <li key={p} className="flex gap-3"><AlertTriangle className="mt-1 size-4 shrink-0 text-[#c4b0ff]" aria-hidden="true" />{p}</li>
+                <li key={p} className="flex gap-3"><AlertTriangle className="mt-1 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{p}</li>
               ))}
             </ul>
           </div>
-          <div className={`${card} bg-gradient-to-br from-brand-purple/30 to-brand-blue/10 p-7`}>
+          <div className={`${card} bg-gradient-to-br from-brand-sky/15 to-brand-purple/15 p-7`}>
             <p className={eyebrow}>The answer</p>
             <h3 className="mt-2 text-2xl font-semibold tracking-tight">One platform. Better-controlled operations.</h3>
-            <p className="mt-3 text-white/80">
+            <p className="mt-3 text-foreground/80">
               AdFlo gives your business one organized environment for its administrative responsibilities, so repetitive work gets
               automated and what is about to slip gets flagged on the Dashboard and in the bell.
             </p>
@@ -111,18 +111,18 @@ export function LandingSections() {
       <section className={`${container} pb-14 sm:pb-20`} aria-labelledby="capabilities-title">
         <p className={eyebrow}>Platform capabilities</p>
         <h2 id="capabilities-title" className={h2}>Every module earns its place: saving time, money and effort</h2>
-        <p className="mt-2 max-w-2xl text-white/75">Tools that share one set of records, so the Dashboard, the bell and Reporting always agree. Here is what each one is best at.</p>
+        <p className="mt-2 max-w-2xl text-muted-foreground">Tools that share one set of records, so the Dashboard, the bell and Reporting always agree. Here is what each one is best at.</p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {CAPABILITIES.map(({ icon: Icon, name, best, time, money, flow }) => (
             <li key={name} className={card}>
-              <span className="flex size-10 items-center justify-center rounded-lg bg-brand-purple/30 text-[#d2c4ff]"><Icon className="size-5" aria-hidden="true" /></span>
+              <span className="flex size-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue"><Icon className="size-5" aria-hidden="true" /></span>
               <h3 className="mt-3 font-semibold">{name}</h3>
-              <p className="mt-1 text-sm text-white/85"><span className="font-medium text-[#d2c4ff]">Best for:</span> {best}</p>
-              <dl className="mt-3 space-y-2 border-t border-white/10 pt-3 text-sm text-white/70">
+              <p className="mt-1 text-sm text-foreground/85"><span className="font-medium text-brand-indigo">Best for:</span> {best}</p>
+              <dl className="mt-3 space-y-2 border-t border-brand-blue/10 pt-3 text-sm text-muted-foreground">
                 {[{ Ic: Clock, label: "Saves time", v: time }, { Ic: PiggyBank, label: "Saves money", v: money }, { Ic: Workflow, label: "Smoother workflow", v: flow }].map(({ Ic, label, v }) => (
                   <div key={label} className="flex gap-2.5">
-                    <Ic className="mt-0.5 size-4 shrink-0 text-[#c4b0ff]" aria-hidden="true" />
-                    <div><dt className="font-medium text-white/90">{label}</dt><dd>{v}</dd></div>
+                    <Ic className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />
+                    <div><dt className="font-medium text-foreground">{label}</dt><dd>{v}</dd></div>
                   </div>
                 ))}
               </dl>
@@ -134,40 +134,40 @@ export function LandingSections() {
       <section id="addy" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="addy-title">
         <p className={eyebrow}>Meet Addy, your AdFlo assistant</p>
         <h2 id="addy-title" className={`${h2} max-w-3xl`}>Tell Addy what you need. She takes care of the busywork.</h2>
-        <p className="mt-3 max-w-2xl text-white/75">Ask in plain language. Addy does the work across every module, and every important step stays in your hands.</p>
+        <p className="mt-3 max-w-2xl text-muted-foreground">Ask in plain language. Addy does the work across every module, and every important step stays in your hands.</p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ADDY_DOES.map(({ icon: Icon, title, text }) => (
             <li key={title} className={card}>
-              <span className="flex size-10 items-center justify-center rounded-lg bg-brand-purple/30 text-[#d2c4ff]"><Icon className="size-5" aria-hidden="true" /></span>
+              <span className="flex size-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue"><Icon className="size-5" aria-hidden="true" /></span>
               <h3 className="mt-3 font-semibold">{title}</h3>
-              <p className="mt-1 text-sm text-white/70">{text}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{text}</p>
             </li>
           ))}
-          <li className={`${card} bg-gradient-to-br from-brand-purple/30 to-brand-blue/10`}>
-            <span className="flex size-10 items-center justify-center rounded-lg bg-brand-purple/30 text-[#d2c4ff]"><Eye className="size-5" aria-hidden="true" /></span>
+          <li className={`${card} bg-gradient-to-br from-brand-sky/15 to-brand-purple/15`}>
+            <span className="flex size-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue"><Eye className="size-5" aria-hidden="true" /></span>
             <h3 className="mt-3 font-semibold">You stay in control</h3>
-            <p className="mt-1 text-sm text-white/75">Addy will never:</p>
-            <ul className="mt-2 space-y-1 text-sm text-white/80">
-              {ADDY_NEVER.map((n) => <li key={n} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-[#c4b0ff]" aria-hidden="true" />{n}</li>)}
+            <p className="mt-1 text-sm text-muted-foreground">Addy will never:</p>
+            <ul className="mt-2 space-y-1 text-sm text-foreground/80">
+              {ADDY_NEVER.map((n) => <li key={n} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{n}</li>)}
             </ul>
           </li>
         </ul>
       </section>
 
-      <section id="approach" className="scroll-mt-4 border-y border-white/10 bg-gradient-to-b from-brand-purple-deep/30 to-black/20" aria-labelledby="approach-title">
+      <section id="approach" className="scroll-mt-4 border-y border-brand-blue/10 bg-white/40" aria-labelledby="approach-title">
         <div className={`${container} py-14 sm:py-20`}>
           <p className={eyebrow}>Human + AI</p>
           <h2 id="approach-title" className={`${h2} max-w-3xl`}>AI does the repetitive work. Your people stay in control.</h2>
-          <p className="mt-3 max-w-2xl text-white/75">AdFlo doesn’t remove the need for people. It makes their work more efficient.</p>
+          <p className="mt-3 max-w-2xl text-muted-foreground">AdFlo doesn’t remove the need for people. It makes their work more efficient.</p>
           <ol className="mt-8 grid gap-4 md:grid-cols-3">
             {APPROACH.map(({ icon: Icon, step, text }, i) => (
               <li key={step} className={card}>
                 <div className="flex items-center gap-3">
-                  <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-violet text-sm font-semibold">{i + 1}</span>
-                  <Icon className="size-5 text-[#c4b0ff]" aria-hidden="true" />
+                  <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-violet text-sm font-semibold text-white">{i + 1}</span>
+                  <Icon className="size-5 text-brand-purple" aria-hidden="true" />
                 </div>
                 <h3 className="mt-3 text-sm font-semibold uppercase tracking-wider">{step}</h3>
-                <p className="mt-1 text-sm text-white/75">{text}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{text}</p>
               </li>
             ))}
           </ol>
@@ -180,8 +180,8 @@ export function LandingSections() {
         <ol className="mt-8 grid gap-8 md:grid-cols-3">
           {HOW.map((s) => (
             <li key={s.n} className="flex gap-4">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-brand-violet/60 bg-brand-purple/20 text-sm font-semibold text-[#d2c4ff]">{s.n}</span>
-              <div><h3 className="font-semibold">{s.title}</h3><p className="mt-1 text-sm text-white/75">{s.text}</p></div>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-brand-violet/60 bg-brand-purple/20 text-sm font-semibold text-brand-indigo">{s.n}</span>
+              <div><h3 className="font-semibold">{s.title}</h3><p className="mt-1 text-sm text-muted-foreground">{s.text}</p></div>
             </li>
           ))}
         </ol>
@@ -192,24 +192,24 @@ export function LandingSections() {
           <div>
             <p className={eyebrow}>Who it’s for</p>
             <h2 id="who-title" className={h2}>Built for businesses that have outgrown disorganized operations.</h2>
-            <p className="mt-3 text-white/75">AdFlo supports businesses that want more organized, efficient and scalable administrative operations.</p>
+            <p className="mt-3 text-muted-foreground">AdFlo supports businesses that want more organized, efficient and scalable administrative operations.</p>
           </div>
           <ul className="flex flex-wrap content-start gap-2.5" aria-label="Who AdFlo is for">
             {AUDIENCE.map((a) => (
-              <li key={a} className="rounded-full border border-brand-violet/40 bg-brand-purple/20 px-4 py-2 text-sm">{a}</li>
+              <li key={a} className="rounded-full border border-white/80 bg-white/70 px-4 py-2 text-sm text-foreground shadow-sm">{a}</li>
             ))}
           </ul>
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-black/20" aria-labelledby="value-title">
+      <section className="border-y border-brand-blue/10 bg-white/40" aria-labelledby="value-title">
         <div className={`${container} py-14 sm:py-20`}>
           <p className={eyebrow}>Business value</p>
           <h2 id="value-title" className={h2}>More organization. Less administrative overhead.</h2>
           <ul className="mt-8 grid gap-3 sm:grid-cols-2">
             {VALUE.map((v) => (
-              <li key={v} className="flex gap-3 rounded-xl border border-white/15 p-4 text-white/85">
-                <Check className="mt-0.5 size-4 shrink-0 text-[#c4b0ff]" aria-hidden="true" />{v}
+              <li key={v} className="flex gap-3 rounded-xl border border-white/80 bg-white/70 p-4 text-foreground/85 shadow-sm">
+                <Check className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{v}
               </li>
             ))}
           </ul>
@@ -220,12 +220,12 @@ export function LandingSections() {
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <div>
             <h2 id="cta-title" className={h2}>Take control of your business operations.</h2>
-            <p className="mt-3 text-white/80">
+            <p className="mt-3 text-foreground/80">
               Discover how AdFlo can help your organization simplify administrative work, streamline workflows and operate more efficiently.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a href="#demo-form" className={`rounded-lg px-5 py-3 font-medium ${gradientBtn}`}>Schedule your AdFlo demo</a>
-              <Link href="/app" className="rounded-lg border border-white/30 px-5 py-3 font-medium transition hover:bg-white/10">Open workspace</Link>
+              <Link href="/app" className="rounded-lg border border-brand-blue/30 bg-white/70 px-5 py-3 font-medium text-foreground transition hover:bg-white">Open workspace</Link>
             </div>
           </div>
           <div id="demo-form" className="scroll-mt-4"><DemoRequestForm /></div>
