@@ -23,3 +23,24 @@ export function agreementEmail(d: { clientName: string; ownerName: string; link:
     ].join("\n"),
   };
 }
+
+/** One email that carries several agreement links (for example Terms and Privacy Policy). One link falls back to the single-agreement email. */
+export function agreementsEmail(d: { clientName: string; ownerName: string; items: { title: string; link: string }[] }): { subject: string; text: string } {
+  if (d.items.length === 1) return agreementEmail({ clientName: d.clientName, ownerName: d.ownerName, link: d.items[0].link });
+  const owner = oneLine(d.ownerName) || "there";
+  return {
+    subject: "Your AdFlo agreements",
+    text: [
+      `Hi ${owner},`,
+      "",
+      `Welcome to AdFlo. Before ${oneLine(d.clientName) || "your team"} gets started, please review and accept each of these:`,
+      "",
+      ...d.items.flatMap((i) => [oneLine(i.title), i.link, ""]),
+      "Each link is for you only and works for 30 days. Type your full name and email on each page to accept.",
+      "",
+      "Questions? Just reply to this email.",
+      "",
+      "The AdFlo team",
+    ].join("\n"),
+  };
+}

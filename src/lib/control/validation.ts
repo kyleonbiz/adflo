@@ -214,6 +214,14 @@ export function parseSendInput(raw: unknown): Parsed<{ clientId: string; templat
   return { ok: true, value: { clientId: r.clientId, templateId: r.templateId, email: r.email === true } };
 }
 
+/** Several agreements for one client in one go (2 to 10 different ones). */
+export function parseSendAllInput(raw: unknown): Parsed<{ clientId: string; templateIds: string[]; email: boolean }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const ids = Array.isArray(r.templateIds) ? [...new Set(r.templateIds)] : [];
+  if (!isUuid(r.clientId) || ids.length < 1 || ids.length > 10 || !ids.every(isUuid)) return { ok: false, errors: { templateIds: "Choose a client and at least one agreement." } };
+  return { ok: true, value: { clientId: r.clientId, templateIds: ids as string[], email: r.email === true } };
+}
+
 export const isAgreementToken = (v: unknown): v is string => typeof v === "string" && /^[A-Za-z0-9_-]{43}$/.test(v);
 
 export function parseAcceptInput(raw: unknown): Parsed<{ token: string; name: string; email: string }> {

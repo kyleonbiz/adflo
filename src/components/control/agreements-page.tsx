@@ -36,6 +36,8 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
   const latest = templates.filter((t) => !templates.some((o) => o.title === t.title && o.version > t.version));
   const [templateId, setTemplateId] = useState(latest[0]?.id ?? "");
   const [link, setLink] = useState("");
+  const [links, setLinks] = useState<{ id: string; title: string; link: string }[]>([]);
+  const [copiedId, setCopiedId] = useState("");
   const [emailIt, setEmailIt] = useState(!!ownerEmail);
   const [emailNote, setEmailNote] = useState("");
   const [copied, setCopied] = useState(false);
@@ -43,12 +45,23 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
   const [busy, setBusy] = useState(false);
 
   async function send(e: React.FormEvent) {
-    e.preventDefault(); setBusy(true); setError(""); setLink(""); setCopied(false); setEmailNote("");
+    e.preventDefault(); setBusy(true); setError(""); setLink(""); setLinks([]); setCopied(false); setEmailNote("");
     try {
       const res = await fetch("/api/control/agreements/send", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, templateId, email: emailIt && !!ownerEmail }) });
       const json = await res.json().catch(() => null);
       if (res.ok && json?.link) { setLink(json.link); setEmailNote(json.emailedTo ? `Emailed to ${json.emailedTo} from onboarding@adflo.pro.` : json.emailError ?? ""); router.refresh(); } else setError(json?.error?.message ?? "Could not create the link. Try again.");
     } catch { setError("Could not reach the server. Try again."); } finally { setBusy(false); }
+  }
+  async function sendAll() {
+    setBusy(true); setError(""); setLink(""); setLinks([]); setCopiedId(""); setEmailNote("");
+    try {
+      const res = await fetch("/api/control/agreements/send-all", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, templateIds: latest.map((t) => t.id), email: emailIt && !!ownerEmail }) });
+      const json = await res.json().catch(() => null);
+      if (res.ok && Array.isArray(json?.items)) { setLinks(json.items); setEmailNote(json.emailedTo ? `Emailed to ${json.emailedTo} from onboarding@adflo.pro.` : json.emailError ?? ""); router.refresh(); } else setError(json?.error?.message ?? "Could not create the links. Try again.");
+    } catch { setError("Could not reach the server. Try again."); } finally { setBusy(false); }
+  }
+  async function copyOne(id: string, value: string) {
+    try { await navigator.clipboard.writeText(value); setCopiedId(id); } catch { setCopiedId(""); }
   }
   async function copy() {
     try { await navigator.clipboard.writeText(link); setCopied(true); } catch { setCopied(false); }
@@ -62,6 +75,7 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
           <div className="min-w-56 flex-1 space-y-1.5"><Label htmlFor="ag-template">Agreement</Label><select id="ag-template" value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30">{latest.map((t) => <option key={t.id} value={t.id}>{t.title} (v{t.version})</option>)}</select></div>
           {ownerEmail && <label className="flex w-full items-center gap-2 text-sm"><input type="checkbox" checked={emailIt} onChange={(e) => setEmailIt(e.target.checked)} /> Also email it to {ownerEmail} from onboarding@adflo.pro</label>}
           <Button type="submit" variant="outline" disabled={busy || !templateId}>{busy ? "Working…" : emailIt && ownerEmail ? "Create link and email it" : "Create link"}</Button>
+          {latest.length >= 2 && <Button type="button" disabled={busy} onClick={sendAll}>{busy ? "Working…" : emailIt && ownerEmail ? `Send all ${latest.length} in one email` : `Create all ${latest.length} links`}</Button>}
         </form>
       ))}
       {link && (
@@ -69,6 +83,18 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
           <p className="font-medium">{emailNote.startsWith("Emailed") ? "The client has the link by email. You can also copy it here." : "Send this link to the client."} It is shown only once and works for 30 days.</p>
           {emailNote && <p role="status" className="text-muted-foreground">{emailNote}</p>}
           <div className="flex flex-wrap items-center gap-2"><Input readOnly aria-label="Agreement link" value={link} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 font-mono text-xs" /><Button type="button" size="sm" onClick={copy}>{copied ? "Copied" : "Copy"}</Button></div>
+        </div>
+      )}
+      {links.length > 0 && (
+        <div className="mt-3 space-y-2 rounded-xl bg-accent p-3 text-sm">
+          <p className="font-medium">{emailNote.startsWith("Emailed") ? "The client has the links by email. You can also copy them here." : "Send these links to the client."} They are shown only once and work for 30 days.</p>
+          {emailNote && <p role="status" className="text-muted-foreground">{emailNote}</p>}
+          {links.map((l) => (
+            <div key={l.id} className="space-y-1">
+              <span className="text-xs font-medium">{l.title}</span>
+              <div className="flex flex-wrap items-center gap-2"><Input readOnly aria-label={`${l.title} link`} value={l.link} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 font-mono text-xs" /><Button type="button" size="sm" onClick={() => copyOne(l.id, l.link)}>{copiedId === l.id ? "Copied" : "Copy"}</Button></div>
+            </div>
+          ))}
         </div>
       )}
       {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}

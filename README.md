@@ -80,7 +80,7 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
   Site URL and allowed redirect URLs so `/reset-password` on your domain is permitted.
 
 * **Agreements**: the Owner publishes terms as versioned, never-edited text; staff create a one-time link for a client
-  (shown once; only its hash is stored; valid 30 days). The client's account card has "Email welcome message" (also from `onboarding@adflo.pro`, ticks the Welcome message sent step). Staff can tick "Also email it" to send it to the client's owner from `onboarding@adflo.pro`; if email is not set up, they copy the link into their own email instead. The client opens `/agreement/<secret>`, types their name and email and accepts; the acceptance, who
+  (shown once; only its hash is stored; valid 30 days). The client's account card has "Email welcome message" (also from `onboarding@adflo.pro`, ticks the Welcome message sent step). Staff can tick "Also email it" to send it to the client's owner from `onboarding@adflo.pro`; with two or more agreements published, "Send all" creates a link for each and emails them together in one message; if email is not set up, they copy the links into their own email instead. The client opens `/agreement/<secret>`, types their name and email and accepts; the acceptance, who
   and when, is recorded and shown on the client's timeline. Sending also ticks the onboarding step.
 
 * **Monitoring**: health checks (database answers, error logging, cron secret, assistant key, dev mode), a log of server
