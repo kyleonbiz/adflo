@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: "%s · AdFlo",
   },
   description:
-    "AdFlo turns the paperwork, invoices, renewals and projects you used to hand off into simple tools your team runs itself.",
+    "AdFlo is the administrative management platform for contractors and property managers, ready for other industries: records, licenses, insurance, vendors, invoices, paperwork and projects in one place, with reminders so nothing slips.",
   robots: { index: true, follow: true },
 };
 
