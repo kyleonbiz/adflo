@@ -29,7 +29,7 @@ export default function HomePage() {
         </main>
       </div>
       <footer className="border-t border-indigo-100 bg-white/60 py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} Aurum Ventura Enterprise LLC · Business Administrative Services
+        © {new Date().getFullYear()} AdFlo · Business Administrative Services
       </footer>
     </div>
   );

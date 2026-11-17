@@ -1,6 +1,6 @@
 # AdFlo
 
-The client-facing back-office platform from Aurum Ventura Enterprise LLC. It started as a multi-tenant document manager:
+The client-facing back-office platform. It started as a multi-tenant document manager:
 folders and tags, metadata, filename/metadata and **document-text search** (text-based PDF, DOCX,
 XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
@@ -49,7 +49,7 @@ in `tests/unit/`). Pages: `src/app/app/`. Database: `supabase/migrations/`.
 
 ## Control center (staff console)
 
-`/control` is Aurum Ventura's own back office, separate from the client app: a client directory (status, plan, seats,
+`/control` is AdFlo's own back office, separate from the client app: a client directory (status, plan, seats,
 owner, notes) and an audit log of every staff change. It uses the same look as the app. Staff are rows in
 `staff_members` (roles `owner`, `support`, `billing`); clients are never staff and cannot see these tables. Anyone who is
 not active staff gets a 404. Every change to a client is written to `staff_audit_log` by a database trigger, and only the

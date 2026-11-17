@@ -31,7 +31,7 @@ export function welcomeMessage(o: { clientName: string; ownerName: string; owner
     "3. Confirm your email when AdFlo asks, then sign in.", "",
     `You will land in the ${o.clientName} workspace as its owner. From there you can invite your team.`,
     ...(o.expiresOn ? ["", `This invitation is open until ${o.expiresOn}.`] : []),
-    "", "Thank you,", "Aurum Ventura",
+    "", "Thank you,", "AdFlo",
   ].join("\n");
 }
 

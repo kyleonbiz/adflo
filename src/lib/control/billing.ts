@@ -125,7 +125,7 @@ export function invoicesCsv(list: BillingInvoice[], today: string): string {
 export function invoiceText(i: BillingInvoice): string {
   return [
     `Invoice ${i.number}`, `To: ${i.clientName}`, `For: ${i.description}`, `Amount due: ${formatMoney(i.amountCents)}`,
-    `Issued: ${i.issuedOn}`, `Due: ${i.dueOn}`, ...(i.note ? [`Note: ${i.note}`] : []), "", "Thank you. Aurum Ventura Enterprise LLC",
+    `Issued: ${i.issuedOn}`, `Due: ${i.dueOn}`, ...(i.note ? [`Note: ${i.note}`] : []), "", "Thank you. AdFlo",
   ].join("\n");
 }
 

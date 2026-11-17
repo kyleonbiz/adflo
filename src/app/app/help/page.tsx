@@ -18,7 +18,7 @@ export default function HelpRoute() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Help &amp; Training</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Quick guides for each part of AdFlo. For anything else, contact your Aurum Ventura team.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Quick guides for each part of AdFlo. For anything else, email support@adflo.pro.</p>
       </div>
       <section aria-label="Tips" className="rounded-2xl border bg-card p-6 shadow-panel">
         <h2 className="text-base font-semibold">Good to know</h2>

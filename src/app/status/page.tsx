@@ -29,7 +29,7 @@ export default async function StatusPage() {
         ))}
       </ul>
       <p className="mt-6 text-sm text-muted-foreground">
-        Checked {new Date(report.checkedAt).toUTCString()}. Reload to check again. Support: weekdays, 9am to 5pm Eastern, kyleonbiz@gmail.com.
+        Checked {new Date(report.checkedAt).toUTCString()}. Reload to check again. Support: weekdays, 9am to 5pm Eastern, support@adflo.pro.
       </p>
     </main>
   );

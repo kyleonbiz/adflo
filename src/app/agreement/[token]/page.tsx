@@ -51,7 +51,7 @@ export default async function AgreementPage({ params }: PageProps<"/agreement/[t
             )}
           </div>
         </main>
-        <p className="mt-6 text-center text-xs text-slate-400">Aurum Ventura Enterprise LLC · AdFlo</p>
+        <p className="mt-6 text-center text-xs text-slate-400">AdFlo</p>
       </div>
     </div>
   );
