@@ -73,6 +73,35 @@ Margin guards: track support hours per client (over about 6 hours a month on a C
 
 Only items 1-3 before the first pilots. Do not build 4-6 until paying clients ask.
 
+## Asset register (equipment and assets, both niches)
+
+Scope: assets tracked **one by one**, never by quantity. Tools, vehicles, appliances, HVAC units, keys.
+
+| Field | Notes |
+|---|---|
+| Name, type, serial number | |
+| Location (job site, vehicle, or property and unit) | |
+| Owner / assigned to | A person, crew or vendor |
+| Dates | Purchase, warranty expiry, inspection due, service due |
+| Documents | Manuals, warranty, inspection records, insurance (reuses Documents) |
+| Value | Purchase value, optional |
+
+Reuse what exists: reminders, risk tiers (Safe / Warning / Critical), document attachments, audit trail and CSV import (bulk-load assets during onboarding).
+
+How each niche uses it:
+- **Contractors:** inspections, calibrations, operator certifications, "is this equipment cleared for the job site?"
+- **Property managers:** warranty expiry, service schedules, fire and safety inspections, "what is in unit 4B and when does it need service?"
+
+Version 1: register, date tracking and reminders, attached documents, QR labels (scan to open the record on a phone), and an "expiring / out of service / missing" report.
+Not in scope: quantities, reorder points, purchasing, barcode scanner hardware, depreciation.
+
+Pricing (test in discovery calls): the basic register is included in every tier up to 100 assets, then about $0.50-$1 per extra asset a month; or sell it as a $200-$500 monthly add-on on the higher tiers.
+
+Rules:
+- Show it in discovery calls as a roadmap item and count how many prospects would pay for it. Build version 1 when at least 3 pilots ask, not before.
+- The pitch stays "vendor and subcontractor compliance". Inventory is a second line, added after the first pilots, so the message stays clear.
+- Differentiator against cheap inventory apps is the compliance link (deadlines and documents per asset). Do not compete on stock counting.
+
 ## Blockers to selling (from the README)
 
 1. Set the prices above in Control Center > Plans (no code).
