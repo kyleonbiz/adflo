@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 const reply = (status: number, body: Record<string, unknown>) => NextResponse.json(body, { status, headers: { "cache-control": "no-store" } });
 
 /**
- * Public: the landing page "Book a demo" form. The server emails the request to DEMO_REQUEST_TO (default: the sending mailbox itself)
+ * Public: the landing page "Book a demo" form. The server emails the request to sales@adflo.pro (override with DEMO_REQUEST_TO)
  * through the company's Google Workspace mailbox, so the visitor never has to open an email app.
  * Needs SMTP_USER (a Workspace address such as sales@adflo.pro or kyle@adflo.pro) and SMTP_PASSWORD (a Google app password).
  */
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const mail = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass } });
     await mail.sendMail({
       from: process.env.DEMO_REQUEST_FROM || `AdFlo <${user}>`,
-      to: process.env.DEMO_REQUEST_TO || user,
+      to: process.env.DEMO_REQUEST_TO || "sales@adflo.pro",
       replyTo: d.email,
       subject: `AdFlo Demo Request: ${d.company}`,
       text: demoRequestText(d),

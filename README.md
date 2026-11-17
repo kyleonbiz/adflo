@@ -260,7 +260,7 @@ Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app 
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only, never prefixed `NEXT_PUBLIC_`. Used for share links, the cleanup and reindex routes and Control center monitoring. |
 | `CRON_SECRET` | 16+ random characters, e.g. `openssl rand -hex 24`. Protects the cleanup and reindex routes. |
 | `SMTP_USER` / `SMTP_PASSWORD` | Server-only. A Workspace mailbox and its Google app password; the landing page "Book a demo" form sends requests through it. Without them the form answers that requests are not switched on. |
-| `DEMO_REQUEST_TO` / `DEMO_REQUEST_FROM` | Optional. Inbox that receives requests (default: the `SMTP_USER` mailbox) and the sender name. |
+| `DEMO_REQUEST_TO` / `DEMO_REQUEST_FROM` | Optional. Inbox that receives requests (default `sales@adflo.pro`) and the sender name. |
 | `ANTHROPIC_API_KEY` | Optional, server only. Without it the assistant (Addy) answers with its built-in rules. Claude answers only for **Core +** workspaces. |
 | `ASSISTANT_MODEL` | Optional model override (default `claude-opus-5-5`). |
 | `DMS_PENDING_UPLOAD_MAX_AGE_HOURS` | Pending-upload cleanup age (default 24, minimum 3). |
