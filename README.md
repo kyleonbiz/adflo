@@ -6,7 +6,7 @@ XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
 expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
 Tailwind and shadcn/ui-style components.
 
-The site address (`/`) is the landing page (`src/app/page.tsx`; the old `/landing` redirects to it; sign-in is at `/login` and the app at `/app`): the hero, the demo workspace, then the story sections and a Book a demo form in `src/components/marketing/sections.tsx`; the form posts to `/api/demo-request`, which emails the request to the sales inbox through Resend); Open workspace goes into the app. The earlier marketing page (hero, features, plans) is in git history at commit `534795a`.
+The site address (`/`) is the landing page (`src/app/page.tsx`; the old `/landing` redirects to it; sign-in is at `/login` and the app at `/app`): the hero, the demo workspace, then the story sections and a Book a demo form in `src/components/marketing/sections.tsx`; the form posts to `/api/demo-request`, which emails the request to the sales inbox through the Google Workspace mailbox); Open workspace goes into the app. The earlier marketing page (hero, features, plans) is in git history at commit `534795a`.
 
 * **With Supabase configured** – real sign-in, workspaces and (for Documents) a real database and storage.
 * **Without Supabase** – the app still opens, as a **preview** labelled "Preview" in the top
@@ -259,8 +259,8 @@ Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app 
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable (anon) key. Safe in the browser: RLS protects the data. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server only, never prefixed `NEXT_PUBLIC_`. Used for share links, the cleanup and reindex routes and Control center monitoring. |
 | `CRON_SECRET` | 16+ random characters, e.g. `openssl rand -hex 24`. Protects the cleanup and reindex routes. |
-| `RESEND_API_KEY` | Server-only. Lets the landing page "Book a demo" form email requests (Resend). Without it the form answers that requests are not switched on. |
-| `DEMO_REQUEST_TO` / `DEMO_REQUEST_FROM` | Optional. Inbox that receives requests (default `sales@adflo.pro`) and the sender (default `AdFlo <noreply@adflo.pro>`, on a domain verified in Resend). |
+| `SMTP_USER` / `SMTP_PASSWORD` | Server-only. A Workspace mailbox and its Google app password; the landing page "Book a demo" form sends requests through it. Without them the form answers that requests are not switched on. |
+| `DEMO_REQUEST_TO` / `DEMO_REQUEST_FROM` | Optional. Inbox that receives requests (default: the `SMTP_USER` mailbox) and the sender name. |
 | `ANTHROPIC_API_KEY` | Optional, server only. Without it the assistant (Addy) answers with its built-in rules. Claude answers only for **Core +** workspaces. |
 | `ASSISTANT_MODEL` | Optional model override (default `claude-opus-5-5`). |
 | `DMS_PENDING_UPLOAD_MAX_AGE_HOURS` | Pending-upload cleanup age (default 24, minimum 3). |

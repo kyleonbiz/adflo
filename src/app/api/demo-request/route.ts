@@ -1,3 +1,4 @@
+import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
 import { checkRate } from "@/lib/dms/server/rate-limit";
 import { sameOrigin } from "@/lib/dms/server/respond";
@@ -8,8 +9,9 @@ export const dynamic = "force-dynamic";
 const reply = (status: number, body: Record<string, unknown>) => NextResponse.json(body, { status, headers: { "cache-control": "no-store" } });
 
 /**
- * Public: the landing page "Book a demo" form. The server emails the request to DEMO_REQUEST_TO (default sales@adflo.pro) through
- * Resend, so the visitor never has to open an email app. Needs RESEND_API_KEY and a sender address on a domain verified in Resend.
+ * Public: the landing page "Book a demo" form. The server emails the request to DEMO_REQUEST_TO (default: the sending mailbox itself)
+ * through the company's Google Workspace mailbox, so the visitor never has to open an email app.
+ * Needs SMTP_USER (a Workspace address such as sales@adflo.pro or kyle@adflo.pro) and SMTP_PASSWORD (a Google app password).
  */
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return reply(403, { ok: false, error: "Cross-origin request blocked." });
@@ -22,17 +24,21 @@ export async function POST(req: Request) {
   const parsed = parseDemoRequest(raw);
   if (!parsed.ok) return reply(400, { ok: false, error: "Check the highlighted fields.", fields: parsed.errors });
 
-  const key = process.env.RESEND_API_KEY;
-  if (!key) return reply(503, { ok: false, error: "Demo requests are not switched on yet." });
-  const to = process.env.DEMO_REQUEST_TO || "sales@adflo.pro";
-  const from = process.env.DEMO_REQUEST_FROM || "AdFlo <noreply@adflo.pro>";
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASSWORD;
+  if (!user || !pass) return reply(503, { ok: false, error: "Demo requests are not switched on yet." });
   const d = parsed.value;
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify({ from, to: [to], reply_to: d.email, subject: `AdFlo demo request: ${d.company}`, text: demoRequestText(d) }),
-  }).catch(() => null);
-  if (!res || !res.ok) return reply(502, { ok: false, error: "We could not send your request. Please try again, or email us directly." });
+  try {
+    const mail = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass } });
+    await mail.sendMail({
+      from: process.env.DEMO_REQUEST_FROM || `AdFlo <${user}>`,
+      to: process.env.DEMO_REQUEST_TO || user,
+      replyTo: d.email,
+      subject: `AdFlo demo request: ${d.company}`,
+      text: demoRequestText(d),
+    });
+  } catch {
+    return reply(502, { ok: false, error: "We could not send your request. Please try again in a moment." });
+  }
   return reply(200, { ok: true });
 }
