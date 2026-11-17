@@ -1,6 +1,6 @@
 import { MODULES } from "@/lib/modules/registry";
 import { AVAILABLE_MODULE_IDS, IMPORTABLE, recommendModules, runSetupChecks, setupScore } from "@/lib/setup/logic";
-import { INDUSTRIES, TEAM_SIZES, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
+import { LIVE_INDUSTRIES, TEAM_SIZES, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
 import { deploy, type Link } from "./engine";
 import { DRAFT_SERVICES, MAX_DRAFTS_PER_TURN, buildDraft } from "./guardrails";
 
@@ -23,7 +23,7 @@ export const TOOL_DEFS = [
       type: "object",
       properties: {
         name: { type: "string", description: "Business name, 2-80 characters." },
-        industry: { type: "string", enum: [...INDUSTRIES] },
+        industry: { type: "string", enum: [...LIVE_INDUSTRIES] },
         team_size: { type: "string", enum: [...TEAM_SIZES] },
       },
       additionalProperties: false,
@@ -89,7 +89,7 @@ export function runTool(state: ToolState, name: string, input: unknown): string 
         b.name = n;
       }
       if (args.industry !== undefined) {
-        if (!(INDUSTRIES as readonly unknown[]).includes(args.industry)) return err("Unknown industry.");
+        if (!(LIVE_INDUSTRIES as readonly unknown[]).includes(args.industry)) return err("Unknown industry.");
         b.industry = args.industry as Industry;
       }
       if (args.team_size !== undefined) {

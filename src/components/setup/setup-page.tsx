@@ -18,7 +18,7 @@ import { saveSettings, useSettings } from "@/lib/settings/storage";
 import { useRecordsInDatabase } from "@/lib/records/storage";
 import { clearConfig, saveConfig, useSetupConfig } from "@/lib/setup/storage";
 import { TEMPLATES, templateById, templatesFor } from "@/lib/setup/templates";
-import { INDUSTRIES, STEPS, TEAM_SIZES, emptyConfig, type CheckStatus, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
+import { STEPS, selectableIndustries, TEAM_SIZES, emptyConfig, type CheckStatus, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
 import { cn } from "@/lib/utils";
 
 const STATUS_ICON: Record<CheckStatus, typeof CheckCircle2> = { pass: CheckCircle2, warn: CircleAlert, fail: CircleX };
@@ -150,7 +150,7 @@ function Wizard({ initial, today, base }: { initial: SetupConfig; today: string;
                 <Label htmlFor="biz-industry">Industry</Label>
                 <Select value={config.business.industry || undefined} onValueChange={(v) => update((c) => ({ ...c, completedOn: null, business: { ...c.business, industry: v as Industry } }))}>
                   <SelectTrigger id="biz-industry"><SelectValue placeholder="Choose one" /></SelectTrigger>
-                  <SelectContent>{INDUSTRIES.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
+                  <SelectContent>{selectableIndustries(config.business.industry).map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">

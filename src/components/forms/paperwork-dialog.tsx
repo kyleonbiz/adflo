@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { INDUSTRIES, paperworkFor, type IndustryId, type Paperwork } from "@/lib/forms/paperwork";
 
+/** Kinds of paperwork offered while only contractors are live; the other libraries stay built. */
+const LIVE_PAPERWORK: readonly IndustryId[] = ["general", "construction"];
+
 /** "Which paperwork do you need?" Pick your kind of business, then the piece of paper. */
 export function PaperworkDialog({ open, onOpenChange, onPick }: { open: boolean; onOpenChange: (open: boolean) => void; onPick: (p: Paperwork) => void }) {
   const [industry, setIndustry] = useState<IndustryId>("general");
@@ -23,7 +26,7 @@ export function PaperworkDialog({ open, onOpenChange, onPick }: { open: boolean;
           <Label htmlFor="paperwork-industry">Your business</Label>
           <Select value={industry} onValueChange={(v) => setIndustry(v as IndustryId)}>
             <SelectTrigger id="paperwork-industry" aria-label="Your business"><SelectValue /></SelectTrigger>
-            <SelectContent>{INDUSTRIES.map((i) => <SelectItem key={i.id} value={i.id}>{i.label}</SelectItem>)}</SelectContent>
+            <SelectContent>{INDUSTRIES.filter((i) => LIVE_PAPERWORK.includes(i.id)).map((i) => <SelectItem key={i.id} value={i.id}>{i.label}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <label className="mt-3 flex items-center gap-2 text-sm">

@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { industryLeadDays } from "@/lib/setup/industries";
 import { useRecordsInDatabase } from "@/lib/records/storage";
 import { saveConfig, useSetupConfig } from "@/lib/setup/storage";
-import { INDUSTRIES, TEAM_SIZES, emptyConfig, type Industry, type TeamSize } from "@/lib/setup/types";
+import { selectableIndustries, TEAM_SIZES, emptyConfig, type Industry, type TeamSize } from "@/lib/setup/types";
 import { saveSettings, useSettings } from "@/lib/settings/storage";
 import { TIMEZONES, type BusinessDetails } from "@/lib/settings/types";
 
@@ -53,7 +53,7 @@ function Form({ initial }: { initial: Draft }) {
           <Label htmlFor="biz-industry">Industry</Label>
           <Select value={draft.industry} onValueChange={(v) => set("industry", v as Industry)}>
             <SelectTrigger id="biz-industry"><SelectValue placeholder="Choose one" /></SelectTrigger>
-            <SelectContent>{INDUSTRIES.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
+            <SelectContent>{selectableIndustries(draft.industry).map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">

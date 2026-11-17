@@ -36,7 +36,12 @@ admin busywork: reminders, duplicate checks and expiry tracking happen for you.
 Safe / Warning / Critical risk tiers with "depends on" links; vendor Non-compliant flag; role views; a shared email Send
 dialog on Invoices, Forms, Vendors, Licenses, Projects, Contacts and Documents.
 
-**Not built yet.** Industry setup that renames screens (Construction, Healthcare, Property Management), the staff
+**Industries.** All 17 industries are built (presets, templates, recommendations, samples; see Working notes). Only
+contractors are open to new sign-ups for now: `LIVE_INDUSTRIES` in `src/lib/setup/types.ts` (or the
+`NEXT_PUBLIC_LIVE_INDUSTRIES` variable: `all`, or names separated by `|`) is what the setup wizard, Settings profile,
+Addy and the paperwork picker offer. An account already set to another industry keeps it. To open one, add it there.
+
+**Not built yet.** Screens that rename themselves per industry, the staff
 operations portal extras, chasing reminders, auto-saved drafts and a one-click audit ZIP.
 
 **Where to look.** Screens: `src/components/<module>/`. Business rules: `src/lib/<module>/logic.ts` (each has unit tests
