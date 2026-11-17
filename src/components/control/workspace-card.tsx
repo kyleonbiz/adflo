@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Link2Off, Mail, Rocket } from "lucide-react";
+import { Link2, Link2Off, Mail, Rocket, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { welcomeMessage } from "@/lib/control/workspace";
 import type { ClientRecord, UnlinkedWorkspace } from "@/lib/control/types";
@@ -31,6 +31,17 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
       if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not do that. Try again." }); return; }
       if (json.expiresAt) setExpires(day(json.expiresAt));
       setMsg({ ok: true, text: done });
+      router.refresh();
+    } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); }
+  }
+
+  async function emailWelcome() {
+    setBusy(true); setMsg(null); setCopied(false);
+    try {
+      const res = await fetch(`/api/control/clients/${client.id}/welcome`, { method: "POST" });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not send the email. Try again." }); return; }
+      setMsg({ ok: true, text: `Welcome email sent to ${json.emailedTo} from onboarding@adflo.pro.` });
       router.refresh();
     } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); }
   }
@@ -77,6 +88,7 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
           {canEdit && (
             <div className="flex flex-wrap items-center gap-2">
               {!joined && hasOwnerEmail && <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation sent again and extended by 14 days.")}><Mail /> Invite owner again</Button>}
+              {hasOwnerEmail && <Button variant="outline" disabled={busy} onClick={emailWelcome}><Send /> Email welcome message</Button>}
               {hasOwnerEmail && <Button variant="outline" onClick={copyWelcome}>Copy welcome message</Button>}
               {!confirmUnlink ? <Button variant="ghost" disabled={busy} onClick={() => setConfirmUnlink(true)}><Link2Off /> Disconnect</Button> : (
                 <span className="flex items-center gap-2 text-sm">Disconnect from this client? Its data stays in the workspace.
@@ -85,7 +97,7 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
               )}
             </div>
           )}
-          {!joined && hasOwnerEmail && <p className="text-xs text-muted-foreground">The owner joins automatically when they sign up with {client.ownerEmail}. AdFlo does not send email yet, so use Copy welcome message and send it yourself.</p>}
+          {!joined && hasOwnerEmail && <p className="text-xs text-muted-foreground">The owner joins automatically when they sign up with {client.ownerEmail}. Use Email welcome message to send it from onboarding@adflo.pro, or Copy welcome message to send it yourself.</p>}
         </div>
       )}
 

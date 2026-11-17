@@ -47,12 +47,13 @@ export const GUIDE: Record<ChecklistStep, GuideStep> = {
   },
   welcome_sent: {
     key: "welcome_sent",
-    why: "AdFlo does not send email yet, so you tell the owner yourself that their account is ready.",
+    why: "The owner needs to hear that their account is ready, and how to sign up with the right email.",
     how: [
-      "In the AdFlo account card, click Copy welcome message.",
-      "Paste it into your own email and send it to the owner.",
+      "In the AdFlo account card, click Email welcome message. It goes to the owner from onboarding@adflo.pro.",
+      "If email is not switched on, click Copy welcome message instead and send it from your own email.",
       "It tells them to sign up with the exact email on this page and confirm it. Then they land in their workspace as its owner.",
     ],
+    auto: "Ticks itself when the welcome email is sent from here. Tick it by hand if you sent the copied message yourself.",
     actions: [{ label: "Go to AdFlo account", kind: "jump", to: () => "#account" }],
   },
   agreement_sent: {

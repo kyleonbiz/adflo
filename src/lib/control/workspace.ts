@@ -17,8 +17,11 @@ export function parseWorkspaceRequest(raw: unknown): ParsedWorkspaceRequest {
   return { ok: true, action: r.action as "unlink" | "provision" | "invite" };
 }
 
+/** Subject line for the welcome email. The name is flattened to one line so it cannot add headers. */
+export const welcomeEmailSubject = (clientName: string) => `Your AdFlo account${clientName.replace(/[\r\n\u0000-\u001f]+/g, " ").trim() ? ` for ${clientName.replace(/[\r\n\u0000-\u001f]+/g, " ").trim()}` : ""} is ready`;
+
 /**
- * The note staff paste into their own email (AdFlo does not send email yet). It tells the owner to sign up with the
+ * The welcome note: emailed from the onboarding@ alias, or copied and sent by hand. It tells the owner to sign up with the
  * exact email the invite was made for, because that is what joins them to the workspace.
  */
 export function welcomeMessage(o: { clientName: string; ownerName: string; ownerEmail: string; signupUrl: string; expiresOn?: string | null }): string {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { agreementEmail, ONBOARDING_FROM_DEFAULT } from "@/lib/mail/onboarding-email";
 import { parseSendInput } from "@/lib/control/validation";
+import { welcomeEmailSubject } from "@/lib/control/workspace";
 
 const id = "3f2b8c1e-5a4d-4e6f-9b7a-1c2d3e4f5a6b";
 
@@ -34,4 +35,10 @@ describe("parseSendInput email option", () => {
     expect(parseSendInput({ clientId: id, templateId: id, email: "yes" })).toMatchObject({ ok: true, value: { email: false } });
     expect(parseSendInput({ clientId: id, templateId: id, email: true })).toMatchObject({ ok: true, value: { email: true } });
   });
+});
+
+describe("welcome email subject", () => {
+  it("names the client", () => expect(welcomeEmailSubject("Acme Roofing")).toBe("Your AdFlo account for Acme Roofing is ready"));
+  it("has no name gap when the name is blank", () => expect(welcomeEmailSubject("  ")).toBe("Your AdFlo account is ready"));
+  it("cannot carry a line break", () => expect(welcomeEmailSubject("Acme\r\nBcc: x@y.com")).not.toMatch(/[\r\n]/));
 });
