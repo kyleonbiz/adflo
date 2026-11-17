@@ -6,7 +6,7 @@ import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
 
 export const metadata: Metadata = {
   title: {
-    default: "AdFlo · Your back office in one place",
+    default: "AdFlo · Administrative management platform",
     template: "%s · AdFlo",
   },
   description:

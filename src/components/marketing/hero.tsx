@@ -5,7 +5,7 @@ export function Hero() {
     <section className="relative text-white" aria-labelledby="hero-title">
       <div className="relative mx-auto max-w-4xl px-4 pb-10 pt-8 text-center sm:px-6 sm:pb-12 sm:pt-12">
         <h1 id="hero-title" className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-          Your back office, in one place
+          The administrative management platform for contractors &amp; property managers
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-base text-white/90 sm:text-lg">
           Invoices, licenses, vendors, paperwork and projects in one tool, with reminders so nothing slips. Start with your documents below.
