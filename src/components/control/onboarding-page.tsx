@@ -8,6 +8,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { STALLED_AFTER_DAYS, summarizeOnboarding, type OnboardingRow } from "@/lib/control/onboarding";
+import type { AutoStatus } from "@/lib/control/auto-due";
 import { cooldownHoursLeft, nextReminder, reminderAgo } from "@/lib/control/reminders";
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "./status-badge";
@@ -17,7 +18,7 @@ type Filter = (typeof FILTERS)[number];
 const LABEL: Record<Filter, string> = { progress: "In progress", stalled: "Stalled", complete: "Complete", all: "All" };
 
 /** Every client's setup progress in one list, so the ones that are stuck stand out. Each row opens the client's profile. */
-export function OnboardingPage({ rows, canAdd, canRemind = false, sample }: { rows: OnboardingRow[]; canAdd: boolean; canRemind?: boolean; sample?: boolean }) {
+export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }: { rows: OnboardingRow[]; canAdd: boolean; canRemind?: boolean; sample?: boolean; auto?: AutoStatus }) {
   const [filter, setFilter] = useState<Filter>("progress");
   const summary = useMemo(() => summarizeOnboarding(rows), [rows]);
   const shown = rows.filter((r) => (filter === "all" ? true : filter === "progress" ? !r.complete : filter === "stalled" ? r.stalled : r.complete));
@@ -33,6 +34,7 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample }: { ro
         {canAdd && <Button asChild><Link href="/control/clients"><Plus /> Add a client</Link></Button>}
       </div>
       {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample clients.</p>}
+      {auto && <AutoNote auto={auto} />}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <SummaryTile icon={Hourglass} label="Being set up" value={summary.inProgress} tone="text-sky-600" />
@@ -76,7 +78,7 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample }: { ro
                 </div>
                 <p className="min-w-0 text-sm">{r.complete ? <span className="text-emerald-700">All steps done</span> : <><span className="text-muted-foreground">Next: </span>{r.next}</>}</p>
               </Link>
-              <ReminderButton row={r} canRemind={canRemind && !sample} />
+              <ReminderButton row={r} canRemind={canRemind && !sample} autoDue={auto?.due[r.client.id]} />
             </li>
           ))}
         </ul>
@@ -86,7 +88,7 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample }: { ro
 }
 
 /** "Remind" for one client: emails the owner about their next outstanding step, after a confirm. Shows when they were last reminded. */
-function ReminderButton({ row, canRemind }: { row: OnboardingRow; canRemind: boolean }) {
+function ReminderButton({ row, canRemind, autoDue }: { row: OnboardingRow; canRemind: boolean; autoDue?: "signup" | "agreement" }) {
   const router = useRouter();
   const c = row.client;
   const next = nextReminder(c);
@@ -95,7 +97,7 @@ function ReminderButton({ row, canRemind }: { row: OnboardingRow; canRemind: boo
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
-  if (!next && !ago && !msg) return null;
+  if (!next && !ago && !msg && !autoDue) return null;
   async function send() {
     if (!next) return;
     setBusy(true); setMsg(null);
@@ -116,8 +118,21 @@ function ReminderButton({ row, canRemind }: { row: OnboardingRow; canRemind: boo
           <Button type="button" size="sm" disabled={busy} onClick={send}>{busy ? "Sending…" : "Send"}</Button>
           <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => setConfirm(false)}>Cancel</Button></span>
       )}
+      {autoDue && !msg && <p><Badge variant="warning">Auto reminder due</Badge></p>}
       {ago && !msg && <p className="text-muted-foreground">Last reminded {ago}{wait > 0 && next ? ` · again in about ${wait} h` : ""}</p>}
       {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-emerald-700" : "text-destructive"}>{msg.text}</p>}
     </div>
+  );
+}
+
+/** Says whether the daily automatic reminders are on and who the next run would remind, so nobody has to run the job to find out. */
+function AutoNote({ auto }: { auto: AutoStatus }) {
+  const n = Object.keys(auto.due).length;
+  if (!auto.enabled) return <p role="note" className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">Automatic reminders are off. Use the Remind buttons to nudge a client by hand.</p>;
+  return (
+    <p role="note" className="rounded-lg bg-accent px-3 py-2 text-sm text-accent-foreground">
+      Automatic reminders are on: a client who has not signed up or accepted their agreement for {auto.days} {auto.days === 1 ? "day" : "days"} is emailed once a day at about 10 am Eastern, up to 3 times.{" "}
+      <span className="font-medium">{n === 0 ? "Nobody is due at the next run." : `${n} ${n === 1 ? "client is" : "clients are"} due at the next run (marked below).`}</span>
+    </p>
   );
 }
