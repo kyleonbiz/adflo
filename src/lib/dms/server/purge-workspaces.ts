@@ -20,6 +20,29 @@ async function storageKeys(admin: SupabaseClient, workspaceId: string): Promise<
 }
 
 /**
+ * Erases one workspace: its stored files first, then the workspace row (the database removes everything that belongs to it).
+ * If any file cannot be removed the workspace is left alone, so nothing is orphaned in storage and the caller can try again.
+ * Used by the nightly job and by the Control center's "delete workspace and data". Never throws; counts only.
+ */
+export async function purgeWorkspace(admin: SupabaseClient, workspaceId: string): Promise<{ ok: boolean; objectsRemoved: number }> {
+  let objectsRemoved = 0;
+  try {
+    const keys = await storageKeys(admin, workspaceId);
+    let storageFailed = false;
+    for (let i = 0; i < keys.length; i += REMOVE_BATCH) {
+      const batch = keys.slice(i, i + REMOVE_BATCH);
+      const res = await admin.storage.from(DOCUMENTS_BUCKET).remove(batch);
+      if (res.error) storageFailed = true; else objectsRemoved += batch.length;
+    }
+    if (storageFailed) return { ok: false, objectsRemoved };
+    const del = await admin.from("workspaces").delete().eq("id", workspaceId);
+    return { ok: !del.error, objectsRemoved };
+  } catch {
+    return { ok: false, objectsRemoved };
+  }
+}
+
+/**
  * Erases every workspace whose 30-day grace period has ended: the stored files first, then the workspace row (the database removes
  * everything that belongs to it), then the sign-in of the person who closed it, but only if it belongs to no other workspace and is
  * not a staff account. If any file cannot be removed the workspace is left for the next night, so nothing is orphaned in storage.
@@ -34,17 +57,9 @@ export async function purgeDueWorkspaces(admin: SupabaseClient): Promise<PurgeRe
 
   for (const w of due) {
     try {
-      const keys = await storageKeys(admin, w.id);
-      let storageFailed = false;
-      for (let i = 0; i < keys.length; i += REMOVE_BATCH) {
-        const batch = keys.slice(i, i + REMOVE_BATCH);
-        const res = await admin.storage.from(DOCUMENTS_BUCKET).remove(batch);
-        if (res.error) storageFailed = true; else result.objectsRemoved += batch.length;
-      }
-      if (storageFailed) { result.failed++; continue; }
-
-      const del = await admin.from("workspaces").delete().eq("id", w.id);
-      if (del.error) { result.failed++; continue; }
+      const purged = await purgeWorkspace(admin, w.id);
+      result.objectsRemoved += purged.objectsRemoved;
+      if (!purged.ok) { result.failed++; continue; }
       result.deleted++;
 
       if (w.requested_by) {
