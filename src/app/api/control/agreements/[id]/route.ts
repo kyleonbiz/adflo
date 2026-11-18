@@ -1,0 +1,20 @@
+import { NextResponse } from "next/server";
+import { fail, staffRoute } from "@/lib/control/api";
+import { agreementDeleteError } from "@/lib/control/agreements";
+import { isUuid } from "@/lib/control/workspace";
+
+export const dynamic = "force-dynamic";
+
+/** Owner deletes one published agreement version, unless a client has accepted it. Unaccepted links sent from it go with it. */
+export function DELETE(req: Request, ctx: RouteContext<"/api/control/agreements/[id]">) {
+  return staffRoute(req, async ({ supabase }) => {
+    const { id } = await ctx.params;
+    if (!isUuid(id)) return fail(404, "not_found", "That agreement no longer exists.");
+    const { data, error } = await supabase.rpc("control_delete_agreement", { p_template: id });
+    if (error) {
+      const e = agreementDeleteError(error.code, error.message);
+      return fail(e.status, "agreement", e.message);
+    }
+    return NextResponse.json({ ok: true, linksRemoved: typeof data === "number" ? data : 0 });
+  }, "owner");
+}

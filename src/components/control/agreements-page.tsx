@@ -103,6 +103,41 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
   );
 }
 
+/** One published version, with its text and (Owner) a two-step delete. */
+function TemplateRow({ t, canDelete }: { t: AgreementTemplate; canDelete: boolean }) {
+  const router = useRouter();
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function remove() {
+    setBusy(true); setError("");
+    try {
+      const res = await fetch(`/api/control/agreements/${t.id}`, { method: "DELETE" });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.ok) { router.refresh(); return; }
+      setError(json?.error?.message ?? "Could not delete it. Try again."); setConfirm(false);
+    } catch { setError("Could not reach the server. Try again."); setConfirm(false); } finally { setBusy(false); }
+  }
+  return (
+    <li className="py-2.5 text-sm">
+      <details>
+        <summary className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="font-medium">{t.title}</span> <span className="text-muted-foreground">v{t.version} · {day(t.createdAt)}</span></summary>
+        <div className="mt-2 max-h-64 overflow-y-auto rounded-lg bg-muted p-3"><AgreementText body={t.body} /></div>
+      </details>
+      {canDelete && (
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {!confirm ? <Button type="button" variant="ghost" size="sm" onClick={() => { setConfirm(true); setError(""); }} aria-label={`Delete ${t.title} version ${t.version}`}>Delete</Button> : (
+            <span className="flex flex-wrap items-center gap-2 text-sm">Delete {t.title} v{t.version}? This cannot be undone. Links sent from it that nobody has accepted stop working.
+              <Button type="button" variant="destructive" size="sm" disabled={busy} onClick={remove}>{busy ? "Deleting…" : "Delete it"}</Button>
+              <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => setConfirm(false)}>Keep</Button></span>
+          )}
+        </div>
+      )}
+      {error && <p role="alert" className="mt-1 text-xs text-destructive">{error}</p>}
+    </li>
+  );
+}
+
 /** The Agreements screen: published versions, publishing (Owner), and everything sent. */
 export function AgreementsPage({ templates, sent, canPublish, sample }: { templates: AgreementTemplate[]; sent: SentAgreement[]; canPublish: boolean; sample?: boolean }) {
   const router = useRouter();
@@ -125,7 +160,7 @@ export function AgreementsPage({ templates, sent, canPublish, sample }: { templa
       <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Published">
         <h2 className="font-semibold">Published</h2>
         {templates.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">Nothing published yet.</p> : (
-          <ul className="mt-2 divide-y">{templates.map((t) => (<li key={t.id} className="py-2.5 text-sm"><details><summary className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="font-medium">{t.title}</span> <span className="text-muted-foreground">v{t.version} · {day(t.createdAt)}</span></summary><div className="mt-2 max-h-64 overflow-y-auto rounded-lg bg-muted p-3"><AgreementText body={t.body} /></div></details></li>))}</ul>
+          <ul className="mt-2 divide-y">{templates.map((t) => <TemplateRow key={t.id} t={t} canDelete={canPublish && !sample} />)}</ul>
         )}
       </section>
       {canPublish && !sample && (
