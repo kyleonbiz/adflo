@@ -37,10 +37,10 @@ export const GUIDE: Record<ChecklistStep, GuideStep> = {
   },
   owner_invited: {
     key: "owner_invited",
-    why: "The invitation is what puts the owner into their workspace as its owner when they sign up. Creating the workspace also emails them the welcome message.",
+    why: "The invitation is what puts the owner into their workspace as its owner when they sign up. No email is sent by this step: the welcome message is sent separately in the next step.",
     how: [
       "Creating the workspace already invites the owner. Nothing more to do if you used Create workspace and invite owner.",
-      "If you connected an existing workspace, or the invitation ran out (they last 14 days), click Resend invitation in the AdFlo account card. It renews the invitation for another 14 days and emails the owner the welcome message again.",
+      "If you connected an existing workspace, or the invitation ran out (they last 14 days), click Renew invitation in the AdFlo account card. It renews the invitation for another 14 days. It does not send an email.",
     ],
     auto: "Ticks itself when the invitation is sent.",
     actions: [{ label: "Go to AdFlo account", kind: "jump", to: () => "#account" }],
@@ -49,7 +49,7 @@ export const GUIDE: Record<ChecklistStep, GuideStep> = {
     key: "welcome_sent",
     why: "The owner needs to hear that their account is ready, and how to sign up with the right email.",
     how: [
-      "Creating the workspace or resending the invitation already emails the welcome message from onboarding@adflo.pro. To send it again on its own, click Email welcome message in the AdFlo account card.",
+      "In the AdFlo account card, click Email welcome message. It goes to the owner from onboarding@adflo.pro. Nothing else sends it for you.",
       "If a message says the email was not sent, click Copy welcome message and send it from your own email.",
       "It tells them to sign up with the exact email on this page and confirm it. Then they land in their workspace as its owner.",
     ],
@@ -83,7 +83,7 @@ export const GUIDE: Record<ChecklistStep, GuideStep> = {
     why: "It proves the invitation worked and they can get in.",
     how: [
       "Wait for the owner to sign up with the invited email. Their Last sign-in appears in the details above once they do.",
-      "If nothing happens after a few days, use Resend invitation to email them again, which also renews the invitation if it has run out.",
+      "If nothing happens after a few days, click Email welcome message to send it again, and Renew invitation if the invitation has run out.",
       "If they say they cannot get in, check Support for a ticket and use the password reset on this page.",
       "Tick this step once they have signed in.",
     ],

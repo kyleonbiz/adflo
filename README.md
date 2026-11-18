@@ -112,9 +112,9 @@ shows every client's progress. Migration `20261117090000_onboarding_steps.sql` a
 and invites the owner's email as its owner, or connects a workspace they already made. Nobody from staff is added to it. The
 owner joins automatically when they sign up with that verified email; AdFlo does not send email yet, so use *Copy welcome
 message*. Both tick the onboarding steps and are audit logged (`supabase/migrations/20261116170000_control_workspace_link.sql`).
-Creating the workspace and *Resend invitation* both email the owner the welcome message from onboarding@adflo.pro (when `SMTP_USER` and
-`SMTP_PASSWORD` are set) and tick *Welcome message sent*; if the email cannot go out the invitation is still saved and the screen says why,
-so the message can be copied and sent by hand.
+Nothing is emailed when the workspace is created or the invitation renewed: the welcome email is its own *Email welcome message* button
+(from onboarding@adflo.pro, when `SMTP_USER` and `SMTP_PASSWORD` are set), so staff choose when it goes out. It ticks *Welcome message sent*
+only when the email really went out, and *Copy welcome message* gives the text to send by hand.
 
 **Suspend lock.** The *Account on* switch on a client's profile turns their access on and off. Turning it off (or cancelling the
 client) locks their people out of the workspace at once: the database refuses their documents, folders, records, files and shared
