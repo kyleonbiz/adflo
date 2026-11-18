@@ -1,4 +1,15 @@
 {
-  "regions": ["pdx1"],
-  "crons": [{ "path": "/api/maintenance/cleanup-uploads", "schedule": "17 3 * * *" }]
+  "regions": [
+    "pdx1"
+  ],
+  "crons": [
+    {
+      "path": "/api/maintenance/cleanup-uploads",
+      "schedule": "17 3 * * *"
+    },
+    {
+      "path": "/api/maintenance/onboarding-reminders",
+      "schedule": "7 15 * * *"
+    }
+  ]
 }

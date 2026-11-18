@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { cooldownHoursLeft, isReminderKind } from "@/lib/control/reminders";
 import { hashToken, newToken } from "@/lib/control/token";
-import { isUuid, welcomeEmailSubject, welcomeMessage } from "@/lib/control/workspace";
+import { signupReminderEmail } from "@/lib/control/reminder-emails";
+import { isUuid } from "@/lib/control/workspace";
 import { onboardingMailReady, sendOnboardingEmail } from "@/lib/mail/onboarding";
 import { agreementsEmail } from "@/lib/mail/onboarding-email";
 import { siteOrigin } from "@/lib/site-url";
@@ -39,8 +40,7 @@ export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/
 
     if (kind === "signup") {
       if (!client.workspace_id) return fail(409, "no_workspace", "Create or connect the workspace first, so the owner has somewhere to land.");
-      const text = `A friendly reminder: your AdFlo account is ready and waiting for you.\n\n${welcomeMessage({ clientName, ownerName, ownerEmail: to, signupUrl: `${origin}/signup` })}`;
-      try { await sendOnboardingEmail({ to, subject: `Reminder: ${welcomeEmailSubject(clientName)}`, text }); }
+      try { await sendOnboardingEmail({ to, ...signupReminderEmail({ clientName, ownerName, ownerEmail: to, origin }) }); }
       catch { return fail(502, "mail_failed", "The email could not be sent. Try again in a moment."); }
     } else {
       const { data: waiting } = await supabase.from("agreements_sent").select("id, template_id").eq("client_id", id).is("accepted_at", null);
