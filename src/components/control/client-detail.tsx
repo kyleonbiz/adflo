@@ -17,10 +17,10 @@ import { StatusBadge } from "./status-badge";
 
 const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "Never");
 
-const SECTIONS = [["details", "Details"], ["onboarding", "Onboarding"], ["account", "Account"], ["billing", "Billing"], ["agreements", "Agreements"], ["support", "Support"], ["history", "History"]] as const;
+const SECTIONS = [["details", "Details"], ["account", "Account"], ["onboarding", "Onboarding"], ["billing", "Billing"], ["agreements", "Agreements"], ["support", "Support"], ["history", "History"]] as const;
 
 /** One client's profile: summary, quick actions, then every part of their account in one place. */
-export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, openTickets, children }: { client: ClientRecord; plans: Plan[]; canEdit: boolean; isOwner: boolean; today: string; sample: boolean; openTickets: number; children?: React.ReactNode }) {
+export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, openTickets, account, children }: { client: ClientRecord; plans: Plan[]; canEdit: boolean; isOwner: boolean; today: string; sample: boolean; openTickets: number; account?: React.ReactNode; children?: React.ReactNode }) {
   const [confirming, setConfirming] = useState<"suspend" | "cancel" | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState("");
@@ -121,6 +121,8 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
         </dl>
         {client.notes && <p className="mt-4 whitespace-pre-wrap border-t pt-4 text-sm text-muted-foreground">{client.notes}</p>}
       </section>
+
+      {account}
 
       <OnboardingGuide client={client} canEdit={canEdit} onEdit={() => setEditing(true)} />
 

@@ -26,8 +26,8 @@ export default async function ClientRoute({ params }: PageProps<"/control/client
       if (!client) notFound();
       const tickets = SAMPLE_TICKETS.filter((t) => t.clientId === id);
       return (
-        <ClientDetail client={client} plans={SAMPLE_PLANS} canEdit={false} isOwner={false} today={today} sample openTickets={tickets.filter((t) => isOpen(t.status)).length}>
-          <div id="account" className="scroll-mt-4"><WorkspaceCard client={client} unlinked={[]} canEdit={false} /></div>
+        <ClientDetail client={client} plans={SAMPLE_PLANS} canEdit={false} isOwner={false} today={today} sample openTickets={tickets.filter((t) => isOpen(t.status)).length}
+          account={<div id="account" className="scroll-mt-4"><WorkspaceCard client={client} unlinked={[]} canEdit={false} /></div>}>
           <ClientBilling client={client} today={today} sample />
           <div id="agreements" className="scroll-mt-4"><SendAgreement clientId={id} templates={SAMPLE_TEMPLATES} sent={[]} canEdit={false} /></div>
           <ClientExtras clientId={id} ownerEmail={client.ownerEmail} tickets={tickets} timeline={[]} canEdit={false} />
@@ -39,8 +39,8 @@ export default async function ClientRoute({ params }: PageProps<"/control/client
     const canEdit = canEditClients(ctx.staff.role);
     const [plans, tickets, timeline, templates, sent, unlinked] = await Promise.all([loadPlans(ctx.supabase), loadTickets(ctx.supabase, id), loadTimeline(ctx.supabase, id), loadTemplates(ctx.supabase), loadSent(ctx.supabase, id), client.workspaceId || !canEdit ? Promise.resolve([]) : loadUnlinkedWorkspaces(ctx.supabase)]);
     return (
-      <ClientDetail client={client} plans={plans} canEdit={canEdit} isOwner={ctx.staff.role === "owner"} today={today} sample={false} openTickets={tickets.filter((t) => isOpen(t.status)).length}>
-        <div id="account" className="scroll-mt-4"><WorkspaceCard client={client} unlinked={unlinked} canEdit={canEdit} /></div>
+      <ClientDetail client={client} plans={plans} canEdit={canEdit} isOwner={ctx.staff.role === "owner"} today={today} sample={false} openTickets={tickets.filter((t) => isOpen(t.status)).length}
+        account={<div id="account" className="scroll-mt-4"><WorkspaceCard client={client} unlinked={unlinked} canEdit={canEdit} /></div>}>
         <ClientBilling client={client} today={today} sample={false} />
         <div id="agreements" className="scroll-mt-4"><SendAgreement clientId={id} templates={templates} sent={sent} canEdit={canEdit} ownerEmail={client.ownerEmail} /></div>
         <ClientExtras clientId={id} ownerEmail={client.ownerEmail} tickets={tickets} timeline={timeline} canEdit={canEdit} />
