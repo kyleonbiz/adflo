@@ -133,7 +133,7 @@ test.describe("business file reset module", () => {
     await expect(page.getByTestId("approved")).toHaveCount(0);
   });
 
-  test("a real folder: identical contents are duplicates, same names with different contents are not", async ({ page }) => {
+  test("a real folder: identical contents are duplicates, same names with different contents are not", async ({ page, browserName }) => {
     const root = mkdtempSync(join(tmpdir(), "client-"));
     const dir = join(root, "Client Files");
     try {
@@ -148,7 +148,8 @@ test.describe("business file reset module", () => {
       await page.goto("/app/file-reset");
       await page.getByLabel("Choose a folder").setInputFiles(dir);
       await expect(page.getByRole("status").filter({ hasText: "Loaded 6 files from your folder." })).toBeVisible();
-      await expect(page.getByRole("region", { name: "Notes" })).toContainText("Skipped Desktop/.DS_Store: System file.");
+      // WebKit leaves hidden files out of a folder pick itself, so there it never has a .DS_Store to report as skipped.
+      if (browserName !== "webkit") await expect(page.getByRole("region", { name: "Notes" })).toContainText("Skipped Desktop/.DS_Store: System file.");
 
       const dup = row(page, "Invoices/Invoice_03-14-2026_Acme (1).pdf");
       await expect(dup).toContainText("Identical to Invoices/Invoice_03-14-2026_Acme.pdf");

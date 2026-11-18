@@ -11,7 +11,9 @@ const chromium = process.env.PLAYWRIGHT_CHROMIUM_PATH ?? ["/opt/pw-browsers/chro
 // WebKit is the engine Safari uses, and "ios-safari" is WebKit on an iPhone-sized screen with touch.
 const ALL = {
   chromium: { use: { ...devices["Desktop Chrome"], launchOptions: chromium ? { executablePath: chromium } : {} } },
-  firefox: { use: { ...devices["Desktop Firefox"] } },
+  // Headless Firefox has no email program, and after the app opens a mailto: link (Send reminder, Send invoice) the page stops
+  // following links and submitting forms. Telling Firefox not to hand mailto: to the system avoids that.
+  firefox: { use: { ...devices["Desktop Firefox"], launchOptions: { firefoxUserPrefs: { "network.protocol-handler.external.mailto": false, "network.protocol-handler.warn-external.mailto": false } } } },
   // On the CI runners WebKit draws in software, where the frosted-glass blur and the entrance animations make frames so slow
   // that Playwright's "has the button stopped moving" check never settles and clicks time out. So WebKit runs with reduced
   // motion (the app already switches its animations off for that) and, in tests/e2e/fixtures.ts, without backdrop blur.
