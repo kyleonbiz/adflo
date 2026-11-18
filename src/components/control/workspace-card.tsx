@@ -30,7 +30,10 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not do that. Try again." }); return; }
       if (json.expiresAt) setExpires(day(json.expiresAt));
-      setMsg({ ok: true, text: done });
+      // Say plainly whether the owner was emailed. The invitation is saved either way.
+      if (json.emailed) setMsg({ ok: true, text: `${done} Welcome email sent to ${json.emailed}.` });
+      else if (json.emailError) setMsg({ ok: false, text: `${done} The welcome email was not sent: ${json.emailError}` });
+      else setMsg({ ok: true, text: done });
       router.refresh();
     } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); }
   }
@@ -62,8 +65,8 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
             <>
               <div className="space-y-2 rounded-xl border p-4">
                 <p className="text-sm font-medium">Create it for them</p>
-                <p className="text-sm text-muted-foreground">Makes an empty workspace named {client.name}, with the standard folders, and invites {hasOwnerEmail ? client.ownerEmail : "the owner"} as its owner. Nobody from AdFlo is added to it.</p>
-                <Button onClick={() => run({ action: "provision" }, "Workspace created and the owner is invited. Send them the welcome message below.")} disabled={busy || !hasOwnerEmail}><Rocket /> Create workspace and invite owner</Button>
+                <p className="text-sm text-muted-foreground">Makes an empty workspace named {client.name}, with the standard folders, and invites {hasOwnerEmail ? client.ownerEmail : "the owner"} as its owner, then emails them the welcome message from onboarding@adflo.pro. Nobody from AdFlo is added to it.</p>
+                <Button onClick={() => run({ action: "provision" }, "Workspace created and the owner is invited.")} disabled={busy || !hasOwnerEmail}><Rocket /> Create workspace and invite owner</Button>
                 {!hasOwnerEmail && <p className="text-xs text-muted-foreground">Add the owner&apos;s email to the client first (Edit).</p>}
               </div>
               <div className="space-y-2 rounded-xl border p-4">
@@ -87,7 +90,7 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
           <p className="text-sm text-muted-foreground">Workspace connected. {joined ? `${client.seatsUsed} ${client.seatsUsed === 1 ? "person has" : "people have"} joined.` : "Nobody has joined yet."}</p>
           {canEdit && (
             <div className="flex flex-wrap items-center gap-2">
-              {!joined && hasOwnerEmail && <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation sent again and extended by 14 days.")}><Mail /> Invite owner again</Button>}
+              {!joined && hasOwnerEmail && <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation renewed for another 14 days.")}><Mail /> Resend invitation</Button>}
               {hasOwnerEmail && <Button variant="outline" disabled={busy} onClick={emailWelcome}><Send /> Email welcome message</Button>}
               {hasOwnerEmail && <Button variant="outline" onClick={copyWelcome}>Copy welcome message</Button>}
               {!confirmUnlink ? <Button variant="ghost" disabled={busy} onClick={() => setConfirmUnlink(true)}><Link2Off /> Disconnect</Button> : (
@@ -97,7 +100,7 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
               )}
             </div>
           )}
-          {!joined && hasOwnerEmail && <p className="text-xs text-muted-foreground">The owner joins automatically when they sign up with {client.ownerEmail}. Use Email welcome message to send it from onboarding@adflo.pro, or Copy welcome message to send it yourself.</p>}
+          {!joined && hasOwnerEmail && <p className="text-xs text-muted-foreground">The owner joins automatically when they sign up with {client.ownerEmail}. Resend invitation emails them again; Copy welcome message gives you the text to send yourself.</p>}
         </div>
       )}
 
