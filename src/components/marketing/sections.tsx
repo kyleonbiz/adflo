@@ -225,7 +225,7 @@ export function LandingSections() {
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a href="#demo-form" className={`rounded-lg px-5 py-3 font-medium ${gradientBtn}`}>Schedule your AdFlo demo</a>
-              <Link href="/app" className="rounded-lg border border-brand-blue/30 bg-white/70 px-5 py-3 font-medium text-foreground transition hover:bg-white">Open workspace</Link>
+              <Link href="/login" className="rounded-lg border border-brand-blue/30 bg-white/70 px-5 py-3 font-medium text-foreground transition hover:bg-white">Open workspace</Link>
             </div>
           </div>
           <div id="demo-form" className="scroll-mt-4"><DemoRequestForm /></div>

@@ -9,11 +9,11 @@ test.describe("Landing page and the app", () => {
     await expect(page).toHaveURL(/\/app\/overview$/);
   });
 
-  test("the landing page at / shows the hero, and Open workspace goes into the app", async ({ page }) => {
+  test("the landing page at / shows the hero, and Open workspace goes to the log in screen", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "The administrative management platform" })).toBeVisible();
     await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Open workspace" }).click();
-    await expect(page).toHaveURL(/\/app$/);
+    await expect(page).toHaveURL(/\/login$/);
   });
 
   test("the landing page keeps its hero and demo, and adds the story and demo request form below", async ({ page }) => {
