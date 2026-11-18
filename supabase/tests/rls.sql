@@ -40,6 +40,15 @@ declare n bigint;
 begin execute 'select count(*) from (' || stmt || ') q' into n; return n; end $$;
 grant execute on all functions in schema t to public;
 
+-- Self-service workspace creation is switched off for the API roles (migration 20261118160000).
+select t.ok('authenticated cannot execute create_workspace', not has_function_privilege('authenticated', 'public.create_workspace(text,text,text)', 'execute'));
+select t.ok('anon cannot execute create_workspace', not has_function_privilege('anon', 'public.create_workspace(text,text,text)', 'execute'));
+select t.as_user('00000000-0000-4000-8000-00000000000a');
+select t.fails('a signed-in user cannot create their own workspace', $q$select public.create_workspace('Mine', 'Me', 'me@x.test')$q$, 'permission denied');
+reset role;
+-- The rest of the suite uses create_workspace as a fixture for the workspaces it tests; this grant exists only inside this test database.
+grant execute on function public.create_workspace(text, text, text) to authenticated;
+
 \set alice '''00000000-0000-4000-8000-00000000000a'''
 \set bob   '''00000000-0000-4000-8000-00000000000b'''
 \set carol '''00000000-0000-4000-8000-00000000000c'''
