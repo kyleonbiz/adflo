@@ -7,7 +7,7 @@ const axeSource = readFileSync("node_modules/axe-core/axe.min.js", "utf8");
 const PAGES = [
   "/app", "/app/overview", "/app/assistant", "/app/invoices", "/app/licenses", "/app/contacts", "/app/vendors", "/app/projects",
   "/app/forms", "/app/reporting", "/app/calendar", "/app/activity", "/app/setup?tab=profile", "/app/setup?tab=notifications",
-  "/app/setup?tab=demo", "/app/setup?tab=setup", "/login",
+  "/app/setup?tab=demo", "/app/setup?tab=setup", "/app/setup?tab=data", "/app/contacts/c-2", "/app/vendors/v-2", "/privacy", "/login",
 ];
 
 for (const [device, viewport] of [["desktop", { width: 1440, height: 900 }], ["phone", { width: 390, height: 844 }]] as const) {

@@ -36,3 +36,4 @@ RUN "$PSQL -d dms -f '$HERE/more_records.sql'" 2>&1 | grep -E "PASS|FAIL|ALL MOR
 RUN "$PSQL -d dms -f '$HERE/suspend.sql'" 2>&1 | grep -E "PASS|FAIL|ALL SUSPEND|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/onboarding_steps.sql'" 2>&1 | grep -E "PASS|FAIL|ALL ONBOARDING|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/job_runs.sql'" 2>&1 | grep -E "PASS|FAIL|ALL JOB RUNS|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/workspace_deletion.sql'" 2>&1 | grep -E "PASS|FAIL|ALL WORKSPACE DELETION|ERROR" | sed 's/^psql:[^ ]* //'

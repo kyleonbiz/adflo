@@ -95,9 +95,10 @@ export default function PrivacyPage() {
 
         <h2 className={H2}>7. Data retention</h2>
         <p className={P}>
-          We keep information while your account is active and as needed to provide the service. After you close your account, we delete
-          or anonymize your data within a reasonable period, except where we must retain it for legal, tax, security or dispute
-          purposes. Backups are overwritten on a rolling schedule.
+          We keep information while your account is active and as needed to provide the service. The owner of a workspace can close it
+          at any time under Settings, Data and account. A closed workspace is kept for 30 days in case you change your mind, and you can
+          cancel the closing during that time. After 30 days everything in it, including your documents and records, is erased, except
+          where we must retain information for legal, tax, security or dispute purposes. Backups are overwritten on a rolling schedule.
         </p>
 
         <h2 className={H2}>8. Security</h2>
@@ -109,7 +110,7 @@ export default function PrivacyPage() {
 
         <h2 className={H2}>9. Your rights and choices</h2>
         <ul className={UL}>
-          <li>Access, correct or delete your information, and export your data, in your account or by contacting us.</li>
+          <li>Access, correct or delete your information, in your account or by contacting us. Owners and admins can download a complete export of the workspace (records, activity, team and documents) under Settings, Data and account.</li>
           <li>Close your account at any time.</li>
           <li>Opt out of marketing emails using the unsubscribe link. Service messages will continue.</li>
         </ul>

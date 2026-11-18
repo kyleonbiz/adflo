@@ -14,6 +14,7 @@ import { isPaused } from "@/lib/dms/standing";
 import { LiveIndustries } from "@/components/live-industries";
 import { loadLiveIndustries } from "@/lib/setup/live-server";
 import { FALLBACK_LIVE } from "@/lib/setup/types";
+import { DeletionBanner } from "@/components/settings/deletion-banner";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { findStaff } from "@/lib/control/gate";
 import { createServerSupabase } from "@/lib/supabase/server";
@@ -65,7 +66,7 @@ export async function renderAppShell(
     // A client switched off in the Control Center sees a plain notice instead of the app. Nothing is deleted.
     const standing = await getWorkspaceStanding(supabase, membership.workspaceId);
     if (isPaused(standing)) return <PausedNotice standing={standing} email={email} />;
-    const { data: ws } = await supabase.from("workspaces").select("name").eq("id", membership.workspaceId).maybeSingle();
+    const { data: ws } = await supabase.from("workspaces").select("name, deletion_requested_at").eq("id", membership.workspaceId).maybeSingle();
     // Plan features: a failed lookup leaves everything available rather than locking a client out.
     const { data: planFeatures } = await supabase.rpc("workspace_features", { p_workspace: membership.workspaceId });
     const features = Array.isArray(planFeatures) ? (planFeatures as string[]) : null;
@@ -73,6 +74,7 @@ export async function renderAppShell(
     const { RecordsProvider } = await import("@/components/records-provider");
     return (
       <Frame userName={fullName} features={features} industries={await loadLiveIndustries(supabase)} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} isStaff={!!(await findStaff(supabase))} />}>
+        {ws?.deletion_requested_at && <DeletionBanner requestedAt={ws.deletion_requested_at as string} />}
         {pathAllowed(features, nextPath) ? content("live", { name: fullName }) : <NotInPlan />}
       </Frame>
     );

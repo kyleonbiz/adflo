@@ -8,6 +8,10 @@
       "schedule": "17 3 * * *"
     },
     {
+      "path": "/api/maintenance/purge-workspaces",
+      "schedule": "47 3 * * *"
+    },
+    {
       "path": "/api/maintenance/onboarding-reminders",
       "schedule": "7 15 * * *"
     }
