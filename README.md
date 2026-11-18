@@ -268,7 +268,7 @@ Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app 
 | `AGREEMENT_NOTIFY_TO` | Optional. Who is emailed when a client accepts an agreement (default `onboarding@adflo.pro`, which lands in the same mailbox as `SMTP_USER`). |
 | `ONBOARDING_AUTO_REMIND`, `ONBOARDING_REMIND_AFTER_DAYS` | Optional. The daily automatic reminders are on by default after 3 days; set `ONBOARDING_AUTO_REMIND=off` to stop them, or change the number of days (1 to 60). |
 | `NEXT_PUBLIC_SITE_URL` | Optional. The address links sent to people are built on (agreement, welcome, password reset and share links). On the live production site it defaults to `https://www.adflo.pro`, and `adflo.pro` redirects there, so the Control center is always at `https://www.adflo.pro/control`. |
-| `SHARE_FROM` | Optional. The address shared-document emails come from (default the `ONBOARDING_FROM` address); the sender's name is added as "Name via AdFlo". |
+| `SHARE_FROM` | Optional. The address shared-document emails come from (default `AdFlo <documents@adflo.pro>`, an alias added under Gmail "Send mail as" like the onboarding one); the sender's name is added as "Name via AdFlo". |
 | `ONBOARDING_FROM` | Optional. Sender of onboarding emails (default `AdFlo Onboarding <onboarding@adflo.pro>`). Add that alias under Gmail > Settings > Accounts > "Send mail as" for `SMTP_USER`, or Gmail sends from `SMTP_USER` itself. |
 | `DMS_PENDING_UPLOAD_MAX_AGE_HOURS` | Pending-upload cleanup age (default 24, minimum 3). |
 | `DMS_MAX_FILE_SIZE_MB`, `DMS_MAX_FILES_PER_BATCH` | Upload limits (defaults 50 MB, 10 files). |
@@ -305,7 +305,7 @@ UI components ──► useDocumentManager (state) ──► DmsApi interface
   Editors can list a document's live links and revoke their own (admins: any); revocation
   takes effect immediately. Creation, revocation and every *use* of a link are audit-logged
   (a use has no actor, since link holders are anonymous). The URL itself is shown once.
-* **Emailing a share link**: in the Share dialog, an optional "Email the link to" address (and a short note) sends the link by email from the onboarding alias as "{Name} via AdFlo", with replies going to the person who shared. The link is made and emailed in one request (it is shown only once), so the email is sent at that moment; if it fails the link is still shown to copy. Limited to 20 emailed links per person per hour. The receiver opens the link and the file downloads.
+* **Emailing a share link**: in the Share dialog, an optional "Email the link to" address (and a short note) sends the link by email from the documents@ alias as "{Name} via AdFlo", with replies going to the person who shared. The link is made and emailed in one request (it is shown only once), so the email is sent at that moment; if it fails the link is still shown to copy. Limited to 20 emailed links per person per hour. The receiver opens the link and the file downloads.
 * **Team**: invites and role changes are SECURITY DEFINER RPCs (`workspace_members` and
   `workspace_invites` have no client write grants). Rules, enforced in both the service and
   SQL: admins manage viewers/editors only; only owners grant or touch admin/owner; nobody

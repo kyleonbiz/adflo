@@ -21,14 +21,14 @@ describe("shareEmail", () => {
 });
 
 describe("shareFromHeader", () => {
-  it("sends as the person 'via AdFlo' from the onboarding alias", () => {
-    expect(shareFromHeader("Pat Lee", {})).toBe('"Pat Lee via AdFlo" <onboarding@adflo.pro>');
-    expect(shareFromHeader("Pat", { ONBOARDING_FROM: "AdFlo Onboarding <hello@adflo.pro>" })).toBe('"Pat via AdFlo" <hello@adflo.pro>');
-    expect(shareFromHeader("Pat", { SHARE_FROM: "AdFlo <docs@adflo.pro>", ONBOARDING_FROM: "x <hello@adflo.pro>" })).toBe('"Pat via AdFlo" <docs@adflo.pro>');
+  it("sends as the person 'via AdFlo' from the documents alias", () => {
+    expect(shareFromHeader("Pat Lee", {})).toBe('"Pat Lee via AdFlo" <documents@adflo.pro>');
+    expect(shareFromHeader("Pat", { SHARE_FROM: "AdFlo <docs@adflo.pro>" })).toBe('"Pat via AdFlo" <docs@adflo.pro>');
+    expect(shareFromHeader("Pat", { ONBOARDING_FROM: "x <hello@adflo.pro>" })).toBe('"Pat via AdFlo" <documents@adflo.pro>'); // onboarding mail has its own address
   });
   it("strips anything that could break the header", () => {
     expect(safeSenderName('Pat "<evil>"\r\nLee')).toBe("Pat evil Lee");
-    expect(shareFromHeader("", {})).toBe("AdFlo <onboarding@adflo.pro>");
+    expect(shareFromHeader("", {})).toBe("AdFlo <documents@adflo.pro>");
   });
 });
 

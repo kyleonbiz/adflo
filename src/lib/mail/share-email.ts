@@ -29,9 +29,12 @@ export function shareEmail(d: { senderName: string; fileName: string; url: strin
   };
 }
 
-/** The "From" header for a shared-document email: the person's name "via AdFlo", sent from the onboarding alias (SHARE_FROM or ONBOARDING_FROM). */
+/** The address shared-document emails are sent from. Override with SHARE_FROM. It must be an alias of the SMTP mailbox (see README). */
+export const SHARE_FROM_DEFAULT = "AdFlo <documents@adflo.pro>";
+
+/** The "From" header for a shared-document email: the person's name "via AdFlo", sent from the documents@ alias (SHARE_FROM). */
 export function shareFromHeader(senderName: string, env: Record<string, string | undefined> = process.env): string {
-  const configured = env.SHARE_FROM || env.ONBOARDING_FROM || "AdFlo <onboarding@adflo.pro>";
+  const configured = env.SHARE_FROM || SHARE_FROM_DEFAULT;
   const address = configured.match(/<([^<>\s]+)>/)?.[1] ?? configured.trim();
   const name = safeSenderName(senderName);
   return name ? `"${name} via AdFlo" <${address}>` : `AdFlo <${address}>`;
