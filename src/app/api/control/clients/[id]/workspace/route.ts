@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { isUuid, parseWorkspaceRequest, workspaceErrorMessage } from "@/lib/control/workspace";
+import { purgeWorkspace } from "@/lib/dms/server/purge-workspaces";
+import { createServiceSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -31,4 +33,29 @@ export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/
     // Only the invite function returns something worth showing: when the invitation runs out.
     return NextResponse.json({ ok: true, expiresAt: req_.action === "invite" && typeof data === "string" ? data : null });
   });
+}
+
+/**
+ * Delete a cancelled client's workspace and all its data now. Owner only. The database function checks the role, the second
+ * factor, that the client is cancelled and that its name was typed back, and writes the audit log. The stored files and the
+ * workspace are then removed with the same code as the nightly job: if any file cannot be removed nothing is deleted.
+ * The client record stays; deleting it is a separate button.
+ */
+export function DELETE(req: Request, ctx: RouteContext<"/api/control/clients/[id]/workspace">) {
+  return staffRoute(req, async ({ supabase }) => {
+    const { id } = await ctx.params;
+    if (!isUuid(id)) return fail(404, "not_found", "Client not found.");
+    const body = (await req.json().catch(() => null)) as { confirm?: unknown } | null;
+    const confirm = typeof body?.confirm === "string" ? body.confirm.slice(0, 200) : "";
+    const { data, error } = await supabase.rpc("control_check_workspace_delete", { p_client: id, p_confirm: confirm });
+    if (error) {
+      const e = workspaceErrorMessage(error.code, error.message);
+      return fail(e.status, "workspace", e.message);
+    }
+    const admin = createServiceSupabase();
+    if (!admin || typeof data !== "string") return fail(503, "no_service_key", "Deleting needs the server's service key, which is not set. Nothing was deleted.");
+    const purged = await purgeWorkspace(admin, data);
+    if (!purged.ok) return fail(502, "purge_failed", "Some stored files could not be removed, so nothing was deleted. Try again.");
+    return NextResponse.json({ ok: true, filesRemoved: purged.objectsRemoved });
+  }, "owner");
 }

@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Link2Off, Mail, Rocket, Send } from "lucide-react";
+import { Link2, Link2Off, Mail, Rocket, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { deleteConfirmationMatches } from "@/lib/control/client-delete";
 import { welcomeMessage } from "@/lib/control/workspace";
 import type { ClientRecord, UnlinkedWorkspace } from "@/lib/control/types";
 import { publicOrigin } from "@/lib/public-origin";
@@ -12,12 +14,14 @@ const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm 
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" });
 
 /** The client's AdFlo account: connect their workspace, or create one and invite the owner in a single step. */
-export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRecord; unlinked: UnlinkedWorkspace[]; canEdit: boolean }) {
+export function WorkspaceCard({ client, unlinked, canEdit, isOwner = false }: { client: ClientRecord; unlinked: UnlinkedWorkspace[]; canEdit: boolean; isOwner?: boolean }) {
   const router = useRouter();
   const [pick, setPick] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirmUnlink, setConfirmUnlink] = useState(false);
+  const [erasing, setErasing] = useState(false);
+  const [typed, setTyped] = useState("");
   const [copied, setCopied] = useState(false);
   const [expires, setExpires] = useState<string | null>(null);
   const linked = client.workspaceId != null;
@@ -34,6 +38,18 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
       setMsg({ ok: true, text: done });
       router.refresh();
     } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); }
+  }
+
+  async function eraseWorkspace() {
+    setBusy(true); setMsg(null);
+    try {
+      const res = await fetch(`/api/control/clients/${client.id}/workspace`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: typed }) });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not delete the workspace. Nothing was deleted." }); return; }
+      setErasing(false); setTyped("");
+      setMsg({ ok: true, text: "The workspace and all its data were deleted. The client record is still here: use Delete client to remove it too." });
+      router.refresh();
+    } catch { setMsg({ ok: false, text: "Could not reach the server. Nothing was deleted." }); } finally { setBusy(false); }
   }
 
   async function emailWelcome() {
@@ -97,6 +113,24 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
                   <Button variant="outline" size="sm" onClick={() => setConfirmUnlink(false)}>Keep</Button></span>
               )}
             </div>
+          )}
+          {isOwner && client.status === "cancelled" && (
+            !erasing ? (
+              <Button variant="ghost" className="text-destructive hover:bg-red-50" disabled={busy} onClick={() => { setErasing(true); setTyped(""); setMsg(null); }}><Trash2 /> Delete workspace and data</Button>
+            ) : (
+              <div role="alertdialog" aria-label="Delete workspace and data" className="space-y-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+                <p className="font-medium">Delete this workspace and everything in it for good?</p>
+                <p>This removes its documents and their stored files, records, activity and members right away, with no 30-day wait. It cannot be undone. People&apos;s sign-in accounts and the client record are kept.</p>
+                <label className="block space-y-1">
+                  <span>Type the client&apos;s name to confirm: <strong>{client.name}</strong></span>
+                  <Input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" aria-label="Type the client name to confirm" />
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="destructive" size="sm" disabled={busy || !deleteConfirmationMatches(client.name, typed)} onClick={eraseWorkspace}>{busy ? "Deleting…" : "Delete workspace and data"}</Button>
+                  <Button variant="outline" size="sm" disabled={busy} onClick={() => setErasing(false)}>Keep</Button>
+                </div>
+              </div>
+            )
           )}
           {!joined && hasOwnerEmail && <p className="text-xs text-muted-foreground">The owner joins automatically when they sign up with {client.ownerEmail}. Renew invitation extends the invitation without emailing anyone. Email welcome message sends it from onboarding@adflo.pro; Copy welcome message gives you the text to send yourself.</p>}
         </div>

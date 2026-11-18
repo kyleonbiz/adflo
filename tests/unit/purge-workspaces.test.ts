@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { purgeDueWorkspaces } from "@/lib/dms/server/purge-workspaces";
+import { purgeDueWorkspaces, purgeWorkspace } from "@/lib/dms/server/purge-workspaces";
 
 interface Opts {
   due: { id: string; requested_by: string | null }[];
@@ -73,5 +73,34 @@ describe("purgeDueWorkspaces", () => {
   it("does nothing when nothing is due", async () => {
     const { admin } = fakeAdmin({ due: [] });
     expect(await purgeDueWorkspaces(admin)).toEqual({ found: 0, deleted: 0, failed: 0, objectsRemoved: 0, accountsRemoved: 0 });
+  });
+});
+
+describe("purgeWorkspace (one workspace, now)", () => {
+  it("removes the files in batches of a hundred, then the workspace, and touches no sign-in", async () => {
+    const keys = Array.from({ length: 250 }, (_, i) => `w1/d${i}/v1`);
+    const { admin, calls } = fakeAdmin({ due: [], keys: { w1: keys } });
+    expect(await purgeWorkspace(admin, "w1")).toEqual({ ok: true, objectsRemoved: 250 });
+    expect(calls.removed.map((b) => b.length)).toEqual([100, 100, 50]);
+    expect(calls.order.at(-1)).toBe("row");
+    expect(calls.deletedWorkspaces).toEqual(["w1"]);
+    expect(calls.deletedUsers).toEqual([]);
+  });
+
+  it("deletes a workspace with no files", async () => {
+    const { admin, calls } = fakeAdmin({ due: [] });
+    expect(await purgeWorkspace(admin, "w1")).toEqual({ ok: true, objectsRemoved: 0 });
+    expect(calls.deletedWorkspaces).toEqual(["w1"]);
+  });
+
+  it("leaves the workspace alone when a file cannot be removed, so nothing is orphaned", async () => {
+    const { admin, calls } = fakeAdmin({ due: [], keys: { w1: ["a", "b"] }, removeFails: true });
+    expect(await purgeWorkspace(admin, "w1")).toEqual({ ok: false, objectsRemoved: 0 });
+    expect(calls.deletedWorkspaces).toEqual([]);
+  });
+
+  it("reports a failed delete of the workspace row", async () => {
+    const { admin } = fakeAdmin({ due: [], keys: { w1: ["a"] }, deleteFails: true });
+    expect(await purgeWorkspace(admin, "w1")).toEqual({ ok: false, objectsRemoved: 1 });
   });
 });
