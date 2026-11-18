@@ -1,0 +1,45 @@
+-- Accounts match to the letter: workspaces only for clients, sign-ups only for invited emails. Run last, through run.sh.
+\set ON_ERROR_STOP 1
+\set QUIET 1
+set client_min_messages = notice;
+\set stf '''ac000000-0000-4000-8000-0000000000f1'''
+\set cl '''ac000000-0000-4000-8000-0000000000f2'''
+
+-- Fixture: a staff member and a client with an owner email (the sessions start with the checks off).
+insert into auth.users (id, email) values (:stf, 'staff-am@adflo.test');
+insert into public.staff_members (user_id, role, display_name, email) values (:stf, 'owner', 'Am Staff', 'staff-am@adflo.test');
+insert into public.clients (id, name, owner_name, owner_email) values (:cl, 'Match Co', 'Mia Match', 'mia@match.test');
+
+-- From here the real rules apply.
+set adflo.test_fixture = off;
+
+select t.fails('nothing but provisioning can create a workspace', $$insert into public.workspaces (name) values ('Random Co')$$, 'only be created for a client');
+select t.ok('no workspace was made', not exists (select 1 from public.workspaces where name = 'Random Co'));
+
+select t.as_staff(:stf::uuid);
+select public.control_provision_workspace(:cl);
+reset role;
+select t.ok('provisioning still works: the workspace is linked to its client', (select w.name from public.clients c join public.workspaces w on w.id = c.workspace_id where c.id = :cl) = 'Match Co');
+select t.fails('and the door is closed again afterwards', $$insert into public.workspaces (name) values ('Random Co 2')$$, 'only be created for a client');
+
+select t.fails('a stranger cannot sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), 'random@nowhere.test')$$, 'sign-up is by invitation');
+select t.fails('an account with no email cannot sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), null)$$, 'sign-up is by invitation');
+select t.fails('someone who is a client but was never invited by email cannot sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), 'mia2@match.test')$$, 'sign-up is by invitation');
+select t.ok('the invited owner can sign up, in any letter case', (select count(*) from (select 1 from public.workspace_invites where email = 'mia@match.test' and accepted_at is null) q) = 1);
+insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000f3', 'Mia@Match.test');
+select t.ok('...and the account exists', exists (select 1 from auth.users where id = 'ac000000-0000-4000-8000-0000000000f3'));
+insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000f4', 'STAFF-AM@adflo.test');
+select t.ok('staff can sign up with their own email', exists (select 1 from auth.users where id = 'ac000000-0000-4000-8000-0000000000f4'));
+
+update public.workspace_invites set expires_at = now() - interval '1 day' where email = 'mia@match.test';
+select t.fails('an expired invitation no longer lets anyone sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), 'mia@match.test')$$, 'sign-up is by invitation');
+
+-- Clean up what this file made, so nothing leaks into later runs.
+set adflo.test_fixture = on;
+delete from public.clients where id = :cl;
+delete from public.workspaces where name = 'Match Co';
+delete from auth.users where email in ('Mia@Match.test', 'STAFF-AM@adflo.test') or id in ('ac000000-0000-4000-8000-0000000000f3', 'ac000000-0000-4000-8000-0000000000f4');
+delete from public.staff_members where user_id = :stf;
+delete from public.staff_audit_log where staff_email = 'staff-am@adflo.test';
+delete from auth.users where id = :stf;
+\echo ALL ACCOUNTS MATCH TESTS PASSED

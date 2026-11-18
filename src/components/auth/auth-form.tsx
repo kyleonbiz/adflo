@@ -54,7 +54,11 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
           emailRedirectTo: `${publicOrigin()}/auth/callback`,
         },
       });
-      if (error) return setFormError(error.message);
+      if (error) {
+        // The database refuses an email AdFlo has not invited, and Supabase reports that as a generic "database error".
+        const refused = error.code === "unexpected_failure" || /database error/i.test(error.message);
+        return setFormError(refused ? "Sign-up is by invitation. Use the email address your invitation was sent to, or contact support@adflo.pro." : error.message);
+      }
       if (!data.session) {
         setUnconfirmed(values.email);
         return setInfo("Check your email to confirm your account, then sign in. It can take a few minutes, and it may land in spam.");
@@ -179,7 +183,7 @@ function TroubleHelp() {
           </li>
           <li>If you just signed up, confirm your email first using the link we sent you.</li>
           <li>
-            Still stuck? <Link href="/signup" className="font-medium text-primary hover:underline">Create an account</Link> or ask your workspace owner to invite you.
+            Still stuck? Ask your workspace owner to invite you, or email support@adflo.pro.
           </li>
         </ul>
       )}

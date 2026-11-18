@@ -17,7 +17,8 @@ cleanup() { RUN "'$PG_BIN/pg_ctl' -D '$WORK/data' -m immediate stop >/dev/null 2
 trap cleanup EXIT
 RUN "'$PG_BIN/initdb' -D '$WORK/data' -A trust -U postgres >/dev/null"
 RUN "'$PG_BIN/pg_ctl' -D '$WORK/data' -o \"-p $PORT -k $WORK -c listen_addresses=''\" -l '$WORK/log' -w start >/dev/null"
-PSQL="'$PG_BIN/psql' -h '$WORK' -p $PORT -U postgres -v ON_ERROR_STOP=1 -X -q"
+# Fixtures insert workspaces and users directly, so the sessions start with the "accounts must match" checks off; accounts_match.sql turns them back on.
+PSQL="PGOPTIONS='-c adflo.test_fixture=on' '$PG_BIN/psql' -h '$WORK' -p $PORT -U postgres -v ON_ERROR_STOP=1 -X -q"
 RUN "$PSQL -d postgres -c 'create database dms'"
 RUN "$PSQL -d dms -f '$HERE/stubs.sql'"
 for f in "$HERE"/../migrations/*.sql; do
@@ -37,3 +38,4 @@ RUN "$PSQL -d dms -f '$HERE/suspend.sql'" 2>&1 | grep -E "PASS|FAIL|ALL SUSPEND|
 RUN "$PSQL -d dms -f '$HERE/onboarding_steps.sql'" 2>&1 | grep -E "PASS|FAIL|ALL ONBOARDING|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/job_runs.sql'" 2>&1 | grep -E "PASS|FAIL|ALL JOB RUNS|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/workspace_deletion.sql'" 2>&1 | grep -E "PASS|FAIL|ALL WORKSPACE DELETION|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/accounts_match.sql'" 2>&1 | grep -E "PASS|FAIL|ALL ACCOUNTS|ERROR" | sed 's/^psql:[^ ]* //'

@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Create account" };
 
 export default function SignupPage() {
   return (
-    <AuthCard title="Create your account" subtitle="Start organizing documents securely.">
+    <AuthCard title="Create your account" subtitle="Sign-up is by invitation. Use the email address your invitation was sent to.">
       <AuthForm mode="signup" demo={!getSupabaseEnv()} />
     </AuthCard>
   );

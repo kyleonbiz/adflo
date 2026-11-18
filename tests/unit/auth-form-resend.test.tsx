@@ -74,3 +74,14 @@ describe("resend confirmation email", () => {
     expect(screen.queryByText(/49 seconds/)).toBeNull();
   });
 });
+
+describe("sign-up is by invitation", () => {
+  it("explains a refused sign-up instead of showing a database error", async () => {
+    auth.signUp.mockResolvedValue({ data: { session: null }, error: { code: "unexpected_failure", message: "Database error saving new user" } });
+    render(<AuthForm mode="signup" />);
+    await fill("stranger@nowhere.test", "Sam Stranger");
+    await userEvent.click(screen.getByRole("button", { name: /Create account/ }));
+    expect(await screen.findByText(/Sign-up is by invitation/)).toBeInTheDocument();
+    expect(screen.queryByText(/Database error/)).toBeNull();
+  });
+});
