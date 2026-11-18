@@ -32,7 +32,7 @@ function LiveTeam() {
   const [team, setTeam] = useState<Team | null>(null);
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -70,9 +70,13 @@ function LiveTeam() {
         ))}
       </ul>
       {!canManage && <p className="text-xs text-muted-foreground">Only owners and admins can invite or remove people.</p>}
-      {note && <p role="status" className="text-sm text-muted-foreground">{note}</p>}
+      {note && (
+        note.kind === "error"
+          ? <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm font-medium text-destructive">{note.text}</p>
+          : <p role="status" className="text-sm text-muted-foreground">{note.text}</p>
+      )}
       {canManage && (
-        <TeamDialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) void load(); }} api={api} myRole={boot.role} myUserId={boot.user.id} onNotify={(_, msg) => setNote(msg)} />
+        <TeamDialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) void load(); }} api={api} myRole={boot.role} myUserId={boot.user.id} onNotify={(kind, text) => setNote({ kind, text })} />
       )}
     </section>
   );
