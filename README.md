@@ -263,6 +263,7 @@ Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app 
 | `ANTHROPIC_API_KEY` | Optional, server only. Without it the assistant (Addy) answers with its built-in rules. Claude answers only for **Core +** workspaces. |
 | `ASSISTANT_MODEL` | Optional model override (default `claude-opus-5-5`). |
 | `SMTP_USER`, `SMTP_PASSWORD` | Optional. A Google Workspace mailbox and its app password. Sends the landing page demo requests and, from the Control center, the welcome message and agreement link to new clients. |
+| `AGREEMENT_NOTIFY_TO` | Optional. Who is emailed when a client accepts an agreement (default `onboarding@adflo.pro`, which lands in the same mailbox as `SMTP_USER`). |
 | `NEXT_PUBLIC_SITE_URL` | Optional. The address links sent to people are built on (agreement, welcome, password reset and share links). On the live production site it defaults to `https://www.adflo.pro`, and `adflo.pro` redirects there, so the Control center is always at `https://www.adflo.pro/control`. |
 | `ONBOARDING_FROM` | Optional. Sender of onboarding emails (default `AdFlo Onboarding <onboarding@adflo.pro>`). Add that alias under Gmail > Settings > Accounts > "Send mail as" for `SMTP_USER`, or Gmail sends from `SMTP_USER` itself. |
 | `DMS_PENDING_UPLOAD_MAX_AGE_HOURS` | Pending-upload cleanup age (default 24, minimum 3). |

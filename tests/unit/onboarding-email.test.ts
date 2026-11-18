@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agreementEmail, agreementsEmail, ONBOARDING_FROM_DEFAULT } from "@/lib/mail/onboarding-email";
+import { acceptanceNoticeEmail, agreementEmail, agreementsEmail, ONBOARDING_FROM_DEFAULT } from "@/lib/mail/onboarding-email";
 import { parseSendAllInput, parseSendInput } from "@/lib/control/validation";
 import { welcomeEmailSubject } from "@/lib/control/workspace";
 
@@ -108,5 +108,21 @@ describe("canonicalControlUrl", () => {
   });
   it("does not treat /controls or /control-x as the Control center", () => {
     expect(canonicalControlUrl(new URL("https://adflo.pro/controls"), live)).toBeNull();
+  });
+});
+
+describe("acceptance notice", () => {
+  const d = { clientName: "Acme Roofing", title: "Terms and Conditions", version: 2, acceptedName: "Pat Lee", acceptedEmail: "pat@acme.com", acceptedAt: "Wed, 18 Nov 2026 15:00:00 GMT", controlUrl: "https://www.adflo.pro/control/agreements" };
+  it("says who accepted what, and where to see it", () => {
+    const m = acceptanceNoticeEmail(d);
+    expect(m.subject).toBe("Agreement accepted: Terms and Conditions by Acme Roofing");
+    expect(m.text).toContain("Pat Lee <pat@acme.com>");
+    expect(m.text).toContain("version 2");
+    expect(m.text).toContain("https://www.adflo.pro/control/agreements");
+  });
+  it("flattens what the client typed so it cannot add lines or headers", () => {
+    const m = acceptanceNoticeEmail({ ...d, clientName: "Acme\r\nBcc: x@y.com", acceptedName: "Pat\nSubject: hi" });
+    expect(m.subject).not.toMatch(/[\r\n]/);
+    expect(m.text.split("\n").some((l) => l.startsWith("Bcc:") || l.startsWith("Subject:"))).toBe(false);
   });
 });

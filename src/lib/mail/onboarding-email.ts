@@ -44,3 +44,23 @@ export function agreementsEmail(d: { clientName: string; ownerName: string; item
     ].join("\n"),
   };
 }
+
+/** Where "a client accepted" notices go. Defaults to the onboarding@ alias, which lands in the same mailbox. Override with AGREEMENT_NOTIFY_TO. */
+export const ACCEPTANCE_NOTIFY_DEFAULT = "onboarding@adflo.pro";
+
+/** The notice staff get when a client accepts an agreement. Everything typed by the client is flattened to one line. */
+export function acceptanceNoticeEmail(d: { clientName: string; title: string; version: number; acceptedName: string; acceptedEmail: string; acceptedAt: string; controlUrl: string }): { subject: string; text: string } {
+  const client = oneLine(d.clientName) || "A client";
+  const title = oneLine(d.title) || "an agreement";
+  return {
+    subject: `Agreement accepted: ${title} by ${client}`,
+    text: [
+      `${client} accepted ${title} (version ${d.version}).`,
+      "",
+      `Accepted by: ${oneLine(d.acceptedName)} <${oneLine(d.acceptedEmail)}>`,
+      `When: ${oneLine(d.acceptedAt)}`,
+      "",
+      `See it in the Control center: ${d.controlUrl}`,
+    ].join("\n"),
+  };
+}
