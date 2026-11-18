@@ -27,12 +27,15 @@ export function ShareDialog({
   open: boolean;
   fileName: string;
   onOpenChange: (open: boolean) => void;
-  onCreate: (ttlMinutes: number) => Promise<{ url: string; expiresAt: string }>;
+  onCreate: (ttlMinutes: number, opts?: { emailTo?: string; message?: string }) => Promise<{ url: string; expiresAt: string; emailedTo?: string; emailError?: string }>;
   loadLinks: () => Promise<ShareLinkInfo[]>;
   onRevoke: (linkId: string) => Promise<void>;
 }) {
   const [ttl, setTtl] = useState(String(OPTIONS[1].minutes));
   const [link, setLink] = useState<{ url: string; expiresAt: string } | null>(null);
+  const [emailTo, setEmailTo] = useState("");
+  const [message, setMessage] = useState("");
+  const [emailNote, setEmailNote] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -61,6 +64,9 @@ export function ShareDialog({
       setLink(null);
       setError("");
       setCopied(false);
+      setEmailTo("");
+      setMessage("");
+      setEmailNote("");
     }
     onOpenChange(next);
   }
@@ -72,7 +78,7 @@ export function ShareDialog({
           <Link2 className="size-5 text-brand-purple" aria-hidden /> Share securely
         </DialogTitle>
         <DialogDescription className="mt-1 break-words">
-          Create a link to “{fileName}” that stops working automatically.
+          Email a link to “{fileName}”, or copy it. The person opens the link and downloads the file. It stops working automatically.
         </DialogDescription>
 
         {!link ? (
@@ -94,6 +100,20 @@ export function ShareDialog({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5">
+              <label htmlFor="share-email" className="text-sm font-medium">
+                Email the link to <span className="font-normal text-muted-foreground">(optional)</span>
+              </label>
+              <Input id="share-email" type="email" autoComplete="off" placeholder="name@example.com" value={emailTo} onChange={(e) => setEmailTo(e.target.value)} />
+            </div>
+            {emailTo.trim() && (
+              <div className="space-y-1.5">
+                <label htmlFor="share-note" className="text-sm font-medium">
+                  Add a note <span className="font-normal text-muted-foreground">(optional)</span>
+                </label>
+                <textarea id="share-note" rows={3} maxLength={1000} value={message} onChange={(e) => setMessage(e.target.value)} className="w-full rounded-lg border border-input field-glass px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">
               Anyone with the link can download this file until it expires. Treat it like a password.
             </p>
@@ -109,10 +129,14 @@ export function ShareDialog({
               <Button
                 disabled={busy}
                 onClick={async () => {
+                  const to = emailTo.trim();
+                  if (to && !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/.test(to)) { setError("Enter a valid email address, or leave it empty to copy the link."); return; }
                   setBusy(true);
                   setError("");
                   try {
-                    setLink(await onCreate(Number(ttl)));
+                    const made = await onCreate(Number(ttl), to ? { emailTo: to, message: message.trim() || undefined } : undefined);
+                    setLink({ url: made.url, expiresAt: made.expiresAt });
+                    setEmailNote(made.emailedTo ? `Emailed to ${made.emailedTo}. They can open the link and download the file.` : made.emailError ?? "");
                     void refreshLinks();
                   } catch (e) {
                     setError(toDmsError(e).message);
@@ -121,7 +145,7 @@ export function ShareDialog({
                   }
                 }}
               >
-                {busy ? "Creating…" : "Create link"}
+                {busy ? (emailTo.trim() ? "Sending…" : "Creating…") : emailTo.trim() ? "Create link and email it" : "Create link"}
               </Button>
             </div>
           </div>
@@ -143,6 +167,7 @@ export function ShareDialog({
                 {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy"}
               </Button>
             </div>
+            {emailNote && <p role="status" className="text-sm">{emailNote}</p>}
             <p className="text-xs text-muted-foreground">Expires {formatDateTime(link.expiresAt)}</p>
             {error && (
               <p role="alert" className="text-xs text-destructive">

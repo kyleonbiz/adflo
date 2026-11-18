@@ -60,5 +60,7 @@ export function clientKey(req: Request): string {
 export const MUTATION_RATE: RateRule = { name: "mutate", max: 120, windowMs: 60_000 };
 export const UPLOAD_RATE: RateRule = { name: "upload-init", max: 60, windowMs: 60_000 };
 export const SHARE_CREATE_RATE: RateRule = { name: "share-create", max: 20, windowMs: 60_000 };
+/** Emailing share links: per signed-in user, so the feature cannot be used to spam strangers. */
+export const SHARE_EMAIL_RATE: RateRule = { name: "share-email", max: 20, windowMs: 60 * 60_000 };
 export const INVITE_RATE: RateRule = { name: "invite", max: 20, windowMs: 60 * 60_000 };
 export const PUBLIC_SHARE_RATE: RateRule = { name: "share-public", max: 60, windowMs: 60_000 };

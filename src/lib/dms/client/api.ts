@@ -50,7 +50,7 @@ export interface DmsApi {
     id: string,
     opts?: { versionNumber?: number; disposition?: "inline" | "attachment" },
   ): Promise<FileLink>;
-  createShareLink(id: string, ttlMinutes: number): Promise<{ url: string; expiresAt: string }>;
+  createShareLink(id: string, ttlMinutes: number, opts?: { emailTo?: string; message?: string }): Promise<{ url: string; expiresAt: string; emailedTo?: string; emailError?: string }>;
   listShareLinks(id: string): Promise<ShareLinkInfo[]>;
   revokeShareLink(id: string, linkId: string): Promise<void>;
   getTeam(): Promise<Team>;

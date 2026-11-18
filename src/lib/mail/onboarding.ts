@@ -11,10 +11,15 @@ export const onboardingMailReady = () => !!(process.env.SMTP_USER && process.env
  * the alias too, so they land in the same mailbox. Throws if sending fails.
  */
 export async function sendOnboardingEmail(m: { to: string; subject: string; text: string }): Promise<void> {
+  const from = process.env.ONBOARDING_FROM || ONBOARDING_FROM_DEFAULT;
+  await sendMail({ from, replyTo: from, ...m });
+}
+
+/** Sends one plain-text email through the SMTP mailbox. Throws if the mailbox is not set up or sending fails. */
+export async function sendMail(m: { from: string; replyTo?: string; to: string; subject: string; text: string }): Promise<void> {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASSWORD;
   if (!user || !pass) throw new Error("mail_not_configured");
-  const from = process.env.ONBOARDING_FROM || ONBOARDING_FROM_DEFAULT;
   const mail = nodemailer.createTransport({ host: "smtp.gmail.com", port: 465, secure: true, auth: { user, pass } });
-  await mail.sendMail({ from, replyTo: from, to: m.to, subject: m.subject, text: m.text });
+  await mail.sendMail({ from: m.from, replyTo: m.replyTo ?? m.from, to: m.to, subject: m.subject, text: m.text });
 }

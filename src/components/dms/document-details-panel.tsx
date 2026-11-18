@@ -164,7 +164,7 @@ export function DocumentDetailsPanel({
                   >
                     <Share2 />
                   </Button>
-                  <Button variant="ghost" size="icon-sm" aria-label="Send" title="Send by email" onClick={() => void manager.send(doc)}>
+                  <Button variant="ghost" size="icon-sm" aria-label="Send" title="Send by email" onClick={() => (api.capabilities.share && perms.share ? setSharing(true) : void manager.send(doc))}>
                     <Send />
                   </Button>
                 </div>
@@ -294,7 +294,7 @@ export function DocumentDetailsPanel({
               open={sharing}
               fileName={doc.displayName}
               onOpenChange={setSharing}
-              onCreate={(ttl) => api.createShareLink(doc.id, ttl)}
+              onCreate={(ttl, opts) => api.createShareLink(doc.id, ttl, opts)}
               loadLinks={() => api.listShareLinks(doc.id)}
               onRevoke={(linkId) => api.revokeShareLink(doc.id, linkId)}
             />

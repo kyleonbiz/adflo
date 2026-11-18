@@ -118,8 +118,8 @@ export function createHttpApi(mode: Exclude<ApiMode, "demo">): DmsApi {
       if (opts?.disposition) p.set("disposition", opts.disposition);
       return call<FileLink>(`/documents/${id}/file?${p}`);
     },
-    createShareLink: (id, ttlMinutes) =>
-      call<{ url: string; expiresAt: string }>(`/documents/${id}/share`, { json: { ttlMinutes } }),
+    createShareLink: (id, ttlMinutes, opts) =>
+      call<{ url: string; expiresAt: string; emailedTo?: string; emailError?: string }>(`/documents/${id}/share`, { json: { ttlMinutes, ...(opts?.emailTo ? { emailTo: opts.emailTo, message: opts.message } : {}) } }),
     listShareLinks: (id) => call<ShareLinkInfo[]>(`/documents/${id}/share`),
     revokeShareLink: (id, linkId) => call<void>(`/documents/${id}/share/${linkId}`, { method: "DELETE" }),
     getTeam: () => call<Team>("/team"),

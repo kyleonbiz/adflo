@@ -251,6 +251,9 @@ export type UpdateDocumentInput = z.infer<typeof updateDocumentSchema>;
 
 export const shareLinkSchema = z.object({
   ttlMinutes: z.number().int().min(5).max(SHARE_LINK_MAX_MINUTES),
+  /** Optional: also email the link to this address (one person) with an optional short note. */
+  emailTo: z.string().trim().email().max(254).optional(),
+  message: z.string().max(1000).optional(),
 });
 
 export const createWorkspaceSchema = z.object({
