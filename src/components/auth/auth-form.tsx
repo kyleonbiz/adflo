@@ -22,6 +22,9 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
   const router = useRouter();
   const [formError, setFormError] = useState("");
   const [info, setInfo] = useState("");
+  /** Set when the account exists but its email is not confirmed yet, so a fresh confirmation email can be requested. */
+  const [unconfirmed, setUnconfirmed] = useState("");
+  const [resending, setResending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const isSignup = mode === "signup";
   const form = useForm<SignUpValues>({
@@ -34,6 +37,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
   const submit = handleSubmit(async (values: SignInValues & Partial<SignUpValues>) => {
     setFormError("");
     setInfo("");
+    setUnconfirmed("");
     if (demo) {
       router.replace(safeNext(next));
       return;
@@ -50,14 +54,33 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
         },
       });
       if (error) return setFormError(error.message);
-      if (!data.session) return setInfo("Check your email to confirm your account, then sign in.");
+      if (!data.session) {
+        setUnconfirmed(values.email);
+        return setInfo("Check your email to confirm your account, then sign in. It can take a few minutes, and it may land in spam.");
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email: values.email, password: values.password });
-      if (error) return setFormError("Incorrect email or password.");
+      if (error) {
+        if (error.code === "email_not_confirmed") {
+          setUnconfirmed(values.email);
+          return setFormError("Confirm your email first. We sent you a link when you signed up.");
+        }
+        return setFormError("Incorrect email or password.");
+      }
     }
     router.replace(safeNext(next));
     router.refresh();
   });
+
+  const resend = async () => {
+    setResending(true);
+    setFormError("");
+    const { createBrowserSupabase } = await import("@/lib/supabase/browser");
+    const { error } = await createBrowserSupabase().auth.resend({ type: "signup", email: unconfirmed, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+    setResending(false);
+    if (error) return setFormError("We could not send another email just now. Wait a minute and try again.");
+    setInfo(`We sent another confirmation email to ${unconfirmed}. Check your spam folder too.`);
+  };
 
   return (
     <form onSubmit={submit} noValidate className="space-y-4">
@@ -114,6 +137,11 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
         <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           {info}
         </p>
+      )}
+      {unconfirmed && (
+        <Button type="button" variant="outline" className="w-full" onClick={resend} disabled={resending}>
+          {resending ? "Sending…" : "Resend confirmation email"}
+        </Button>
       )}
       <Button type="submit" size="lg" className="auth-submit w-full" disabled={formState.isSubmitting}>
         {formState.isSubmitting ? "Please wait…" : isSignup ? "Create account" : "Log in"}
