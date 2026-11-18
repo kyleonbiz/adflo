@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
@@ -342,7 +343,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
                       <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">{initials(c.name)}</span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                          <p className="truncate font-medium">{c.name}</p>
+                          <p className="truncate font-medium"><Link href={`/app/contacts/${c.id}`} className={linkClass}>{c.name}</Link></p>
                           <Badge variant={CATEGORY_BADGE[c.category]}>{c.category}</Badge>
                         </div>
                         {c.notes && <p className="truncate text-xs text-muted-foreground" title={c.notes}>{c.notes}</p>}

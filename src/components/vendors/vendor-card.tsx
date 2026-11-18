@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BellRing, CheckCircle2, ChevronDown, Paperclip, Pencil, Plus, Power, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -108,7 +109,7 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
       <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="truncate text-base font-semibold">{vendor.name}</h3>
+            <h3 className="truncate text-base font-semibold"><Link href={`/app/vendors/${vendor.id}`} className="rounded underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{vendor.name}</Link></h3>
             <Badge variant={STATUS_BADGE[vendor.status]}>{STATUS_LABEL[vendor.status]}</Badge>
             <Badge variant="muted">{vendor.category}</Badge>
           </div>
