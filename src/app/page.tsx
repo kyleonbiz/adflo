@@ -36,7 +36,8 @@ export default function HomePage() {
       <div className="landing-light relative -mt-10 flex-1 rounded-t-[2.5rem] text-foreground">
         <LandingSections />
         <footer className="border-t border-brand-blue/10 bg-white/50 py-6 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} AdFlo · Administrative management platform
+          © {new Date().getFullYear()} AdFlo · Administrative management platform ·{" "}
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy</Link>
         </footer>
       </div>
     </div>
