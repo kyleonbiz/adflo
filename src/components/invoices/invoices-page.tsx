@@ -26,6 +26,7 @@ import { InvoiceCard, type InvoiceActions } from "./invoice-card";
 import { InvoiceFormDialog, type InvoiceDraft } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
 import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
+import { publicOrigin } from "@/lib/public-origin";
 
 /** "sent" matches every sent invoice however close to due; the rest match one state. */
 type StatusFilter = "all" | "sent" | Exclude<InvoiceState, "upcoming">;
@@ -91,7 +92,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
       setNotice(i.status === "void" ? `${i.number} reopened as a draft.` : `${i.number} payment undone.`);
     },
     onEmail: (i) => {
-      window.location.href = invoiceMailto(i, window.location.origin);
+      window.location.href = invoiceMailto(i, publicOrigin());
       if (i.status === "draft") patch(i.id, markSent);
       audit("emailed", `invoice ${i.number}`, "Invoices", "/app/invoices");
       setNotice(`Opened your email app for ${i.number}${i.clientEmail ? ` to ${i.clientEmail}` : ""}${i.status === "draft" ? "; marked as sent." : "."}`);
@@ -103,7 +104,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
       setNotice(`Opened your email app with a payment reminder for ${i.number}${i.clientEmail ? ` to ${i.clientEmail}` : ""}.`);
     },
     onCopyLink: async (i) => {
-      const link = `${window.location.origin}${invoicePath(i)}`;
+      const link = `${publicOrigin()}${invoicePath(i)}`;
       try { await navigator.clipboard.writeText(link); setNotice(`Link to ${i.number} copied.`); }
       catch { setNotice(`Copy this link to ${i.number}: ${link}`); }
     },

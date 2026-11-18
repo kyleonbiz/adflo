@@ -23,7 +23,10 @@ const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g;
 
 const clean = (v: unknown) => (typeof v === "string" ? v.replace(CONTROL, "").trim() : "");
 
-/** Checks a client form (create or edit). `partial` skips fields that were not sent, for PATCH. */
+/**
+ * Checks a client form (create or edit). `partial` skips fields that were not sent, for PATCH. A new client must have its
+ * name, owner name and owner email: without them there is nobody to invite and no way to tell two clients apart.
+ */
 export function parseClientInput(raw: unknown, partial = false): ParsedClient {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const errors: Partial<Record<keyof ClientInput, string>> = {};
@@ -53,12 +56,13 @@ export function parseClientInput(raw: unknown, partial = false): ParsedClient {
   }
   if (has("ownerName")) {
     const v = clean(r.ownerName);
-    if (v.length > 120) errors.ownerName = "Keep the owner's name under 120 characters.";
+    if (!partial && v.length < 2) errors.ownerName = "Enter the owner's name.";
+    else if (v.length > 120) errors.ownerName = "Keep the owner's name under 120 characters.";
     else out.ownerName = v;
   }
   if (has("ownerEmail")) {
     const v = clean(r.ownerEmail).toLowerCase();
-    if (v && (!EMAIL.test(v) || v.length > 254)) errors.ownerEmail = "Enter a valid email address.";
+    if ((!partial && !v) || (v && (!EMAIL.test(v) || v.length > 254))) errors.ownerEmail = v ? "Enter a valid email address." : "Enter the owner's email. It is how they get into their workspace.";
     else out.ownerEmail = v;
   }
   if (has("notes")) {

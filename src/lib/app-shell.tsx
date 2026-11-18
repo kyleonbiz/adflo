@@ -3,8 +3,7 @@ import { redirect } from "next/navigation";
 import { AppTopBar } from "@/components/app-header";
 import { PlanFeaturesProvider } from "@/components/plan-features";
 import { CurrentUserProvider } from "@/components/current-user";
-import { AuthCard } from "@/components/auth/auth-card";
-import { OnboardingForm } from "@/components/auth/onboarding-form";
+import { NoWorkspaceNotice } from "@/components/auth/no-workspace-notice";
 import { AppFrame } from "@/components/modules/app-frame";
 import { pathAllowed } from "@/lib/control/gating";
 import { dayInZone } from "@/lib/dashboard/logic";
@@ -40,7 +39,7 @@ function NotInPlan() {
 }
 
 /**
- * Shared gate for every signed-in page: sign-in and workspace onboarding when a database is connected,
+ * Shared gate for every signed-in page: sign-in when a database is connected,
  * otherwise an empty preview. `content(mode)` is only rendered once the visitor is allowed in.
  */
 export async function renderAppShell(
@@ -53,16 +52,11 @@ export async function renderAppShell(
     if (!data.user) redirect(`/login?next=${nextPath}`);
     const email = data.user.email ?? "";
     const fullName = (data.user.user_metadata?.full_name as string | undefined) ?? email.split("@")[0];
-    // Pending invites for this (verified) email take effect before onboarding is offered.
+    // Pending invites for this (verified) email take effect before the no-workspace notice is considered.
     await acceptPendingInvites(supabase, fullName);
     const membership = await findMembership(supabase, data.user.id);
-    if (!membership) {
-      return (
-        <AuthCard title="Create your workspace" subtitle="A workspace holds your team's documents, folders and storage.">
-          <OnboardingForm displayName={fullName} email={email} />
-        </AuthCard>
-      );
-    }
+    // Nobody creates a workspace from the sign-in flow: AdFlo makes it in the Control center and the owner joins by email.
+    if (!membership) return <NoWorkspaceNotice email={email} />;
     // A client switched off in the Control Center sees a plain notice instead of the app. Nothing is deleted.
     const standing = await getWorkspaceStanding(supabase, membership.workspaceId);
     if (isPaused(standing)) return <PausedNotice standing={standing} email={email} />;

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getSupabaseEnv } from "@/lib/supabase/env";
+import { publicOrigin } from "@/lib/public-origin";
 
 /** Asks for the account email and sends a reset link that lands on /reset-password. */
 export function ForgotPasswordForm({ demo = false }: { demo?: boolean }) {
@@ -26,7 +27,7 @@ export function ForgotPasswordForm({ demo = false }: { demo?: boolean }) {
     const { createClient } = await import("@supabase/supabase-js");
     // The implicit flow matches the reset page, which reads the tokens straight from the link.
     const client = createClient(env.url, env.anonKey, { auth: { flowType: "implicit", persistSession: false } });
-    const { error: err } = await client.auth.resetPasswordForEmail(value, { redirectTo: `${window.location.origin}/reset-password` });
+    const { error: err } = await client.auth.resetPasswordForEmail(value, { redirectTo: `${publicOrigin()}/reset-password` });
     setBusy(false);
     // Same message whether or not the account exists, so this cannot be used to find out who has one.
     if (err && err.status !== 400 && err.status !== 404 && err.status !== 422) return setError("Could not send the email. Try again in a moment.");

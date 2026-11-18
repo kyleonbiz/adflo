@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formPath, isEmail, parseRecipients, sendMailto } from "@/lib/forms/share";
 import type { FormTemplate } from "@/lib/forms/types";
+import { publicOrigin } from "@/lib/public-origin";
 
 const REPLY_KEY = "adflo.forms.replyTo";
 const readReply = () => { try { return window.localStorage.getItem(REPLY_KEY) ?? ""; } catch { return ""; } };
@@ -20,7 +21,7 @@ function SendBody({ form, onSent }: { form: FormTemplate; onSent: (count: number
 
   const replyOk = isEmail(replyTo.trim());
   const { emails, invalid } = parseRecipients(to);
-  const link = replyOk ? `${window.location.origin}${formPath(form, replyTo.trim())}` : "";
+  const link = replyOk ? `${publicOrigin()}${formPath(form, replyTo.trim())}` : "";
 
   const sent = (n: number) => { saveReply(replyTo.trim()); onSent(n); };
 

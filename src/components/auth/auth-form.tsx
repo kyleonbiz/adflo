@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { safeNext } from "@/lib/safe-redirect";
 import { signInSchema } from "@/lib/dms/validation";
+import { publicOrigin } from "@/lib/public-origin";
 
 const signUpSchema = signInSchema.extend({ fullName: z.string().trim().min(2, "Enter your name").max(80) });
 type SignInValues = z.infer<typeof signInSchema>;
@@ -50,7 +51,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
         password: values.password,
         options: {
           data: { full_name: values.fullName },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${publicOrigin()}/auth/callback`,
         },
       });
       if (error) return setFormError(error.message);
@@ -76,7 +77,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
     setResending(true);
     setFormError("");
     const { createBrowserSupabase } = await import("@/lib/supabase/browser");
-    const { error } = await createBrowserSupabase().auth.resend({ type: "signup", email: unconfirmed, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+    const { error } = await createBrowserSupabase().auth.resend({ type: "signup", email: unconfirmed, options: { emailRedirectTo: `${publicOrigin()}/auth/callback` } });
     setResending(false);
     if (error) return setFormError("We could not send another email just now. Wait a minute and try again.");
     setInfo(`We sent another confirmation email to ${unconfirmed}. Check your spam folder too.`);

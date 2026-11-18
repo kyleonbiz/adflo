@@ -14,32 +14,40 @@ import { CLIENT_STATUSES, STATUS_LABEL, effectivePriceCents, formatMoney, isQuie
 import { cn } from "@/lib/utils";
 import { StatusBadge } from "./status-badge";
 
-interface FormState { name: string; status: ClientStatus; plan: string; seatsLimit: string; ownerName: string; ownerEmail: string; notes: string; priceOverrideCents: string; priceNote: string }
-const EMPTY: FormState = { name: "", status: "trial", plan: "standard", seatsLimit: "3", ownerName: "", ownerEmail: "", notes: "", priceOverrideCents: "", priceNote: "" };
-const fromClient = (c: ClientRecord): FormState => ({ name: c.name, status: c.status, plan: c.plan, seatsLimit: String(c.seatsLimit), ownerName: c.ownerName, ownerEmail: c.ownerEmail, notes: c.notes, priceOverrideCents: c.priceOverrideCents == null ? "" : String(c.priceOverrideCents / 100), priceNote: c.priceNote });
+interface FormState { createWorkspace: boolean; name: string; status: ClientStatus; plan: string; seatsLimit: string; ownerName: string; ownerEmail: string; notes: string; priceOverrideCents: string; priceNote: string }
+const EMPTY: FormState = { createWorkspace: true, name: "", status: "trial", plan: "standard", seatsLimit: "3", ownerName: "", ownerEmail: "", notes: "", priceOverrideCents: "", priceNote: "" };
+const fromClient = (c: ClientRecord): FormState => ({ createWorkspace: false, name: c.name, status: c.status, plan: c.plan, seatsLimit: String(c.seatsLimit), ownerName: c.ownerName, ownerEmail: c.ownerEmail, notes: c.notes, priceOverrideCents: c.priceOverrideCents == null ? "" : String(c.priceOverrideCents / 100), priceNote: c.priceNote });
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
 
-function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) {
+function Field({ id, label, error, required, children }: { id: string; label: string; error?: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>{label}{required && <span aria-hidden className="text-destructive"> *</span>}</Label>
       {children}
       {error && <p id={`${id}-error`} role="alert" className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }
 
-export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { client: ClientRecord | null; plans: Plan[]; isOwner: boolean; onClose: () => void; onSaved: () => void }) {
+export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { client: ClientRecord | null; plans: Plan[]; isOwner: boolean; onClose: () => void; onSaved: (warning: string | null) => void }) {
   const [form, setForm] = useState<FormState>(client ? fromClient(client) : EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const set = (k: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const set = (k: Exclude<keyof FormState, "createWorkspace">) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  // A new client needs a name and an owner (the owner is who gets invited). An old client without them can still be edited.
+  const mustHaveOwner = !client || client.ownerEmail.trim() !== "";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setBusy(true); setErrors({}); setMessage("");
+    setMessage("");
+    const missing: Record<string, string> = {};
+    if (form.name.trim().length < 2) missing.name = "Enter the client's name.";
+    if (mustHaveOwner && form.ownerName.trim().length < 2) missing.ownerName = "Enter the owner's name.";
+    if (mustHaveOwner && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.ownerEmail.trim())) missing.ownerEmail = "Enter the owner's email. It is how they get into their workspace.";
+    if (Object.keys(missing).length) { setErrors(missing); setMessage("Fill in the required fields (marked *)."); return; }
+    setBusy(true); setErrors({});
     try {
       const res = await fetch(client ? `/api/control/clients/${client.id}` : "/api/control/clients", {
         method: client ? "PATCH" : "POST",
@@ -48,7 +56,7 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
         body: JSON.stringify(isOwner ? form : { ...form, priceOverrideCents: undefined, priceNote: undefined }),
       });
       const json = await res.json().catch(() => null);
-      if (res.ok && json?.ok) { onSaved(); return; }
+      if (res.ok && json?.ok) { onSaved(typeof json.workspaceError === "string" ? json.workspaceError : null); return; }
       setErrors(json?.error?.fields ?? {});
       setMessage(json?.error?.message ?? "Could not save. Try again.");
     } catch {
@@ -60,9 +68,9 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
         <DialogTitle>{client ? "Edit client" : "Add client"}</DialogTitle>
-        <DialogDescription>{client ? "Changes are recorded in the audit log." : "Creates the client's record. Onboarding steps come next."}</DialogDescription>
+        <DialogDescription>{client ? "Changes are recorded in the audit log." : "Creates the client and, if you leave the box ticked, their workspace and the owner's invitation in the same step. Fields marked * are required."}</DialogDescription>
         <form onSubmit={submit} className="space-y-4" noValidate>
-          <Field id="c-name" label="Client name" error={errors.name}><Input id="c-name" value={form.name} onChange={set("name")} aria-invalid={!!errors.name} autoFocus /></Field>
+          <Field id="c-name" label="Client name" required error={errors.name}><Input id="c-name" value={form.name} onChange={set("name")} aria-invalid={!!errors.name} autoFocus /></Field>
           <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
             <div className="min-w-0">
               <p id="c-on-label" className="text-sm font-medium">Account on</p>
@@ -79,8 +87,8 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
             <Field id="c-seats" label="Seats allowed" error={errors.seatsLimit}><Input id="c-seats" inputMode="numeric" value={form.seatsLimit} onChange={set("seatsLimit")} /></Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="c-owner" label="Owner's name" error={errors.ownerName}><Input id="c-owner" value={form.ownerName} onChange={set("ownerName")} /></Field>
-            <Field id="c-email" label="Owner's email" error={errors.ownerEmail}><Input id="c-email" type="email" value={form.ownerEmail} onChange={set("ownerEmail")} /></Field>
+            <Field id="c-owner" label="Owner's name" required={mustHaveOwner} error={errors.ownerName}><Input id="c-owner" value={form.ownerName} onChange={set("ownerName")} /></Field>
+            <Field id="c-email" label="Owner's email" required={mustHaveOwner} error={errors.ownerEmail}><Input id="c-email" type="email" value={form.ownerEmail} onChange={set("ownerEmail")} /></Field>
           </div>
           {isOwner && (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -91,6 +99,12 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
           <Field id="c-notes" label="Internal notes" error={errors.notes}>
             <textarea id="c-notes" rows={3} value={form.notes} onChange={set("notes")} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />
           </Field>
+          {!client && (
+            <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
+              <input type="checkbox" className="mt-1" checked={form.createWorkspace} onChange={(e) => setForm((f) => ({ ...f, createWorkspace: e.target.checked }))} />
+              <span><span className="font-medium">Create their workspace and invite the owner</span><span className="block text-xs text-muted-foreground">Makes an empty workspace named after the client. The owner joins it when they sign up with the email above. No email is sent until you use Email welcome message.</span></span>
+            </label>
+          )}
           {form.status === "suspended" && client?.status !== "suspended" && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Suspending is recorded in the audit log. No data is deleted.</p>}
           {message && <p role="alert" className="text-sm text-destructive">{message}</p>}
           <div className="flex justify-end gap-2">
@@ -109,6 +123,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<ClientStatus | "all">("all");
   const [dialog, setDialog] = useState<ClientRecord | "new" | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -125,6 +140,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }
         </div>
         {canEdit && <Button onClick={() => setDialog("new")}><Plus /> Add client</Button>}
       </div>
+      {warning && <p role="alert" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">The client was saved, but its workspace could not be created: {warning} Open the client and use the AdFlo account card to finish.</p>}
       {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample clients. Connect the database to manage real ones.</p>}
 
       <div className="flex flex-wrap items-center gap-2">
@@ -147,9 +163,9 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border bg-card shadow-panel">
-          <table className="w-full min-w-[56rem] text-left text-sm">
+          <table className="w-full min-w-[64rem] text-left text-sm">
             <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-              <tr><th className="px-4 py-3 font-medium">Client</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Plan</th><th className="px-4 py-3 text-right font-medium">Seats</th><th className="px-4 py-3 text-right font-medium">Price / mo</th><th className="px-4 py-3 font-medium">Last sign-in</th><th className="px-4 py-3 font-medium">Owner</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr>
+              <tr><th className="px-4 py-3 font-medium">Client</th><th className="px-4 py-3 font-medium">Status</th><th className="px-4 py-3 font-medium">Plan</th><th className="px-4 py-3 text-right font-medium">Seats</th><th className="px-4 py-3 text-right font-medium">Price / mo</th><th className="px-4 py-3 font-medium">Last sign-in</th><th className="px-4 py-3 font-medium">Owner</th><th className="px-4 py-3 font-medium">Workspace</th><th className="px-4 py-3"><span className="sr-only">Actions</span></th></tr>
             </thead>
             <tbody className="divide-y">
               {rows.map((c) => (
@@ -161,6 +177,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }
                   <td className="px-4 py-3 text-right tabular-nums">{(() => { const p = effectivePriceCents(c, plans); return p == null ? "—" : formatMoney(p); })()}</td>
                   <td className="px-4 py-3 text-muted-foreground">{c.lastActive ? new Date(c.lastActive).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "—"}{isQuiet(c) && <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">Quiet</span>}</td>
                   <td className="px-4 py-3"><div>{c.ownerName || "—"}</div><div className="text-xs text-muted-foreground">{c.ownerEmail}</div></td>
+                  <td className="px-4 py-3">{c.workspaceId ? <span className="text-emerald-700">Created</span> : <Link href={`/control/clients/${c.id}`} className="text-amber-800 hover:underline">Not created</Link>}</td>
                   <td className="px-4 py-3 text-right">{canEdit && <Button variant="outline" size="sm" onClick={() => setDialog(c)} aria-label={`Edit ${c.name}`}>Edit</Button>}</td>
                 </tr>
               ))}
@@ -169,7 +186,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }
         </div>
       )}
 
-      {dialog && <ClientDialog client={dialog === "new" ? null : dialog} plans={plans} isOwner={isOwner} onClose={() => setDialog(null)} onSaved={() => { setDialog(null); router.refresh(); }} />}
+      {dialog && <ClientDialog client={dialog === "new" ? null : dialog} plans={plans} isOwner={isOwner} onClose={() => setDialog(null)} onSaved={(w) => { setDialog(null); setWarning(w); router.refresh(); }} />}
     </div>
   );
 }

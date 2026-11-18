@@ -6,6 +6,7 @@ import { Link2, Link2Off, Mail, Rocket, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { welcomeMessage } from "@/lib/control/workspace";
 import type { ClientRecord, UnlinkedWorkspace } from "@/lib/control/types";
+import { publicOrigin } from "@/lib/public-origin";
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" });
@@ -47,7 +48,7 @@ export function WorkspaceCard({ client, unlinked, canEdit }: { client: ClientRec
   }
 
   async function copyWelcome() {
-    const text = welcomeMessage({ clientName: client.name, ownerName: client.ownerName, ownerEmail: client.ownerEmail, signupUrl: `${window.location.origin}/signup`, expiresOn: expires });
+    const text = welcomeMessage({ clientName: client.name, ownerName: client.ownerName, ownerEmail: client.ownerEmail, signupUrl: `${publicOrigin()}/signup`, expiresOn: expires });
     try { await navigator.clipboard.writeText(text); setCopied(true); } catch { setCopied(false); setMsg({ ok: false, text: "Could not copy. Select the text from the invitation and copy it by hand." }); }
   }
 

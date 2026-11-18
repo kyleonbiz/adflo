@@ -28,7 +28,8 @@ export const GUIDE: Record<ChecklistStep, GuideStep> = {
     key: "workspace",
     why: "A workspace is where the client keeps their documents, folders and records.",
     how: [
-      "Find the AdFlo account card below.",
+      "If you left Create their workspace ticked when you added the client, this is already done.",
+      "Otherwise find the AdFlo account card below.",
       "Click Create workspace and invite owner. This makes an empty workspace named after the client, with the standard folders. Nobody from your team is added to it.",
       "If the client already made their own workspace, use Connect instead and pick it from the list.",
     ],

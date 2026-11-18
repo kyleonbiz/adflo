@@ -3,25 +3,37 @@ import { isQuiet, agreementState } from "@/lib/control/types";
 import { parseAcceptInput, parseAgreementInput, parseSendInput, isAgreementToken, describeAudit, isUuid, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
 import { effectivePriceCents, formatMoney } from "@/lib/control/types";
 
+const OWNER = { ownerName: "Pat Lee", ownerEmail: "pat@acme.com" };
+
 describe("parseClientInput", () => {
   it("accepts a minimal client and fills defaults", () => {
-    const r = parseClientInput({ name: "  Acme Roofing " });
-    expect(r).toEqual({ ok: true, value: { name: "Acme Roofing", status: "trial", plan: "standard", seatsLimit: 3, ownerName: "", ownerEmail: "", notes: "", priceOverrideCents: null, priceNote: "" } });
+    const r = parseClientInput({ name: "  Acme Roofing ", ...OWNER });
+    expect(r).toEqual({ ok: true, value: { name: "Acme Roofing", status: "trial", plan: "standard", seatsLimit: 3, ownerName: "Pat Lee", ownerEmail: "pat@acme.com", notes: "", priceOverrideCents: null, priceNote: "" } });
+  });
+  it("requires the name, the owner's name and the owner's email on a new client", () => {
+    const r = parseClientInput({});
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual(["name", "ownerEmail", "ownerName"]);
+    expect(parseClientInput({ name: "Ok Co", ownerName: "Pat Lee", ownerEmail: "  " }).ok).toBe(false);
+    expect(parseClientInput({ name: "Ok Co", ownerName: " ", ownerEmail: "pat@acme.com" }).ok).toBe(false);
   });
   it("rejects short names, bad status, negative or fractional seats and bad email", () => {
     const r = parseClientInput({ name: "A", status: "gone", seatsLimit: -1, ownerEmail: "nope" });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual(["name", "ownerEmail", "seatsLimit", "status"]);
-    expect(parseClientInput({ name: "Ok Co", seatsLimit: 2.5 }).ok).toBe(false);
+    if (!r.ok) expect(Object.keys(r.errors).sort()).toEqual(["name", "ownerEmail", "ownerName", "seatsLimit", "status"]);
+    expect(parseClientInput({ name: "Ok Co", ...OWNER, seatsLimit: 2.5 }).ok).toBe(false);
   });
   it("takes seats typed into a form field", () => {
-    const r = parseClientInput({ name: "Ok Co", seatsLimit: "12" });
+    const r = parseClientInput({ name: "Ok Co", ...OWNER, seatsLimit: "12" });
     expect(r.ok && r.value.seatsLimit).toBe(12);
   });
   it("lower-cases the owner's email and strips control characters", () => {
-    const r = parseClientInput({ name: "Ok\u0000 Co", ownerEmail: "Pat@Example.COM" });
+    const r = parseClientInput({ name: "Ok\u0000 Co", ownerName: "Pat", ownerEmail: "Pat@Example.COM" });
     expect(r.ok && r.value.name).toBe("Ok Co");
     expect(r.ok && r.value.ownerEmail).toBe("pat@example.com");
+  });
+  it("lets an edit leave the owner fields alone", () => {
+    expect(parseClientInput({ ownerEmail: "bad" }, true).ok).toBe(false);
   });
   it("only checks fields that were sent when partial", () => {
     expect(parseClientInput({ status: "suspended" }, true)).toEqual({ ok: true, value: { status: "suspended" } });
@@ -53,7 +65,7 @@ describe("money", () => {
     expect(effectivePriceCents({ plan: "gone", priceOverrideCents: null }, plans)).toBeNull();
   });
   it("reads a client price from the form", () => {
-    const r = parseClientInput({ name: "Ok Co", priceOverrideCents: "79.50" });
+    const r = parseClientInput({ name: "Ok Co", ...OWNER, priceOverrideCents: "79.50" });
     expect(r.ok && r.value.priceOverrideCents).toBe(7950);
     expect(parseClientInput({ name: "Ok Co", priceOverrideCents: "free" }).ok).toBe(false);
   });

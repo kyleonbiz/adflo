@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, CircleDollarSign, Download, FilePlus2, Hourglass, NotebookPen, Plus } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleDollarSign, Download, FilePlus2, Hourglass, NotebookPen, Plus, Send } from "lucide-react";
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -149,6 +149,21 @@ export function BillingPage({ clients, plans, today, sample, newForClient }: { c
   const commit = (next: BillingInvoice[], message = "") => { saveInvoices(next); setNotice(message); };
   const update = (id: string, patch: Partial<BillingInvoice>, message?: string) => commit(list.map((i) => (i.id === id ? { ...i, ...patch } : i)), message);
 
+  const [sending, setSending] = useState<string | null>(null);
+  /** Emails the invoice to the client's owner (the server looks the address up), then marks a draft as sent. */
+  async function sendInvoice(i: BillingInvoice) {
+    if (sample) { setNotice("This is a preview with sample clients, so nothing can be emailed."); return; }
+    const owner = clients.find((c) => c.id === i.clientId)?.ownerEmail ?? "";
+    if (!window.confirm(`Email ${i.number} (${formatMoney(i.amountCents)}) to ${owner || "the client's owner"}?`)) return;
+    setSending(i.id); setNotice("");
+    try {
+      const res = await fetch("/api/control/invoices/send", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId: i.clientId, number: i.number, description: i.description, amountCents: i.amountCents, issuedOn: i.issuedOn, dueOn: i.dueOn, note: i.note }) });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) { setNotice(json?.error?.message ?? "Could not send the invoice. Try again."); return; }
+      update(i.id, i.status === "draft" ? { status: "sent" } : {}, `${i.number} emailed to ${json.emailedTo}${i.status === "draft" ? " and marked sent" : ""}.`);
+    } catch { setNotice("Could not reach the server. Try again."); } finally { setSending(null); }
+  }
+
   function save(v: ReturnType<typeof okValue>) {
     const c = clients.find((x) => x.id === v.clientId)!;
     if (dlg?.kind === "edit") update(dlg.inv.id, { ...v, clientName: c.name }, `Saved ${dlg.inv.number}.`);
@@ -172,7 +187,8 @@ export function BillingPage({ clients, plans, today, sample, newForClient }: { c
       <div className="flex flex-wrap justify-end gap-1.5">
         <Button variant="outline" className={small} onClick={() => setDlg({ kind: "view", inv: i })} aria-label={`View ${i.number}`}>View</Button>
         {st === "draft" && <Button variant="outline" className={small} onClick={() => setDlg({ kind: "edit", inv: i })} aria-label={`Edit ${i.number}`}>Edit</Button>}
-        {st === "draft" && <Button className={small} onClick={() => update(i.id, { status: "sent" }, `${i.number} marked sent.`)} aria-label={`Mark ${i.number} sent`}>Mark sent</Button>}
+        {(st === "draft" || st === "sent" || st === "overdue") && <Button className={small} disabled={sending === i.id} onClick={() => sendInvoice(i)} aria-label={`Send ${i.number} by email`}><Send className="size-3" aria-hidden /> {sending === i.id ? "Sending…" : st === "draft" ? "Send" : "Resend"}</Button>}
+        {st === "draft" && <Button variant="outline" className={small} onClick={() => update(i.id, { status: "sent" }, `${i.number} marked sent.`)} aria-label={`Mark ${i.number} sent`}>Mark sent</Button>}
         {(st === "sent" || st === "overdue") && <Button className={small} onClick={() => setDlg({ kind: "paid", inv: i })} aria-label={`Mark ${i.number} paid`}>Mark paid</Button>}
         {(st === "draft" || st === "sent" || st === "overdue") && <Button variant="ghost" className={small} onClick={() => update(i.id, { status: "void" }, `${i.number} voided.`)} aria-label={`Void ${i.number}`}>Void</Button>}
         {st === "draft" && <Button variant="ghost" className={cn(small, "text-destructive")} onClick={() => commit(list.filter((x) => x.id !== i.id), `Deleted ${i.number}.`)} aria-label={`Delete ${i.number}`}>Delete</Button>}
@@ -197,7 +213,7 @@ export function BillingPage({ clients, plans, today, sample, newForClient }: { c
       </div>
 
       <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-        {sample && saved === null ? "Examples are shown until you make a change. " : ""}Invoices are saved in this browser only. AdFlo does not take payments or send email yet: send each invoice yourself, then mark it sent and paid here.
+        {sample && saved === null ? "Examples are shown until you make a change. " : ""}Invoices are saved in this browser only. AdFlo does not take payments. Use Send to email an invoice to the client&apos;s owner, then mark it paid here when the money arrives.
       </p>
       {notice && <p role="status" className="text-sm text-muted-foreground">{notice}</p>}
 

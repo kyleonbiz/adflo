@@ -43,6 +43,11 @@ const nextConfig: NextConfig = {
     return [
       // The bare domain always goes to the www address, where the app and the Control center (/control) live.
       { source: "/:path*", has: [{ type: "host", value: "adflo.pro" }], destination: "https://www.adflo.pro/:path*", permanent: true },
+      // On the live site the *.vercel.app addresses only forward to the real domain. API routes are left alone so cron
+      // jobs and webhooks that call the deployment address keep working.
+      ...(process.env.VERCEL_ENV === "production"
+        ? [{ source: "/((?!api/).*)", has: [{ type: "host" as const, value: ".*\\.vercel\\.app" }], destination: "https://www.adflo.pro/$1", permanent: false }]
+        : []),
       { source: "/landing", destination: "/", permanent: true },
       { source: "/demo", destination: "/app/overview", permanent: true },
       { source: "/demo/documents", destination: "/app", permanent: true },

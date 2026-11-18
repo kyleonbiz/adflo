@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, displayStatus, invoicesCsv, monthlyDrafts, nextNumber, parseDollars, summarize, validateInvoiceForm, type BillingInvoice } from "@/lib/control/billing";
+import { addDays, displayStatus, invoiceEmail, invoicesCsv, parseSendInvoice, monthlyDrafts, nextNumber, parseDollars, summarize, validateInvoiceForm, type BillingInvoice } from "@/lib/control/billing";
 import type { ClientRecord, Plan } from "@/lib/control/types";
 
 const inv = (o: Partial<BillingInvoice>): BillingInvoice => ({ id: "i", number: "AF-0001", clientId: "c1", clientName: "Acme", description: "AdFlo standard · November 2026", amountCents: 9900, issuedOn: "2026-11-01", dueOn: "2026-11-15", status: "sent", paidOn: null, method: "", note: "", ...o });
@@ -64,5 +64,24 @@ describe("csv", () => {
     expect(csv).toContain("'=cmd()");
     expect(csv).toContain('"a, b"');
     expect(csv).toContain(",99.00,");
+  });
+});
+
+describe("emailing an invoice", () => {
+  const ok = { clientId: "c1", number: "AF-0007", description: "AdFlo standard · November 2026", amountCents: 9900, issuedOn: "2026-11-01", dueOn: "2026-11-15", note: "" };
+  it("accepts a complete invoice and refuses an incomplete one", () => {
+    expect(parseSendInvoice(ok).ok).toBe(true);
+    expect(parseSendInvoice({ ...ok, amountCents: 0 }).ok).toBe(false);
+    expect(parseSendInvoice({ ...ok, number: "X" }).ok).toBe(false);
+    expect(parseSendInvoice({ ...ok, dueOn: "2026-10-01" }).ok).toBe(false);
+    expect(parseSendInvoice(null).ok).toBe(false);
+  });
+  it("writes the email to the owner's first name with the amount and due date in the subject", () => {
+    const r = parseSendInvoice(ok);
+    if (!r.ok) throw new Error("expected ok");
+    const m = invoiceEmail({ ...r.value, clientName: "Acme Roofing" }, "Pat Lee");
+    expect(m.subject).toBe("Invoice AF-0007 from AdFlo: $99 due 2026-11-15");
+    expect(m.text.startsWith("Hi Pat,")).toBe(true);
+    expect(m.text).toContain("To: Acme Roofing");
   });
 });

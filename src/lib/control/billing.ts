@@ -129,6 +129,29 @@ export function invoiceText(i: BillingInvoice): string {
   ].join("\n");
 }
 
+/** What the browser sends to email an invoice. Checked again on the server; the owner's email comes from the client record, never from here. */
+export function parseSendInvoice(raw: unknown): { ok: true; value: BillingInvoice } | { ok: false; message: string } {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const s = (v: unknown, max: number) => (typeof v === "string" && v.length <= max ? v.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, " ").trim() : "");
+  const clientId = s(r.clientId, 64);
+  const number = s(r.number, 20);
+  const description = s(r.description, 200);
+  const amountCents = typeof r.amountCents === "number" && Number.isInteger(r.amountCents) && r.amountCents > 0 && r.amountCents <= 100_000_000 ? r.amountCents : 0;
+  const issuedOn = s(r.issuedOn, 10);
+  const dueOn = s(r.dueOn, 10);
+  const form = validateInvoiceForm({ clientId, description, amount: (amountCents / 100).toFixed(2), issuedOn, dueOn, note: s(r.note, 500) }, [clientId]);
+  if (!/^AF-\d{4,}$/.test(number) || !form.ok || !amountCents) return { ok: false, message: "This invoice is incomplete. Check the amount, dates and description." };
+  return { ok: true, value: { ...form.value, id: "", number, clientName: "", status: "sent", paidOn: null, method: "" } };
+}
+
+/** The email for one invoice. `owner` is who it is addressed to; everything typed by staff is already one line. */
+export function invoiceEmail(i: BillingInvoice, owner: string): { subject: string; text: string } {
+  return {
+    subject: `Invoice ${i.number} from AdFlo: ${formatMoney(i.amountCents)} due ${i.dueOn}`,
+    text: [`Hi ${owner.trim().split(/\s+/)[0] || "there"},`, "", "Here is your invoice from AdFlo.", "", invoiceText(i), "", "Questions about this invoice? Just reply to this email."].join("\n"),
+  };
+}
+
 export const SAMPLE_INVOICES = (today: string): BillingInvoice[] => [
   { id: "s-1", number: "AF-0001", clientId: "sample-1", clientName: "Sample: Acme Roofing", description: `AdFlo standard · ${monthLabel(addDays(today, -35))}`, amountCents: 9900, issuedOn: addDays(today, -35), dueOn: addDays(today, -21), status: "paid", paidOn: addDays(today, -18), method: "Bank transfer", note: "" },
   { id: "s-2", number: "AF-0002", clientId: "sample-1", clientName: "Sample: Acme Roofing", description: `AdFlo standard · ${monthLabel(addDays(today, -5))}`, amountCents: 9900, issuedOn: addDays(today, -5), dueOn: addDays(today, 9), status: "sent", paidOn: null, method: "", note: "" },

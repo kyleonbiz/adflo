@@ -15,6 +15,12 @@ export async function sendOnboardingEmail(m: { to: string; subject: string; text
   await sendMail({ from, replyTo: from, ...m });
 }
 
+/** Sends one invoice email. From BILLING_FROM when set (it must be an alias of the SMTP account), otherwise from the onboarding@ alias. */
+export async function sendBillingEmail(m: { to: string; subject: string; text: string }): Promise<void> {
+  const from = process.env.BILLING_FROM || process.env.ONBOARDING_FROM || ONBOARDING_FROM_DEFAULT;
+  await sendMail({ from, replyTo: from, ...m });
+}
+
 /** Sends one plain-text email through the SMTP mailbox. Throws if the mailbox is not set up or sending fails. */
 export async function sendMail(m: { from: string; replyTo?: string; to: string; subject: string; text: string }): Promise<void> {
   const user = process.env.SMTP_USER;
