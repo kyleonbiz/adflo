@@ -176,6 +176,30 @@ describe("cleanup route (CRON_SECRET)", () => {
     // The x-cron-secret header works too.
     expect((await cleanupPost(req({ "x-cron-secret": SECRET }))).status).toBe(200);
   });
+  it("records each run so the Monitoring page can show it ran, with counts only", async () => {
+    vi.stubEnv("CRON_SECRET", SECRET);
+    const upsert = vi.fn(async () => ({ error: null }));
+    const from = vi.fn(() => ({ upsert }));
+    mocks.admin = {
+      rpc: vi.fn(async () => ({ data: ["ws/secret-name.pdf"], error: null })),
+      storage: { from: vi.fn(() => ({ remove: vi.fn(async () => ({ data: [], error: null })) })) },
+      from,
+    };
+    expect((await cleanupGet(req({ authorization: `Bearer ${SECRET}` }, "GET"))).status).toBe(200);
+    expect(from).toHaveBeenCalledWith("job_runs");
+    const row = (upsert.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(row).toMatchObject({ job: "cleanup-uploads", ok: true });
+    expect(JSON.stringify(row)).not.toContain("secret-name");
+  });
+  it("still succeeds when recording the run fails", async () => {
+    vi.stubEnv("CRON_SECRET", SECRET);
+    mocks.admin = {
+      rpc: vi.fn(async () => ({ data: [], error: null })),
+      storage: { from: vi.fn(() => ({ remove: vi.fn() })) },
+      from: vi.fn(() => { throw new Error("db down"); }),
+    };
+    expect((await cleanupGet(req({ authorization: `Bearer ${SECRET}` }, "GET"))).status).toBe(200);
+  });
   it("counts storage failures instead of hiding them", async () => {
     vi.stubEnv("CRON_SECRET", SECRET);
     mocks.admin = {

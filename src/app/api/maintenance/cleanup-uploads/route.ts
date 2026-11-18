@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { DOCUMENTS_BUCKET } from "@/lib/dms/supabase/storage";
+import { recordJobRun } from "@/lib/control/job-runs";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -44,7 +45,10 @@ async function run(req: Request) {
 
   const hours = pendingMaxAgeHours();
   const { data, error } = await admin.rpc("dms_cleanup_stale_uploads", { p_older_than: `${hours} hours` });
-  if (error) return reply({ ok: false, error: "Cleanup failed." }, 500);
+  if (error) {
+    await recordJobRun("cleanup-uploads", false, "The database cleanup failed.");
+    return reply({ ok: false, error: "Cleanup failed." }, 500);
+  }
 
   const keys = (data as string[] | null) ?? [];
   let objectsRemoved = 0;
@@ -55,6 +59,7 @@ async function run(req: Request) {
     if (res.error) objectsFailed += batch.length;
     else objectsRemoved += batch.length;
   }
+  await recordJobRun("cleanup-uploads", objectsFailed === 0, `${keys.length} stale upload${keys.length === 1 ? "" : "s"} found, ${objectsRemoved} file${objectsRemoved === 1 ? "" : "s"} removed${objectsFailed ? `, ${objectsFailed} could not be removed` : ""}.`);
   // Counts only: keys and file names are never returned or logged.
   return reply({ ok: true, olderThanHours: hours, staleVersions: keys.length, objectsRemoved, objectsFailed }, 200);
 }
