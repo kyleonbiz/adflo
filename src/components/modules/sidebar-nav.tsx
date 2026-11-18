@@ -95,7 +95,18 @@ function NavGroup({ item, base, active, onNavigate, collapsed }: { item: Item; b
   );
 }
 
-/** The vertical module menu: Dashboard, AI Assistant and the working modules, then Settings apart at the bottom. */
+/**
+ * How the menu is grouped, top to bottom: home, then where records live, then day-to-day work, then looking back. Anything not
+ * listed here (a service added later) lands in a last group, so it is never lost.
+ */
+const GROUPS: { label: string | null; ids: string[] }[] = [
+  { label: null, ids: ["overview", "assistant"] },
+  { label: "Records", ids: ["documents", "invoices", "licenses", "crm"] },
+  { label: "Work", ids: ["projects", "forms", "calendar"] },
+  { label: "Insights", ids: ["reporting", "activity"] },
+];
+
+/** The vertical module menu: Dashboard, AI Assistant and the working modules in labelled groups, then Settings apart at the bottom. */
 export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/app"; onNavigate?: () => void; collapsed?: boolean }) {
   const pathname = usePathname();
   const features = usePlanFeatures();
@@ -110,6 +121,12 @@ export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/ap
   const calendar: Item = { id: "calendar", label: "Calendar", href: `${base}/calendar` };
   const activity: Item = { id: "activity", label: "Activity", href: `${base}/activity` };
 
+  const byId = new Map<string, Item>([overview, assistant, calendar, activity, ...modules].map((m) => [m.id, m]));
+  const grouped = new Set(GROUPS.flatMap((g) => g.ids));
+  const sections = [...GROUPS, { label: null, ids: [...byId.keys()].filter((id) => !grouped.has(id)) }]
+    .map((g) => ({ label: g.label, items: g.ids.map((id) => byId.get(id)).filter((m): m is Item => !!m && itemAllowed(features, m.id)) }))
+    .filter((g) => g.items.length > 0);
+
   return (
     <div className={cn("flex h-full flex-col gap-4 p-4", collapsed && "items-center px-2")}>
       {collapsed ? (
@@ -120,9 +137,16 @@ export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/ap
         <Brand wordmark light href={`${base}/overview`} className="w-44 px-1" />
       )}
       <nav aria-label="Services" className="flex min-h-0 w-full flex-1 flex-col">
-        <ul className="min-h-0 space-y-2 overflow-y-auto">
-          {[overview, assistant, ...modules, calendar, activity].filter((item) => itemAllowed(features, item.id)).map((item) => (
-            <li key={item.id}><NavGroup item={item} base={base} active={isActive(pathname, item.href, base) || (item.id === "crm" && isActive(pathname, `${base}/vendors`, base))} onNavigate={onNavigate} collapsed={collapsed} /></li>
+        <ul className="min-h-0 overflow-y-auto">
+          {sections.map((g, i) => (
+            <li key={g.label ?? `group-${i}`} className={cn(i > 0 && (collapsed ? "mt-2 border-t border-white/10 pt-2" : "mt-0.5"))}>
+              {g.label && !collapsed && <p id={`nav-group-${g.label}`} className="px-3 pb-0.5 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{g.label}</p>}
+              <ul aria-labelledby={g.label && !collapsed ? `nav-group-${g.label}` : undefined} className="space-y-0.5">
+                {g.items.map((item) => (
+                  <li key={item.id}><NavGroup item={item} base={base} active={isActive(pathname, item.href, base) || (item.id === "crm" && isActive(pathname, `${base}/vendors`, base))} onNavigate={onNavigate} collapsed={collapsed} /></li>
+                ))}
+              </ul>
+            </li>
           ))}
         </ul>
         <div className="mt-auto space-y-3 border-t border-white/10 pt-3">

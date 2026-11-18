@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 
 const NAMES = [
   "Dashboard", "AI Assistant", "Documents", "Invoices", "Licenses & Renewals", "Contacts", "Tasks", "Forms & Paperwork",
-  "Reporting", "Calendar", "Activity", "Settings",
+  "Calendar", "Reporting", "Activity", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
 
@@ -23,7 +23,7 @@ test.describe("module sidebar on a wide screen", () => {
     for (const b of boxes) expect(b!.x + b!.width).toBeLessThanOrEqual(270); // inside a sidebar about 256px wide, no sideways scrolling
 
     const gapBeforeSetup = boxes[11]!.y - (boxes[10]!.y + boxes[10]!.height);
-    const gapBetweenOthers = boxes[6]!.y - (boxes[5]!.y + boxes[5]!.height);
+    const gapBetweenOthers = boxes[3]!.y - (boxes[2]!.y + boxes[2]!.height); // two neighbours in the same group
     expect(gapBeforeSetup).toBeGreaterThan(gapBetweenOthers + 20); // set apart
     const viewport = page.viewportSize()!;
     expect(boxes[11]!.y + boxes[11]!.height).toBeGreaterThan(viewport.height - 120); // down at the bottom
