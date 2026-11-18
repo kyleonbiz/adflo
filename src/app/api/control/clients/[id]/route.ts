@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
+import { clientDeleteError } from "@/lib/control/client-delete";
 import { CLIENT_COLUMNS, toClient } from "@/lib/control/data";
 import { parseClientInput } from "@/lib/control/validation";
 
@@ -35,4 +36,21 @@ export function PATCH(req: Request, ctx: RouteContext<"/api/control/clients/[id]
     if (!data) return fail(404, "not_found", "Client not found.");
     return NextResponse.json({ ok: true, client: toClient(data) });
   });
+}
+
+/**
+ * Owner deletes a client record (a test, or one made by mistake). The database function refuses while the client's workspace is
+ * still connected or if the client accepted an agreement (cancel them instead). It never touches the workspace or its data.
+ */
+export function DELETE(req: Request, ctx: RouteContext<"/api/control/clients/[id]">) {
+  return staffRoute(req, async ({ supabase }) => {
+    const { id } = await ctx.params;
+    if (!UUID.test(id)) return fail(404, "not_found", "That client no longer exists.");
+    const { error } = await supabase.rpc("control_delete_client", { p_client: id });
+    if (error) {
+      const e = clientDeleteError(error.code, error.message);
+      return fail(e.status, "client", e.message);
+    }
+    return NextResponse.json({ ok: true });
+  }, "owner");
 }

@@ -66,6 +66,7 @@ select id, 'owner', 'Your Name', email from auth.users where email = 'you@exampl
 Two-factor (an authenticator app) is required for staff and enforced in the database: a password-only session sees no
 staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
 
+* **Deleting a client**: the Owner can delete a client record (a test, or one made by mistake) from its page, by typing its name to confirm. It removes the record with its onboarding steps, sent agreements and reminder log; support tickets are kept, unlinked. The client's AdFlo workspace and its data are never touched, so a connected workspace must be disconnected first, and a client who accepted an agreement cannot be deleted (cancel them instead). The deletion is audit-logged.
 * **Clients**: status, plan, seats in use (counted by a database function that exposes only counts and last sign-in),
   price, and a detail page with the onboarding checklist.
 * **Plans & pricing**: the Owner sets plan prices and seats; only the Owner can give a client their own price.
