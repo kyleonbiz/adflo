@@ -3,8 +3,17 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { THEME_INIT_SCRIPT } from "@/lib/theme-script";
+import { CANONICAL_ORIGIN } from "@/lib/site-url";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(CANONICAL_ORIGIN),
+  openGraph: {
+    type: "website",
+    siteName: "AdFlo",
+    title: "AdFlo · Administrative management platform",
+    description: "Records, compliance deadlines, and equipment and asset tracking for contractors and property managers, in one place.",
+  },
+  twitter: { card: "summary_large_image" },
   title: {
     default: "AdFlo · Administrative management platform",
     template: "%s · AdFlo",
