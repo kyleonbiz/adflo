@@ -13,3 +13,14 @@ describe("agreementDeleteError", () => {
     expect(other.message).not.toMatch(/relation/);
   });
 });
+
+import { sentAgreementDeleteError } from "@/lib/control/agreements";
+
+describe("sentAgreementDeleteError", () => {
+  it("shows the messages written for staff and hides anything unexpected", () => {
+    expect(sentAgreementDeleteError("22023", "The client has accepted this agreement.").status).toBe(409);
+    expect(sentAgreementDeleteError("P0002", undefined)).toEqual({ status: 404, message: "That agreement is no longer on this client." });
+    expect(sentAgreementDeleteError("42501", "x").status).toBe(403);
+    expect(sentAgreementDeleteError("XX000", "secret detail").message).not.toMatch(/secret/);
+  });
+});

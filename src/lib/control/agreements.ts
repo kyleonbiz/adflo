@@ -5,3 +5,11 @@ export function agreementDeleteError(code: string | undefined, message: string |
   if (code === "P0002") return { status: 404, message: message || "That agreement no longer exists." };
   return { status: 500, message: "Something went wrong. Try again." };
 }
+
+/** Same for withdrawing an agreement from one client (Support and the Owner may). */
+export function sentAgreementDeleteError(code: string | undefined, message: string | undefined): { status: number; message: string } {
+  if (code === "42501") return { status: 403, message: "Your role cannot do this, or you have not entered your two-factor code." };
+  if (code === "22023") return { status: 409, message: message || "That agreement cannot be deleted." };
+  if (code === "P0002") return { status: 404, message: message || "That agreement is no longer on this client." };
+  return { status: 500, message: "Something went wrong. Try again." };
+}

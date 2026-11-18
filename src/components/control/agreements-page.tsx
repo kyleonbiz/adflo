@@ -13,20 +13,43 @@ import { agreementState, type AgreementTemplate, type SentAgreement } from "@/li
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" });
 const STATE = { accepted: ["success", "Accepted"], waiting: ["warning", "Waiting"], expired: ["muted", "Expired"] } as const;
 
-export function SentList({ sent, showClient }: { sent: SentAgreement[]; showClient?: boolean }) {
+export function SentList({ sent, showClient, canDelete }: { sent: SentAgreement[]; showClient?: boolean; canDelete?: boolean }) {
   if (sent.length === 0) return <p className="text-sm text-muted-foreground">Nothing sent yet.</p>;
+  return <ul className="divide-y">{sent.map((a) => <SentRow key={a.id} a={a} showClient={showClient} canDelete={!!canDelete} />)}</ul>;
+}
+
+/** One sent agreement. Unless the client accepted it, staff can withdraw it (two-step); its link then stops working. */
+function SentRow({ a, showClient, canDelete }: { a: SentAgreement; showClient?: boolean; canDelete: boolean }) {
+  const router = useRouter();
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [variant, label] = STATE[agreementState(a)];
+  async function remove() {
+    setBusy(true); setError("");
+    try {
+      const res = await fetch(`/api/control/agreements/sent/${a.id}`, { method: "DELETE" });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.ok) { router.refresh(); return; }
+      setError(json?.error?.message ?? "Could not delete it. Try again."); setConfirm(false);
+    } catch { setError("Could not reach the server. Try again."); setConfirm(false); } finally { setBusy(false); }
+  }
   return (
-    <ul className="divide-y">
-      {sent.map((a) => {
-        const [variant, label] = STATE[agreementState(a)];
-        return (
-          <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm">
-            <span className="min-w-0">{showClient && <Link href={`/control/clients/${a.clientId}`} className="font-medium hover:underline">{a.clientName} · </Link>}{a.title} <span className="text-muted-foreground">v{a.version} · sent {day(a.sentAt)}{a.acceptedAt ? ` · accepted by ${a.acceptedName} on ${day(a.acceptedAt)}` : ""}</span></span>
-            <Badge variant={variant}>{label}</Badge>
-          </li>
-        );
-      })}
-    </ul>
+    <li className="py-2.5 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="min-w-0">{showClient && <Link href={`/control/clients/${a.clientId}`} className="font-medium hover:underline">{a.clientName} · </Link>}{a.title} <span className="text-muted-foreground">v{a.version} · sent {day(a.sentAt)}{a.acceptedAt ? ` · accepted by ${a.acceptedName} on ${day(a.acceptedAt)}` : ""}</span></span>
+        <span className="flex items-center gap-2">
+          <Badge variant={variant}>{label}</Badge>
+          {canDelete && !a.acceptedAt && !confirm && <Button type="button" variant="ghost" size="sm" onClick={() => { setConfirm(true); setError(""); }} aria-label={`Delete ${a.title} version ${a.version} sent ${day(a.sentAt)}`}>Delete</Button>}
+        </span>
+      </div>
+      {confirm && (
+        <p className="mt-2 flex flex-wrap items-center gap-2">Delete this sent agreement? Its link stops working. The agreement itself stays published.
+          <Button type="button" variant="destructive" size="sm" disabled={busy} onClick={remove}>{busy ? "Deleting…" : "Delete it"}</Button>
+          <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => setConfirm(false)}>Keep</Button></p>
+      )}
+      {error && <p role="alert" className="mt-1 text-xs text-destructive">{error}</p>}
+    </li>
   );
 }
 
@@ -98,7 +121,7 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
         </div>
       )}
       {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
-      <div className="mt-4"><SentList sent={sent} /></div>
+      <div className="mt-4"><SentList sent={sent} canDelete={canEdit} /></div>
     </section>
   );
 }
