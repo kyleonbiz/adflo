@@ -290,3 +290,19 @@ Two throwaway users and workspaces were created inside a single transaction that
 - A signed-out visitor gets `permission denied` on workspaces, documents, staff members, `create_workspace` and `dms_begin_upload`.
 Not covered: the signed-in staff path with a real authenticator, Storage and signed-URL behaviour, and the Auth cookie settings (still
 "Needs a hosted project to verify" items 1–4). This was the test project, not production: repeat the same checks there once it exists.
+
+### Security headers check, 2026-11-18 (local production build; the live URL is still to do)
+`next build && next start` with the hosted Supabase URL set, requests to `/landing`, `/login`, `/app/overview` (redirect), `/control` (redirect),
+`/api/dms/bootstrap` (401), `/share/nope` (404) and an unknown path. **Every response, including redirects, errors and 404s, carried:**
+`Strict-Transport-Security: max-age=63072000; includeSubDomains`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
+`Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy: camera=(), microphone=(), geolocation=()`,
+`Cross-Origin-Opener-Policy: same-origin`, the static `Content-Security-Policy` (`frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'`)
+and the nonce policy as `Content-Security-Policy-Report-Only`. No `X-Powered-By`. Pages are `private, no-cache, no-store`; API JSON is `no-store`.
+- Notes: HSTS is `includeSubDomains`, so every subdomain of your domain must serve HTTPS before it is sent (it is only honoured over HTTPS).
+  Not added: `preload` (a one-way commitment, do it later if wanted). The 401 that the proxy returns for signed-out API calls has no
+  `Cache-Control` (a body-less status, no data).
+- Still to check on the live URL: the host's own headers (Vercel adds some), that HTTP redirects to HTTPS, `www` redirect, and that the
+  enforced CSP matches (`CSP_ROLLOUT.md`). An external scanner such as securityheaders.com or the Mozilla Observatory gives a second opinion.
+- **Dependency finding:** a new advisory landed against Next.js 16.2.0–16.4.4 (cache leaks with `use cache` / `unstable_cache` and root
+  params). AdFlo uses neither, so it was not exploitable, but `next` and `eslint-config-next` are now pinned to 16.4.6. `npm audit --omit=dev`: 0.
+  Unit tests, lint, a production build and the layout and demo e2e specs pass.
