@@ -33,6 +33,10 @@ export interface ClientRecord {
   lastActive: string | null;
   /** Onboarding steps that are done. */
   checklist: string[];
+  /** Agreements sent to this client that nobody has accepted yet. */
+  agreementsWaiting?: number;
+  /** When staff last sent this client's owner a reminder from the onboarding tracker. */
+  lastReminderAt?: string | null;
 }
 
 export const CHECKLIST_STEPS = [

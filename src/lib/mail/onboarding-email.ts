@@ -4,14 +4,14 @@ export const ONBOARDING_FROM_DEFAULT = "AdFlo Onboarding <onboarding@adflo.pro>"
 const oneLine = (v: string) => v.replace(/[\r\n\u0000-\u001f]+/g, " ").trim();
 
 /** The email that carries a client's agreement link. Names are flattened to one line so they cannot add headers or lines. */
-export function agreementEmail(d: { clientName: string; ownerName: string; link: string }): { subject: string; text: string } {
+export function agreementEmail(d: { clientName: string; ownerName: string; link: string; reminder?: boolean }): { subject: string; text: string } {
   const owner = oneLine(d.ownerName) || "there";
   return {
-    subject: "Your AdFlo agreement",
+    subject: `${d.reminder ? "Reminder: " : ""}Your AdFlo agreement`,
     text: [
       `Hi ${owner},`,
       "",
-      `Welcome to AdFlo. Before ${oneLine(d.clientName) || "your team"} gets started, please review and accept your agreement:`,
+      `${d.reminder ? "A friendly reminder: you have an agreement waiting." : "Welcome to AdFlo."} Before ${oneLine(d.clientName) || "your team"} gets started, please review and accept your agreement:`,
       "",
       d.link,
       "",
@@ -25,15 +25,15 @@ export function agreementEmail(d: { clientName: string; ownerName: string; link:
 }
 
 /** One email that carries several agreement links (for example Terms and Privacy Policy). One link falls back to the single-agreement email. */
-export function agreementsEmail(d: { clientName: string; ownerName: string; items: { title: string; link: string }[] }): { subject: string; text: string } {
-  if (d.items.length === 1) return agreementEmail({ clientName: d.clientName, ownerName: d.ownerName, link: d.items[0].link });
+export function agreementsEmail(d: { clientName: string; ownerName: string; items: { title: string; link: string }[]; reminder?: boolean }): { subject: string; text: string } {
+  if (d.items.length === 1) return agreementEmail({ clientName: d.clientName, ownerName: d.ownerName, link: d.items[0].link, reminder: d.reminder });
   const owner = oneLine(d.ownerName) || "there";
   return {
-    subject: "Your AdFlo agreements",
+    subject: `${d.reminder ? "Reminder: " : ""}Your AdFlo agreements`,
     text: [
       `Hi ${owner},`,
       "",
-      `Welcome to AdFlo. Before ${oneLine(d.clientName) || "your team"} gets started, please review and accept each of these:`,
+      `${d.reminder ? "A friendly reminder: you have agreements waiting." : "Welcome to AdFlo."} Before ${oneLine(d.clientName) || "your team"} gets started, please review and accept each of these:`,
       "",
       ...d.items.flatMap((i) => [oneLine(i.title), i.link, ""]),
       "Each link is for you only and works for 30 days. Type your full name and email on each page to accept.",

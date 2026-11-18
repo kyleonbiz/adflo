@@ -22,12 +22,19 @@ export async function loadClients(supabase: SupabaseClient): Promise<ClientRecor
   if (error) throw new Error("Could not load clients.");
   const clients = (data as ClientRow[]).map(toClient);
   // Seats in use and last sign-in come from a function that exposes only those figures; the checklist is a plain table.
-  const [usage, steps] = await Promise.all([supabase.rpc("control_client_usage"), supabase.from("client_checklist").select("client_id, step")]);
+  const [usage, steps, waiting, reminders] = await Promise.all([
+    supabase.rpc("control_client_usage"),
+    supabase.from("client_checklist").select("client_id, step"),
+    supabase.from("agreements_sent").select("client_id").is("accepted_at", null),
+    supabase.from("client_reminders").select("client_id, sent_at").order("sent_at", { ascending: false }).limit(1000),
+  ]);
   type Usage = { client_id: string; seats_used: number; last_active: string | null };
   const u = new Map<string, Usage>(((usage.data ?? []) as Usage[]).map((x) => [x.client_id, x]));
   for (const c of clients) {
     const row = u.get(c.id);
     if (row && c.workspaceId) { c.seatsUsed = Number(row.seats_used); c.lastActive = row.last_active; }
+    c.agreementsWaiting = ((waiting.data ?? []) as { client_id: string }[]).filter((w) => w.client_id === c.id).length;
+    c.lastReminderAt = ((reminders.data ?? []) as { client_id: string; sent_at: string }[]).find((r) => r.client_id === c.id)?.sent_at ?? null;
     c.checklist = (steps.data ?? []).filter((s: { client_id: string }) => s.client_id === c.id).map((s: { step: string }) => s.step);
   }
   return clients;

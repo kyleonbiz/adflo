@@ -83,6 +83,8 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
   (shown once; only its hash is stored; valid 30 days). The client's account card has "Email welcome message" (also from `onboarding@adflo.pro`, ticks the Welcome message sent step). Staff can tick "Also email it" to send it to the client's owner from `onboarding@adflo.pro`; with two or more agreements published, "Send all" creates a link for each and emails them together in one message; if email is not set up, they copy the links into their own email instead. The client opens `/agreement/<secret>`, types their name and email and accepts; the acceptance, who
   and when, is recorded and shown on the client's timeline. Sending also ticks the onboarding step.
 
+* **Onboarding tracker** (`/control/onboarding`): every new client's setup progress, with stalled ones first. A **Remind** button on each row emails the client's owner from `onboarding@adflo.pro` about their next outstanding step: to sign up (repeats the welcome) or to accept an agreement (fresh links; older unaccepted links are withdrawn). It asks first, allows one reminder per client per day, and shows when they were last reminded. Reminders are logged to the staff audit log.
+
 * **Monitoring**: health checks (database answers, error logging, cron secret, assistant key, dev mode), a log of server
   errors, and which clients have documents that could not be indexed or recent errors. The log stores only the error
   class and route, never messages or client data, and needs `SUPABASE_SERVICE_ROLE_KEY` on the server to record anything.

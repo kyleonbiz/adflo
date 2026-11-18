@@ -13,7 +13,7 @@ export default function OnboardingRoute() {
   const today = new Date().toISOString().slice(0, 10);
   return renderControlShell("/control/onboarding", async (ctx) =>
     ctx.mode === "live"
-      ? <OnboardingPage rows={onboardingRows(await loadClients(ctx.supabase), today)} canAdd={canEditClients(ctx.staff.role)} />
+      ? <OnboardingPage rows={onboardingRows(await loadClients(ctx.supabase), today)} canAdd={canEditClients(ctx.staff.role)} canRemind={canEditClients(ctx.staff.role)} />
       : <OnboardingPage rows={onboardingRows(SAMPLE_CLIENTS, today)} canAdd={false} sample />,
   );
 }
