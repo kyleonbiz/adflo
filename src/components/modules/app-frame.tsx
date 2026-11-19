@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ViewTransition } from "react";
 import { Menu, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Brand } from "@/components/brand";
@@ -23,12 +23,12 @@ export function AppFrame({ base, topRight, children, variant = "app", navBadges 
   return (
     <div className="app-mesh min-h-dvh lg:flex">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-float focus:outline-none focus:ring-2 focus:ring-ring">Skip to content</a>
-      <aside id="sidebar" className={cn("hidden sidebar-glass transition-[width] duration-200 lg:sticky lg:top-0 lg:block lg:h-dvh lg:shrink-0 lg:overflow-y-auto", collapsed ? "lg:w-[4.5rem]" : "lg:w-64")}>
+      <aside id="sidebar" className={cn("vt-sidebar hidden sidebar-glass transition-[width] duration-200 lg:sticky lg:top-0 lg:block lg:h-dvh lg:shrink-0 lg:overflow-y-auto", collapsed ? "lg:w-[4.5rem]" : "lg:w-64")}>
         <Nav base={base as "/app"} collapsed={collapsed} badges={navBadges} />
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="glass-header sticky top-0 z-30">
+        <header className="vt-header glass-header sticky top-0 z-30">
           <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6">
             <div className="flex min-w-0 items-center gap-2 lg:hidden">
               <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
@@ -59,7 +59,8 @@ export function AppFrame({ base, topRight, children, variant = "app", navBadges 
           </div>
           {!control && <div className="px-4 pb-3 sm:hidden"><GlobalSearch /></div>}
         </header>
-        <main id="main-content" tabIndex={-1} className="page-rise mx-auto max-w-6xl px-3 py-6 outline-none sm:px-6">{children}</main>
+        {/* The menu and header keep their place; only this page content crossfades and rises into the next page. */}
+        <ViewTransition name="app-main"><main id="main-content" tabIndex={-1} className="page-rise mx-auto max-w-6xl px-3 py-6 outline-none sm:px-6">{children}</main></ViewTransition>
       </div>
     </div>
   );

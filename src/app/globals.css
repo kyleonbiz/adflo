@@ -167,6 +167,19 @@
 .page-rise > div > *:nth-child(5) { animation-delay: 200ms; }
 .page-rise > div > *:nth-child(n + 6) { animation-delay: 250ms; }
 
+/* Page changes: the menu and top bar hold still while the page content fades out quickly and the next one fades in and rises. */
+.vt-sidebar { view-transition-name: app-sidebar; }
+.vt-header { view-transition-name: app-header; }
+@keyframes vt-out { to { opacity: 0; transform: translateY(-6px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(10px); } }
+::view-transition-old(app-main) { animation: vt-out 0.16s cubic-bezier(0.4, 0, 1, 1) both; }
+::view-transition-new(app-main) { animation: vt-in 0.34s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both; }
+::view-transition-group(app-sidebar), ::view-transition-group(app-header) { animation-duration: 0.2s; }
+/* The page's own blocks already rise in turn, so the crossfade is only the page as a whole. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
+
 /* The bell's count pulses a few times when something new has arrived. */
 @keyframes bell-pulse {
   0%, 100% { box-shadow: 0 0 0 0 rgb(220 38 38 / 0.45); }
