@@ -340,7 +340,8 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
                       >
                         <ChevronDown className={`size-4 transition-transform ${isOpen ? "rotate-180" : ""}`} aria-hidden />
                       </button>
-                      <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground">{initials(c.name)}</span>
+                      {/* Decorative, and on a phone it pushes the name over the action buttons, so it only shows from sm up. */}
+                      <span aria-hidden className="hidden size-9 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground sm:flex">{initials(c.name)}</span>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                           <p className="truncate font-medium"><Link href={`/app/contacts/${c.id}`} className={linkClass}>{c.name}</Link></p>
