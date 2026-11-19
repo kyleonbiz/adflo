@@ -3,8 +3,9 @@ import { NextRequest } from "next/server";
 
 let currentUser: { id: string; email?: string } | null = null;
 vi.mock("@supabase/ssr", () => ({
-  createServerClient: () => ({ auth: { getUser: async () => ({ data: { user: currentUser } }) } }),
+  createServerClient: (_url: string, _key: string, opts: { cookieOptions?: { name?: string } }) => { cookieNames.push(opts.cookieOptions?.name); return ({ auth: { getUser: async () => ({ data: { user: currentUser } }) } }); },
 }));
+const cookieNames: (string | undefined)[] = [];
 
 const supa = {
   user: null as null | { id: string; email: string },
@@ -81,6 +82,18 @@ describe("proxy / route gating", () => {
       const res = await updateSession(req(path));
       expect(new URL(res.headers.get("location")!).pathname).toBe("/app/overview");
     }
+  });
+  it("reads the staff session for the Control center and the client session for the app, and tells the server which", async () => {
+    withSupabase();
+    cookieNames.length = 0;
+    currentUser = { id: "u1" };
+    const control = req("/control/clients");
+    await updateSession(control);
+    const app = req("/app/overview", { headers: { "x-adflo-surface": "control" } }); // a browser cannot choose its own surface
+    await updateSession(app);
+    expect(cookieNames).toEqual(["adflo-staff-auth-token", undefined]);
+    expect(control.headers.get("x-adflo-surface")).toBe("control");
+    expect(app.headers.get("x-adflo-surface")).toBe("app");
   });
   it("is a pass-through when Supabase is not configured (dev mode)", async () => {
     expect((await updateSession(req("/app"))).status).toBe(200);

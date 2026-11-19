@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "./env";
+import { cookieOptionsFor, SURFACE_HEADER, surfaceOfPath } from "./surface";
 
 /**
  * Refreshes the Supabase session cookie and gates private routes.
@@ -8,10 +9,14 @@ import { getSupabaseEnv } from "./env";
  */
 export async function updateSession(request: NextRequest) {
   const env = getSupabaseEnv();
+  // Tell the server code which session this request belongs to, whatever the browser claimed.
+  const surface = surfaceOfPath(request.nextUrl.pathname);
+  request.headers.set(SURFACE_HEADER, surface);
   if (!env) return NextResponse.next({ request });
 
   let response = NextResponse.next({ request });
   const supabase = createServerClient(env.url, env.anonKey, {
+    cookieOptions: cookieOptionsFor(surface),
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(list) {

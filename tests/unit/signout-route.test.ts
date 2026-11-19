@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/lib/supabase/env", () => ({ getSupabaseEnv: () => null }));
-vi.mock("@/lib/supabase/server", () => ({ createServerSupabase: async () => ({ auth: { signOut: async () => undefined } }) }));
+const seen: { surface?: string; scope?: string }[] = [];
+vi.mock("@/lib/supabase/env", () => ({ getSupabaseEnv: () => ({ url: "https://x.supabase.co", anonKey: "k" }) }));
+vi.mock("@/lib/supabase/server", () => ({ createServerSupabase: async (surface?: string) => ({ auth: { signOut: async (o?: { scope?: string }) => { seen.push({ surface, scope: o?.scope }); } } }) }));
 import { POST } from "@/app/auth/signout/route";
 
 const post = (fields: Record<string, string>) => {
@@ -11,6 +12,12 @@ const post = (fields: Record<string, string>) => {
 const where = (r: Response) => { const u = new URL(r.headers.get("location")!); return u.pathname + u.search; };
 
 describe("POST /auth/signout", () => {
+  it("signs out only the side asked for, and only this session", async () => {
+    seen.length = 0;
+    await post({ to: "control" });
+    await post({});
+    expect(seen).toEqual([{ surface: "control", scope: "local" }, { surface: "app", scope: "local" }]);
+  });
   it("goes to the sign-in screen, or the staff one", async () => {
     expect(where(await post({}))).toBe("/login");
     expect(where(await post({ to: "control" }))).toBe("/control/login");

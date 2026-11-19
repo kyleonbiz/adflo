@@ -334,6 +334,10 @@ UI components ──► useDocumentManager (state) ──► DmsApi interface
   RPC (download, share, tags).
   Admins can read it; nobody can edit it. Contents and credentials are never logged.
 * **Auth**: `proxy.ts` refreshes the session and gates `/app` and `/api/dms`; handlers
+  The Control center and the client app keep **separate sign-ins** (`src/lib/supabase/surface.ts`): staff use their own
+  session cookie (`adflo-staff-auth-token`, for `/control` and `/api/control`), the client app keeps Supabase's default one.
+  One browser can be signed in to both, signing out of one leaves the other alone, and the proxy sets which session a
+  request uses, so the browser cannot choose.
   re-authenticate with `auth.getUser()` (validated server-side). Cross-origin mutations
   are rejected; `next=` redirects are same-site only; API errors are generic.
 * **Roles**: viewer (read/download) · editor (+upload, edit, tag, soft-delete, folders,
