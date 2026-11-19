@@ -226,7 +226,11 @@
   background-image: linear-gradient(180deg, rgb(255 255 255 / 0.3), rgb(255 255 255 / 0) 55%);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -1px 0 rgb(0 0 0 / 0.12), 0 8px 18px -6px color-mix(in srgb, var(--btn-glow, var(--primary)) 65%, transparent);
 }
-.btn-gloss:hover { filter: brightness(1.06) saturate(1.05); }
+.btn-gloss:hover {
+  filter: brightness(1.12) saturate(1.1);
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.5), inset 0 -1px 0 rgb(0 0 0 / 0.12), 0 12px 24px -6px color-mix(in srgb, var(--btn-glow, var(--primary)) 85%, transparent);
+}
 .btn-gloss:active { transform: translateY(1px); filter: brightness(0.97); box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.2); }
 .btn-glass {
   background-color: rgb(255 255 255 / 0.6);
@@ -235,7 +239,10 @@
   backdrop-filter: blur(10px);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.9), 0 2px 8px -3px rgb(13 19 48 / 0.18);
 }
-.btn-glass:hover { background-color: rgb(255 255 255 / 0.85); }
+.btn-glass:hover {
+  background-color: color-mix(in srgb, var(--primary) 14%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent), 0 4px 12px -4px color-mix(in srgb, var(--primary) 40%, transparent);
+}
 .btn-glass:active { transform: translateY(1px); }
 .field-glass { background-color: rgb(255 255 255 / 0.7); box-shadow: inset 0 1px 2px rgb(13 19 48 / 0.07), 0 1px 0 rgb(255 255 255 / 0.8); }
 

@@ -43,10 +43,10 @@ export const CHECKLIST_STEPS = [
   { key: "details", label: "Client details complete" },
   { key: "workspace", label: "Workspace created" },
   { key: "owner_invited", label: "Owner invited" },
-  { key: "welcome_sent", label: "Welcome message sent" },
   { key: "agreement_sent", label: "Terms and agreement sent" },
   { key: "plan_set", label: "Plan and seats confirmed" },
   { key: "first_login", label: "First sign-in completed" },
+  { key: "welcome_sent", label: "Welcome message sent" },
   { key: "live", label: "Made active and first invoice sent" },
 ] as const;
 export type ChecklistStep = (typeof CHECKLIST_STEPS)[number]["key"];

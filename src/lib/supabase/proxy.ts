@@ -45,7 +45,11 @@ export async function updateSession(request: NextRequest) {
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
-  if (data.user && (path === "/login" || path === "/signup")) {
+  // Someone already signed in is sent to the app, except when they open an invitation's sign-up for a different email:
+  // the page then tells them to sign out first, instead of dropping them in an app that has no workspace for them.
+  const invited = request.nextUrl.searchParams.get("email")?.trim().toLowerCase();
+  const otherInvite = path === "/signup" && !!invited && invited !== (data.user?.email ?? "").toLowerCase();
+  if (data.user && (path === "/login" || path === "/signup") && !otherInvite) {
     const url = request.nextUrl.clone();
     url.pathname = "/app/overview";
     url.search = "";

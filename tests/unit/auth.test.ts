@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-let currentUser: { id: string } | null = null;
+let currentUser: { id: string; email?: string } | null = null;
 vi.mock("@supabase/ssr", () => ({
   createServerClient: () => ({ auth: { getUser: async () => ({ data: { user: currentUser } }) } }),
 }));
@@ -68,6 +68,19 @@ describe("proxy / route gating", () => {
     expect((await updateSession(req("/app"))).status).toBe(200);
     const res = await updateSession(req("/login"));
     expect(new URL(res.headers.get("location")!).pathname).toBe("/app/overview");
+  });
+  it("lets someone signed in as another account open an invitation's sign-up, so the page can ask them to sign out", async () => {
+    withSupabase();
+    currentUser = { id: "u1", email: "kyleonbiz@gmail.com" };
+    expect((await updateSession(req("/signup?email=kyle%40adflo.pro"))).status).toBe(200);
+  });
+  it("still sends a signed-in user to the app from /signup when there is no invitation or it is their own email", async () => {
+    withSupabase();
+    currentUser = { id: "u1", email: "kyle@adflo.pro" };
+    for (const path of ["/signup", "/signup?email=KYLE%40adflo.pro"]) {
+      const res = await updateSession(req(path));
+      expect(new URL(res.headers.get("location")!).pathname).toBe("/app/overview");
+    }
   });
   it("is a pass-through when Supabase is not configured (dev mode)", async () => {
     expect((await updateSession(req("/app"))).status).toBe(200);

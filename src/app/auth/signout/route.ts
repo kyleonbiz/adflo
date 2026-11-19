@@ -11,6 +11,10 @@ export async function POST(request: Request) {
     await supabase.auth.signOut();
   }
   // Staff signing out of the Control center come back to the staff sign-in, not the client one.
-  const to = await request.formData().then((f) => f.get("to")).catch(() => null);
+  const form = await request.formData().catch(() => null);
+  const to = form?.get("to");
+  // An invited person who was signed in as someone else signs out and comes straight back to their sign-up.
+  const next = form?.get("next");
+  if (typeof next === "string" && /^\/signup\?email=[^\s&#]+$/.test(next)) return NextResponse.redirect(new URL(next, request.url), { status: 303 });
   return NextResponse.redirect(new URL(to === "control" ? "/control/login" : "/login", request.url), { status: 303 });
 }

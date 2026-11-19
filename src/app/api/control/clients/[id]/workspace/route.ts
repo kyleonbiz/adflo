@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { isUuid, parseWorkspaceRequest, workspaceErrorMessage } from "@/lib/control/workspace";
-import { emailWelcome } from "@/lib/control/welcome-email";
+import { emailInvitation } from "@/lib/control/invitation-email";
 import { purgeWorkspace } from "@/lib/dms/server/purge-workspaces";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * the owner in one step, or invite the owner again. Each is a database function that checks the role and the second
  * factor itself, writes the audit log and ticks the onboarding step. Creating the workspace and inviting the owner then
  * email the owner their invitation (a confirm link) at once. If that email cannot go out the invitation is still saved
- * and the answer says why, so staff can use "Copy welcome message" instead.
+ * and the answer says why, so staff can use "Copy invitation" instead.
  */
 export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/workspace">) {
   return staffRoute(req, async ({ supabase, staff }) => {
@@ -35,9 +35,9 @@ export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/
     let mail: { emailedTo?: string; emailError?: string } = {};
     if (req_.action === "provision" || req_.action === "invite") {
       try {
-        const r = await emailWelcome(supabase, staff.userId, id, req.url);
+        const r = await emailInvitation(supabase, id, req.url);
         mail = r.ok ? { emailedTo: r.emailedTo } : { emailError: r.message };
-      } catch { mail = { emailError: "The invitation email could not be sent. Use Copy welcome message and send it yourself." }; }
+      } catch { mail = { emailError: "The invitation email could not be sent. Use Copy invitation and send it yourself." }; }
     }
     // Only the invite function returns something worth showing: when the invitation runs out.
     return NextResponse.json({ ok: true, expiresAt: req_.action === "invite" && typeof data === "string" ? data : null, ...mail });

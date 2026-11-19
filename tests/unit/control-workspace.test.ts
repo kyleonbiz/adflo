@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isUuid, parseWorkspaceRequest, welcomeMessage, workspaceErrorMessage } from "@/lib/control/workspace";
+import { invitationMessage, isUuid, parseWorkspaceRequest, welcomeMessage, workspaceErrorMessage } from "@/lib/control/workspace";
 
 const ID = "7a000000-0000-4000-8000-0000000000c1";
 
@@ -17,21 +17,36 @@ describe("parseWorkspaceRequest", () => {
   it("checks ids strictly", () => { expect(isUuid(ID)).toBe(true); expect(isUuid(`${ID} `)).toBe(false); expect(isUuid(7)).toBe(false); });
 });
 
-describe("welcomeMessage", () => {
+describe("invitationMessage", () => {
   const base = { clientName: "Acme Roofing", ownerName: "Pat Example", ownerEmail: "pat@acme.test", inviteUrl: "https://app.test/invite/abc" };
-  it("names the exact email to sign up with and the link", () => {
-    const m = welcomeMessage({ ...base, expiresOn: "Dec 1, 2026" });
+  it("names the exact email to sign up with and the confirm link", () => {
+    const m = invitationMessage({ ...base, expiresOn: "Dec 1, 2026" });
     expect(m).toContain("Hi Pat,");
+    expect(m).toContain("You are invited to AdFlo for Acme Roofing");
     expect(m).toContain("https://app.test/invite/abc");
     expect(m).toContain("confirm your invitation");
     expect(m).toContain("pat@acme.test");
     expect(m).toContain("open until Dec 1, 2026");
   });
   it("copes with no owner name or expiry", () => {
-    const m = welcomeMessage({ ...base, ownerName: "  " });
+    const m = invitationMessage({ ...base, ownerName: "  " });
     expect(m.startsWith("Hi,")).toBe(true);
     expect(m).not.toContain("open until");
   });
+});
+
+describe("welcomeMessage", () => {
+  const base = { clientName: "Acme Roofing", ownerName: "Pat Example", loginUrl: "https://app.test/login" };
+  it("is a welcome with first steps, not an invitation", () => {
+    const m = welcomeMessage(base);
+    expect(m).toContain("Hi Pat,");
+    expect(m).toContain("Welcome to AdFlo");
+    expect(m).toContain("https://app.test/login");
+    expect(m).toContain("Guided setup");
+    expect(m).toContain("administrative management platform");
+    expect(m).not.toMatch(/confirm your invitation|\/invite\/|create your account/i);
+  });
+  it("copes with no owner name", () => expect(welcomeMessage({ ...base, ownerName: "" }).startsWith("Hi,")).toBe(true));
 });
 
 describe("workspaceErrorMessage", () => {

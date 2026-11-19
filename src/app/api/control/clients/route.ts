@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { CLIENT_COLUMNS, toClient } from "@/lib/control/data";
 import { findDuplicateClient } from "@/lib/control/duplicates";
-import { emailWelcome } from "@/lib/control/welcome-email";
+import { emailInvitation } from "@/lib/control/invitation-email";
 import { workspaceErrorMessage } from "@/lib/control/workspace";
 import { parseClientInput } from "@/lib/control/validation";
 
@@ -43,9 +43,9 @@ export function POST(req: Request) {
         if (fresh) client = toClient(fresh);
         // The invitation exists, so the owner is emailed it now. A failed email never undoes the client or the invitation.
         try {
-          const r = await emailWelcome(supabase, staff.userId, data.id, req.url);
+          const r = await emailInvitation(supabase, data.id, req.url);
           mail = r.ok ? { emailedTo: r.emailedTo } : { emailError: r.message };
-        } catch { mail = { emailError: "The invitation email could not be sent. Use Copy welcome message and send it yourself." }; }
+        } catch { mail = { emailError: "The invitation email could not be sent. Use Copy invitation and send it yourself." }; }
       }
     }
     return NextResponse.json({ ok: true, client, workspaceError, ...mail }, { status: 201 });

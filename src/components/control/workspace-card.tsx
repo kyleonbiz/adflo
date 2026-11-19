@@ -8,7 +8,8 @@ import { isAccountOn, statusAfterSwitch } from "@/lib/control/status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { deleteConfirmationMatches } from "@/lib/control/client-delete";
-import { welcomeMessage } from "@/lib/control/workspace";
+import { invitationMessage, welcomeMessage } from "@/lib/control/workspace";
+import { publicOrigin } from "@/lib/public-origin";
 import { STATUS_LABEL, effectivePriceCents, formatMoney, type ClientRecord, type Plan, type UnlinkedWorkspace } from "@/lib/control/types";
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
@@ -31,9 +32,9 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   const [needAck, setNeedAck] = useState(false);
   const [ack, setAck] = useState(false);
   const [typed, setTyped] = useState("");
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"" | "invitation" | "welcome">("");
   // Which of the owner-access buttons is working, and whether the message on screen belongs to them (so it shows right under them).
-  const [working, setWorking] = useState<"invite" | "email" | null>(null);
+  const [working, setWorking] = useState<"invite" | "invitation" | "email" | null>(null);
   const [msgInAccess, setMsgInAccess] = useState(false);
   const [expires, setExpires] = useState<string | null>(null);
   const linked = client.workspaceId != null;
@@ -41,7 +42,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   const joined = (client.seatsUsed ?? 0) > 0;
 
   async function run(body: Record<string, string>, done: string, access?: "invite") {
-    setBusy(true); setMsg(null); setConfirmUnlink(false); setCopied(false); setMsgInAccess(!!access); setWorking(access ?? null);
+    setBusy(true); setMsg(null); setConfirmUnlink(false); setCopied(""); setMsgInAccess(!!access); setWorking(access ?? null);
     try {
       const res = await fetch(`/api/control/clients/${client.id}/workspace`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const json = await res.json().catch(() => null);
@@ -88,7 +89,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   }
 
   async function emailWelcome() {
-    setBusy(true); setMsg(null); setCopied(false); setMsgInAccess(true); setWorking("email");
+    setBusy(true); setMsg(null); setCopied(""); setMsgInAccess(true); setWorking("email");
     try {
       const res = await fetch(`/api/control/clients/${client.id}/welcome`, { method: "POST" });
       const json = await res.json().catch(() => null);
@@ -98,18 +99,35 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
     } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); setWorking(null); }
   }
 
-  async function copyWelcome() {
+  async function emailInvitationNow() {
+    setBusy(true); setMsg(null); setCopied(""); setMsgInAccess(true); setWorking("invitation");
+    try {
+      const res = await fetch(`/api/control/clients/${client.id}/invitation`, { method: "POST" });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not send the email. Try again." }); return; }
+      setMsg({ ok: true, text: `Invitation email sent to ${json.emailedTo} from onboarding@adflo.pro.` });
+      router.refresh();
+    } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); setWorking(null); }
+  }
+
+  async function copyInvitation() {
     setMsg(null); setMsgInAccess(true);
-    // The message carries a fresh confirm link, so one is made first (nothing is emailed).
+    // The invitation carries a fresh confirm link, so one is made first (nothing is emailed).
     let link: string, until: string | null = expires;
     try {
       const res = await fetch(`/api/control/clients/${client.id}/invite-link`, { method: "POST" });
       const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) { setCopied(false); setMsg({ ok: false, text: json?.error?.message ?? "Could not make the invitation link. Try again." }); return; }
+      if (!res.ok || !json?.ok) { setCopied(""); setMsg({ ok: false, text: json?.error?.message ?? "Could not make the invitation link. Try again." }); return; }
       link = json.link; if (json.expiresAt) { until = day(json.expiresAt); setExpires(until); }
-    } catch { setCopied(false); setMsg({ ok: false, text: "Could not reach the server. Try again." }); return; }
-    const text = welcomeMessage({ clientName: client.name, ownerName: client.ownerName, ownerEmail: client.ownerEmail, inviteUrl: link, expiresOn: until });
-    try { await navigator.clipboard.writeText(text); setCopied(true); } catch { setCopied(false); setMsg({ ok: false, text: "Could not copy. Select the text from the invitation and copy it by hand." }); }
+    } catch { setCopied(""); setMsg({ ok: false, text: "Could not reach the server. Try again." }); return; }
+    const text = invitationMessage({ clientName: client.name, ownerName: client.ownerName, ownerEmail: client.ownerEmail, inviteUrl: link, expiresOn: until });
+    try { await navigator.clipboard.writeText(text); setCopied("invitation"); } catch { setCopied(""); setMsg({ ok: false, text: "Could not copy. Select the text from the invitation and copy it by hand." }); }
+  }
+
+  async function copyWelcome() {
+    setMsg(null); setMsgInAccess(true);
+    const text = welcomeMessage({ clientName: client.name, ownerName: client.ownerName, loginUrl: `${publicOrigin()}/login` });
+    try { await navigator.clipboard.writeText(text); setCopied("welcome"); } catch { setCopied(""); setMsg({ ok: false, text: "Could not copy. Select the text and copy it by hand." }); }
   }
 
   const price = effectivePriceCents(client, plans);
@@ -200,18 +218,32 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">Workspace connected. {joined ? `${client.seatsUsed} ${client.seatsUsed === 1 ? "person has" : "people have"} joined.` : "Nobody has joined yet."}</p>
             {canEdit && hasOwnerEmail && (
-              <div className="flex flex-wrap items-center gap-2">
-                {!joined && <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation renewed for another 14 days.", "invite")}><Mail /> {working === "invite" ? "Renewing…" : "Renew invitation"}</Button>}
-                <Button variant="outline" disabled={busy} onClick={emailWelcome}><Send /> {working === "email" ? "Sending…" : "Email welcome message"}</Button>
-                <Button variant="outline" onClick={copyWelcome}>{copied ? "Copied" : "Copy welcome message"}</Button>
+              <div className="space-y-3">
+                {!joined && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">Invitation: lets the owner confirm and create their account</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation renewed for another 14 days.", "invite")}><Mail /> {working === "invite" ? "Renewing…" : "Renew invitation"}</Button>
+                      <Button variant="outline" disabled={busy} onClick={emailInvitationNow}><Send /> {working === "invitation" ? "Sending…" : "Email invitation"}</Button>
+                      <Button variant="outline" onClick={copyInvitation}>{copied === "invitation" ? "Copied" : "Copy invitation"}</Button>
+                    </div>
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">Welcome: sent once the owner has signed in, and says what to do first</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button variant="outline" disabled={busy || !joined} onClick={emailWelcome}><Send /> {working === "email" ? "Sending…" : "Email welcome message"}</Button>
+                    <Button variant="outline" disabled={!joined} onClick={copyWelcome}>{copied === "welcome" ? "Copied" : "Copy welcome message"}</Button>
+                  </div>
+                </div>
               </div>
             )}
             {canEdit && hasOwnerEmail && (working || copied || (msgInAccess && msg)) && (
               <p role={!working && !copied && msg && !msg.ok ? "alert" : "status"} className={!working && !copied && msg ? (msg.ok ? "text-sm text-emerald-700" : "text-sm text-destructive") : "text-sm text-muted-foreground"}>
-                {working === "invite" ? "Renewing the invitation…" : working === "email" ? "Sending the welcome email…" : copied ? "Copied. Paste it into your email." : msg?.text}
+                {working === "invite" ? "Renewing the invitation…" : working === "invitation" ? "Sending the invitation email…" : working === "email" ? "Sending the welcome email…" : copied ? "Copied. Paste it into your email." : msg?.text}
               </p>
             )}
-            {!joined && hasOwnerEmail && <p className="text-xs text-muted-foreground">The owner joins automatically when they sign up with {client.ownerEmail}. Renew invitation extends the invitation without emailing anyone. Email welcome message sends it from onboarding@adflo.pro; Copy welcome message gives you the text to send yourself.</p>}
+            {!joined && hasOwnerEmail && <p className="text-xs text-muted-foreground">The owner opens the link in their invitation, confirms it, then signs up with {client.ownerEmail}. Each new invitation email or copy replaces the earlier link. The welcome message is a separate email for after they have signed in.</p>}
           </div>
         )}
       </div>
