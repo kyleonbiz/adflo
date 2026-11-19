@@ -2,25 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Link2Off, Mail, Rocket, Send, Trash2 } from "lucide-react";
+import { Link2, Link2Off, Mail, Pencil, Rocket, Send, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { isAccountOn, statusAfterSwitch } from "@/lib/control/status";
-import { STATUS_LABEL } from "@/lib/control/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { deleteConfirmationMatches } from "@/lib/control/client-delete";
 import { welcomeMessage } from "@/lib/control/workspace";
-import type { ClientRecord, UnlinkedWorkspace } from "@/lib/control/types";
+import { STATUS_LABEL, effectivePriceCents, formatMoney, type ClientRecord, type Plan, type UnlinkedWorkspace } from "@/lib/control/types";
 import { publicOrigin } from "@/lib/public-origin";
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
+const dayOrNever = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "Never");
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" });
 
 /**
- * The one place for a client's account: its status (on, off, cancelled), its workspace and the owner's access (create or connect,
+ * The one place for a client's account: its details (edited here), its status (on, off, cancelled), its workspace and the owner's access (create or connect,
  * invite, welcome email), and removing it (disconnect, delete the workspace, delete the client). Details live in Edit.
  */
-export function WorkspaceCard({ client, unlinked, canEdit, isOwner = false }: { client: ClientRecord; unlinked: UnlinkedWorkspace[]; canEdit: boolean; isOwner?: boolean }) {
+export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = false, onEdit }: { client: ClientRecord; plans: Plan[]; unlinked: UnlinkedWorkspace[]; canEdit: boolean; isOwner?: boolean; onEdit?: () => void }) {
   const router = useRouter();
   const [pick, setPick] = useState("");
   const [busy, setBusy] = useState(false);
@@ -95,6 +95,15 @@ export function WorkspaceCard({ client, unlinked, canEdit, isOwner = false }: { 
     try { await navigator.clipboard.writeText(text); setCopied(true); } catch { setCopied(false); setMsg({ ok: false, text: "Could not copy. Select the text from the invitation and copy it by hand." }); }
   }
 
+  const price = effectivePriceCents(client, plans);
+  const facts: [string, React.ReactNode][] = [
+    ["Plan", <span key="p" className="capitalize">{client.plan}</span>],
+    ["Price per month", price == null ? "Not set" : <>{formatMoney(price)}{client.priceOverrideCents != null && <span className="ml-1 text-xs text-muted-foreground">own price{client.priceNote ? `: ${client.priceNote}` : ""}</span>}</>],
+    ["Seats", `${client.seatsUsed ?? "—"} used of ${client.seatsLimit}`],
+    ["Last sign-in", dayOrNever(client.lastActive)],
+    ["Owner", client.ownerName ? `${client.ownerName}${client.ownerEmail ? ` · ${client.ownerEmail}` : ""}` : client.ownerEmail || "—"],
+    ["Client since", dayOrNever(client.startedOn)],
+  ];
   const sub = "text-xs font-semibold uppercase tracking-wide text-muted-foreground";
   const owner = isOwner && canEdit;
 
@@ -102,8 +111,20 @@ export function WorkspaceCard({ client, unlinked, canEdit, isOwner = false }: { 
     <section className="space-y-6 rounded-2xl border bg-card p-5 shadow-panel" aria-label="AdFlo account">
       <h2 className="font-semibold">AdFlo account</h2>
 
-      {/* 1. Status */}
-      <div className="space-y-3">
+      {/* 1. Details */}
+      <div id="details" className="scroll-mt-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className={sub}>Details</h3>
+          {canEdit && onEdit && <Button variant="outline" size="sm" onClick={onEdit}><Pencil /> Edit details</Button>}
+        </div>
+        <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
+          {facts.map(([k, v]) => (<div key={k} className="min-w-0"><dt className="text-xs uppercase tracking-wide text-muted-foreground">{k}</dt><dd className="mt-0.5 break-words text-sm font-medium">{v}</dd></div>))}
+        </dl>
+        {client.notes && <p className="whitespace-pre-wrap border-t pt-3 text-sm text-muted-foreground">{client.notes}</p>}
+      </div>
+
+      {/* 2. Status */}
+      <div className="space-y-3 border-t pt-5">
         <h3 className={sub}>Status</h3>
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm font-medium">{STATUS_LABEL[client.status]}</span>
@@ -128,7 +149,7 @@ export function WorkspaceCard({ client, unlinked, canEdit, isOwner = false }: { 
         )}
       </div>
 
-      {/* 2. Workspace and the owner's access */}
+      {/* 3. Workspace and the owner's access */}
       <div className="space-y-3 border-t pt-5">
         <h3 className={sub}>Workspace &amp; access</h3>
         {!linked ? (
@@ -173,7 +194,7 @@ export function WorkspaceCard({ client, unlinked, canEdit, isOwner = false }: { 
         )}
       </div>
 
-      {/* 3. Remove */}
+      {/* 4. Remove */}
       {canEdit && (linked || owner) && (
         <div className="space-y-3 border-t pt-5">
           <h3 className={sub}>Remove</h3>

@@ -173,7 +173,7 @@ test("client profile: everything about a client in one place, and New invoice op
   await expect(page.getByText("Per month · standard")).toBeVisible();
   await expect(page.getByText("Open tickets")).toBeVisible();
   const jump = page.getByRole("navigation", { name: "On this page" });
-  for (const name of ["Details", "Onboarding", "Account", "Billing", "Agreements", "Support", "History"]) await expect(jump.getByRole("link", { name })).toBeVisible();
+  for (const name of ["Account", "Onboarding", "Billing", "Agreements", "Support", "History"]) await expect(jump.getByRole("link", { name })).toBeVisible();
   // The onboarding guide: eight steps, the finished ones ticked, each with instructions.
   const guide = page.getByRole("region", { name: "Onboarding" });
   await expect(guide.getByRole("heading", { name: "Onboarding guide" })).toBeVisible();
