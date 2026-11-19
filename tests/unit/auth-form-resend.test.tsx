@@ -26,6 +26,25 @@ async function fill(email: string, name?: string) {
   await userEvent.type(screen.getByPlaceholderText("Password"), "correct-horse-battery");
 }
 
+describe("signing up with an email that already has an account", () => {
+  it("says so instead of promising a confirmation email that is never sent", async () => {
+    auth.signUp.mockResolvedValue({ data: { session: null, user: { identities: [] } }, error: null });
+    render(<AuthForm mode="signup" />);
+    await fill("pat@pizza.test", "Pat Lee");
+    await userEvent.click(screen.getByRole("button", { name: /Create account/ }));
+    expect(await screen.findByText(/already an account for this email/)).toBeInTheDocument();
+    expect(screen.queryByText(/Check your email to confirm/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Resend confirmation email" })).toBeNull();
+  });
+  it("a brand-new account still gets the confirmation notice", async () => {
+    auth.signUp.mockResolvedValue({ data: { session: null, user: { identities: [{ id: "i1" }] } }, error: null });
+    render(<AuthForm mode="signup" />);
+    await fill("new@pizza.test", "New Person");
+    await userEvent.click(screen.getByRole("button", { name: /Create account/ }));
+    expect(await screen.findByText(/Check your email to confirm/)).toBeInTheDocument();
+  });
+});
+
 describe("resend confirmation email", () => {
   it("is offered after signing up when the email still has to be confirmed, and sends a new one to that address", async () => {
     auth.signUp.mockResolvedValue({ data: { session: null }, error: null });

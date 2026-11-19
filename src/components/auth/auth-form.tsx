@@ -59,6 +59,11 @@ export function AuthForm({ mode, next, demo = false, invitedEmail }: { mode: "lo
         const refused = error.code === "unexpected_failure" || /database error/i.test(error.message);
         return setFormError(refused ? "Sign-up is by invitation. Open the link in your invitation email and confirm it first, then sign up with the email it was sent to. Need help? Contact support@adflo.pro." : error.message);
       }
+      // Supabase answers a sign-up for an address that already has an account as if it worked, and sends nothing. Its
+      // tell is a user with no identities. Say so, instead of promising an email that will never come.
+      if (Array.isArray(data.user?.identities) && data.user.identities.length === 0) {
+        return setFormError("There is already an account for this email, so no confirmation email was sent. Log in instead, or use Forgot password on the log-in screen if you do not remember it.");
+      }
       if (!data.session) {
         setUnconfirmed(values.email);
         return setInfo("Check your email to confirm your account, then sign in. It can take a few minutes, and it may land in spam.");
