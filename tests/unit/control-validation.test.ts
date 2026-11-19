@@ -160,6 +160,12 @@ describe("quiet clients", () => {
   });
 });
 
+describe("workspace deletion in the audit log", () => {
+  it("reads in plain words", () => {
+    expect(describeAudit("workspace.delete_requested", { name: "Lingering Co" })).toBe("Deleted the workspace Lingering Co and its data");
+  });
+});
+
 describe("actorLabel", () => {
   it("shows the staff member's name, then their email, then System", () => {
     expect(actorLabel({ staffName: "Kyle Fulwood Jr", staffEmail: "kyleonbiz@gmail.com" })).toBe("Kyle Fulwood Jr");

@@ -40,3 +40,4 @@ RUN "$PSQL -d dms -f '$HERE/job_runs.sql'" 2>&1 | grep -E "PASS|FAIL|ALL JOB RUN
 RUN "$PSQL -d dms -f '$HERE/workspace_deletion.sql'" 2>&1 | grep -E "PASS|FAIL|ALL WORKSPACE DELETION|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/accounts_match.sql'" 2>&1 | grep -E "PASS|FAIL|ALL ACCOUNTS|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/client_workspace_delete.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CLIENT WORKSPACE DELETE|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/orphan_workspace_delete.sql'" 2>&1 | grep -E "PASS|FAIL|ALL ORPHAN WORKSPACE DELETE|ERROR" | sed 's/^psql:[^ ]* //'

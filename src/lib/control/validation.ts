@@ -140,6 +140,7 @@ export function describeAudit(action: string, detail: Record<string, unknown>): 
   if (action === "client.workspace_linked") return `Connected workspace ${String(detail.workspace ?? "")}`.trim();
   if (action === "client.workspace_unlinked") return "Disconnected the workspace";
   if (action === "client.owner_invited") return `Invited ${String(detail.email ?? "the owner")} as workspace owner`;
+  if (action === "workspace.delete_requested") return `Deleted the workspace ${String(detail.name ?? "")} and its data`.replace(/\s+/g, " ").trim();
   if (!action.startsWith("client.")) return describeGeneric(action, detail);
   const parts = Object.entries(detail).filter(([k]) => k !== "client_id").map(([k, v]) => {
     const label = k === "seats_limit" ? "Seats" : k === "owner_email" ? "Owner email" : k.charAt(0).toUpperCase() + k.slice(1);

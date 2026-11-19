@@ -108,7 +108,7 @@ export function WorkspaceCard({ client, unlinked, canEdit, isOwner = false }: { 
               {hasOwnerEmail && <Button variant="outline" disabled={busy} onClick={emailWelcome}><Send /> Email welcome message</Button>}
               {hasOwnerEmail && <Button variant="outline" onClick={copyWelcome}>Copy welcome message</Button>}
               {!confirmUnlink ? <Button variant="ghost" disabled={busy} onClick={() => setConfirmUnlink(true)}><Link2Off /> Disconnect</Button> : (
-                <span className="flex items-center gap-2 text-sm">Disconnect from this client? Its data stays in the workspace.
+                <span className="flex items-center gap-2 text-sm">Disconnect from this client? Its data stays in the workspace, which will then be listed under Workspaces with no client.
                   <Button variant="destructive" size="sm" disabled={busy} onClick={() => run({ action: "unlink" }, "Disconnected.")}>Disconnect</Button>
                   <Button variant="outline" size="sm" onClick={() => setConfirmUnlink(false)}>Keep</Button></span>
               )}

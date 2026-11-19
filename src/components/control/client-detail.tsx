@@ -93,7 +93,7 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
           <p className="font-medium">Delete {client.name} permanently?</p>
           <p>This removes the client record with its onboarding steps, the agreements sent to them and the reminder log. Support tickets are kept but no longer linked to a client. Their AdFlo workspace and its data are <strong>not</strong> deleted. This cannot be undone.</p>
           {client.workspaceId ? (
-            <p className="rounded bg-white/70 px-2 py-1.5">Their workspace is still connected. Use <strong>Disconnect</strong> in the AdFlo account card first, then delete. To stop their access without deleting anything, cancel the client instead.</p>
+            <p className="rounded bg-white/70 px-2 py-1.5">Their workspace is still connected. To remove the client for good, cancel them, use <strong>Delete workspace and data</strong> in the AdFlo account card, then delete the client, so no workspace is left behind. To stop their access without deleting anything, just cancel the client.</p>
           ) : (
             <div className="space-y-1.5">
               <label htmlFor="del-confirm" className="block font-medium">Type the client&apos;s name to confirm</label>
