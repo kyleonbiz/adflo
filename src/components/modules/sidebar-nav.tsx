@@ -141,7 +141,7 @@ export function SidebarNav({ base, onNavigate, collapsed = false }: { base: "/ap
         <Brand wordmark light href={`${base}/overview`} className="w-44 px-1" />
       )}
       <nav aria-label="Services" className="flex min-h-0 w-full flex-1 flex-col">
-        <ul className="min-h-0 overflow-y-auto">
+        <ul className="-mx-1 min-h-0 overflow-y-auto overflow-x-hidden px-1">
           {sections.map((g, i) => (
             <li key={g.label ?? `group-${i}`} className={cn(i > 0 && (collapsed ? "mt-2 border-t border-white/10 pt-2" : "mt-0.5"))}>
               {g.label && !collapsed && <p id={`nav-group-${g.label}`} className="px-3 pb-0.5 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">{g.label}</p>}
