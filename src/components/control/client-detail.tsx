@@ -42,7 +42,7 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
   async function deleteClient() {
     setBusy("delete"); setError("");
     try {
-      const res = await fetch(`/api/control/clients/${client.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/control/clients/${client.id}`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: typed }) });
       const json = await res.json().catch(() => null);
       if (res.ok && json?.ok) { router.replace("/control/clients"); router.refresh(); return; }
       setError(json?.error?.message ?? "Could not delete the client. Try again.");
@@ -91,17 +91,14 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
       {deleting && (
         <div role="alertdialog" aria-label="Delete client" className="space-y-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
           <p className="font-medium">Delete {client.name} permanently?</p>
-          <p>This removes the client record with its onboarding steps, the agreements sent to them and the reminder log. Support tickets are kept but no longer linked to a client. Their AdFlo workspace and its data are <strong>not</strong> deleted. This cannot be undone.</p>
-          {client.workspaceId ? (
-            <p className="rounded bg-white/70 px-2 py-1.5">Their workspace is still connected. To remove the client for good, cancel them, use <strong>Delete workspace and data</strong> in the AdFlo account card, then delete the client, so no workspace is left behind. To stop their access without deleting anything, just cancel the client.</p>
-          ) : (
-            <div className="space-y-1.5">
-              <label htmlFor="del-confirm" className="block font-medium">Type the client&apos;s name to confirm</label>
-              <Input id="del-confirm" autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={client.name} className="max-w-sm bg-white" />
-            </div>
-          )}
+          <p>This removes the client record with its onboarding steps, the agreements sent to them and the reminder log. Support tickets are kept but no longer linked to a client.{client.workspaceId ? <> <strong>Their workspace is deleted too</strong>: its documents, stored files, records and team are erased right away, with no 30-day wait. People&apos;s sign-in accounts are kept.</> : ""} This cannot be undone.</p>
+          {client.status === "active" && <p className="rounded bg-white/70 px-2 py-1.5">This client is active. Cancel them first, then delete.</p>}
+          <div className="space-y-1.5">
+            <label htmlFor="del-confirm" className="block font-medium">Type the client&apos;s name to confirm</label>
+            <Input id="del-confirm" autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={client.name} className="max-w-sm bg-white" />
+          </div>
           <div className="flex flex-wrap items-center gap-2">
-            {!client.workspaceId && <Button variant="destructive" size="sm" disabled={busy === "delete" || !deleteConfirmationMatches(client.name, typed)} onClick={deleteClient}>{busy === "delete" ? "Deleting…" : "Delete client"}</Button>}
+            <Button variant="destructive" size="sm" disabled={busy === "delete" || client.status === "active" || !deleteConfirmationMatches(client.name, typed)} onClick={deleteClient}>{busy === "delete" ? "Deleting…" : client.workspaceId ? "Delete client and workspace" : "Delete client"}</Button>
             <Button variant="outline" size="sm" disabled={busy === "delete"} onClick={() => { setDeleting(false); setTyped(""); }}>Keep</Button>
           </div>
         </div>

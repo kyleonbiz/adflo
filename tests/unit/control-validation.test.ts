@@ -166,6 +166,13 @@ describe("workspace deletion in the audit log", () => {
   });
 });
 
+describe("client deletion in the audit log", () => {
+  it("says whether the workspace goes too", () => {
+    expect(describeAudit("client.delete_requested", { name: "Acme", workspace_id: "w1" })).toBe("Deleting Acme and its workspace");
+    expect(describeAudit("client.delete_requested", { name: "Acme", workspace_id: null })).toBe("Deleting Acme");
+  });
+});
+
 describe("actorLabel", () => {
   it("shows the staff member's name, then their email, then System", () => {
     expect(actorLabel({ staffName: "Kyle Fulwood Jr", staffEmail: "kyleonbiz@gmail.com" })).toBe("Kyle Fulwood Jr");

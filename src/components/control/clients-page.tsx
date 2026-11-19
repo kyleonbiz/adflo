@@ -10,8 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { isAccountOn, statusAfterSwitch } from "@/lib/control/status";
-import { CLIENT_STATUSES, STATUS_LABEL, effectivePriceCents, formatMoney, isQuiet, type ClientRecord, type ClientStatus, type Plan } from "@/lib/control/types";
+import { CLIENT_STATUSES, STATUS_LABEL, effectivePriceCents, formatMoney, isQuiet, type ClientRecord, type ClientStatus, type Plan, type UnlinkedWorkspace } from "@/lib/control/types";
 import { cn } from "@/lib/utils";
+import { LeftoverWorkspaces } from "./leftover-workspaces";
 import { StatusBadge } from "./status-badge";
 
 interface FormState { createWorkspace: boolean; name: string; status: ClientStatus; plan: string; seatsLimit: string; ownerName: string; ownerEmail: string; notes: string; priceOverrideCents: string; priceNote: string }
@@ -118,7 +119,7 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
 }
 
 /** The client directory: search, filter by status, add and edit. `canEdit` is false for read-only staff and in the preview. */
-export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }: { clients: ClientRecord[]; plans: Plan[]; canEdit: boolean; isOwner?: boolean; sample?: boolean }) {
+export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, leftovers = [] }: { clients: ClientRecord[]; plans: Plan[]; canEdit: boolean; isOwner?: boolean; sample?: boolean; leftovers?: UnlinkedWorkspace[] }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<ClientStatus | "all">("all");
@@ -185,6 +186,8 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample }
           </table>
         </div>
       )}
+
+      {canEdit && <LeftoverWorkspaces workspaces={leftovers} canDelete={isOwner} />}
 
       {dialog && <ClientDialog client={dialog === "new" ? null : dialog} plans={plans} isOwner={isOwner} onClose={() => setDialog(null)} onSaved={(w) => { setDialog(null); setWarning(w); router.refresh(); }} />}
     </div>

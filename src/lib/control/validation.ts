@@ -136,6 +136,8 @@ export function parseChecklistInput(raw: unknown): Parsed<{ step: ChecklistStep;
 /** One readable line for an audit entry, e.g. "Status: trial → active". */
 export function describeAudit(action: string, detail: Record<string, unknown>): string {
   if (action === "client.created") return `Created ${String(detail.name ?? "a client")} (${String(detail.plan ?? "")}, ${String(detail.seats_limit ?? "")} seats)`;
+  if (action === "client.delete_requested") return detail.workspace_id ? `Deleting ${String(detail.name ?? "a client")} and its workspace` : `Deleting ${String(detail.name ?? "a client")}`;
+  if (action === "client.workspace_delete_requested") return `Deleting the workspace of ${String(detail.name ?? "a client")}`;
   if (action === "client.deleted") return `Deleted ${String(detail.name ?? "a client")}`;
   if (action === "client.workspace_linked") return `Connected workspace ${String(detail.workspace ?? "")}`.trim();
   if (action === "client.workspace_unlinked") return "Disconnected the workspace";
