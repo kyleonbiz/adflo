@@ -29,6 +29,8 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   const [erasing, setErasing] = useState(false);
   const [confirming, setConfirming] = useState<"suspend" | "cancel" | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [needAck, setNeedAck] = useState(false);
+  const [ack, setAck] = useState(false);
   const [typed, setTyped] = useState("");
   const [copied, setCopied] = useState(false);
   const [expires, setExpires] = useState<string | null>(null);
@@ -72,8 +74,9 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   async function deleteClient() {
     setBusy(true); setMsg(null);
     try {
-      const res = await fetch(`/api/control/clients/${client.id}`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: typed }) });
+      const res = await fetch(`/api/control/clients/${client.id}`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: typed, acknowledgeAgreements: ack }) });
       const json = await res.json().catch(() => null);
+      if (json?.error?.code === "needs_ack") setNeedAck(true);
       if (res.ok && json?.ok) { router.replace("/control/clients"); router.refresh(); return; }
       setMsg({ ok: false, text: json?.error?.message ?? "Could not delete the client. Try again." });
     } catch { setMsg({ ok: false, text: "Could not reach the server. Nothing was deleted." }); } finally { setBusy(false); }
@@ -205,7 +208,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
                 <Button variant="outline" size="sm" onClick={() => setConfirmUnlink(false)}>Keep</Button></span>
             ))}
             {owner && linked && client.status === "cancelled" && !erasing && <Button variant="ghost" className="text-destructive hover:bg-red-50" disabled={busy} onClick={() => { setErasing(true); setDeleting(false); setTyped(""); setMsg(null); }}><Trash2 /> Delete workspace and data</Button>}
-            {owner && !deleting && <Button variant="ghost" className="text-destructive hover:bg-red-50" disabled={busy} onClick={() => { setDeleting(true); setErasing(false); setTyped(""); setMsg(null); }}><Trash2 /> Delete client{linked ? " and workspace" : ""}</Button>}
+            {owner && !deleting && <Button variant="ghost" className="text-destructive hover:bg-red-50" disabled={busy} onClick={() => { setDeleting(true); setErasing(false); setNeedAck(false); setAck(false); setTyped(""); setMsg(null); }}><Trash2 /> Delete client{linked ? " and workspace" : ""}</Button>}
           </div>
 
           {erasing && (
@@ -228,12 +231,18 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
               <p className="font-medium">Delete {client.name} permanently?</p>
               <p>This removes the client record with its onboarding steps, the agreements sent to them and the reminder log. Support tickets are kept but no longer linked to a client.{linked ? <> <strong>Their workspace is deleted too</strong>: its documents, stored files, records and team are erased right away, with no 30-day wait. People&apos;s sign-in accounts are kept.</> : ""} This cannot be undone.</p>
               {client.status === "active" && <p className="rounded bg-white/70 px-2 py-1.5">This client is active. Cancel them first, then delete.</p>}
+              {needAck && (
+                <label className="flex items-start gap-2 rounded bg-white/70 px-2 py-1.5">
+                  <input type="checkbox" className="mt-1" checked={ack} onChange={(e) => setAck(e.target.checked)} />
+                  <span>This client has signed agreements. I understand deleting the client deletes those records too. A copy of who signed what, and when, is kept in the audit log.</span>
+                </label>
+              )}
               <div className="space-y-1.5">
                 <label htmlFor="del-confirm" className="block font-medium">Type the client&apos;s name to confirm</label>
                 <Input id="del-confirm" autoComplete="off" value={typed} onChange={(e) => setTyped(e.target.value)} placeholder={client.name} className="max-w-sm bg-white" />
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Button variant="destructive" size="sm" disabled={busy || client.status === "active" || !deleteConfirmationMatches(client.name, typed)} onClick={deleteClient}>{busy ? "Deleting…" : linked ? "Delete client and workspace" : "Delete client"}</Button>
+                <Button variant="destructive" size="sm" disabled={busy || client.status === "active" || (needAck && !ack) || !deleteConfirmationMatches(client.name, typed)} onClick={deleteClient}>{busy ? "Deleting…" : linked ? "Delete client and workspace" : "Delete client"}</Button>
                 <Button variant="outline" size="sm" disabled={busy} onClick={() => { setDeleting(false); setTyped(""); }}>Keep</Button>
               </div>
             </div>

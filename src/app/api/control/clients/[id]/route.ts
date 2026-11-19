@@ -48,7 +48,7 @@ export function PATCH(req: Request, ctx: RouteContext<"/api/control/clients/[id]
 
 /**
  * Owner deletes a client together with its workspace, in one step. The database function checks the role, the second factor, that
- * the name was typed back, that the client is not active and has not accepted an agreement, and writes the audit log. If the
+ * the name was typed back, that the client is not active and, when it has signed agreements, that the Owner acknowledged they are deleted too (a copy goes into the audit log), and writes the audit log. If the
  * client has a workspace its stored files and the workspace are erased first, with the same code as the nightly job: if any file
  * cannot be removed nothing is deleted. Only then is the client record removed, so a client and its workspace never part ways.
  */
@@ -56,12 +56,13 @@ export function DELETE(req: Request, ctx: RouteContext<"/api/control/clients/[id
   return staffRoute(req, async ({ supabase }) => {
     const { id } = await ctx.params;
     if (!UUID.test(id)) return fail(404, "not_found", "That client no longer exists.");
-    const body = (await req.json().catch(() => null)) as { confirm?: unknown } | null;
+    const body = (await req.json().catch(() => null)) as { confirm?: unknown; acknowledgeAgreements?: unknown } | null;
     const confirm = typeof body?.confirm === "string" ? body.confirm.slice(0, 200) : "";
-    const check = await supabase.rpc("control_check_client_delete", { p_client: id, p_confirm: confirm });
+    const check = await supabase.rpc("control_check_client_delete", { p_client: id, p_confirm: confirm, p_ack: body?.acknowledgeAgreements === true });
     if (check.error) {
       const e = clientDeleteError(check.error.code, check.error.message);
-      return fail(e.status, "client", e.message);
+      // The client has signed agreements: the page then asks for the extra acknowledgement.
+      return fail(e.status, check.error.hint === "needs_ack" ? "needs_ack" : "client", e.message);
     }
     let filesRemoved = 0;
     if (typeof check.data === "string") {
