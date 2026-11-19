@@ -33,7 +33,7 @@ function Field({ id, label, error, required, children }: { id: string; label: st
   );
 }
 
-export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { client: ClientRecord | null; plans: Plan[]; isOwner: boolean; onClose: () => void; onSaved: (warning: string | null) => void }) {
+export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { client: ClientRecord | null; plans: Plan[]; isOwner: boolean; onClose: () => void; onSaved: (warning: string | null, mail?: { emailedTo?: string; emailError?: string }) => void }) {
   const [form, setForm] = useState<FormState>(client ? fromClient(client) : EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
@@ -59,7 +59,7 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
         body: JSON.stringify(isOwner ? form : { ...form, priceOverrideCents: undefined, priceNote: undefined }),
       });
       const json = await res.json().catch(() => null);
-      if (res.ok && json?.ok) { onSaved(typeof json.workspaceError === "string" ? json.workspaceError : null); return; }
+      if (res.ok && json?.ok) { onSaved(typeof json.workspaceError === "string" ? json.workspaceError : null, { emailedTo: typeof json.emailedTo === "string" ? json.emailedTo : undefined, emailError: typeof json.emailError === "string" ? json.emailError : undefined }); return; }
       setErrors(json?.error?.fields ?? {});
       setMessage(json?.error?.message ?? "Could not save. Try again.");
     } catch {
@@ -105,7 +105,7 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
           {!client && (
             <label className="flex items-start gap-2 rounded-lg border p-3 text-sm">
               <input type="checkbox" className="mt-1" checked={form.createWorkspace} onChange={(e) => setForm((f) => ({ ...f, createWorkspace: e.target.checked }))} />
-              <span><span className="font-medium">Create their workspace and invite the owner</span><span className="block text-xs text-muted-foreground">Makes an empty workspace named after the client. The owner joins it when they sign up with the email above. No email is sent until you use Email welcome message.</span></span>
+              <span><span className="font-medium">Create their workspace and invite the owner</span><span className="block text-xs text-muted-foreground">Makes an empty workspace named after the client. The owner joins it when they sign up with the email above. It also emails the owner their invitation, with a link to confirm it before they sign up.</span></span>
             </label>
           )}
           {form.status === "suspended" && client?.status !== "suspended" && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Suspending is recorded in the audit log. No data is deleted.</p>}
@@ -127,6 +127,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
   const [filter, setFilter] = useState<ClientStatus | "all">("all");
   const [dialog, setDialog] = useState<ClientRecord | "new" | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
+  const [mailNote, setMailNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -143,6 +144,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
         </div>
         {canEdit && <Button onClick={() => setDialog("new")}><Plus /> Add client</Button>}
       </div>
+      {mailNote && <p role={mailNote.ok ? "status" : "alert"} className={mailNote.ok ? "rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800" : "rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"}>{mailNote.text}</p>}
       {warning && <p role="alert" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">The client was saved, but its workspace could not be created: {warning} Open the client and use the AdFlo account card to finish.</p>}
       {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample clients. Connect the database to manage real ones.</p>}
 
@@ -191,7 +193,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
 
       {canEdit && <LeftoverWorkspaces workspaces={leftovers} canDelete={isOwner} />}
 
-      {dialog && <ClientDialog client={dialog === "new" ? null : dialog} plans={plans} isOwner={isOwner} onClose={() => setDialog(null)} onSaved={(w) => { setDialog(null); setWarning(w); router.refresh(); }} />}
+      {dialog && <ClientDialog client={dialog === "new" ? null : dialog} plans={plans} isOwner={isOwner} onClose={() => setDialog(null)} onSaved={(w, mail) => { setDialog(null); setWarning(w); setMailNote(mail?.emailedTo ? { ok: true, text: `Invitation emailed to ${mail.emailedTo}.` } : mail?.emailError ? { ok: false, text: `The client and workspace were saved, but the invitation email was not sent: ${mail.emailError}` } : null); router.refresh(); }} />}
     </div>
   );
 }

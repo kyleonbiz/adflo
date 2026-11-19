@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { isUuid, parseWorkspaceRequest, workspaceErrorMessage } from "@/lib/control/workspace";
+import { emailWelcome } from "@/lib/control/welcome-email";
 import { purgeWorkspace } from "@/lib/dms/server/purge-workspaces";
 import { createServiceSupabase } from "@/lib/supabase/server";
 
@@ -9,11 +10,12 @@ export const dynamic = "force-dynamic";
 /**
  * Connect a client to its workspace and get the owner in: link an existing workspace, unlink it, create one and invite
  * the owner in one step, or invite the owner again. Each is a database function that checks the role and the second
- * factor itself, writes the audit log and ticks the onboarding step. None of them sends email; the
- * welcome email is a separate action so staff decide when it goes out.
+ * factor itself, writes the audit log and ticks the onboarding step. Creating the workspace and inviting the owner then
+ * email the owner their invitation (a confirm link) at once. If that email cannot go out the invitation is still saved
+ * and the answer says why, so staff can use "Copy welcome message" instead.
  */
 export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/workspace">) {
-  return staffRoute(req, async ({ supabase }) => {
+  return staffRoute(req, async ({ supabase, staff }) => {
     const { id } = await ctx.params;
     if (!isUuid(id)) return fail(404, "not_found", "Client not found.");
     const req_ = parseWorkspaceRequest(await req.json().catch(() => null));
@@ -29,9 +31,16 @@ export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/
       const e = workspaceErrorMessage(error.code, error.message);
       return fail(e.status, "workspace", e.message);
     }
-    // Nothing is emailed here: the welcome email is its own button (/welcome), so staff choose when it goes out.
+    // The invitation exists now, so the owner is told straight away. A failed email never undoes the invitation.
+    let mail: { emailedTo?: string; emailError?: string } = {};
+    if (req_.action === "provision" || req_.action === "invite") {
+      try {
+        const r = await emailWelcome(supabase, staff.userId, id, req.url);
+        mail = r.ok ? { emailedTo: r.emailedTo } : { emailError: r.message };
+      } catch { mail = { emailError: "The invitation email could not be sent. Use Copy welcome message and send it yourself." }; }
+    }
     // Only the invite function returns something worth showing: when the invitation runs out.
-    return NextResponse.json({ ok: true, expiresAt: req_.action === "invite" && typeof data === "string" ? data : null });
+    return NextResponse.json({ ok: true, expiresAt: req_.action === "invite" && typeof data === "string" ? data : null, ...mail });
   });
 }
 

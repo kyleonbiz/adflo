@@ -38,19 +38,19 @@ export const GUIDE: Record<ChecklistStep, GuideStep> = {
   },
   owner_invited: {
     key: "owner_invited",
-    why: "The invitation is what puts the owner into their workspace as its owner when they sign up. No email is sent by this step: the welcome message is sent separately in the next step.",
+    why: "The invitation is what lets the owner sign up and puts them into their workspace as its owner. They have to confirm it first.",
     how: [
-      "Creating the workspace already invites the owner. Nothing more to do if you used Create workspace and invite owner.",
-      "If you connected an existing workspace, or the invitation ran out (they last 14 days), click Renew invitation in the AdFlo account card. It renews the invitation for another 14 days. It does not send an email.",
+      "Creating the workspace already invites the owner and emails them the invitation. Nothing more to do if you used Create workspace and invite owner.",
+      "If you connected an existing workspace, or the invitation ran out (they last 14 days), click Renew invitation in the AdFlo account card. It renews the invitation for another 14 days and emails the owner a new link.",
     ],
-    auto: "Ticks itself when the invitation is sent.",
+    auto: "Ticks itself when the invitation is made.",
     actions: [{ label: "Go to AdFlo account", kind: "jump", to: () => "#account" }],
   },
   welcome_sent: {
     key: "welcome_sent",
     why: "The owner needs to hear that their account is ready, and how to sign up with the right email.",
     how: [
-      "In the AdFlo account card, click Email welcome message. It goes to the owner from onboarding@adflo.pro. Nothing else sends it for you.",
+      "Creating the workspace or renewing the invitation already emails the owner from onboarding@adflo.pro. If that did not go out, or you want to send it again, click Email welcome message in the AdFlo account card.",
       "If a message says the email was not sent, click Copy welcome message and send it from your own email.",
       "It carries a link. They open it and confirm the invitation, which is what lets them create their account. They must sign up with the exact email on this page, then confirm that email too. Then they land in their workspace as its owner.",
     ],

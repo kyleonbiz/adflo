@@ -47,7 +47,10 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not do that. Try again." }); return; }
       if (json.expiresAt) setExpires(day(json.expiresAt));
-      setMsg({ ok: true, text: done });
+      // Creating the workspace and inviting the owner also email the invitation; say what happened to that email.
+      if (json.emailedTo) setMsg({ ok: true, text: `${done} The invitation email was sent to ${json.emailedTo} from onboarding@adflo.pro.` });
+      else if (json.emailError) setMsg({ ok: false, text: `${done} The invitation email was not sent: ${json.emailError}` });
+      else setMsg({ ok: true, text: done });
       router.refresh();
     } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); setWorking(null); }
   }
@@ -173,8 +176,8 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
               <>
                 <div className="space-y-2 rounded-xl border p-4">
                   <p className="text-sm font-medium">Create it for them</p>
-                  <p className="text-sm text-muted-foreground">Makes an empty workspace named {client.name}, with the standard folders, and invites {hasOwnerEmail ? client.ownerEmail : "the owner"} as its owner. It does not send any email: you send the welcome message yourself with its own button. Nobody from AdFlo is added to it.</p>
-                  <Button onClick={() => run({ action: "provision" }, "Workspace created and the owner is invited. No email has been sent yet: use Email welcome message when you are ready.")} disabled={busy || !hasOwnerEmail}><Rocket /> Create workspace and invite owner</Button>
+                  <p className="text-sm text-muted-foreground">Makes an empty workspace named {client.name}, with the standard folders, and invites {hasOwnerEmail ? client.ownerEmail : "the owner"} as its owner. It then emails the owner their invitation. Nobody from AdFlo is added to it.</p>
+                  <Button onClick={() => run({ action: "provision" }, "Workspace created and the owner is invited.")} disabled={busy || !hasOwnerEmail}><Rocket /> Create workspace and invite owner</Button>
                   {!hasOwnerEmail && <p className="text-xs text-muted-foreground">Add the owner&apos;s email to the client first (Edit).</p>}
                 </div>
                 <div className="space-y-2 rounded-xl border p-4">
@@ -198,7 +201,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
             <p className="text-sm text-muted-foreground">Workspace connected. {joined ? `${client.seatsUsed} ${client.seatsUsed === 1 ? "person has" : "people have"} joined.` : "Nobody has joined yet."}</p>
             {canEdit && hasOwnerEmail && (
               <div className="flex flex-wrap items-center gap-2">
-                {!joined && <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation renewed for another 14 days. No email was sent: use Email welcome message to send one.", "invite")}><Mail /> {working === "invite" ? "Renewing…" : "Renew invitation"}</Button>}
+                {!joined && <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation renewed for another 14 days.", "invite")}><Mail /> {working === "invite" ? "Renewing…" : "Renew invitation"}</Button>}
                 <Button variant="outline" disabled={busy} onClick={emailWelcome}><Send /> {working === "email" ? "Sending…" : "Email welcome message"}</Button>
                 <Button variant="outline" onClick={copyWelcome}>{copied ? "Copied" : "Copy welcome message"}</Button>
               </div>
