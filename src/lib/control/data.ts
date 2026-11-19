@@ -65,7 +65,9 @@ export async function loadStaff(supabase: SupabaseClient): Promise<StaffMember[]
 export async function loadAudit(supabase: SupabaseClient, limit = 100): Promise<AuditEntry[]> {
   const { data, error } = await supabase.from("staff_audit_log").select("id, staff_email, action, entity, entity_id, detail, created_at").order("created_at", { ascending: false }).limit(limit);
   if (error) throw new Error("Could not load the audit log.");
-  return (data ?? []).map((r) => ({ id: r.id as number, staffEmail: r.staff_email as string, action: r.action as string, entity: r.entity as string, entityId: r.entity_id as string, detail: (r.detail ?? {}) as Record<string, unknown>, createdAt: r.created_at as string }));
+  // Names come from the team list (the Owner can read it), so a renamed person is renamed in old entries too.
+  const names = new Map((await loadStaff(supabase).catch(() => [])).map((m) => [m.email.toLowerCase(), m.displayName.trim()]));
+  return (data ?? []).map((r) => ({ id: r.id as number, staffEmail: r.staff_email as string, staffName: names.get(String(r.staff_email ?? "").toLowerCase()) ?? "", action: r.action as string, entity: r.entity as string, entityId: r.entity_id as string, detail: (r.detail ?? {}) as Record<string, unknown>, createdAt: r.created_at as string }));
 }
 
 /** Labelled examples for the development preview, so the screens show what they will hold. */
@@ -111,7 +113,7 @@ export async function loadDirectory(supabase: SupabaseClient): Promise<Directory
 
 export async function loadTimeline(supabase: SupabaseClient, clientId: string): Promise<TimelineEvent[]> {
   const { data } = await supabase.rpc("control_client_timeline", { p_client: clientId });
-  return ((data ?? []) as { at: string; staff_email: string; action: string; detail: Record<string, unknown> }[]).map((e) => ({ at: e.at, staffEmail: e.staff_email, action: e.action, detail: e.detail ?? {} }));
+  return ((data ?? []) as { at: string; staff_email: string; staff_name?: string; action: string; detail: Record<string, unknown> }[]).map((e) => ({ at: e.at, staffEmail: e.staff_email, staffName: e.staff_name ?? "", action: e.action, detail: e.detail ?? {} }));
 }
 
 export const SAMPLE_TICKETS: Ticket[] = [

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isQuiet, agreementState } from "@/lib/control/types";
+import { actorLabel, isQuiet, agreementState } from "@/lib/control/types";
 import { parseAcceptInput, parseAgreementInput, parseSendInput, isAgreementToken, describeAudit, isUuid, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
 import { effectivePriceCents, formatMoney } from "@/lib/control/types";
 
@@ -157,5 +157,13 @@ describe("quiet clients", () => {
     expect(describeAudit("client.workspace_linked", { client_id: "x", workspace: "Acme" })).toBe("Connected workspace Acme");
     expect(describeAudit("client.workspace_unlinked", { client_id: "x" })).toBe("Disconnected the workspace");
     expect(describeAudit("client.owner_invited", { client_id: "x", email: "pat@acme.test" })).toBe("Invited pat@acme.test as workspace owner");
+  });
+});
+
+describe("actorLabel", () => {
+  it("shows the staff member's name, then their email, then System", () => {
+    expect(actorLabel({ staffName: "Kyle Fulwood Jr", staffEmail: "kyleonbiz@gmail.com" })).toBe("Kyle Fulwood Jr");
+    expect(actorLabel({ staffName: "  ", staffEmail: "kyleonbiz@gmail.com" })).toBe("kyleonbiz@gmail.com");
+    expect(actorLabel({ staffName: "", staffEmail: "" })).toBe("System");
   });
 });

@@ -34,6 +34,11 @@ select t.ok('staff can sign up with their own email', exists (select 1 from auth
 update public.workspace_invites set expires_at = now() - interval '1 day' where email = 'mia@match.test';
 select t.fails('an expired invitation no longer lets anyone sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), 'mia@match.test')$$, 'sign-up is by invitation');
 
+-- The client history names the staff member (from the team list), not just their email.
+select t.as_staff(:stf::uuid);
+select t.ok('the client history shows the staff member by name', (select count(*) from public.control_client_timeline(:cl) where staff_email = 'staff-am@adflo.test' and staff_name = 'Am Staff') > 0);
+reset role;
+
 -- Clean up what this file made, so nothing leaks into later runs.
 set adflo.test_fixture = on;
 delete from public.clients where id = :cl;

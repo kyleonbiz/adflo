@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { loadAudit } from "@/lib/control/data";
+import { actorLabel } from "@/lib/control/types";
 import { renderControlShell } from "@/lib/control/shell";
 import { describeAudit } from "@/lib/control/validation";
 
@@ -30,7 +31,7 @@ export default function AuditRoute() {
             {entries.map((e) => (
               <li key={e.id} className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm">
                 <span className="min-w-0"><span className="font-medium">{describeAudit(e.action, e.detail)}</span></span>
-                <span className="text-xs text-muted-foreground">{e.staffEmail || "System"} · {when(e.createdAt)}</span>
+                <span className="text-xs text-muted-foreground">{actorLabel(e)} · {when(e.createdAt)}</span>
               </li>
             ))}
           </ul>

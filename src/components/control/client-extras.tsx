@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { describeAudit } from "@/lib/control/validation";
-import type { Ticket, TimelineEvent } from "@/lib/control/types";
+import { actorLabel, type Ticket, type TimelineEvent } from "@/lib/control/types";
 import { TicketBadges, when } from "./support-page";
 
 const stamp = (iso: string) => new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC";
@@ -46,7 +46,7 @@ export function ClientExtras({ clientId, ownerEmail, tickets, timeline, canEdit 
       <section id="history" className="scroll-mt-4 rounded-2xl border bg-card p-5 shadow-panel" aria-label="Timeline">
         <h2 className="font-semibold">Timeline</h2>
         {timeline.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">Nothing recorded yet for client {clientId.slice(0, 8)}.</p> : (
-          <ul className="mt-2 divide-y">{timeline.map((e, i) => (<li key={i} className="flex flex-wrap items-baseline justify-between gap-x-4 py-2 text-sm"><span>{describeAudit(e.action, e.detail)}</span><span className="text-xs text-muted-foreground">{e.staffEmail || "System"} · {stamp(e.at)}</span></li>))}</ul>
+          <ul className="mt-2 divide-y">{timeline.map((e, i) => (<li key={i} className="flex flex-wrap items-baseline justify-between gap-x-4 py-2 text-sm"><span>{describeAudit(e.action, e.detail)}</span><span className="text-xs text-muted-foreground">{actorLabel(e)} · {stamp(e.at)}</span></li>))}</ul>
         )}
       </section>
     </>

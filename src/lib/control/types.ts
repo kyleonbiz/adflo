@@ -69,6 +69,8 @@ export function effectivePriceCents(c: Pick<ClientRecord, "plan" | "priceOverrid
 export interface AuditEntry {
   id: number;
   staffEmail: string;
+  /** The staff member's name from the team list; empty when they are not (or no longer) on it. */
+  staffName: string;
   action: string;
   entity: string;
   entityId: string;
@@ -88,7 +90,7 @@ export interface Ticket {
 }
 export interface TicketNote { id: string; authorEmail: string; body: string; createdAt: string }
 export interface DirectoryEntry { userId: string; displayName: string; role: StaffRole }
-export interface TimelineEvent { at: string; staffEmail: string; action: string; detail: Record<string, unknown> }
+export interface TimelineEvent { at: string; staffEmail: string; staffName: string; action: string; detail: Record<string, unknown> }
 
 export interface AgreementTemplate { id: string; title: string; version: number; body: string; createdAt: string }
 export interface SentAgreement {
@@ -111,3 +113,6 @@ export function isQuiet(c: Pick<ClientRecord, "status" | "lastActive" | "workspa
   if (c.status !== "active" || !c.workspaceId) return false;
   return !c.lastActive || now - Date.parse(c.lastActive) > QUIET_DAYS * 86_400_000;
 }
+
+/** Who did it, for the audit log and client history: the staff member's name, else their email, else "System". */
+export const actorLabel = (e: { staffName?: string; staffEmail: string }) => e.staffName?.trim() || e.staffEmail || "System";
