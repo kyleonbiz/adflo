@@ -15,12 +15,15 @@ function fakeSupabase(client: Record<string, unknown> | null, opts: { rpcError?:
   const ticks: Record<string, unknown>[] = [];
   const rpcs: { fn: string; args: Record<string, unknown> }[] = [];
   const db = {
-    rpc: async (fn: string, args: Record<string, unknown>) => { rpcs.push({ fn, args }); return opts.rpcError ? { data: null, error: opts.rpcError } : { data: "2026-12-03T16:09:15Z", error: null }; },
+    rpc: async (fn: string, args: Record<string, unknown>) => {
+      rpcs.push({ fn, args });
+      // Staff see who has joined only through this count; the members table itself is not readable to them.
+      if (fn === "control_client_usage") return { data: [{ client_id: "c1", seats_used: opts.members ?? 0, last_active: null }, { client_id: "other", seats_used: 5, last_active: null }], error: null };
+      return opts.rpcError ? { data: null, error: opts.rpcError } : { data: "2026-12-03T16:09:15Z", error: null };
+    },
     from: (table: string) => table === "clients"
       ? { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: client }) }) }) }
-      : table === "workspace_members"
-        ? { select: () => ({ eq: () => ({ limit: async () => ({ data: Array.from({ length: opts.members ?? 0 }, () => ({ workspace_id: "w1" })) }) }) }) }
-        : { upsert: async (row: Record<string, unknown>) => { ticks.push(row); return { error: null }; } },
+      : { upsert: async (row: Record<string, unknown>) => { ticks.push(row); return { error: null }; } },
   };
   return { db: db as never, ticks, rpcs };
 }
@@ -79,7 +82,7 @@ describe("emailWelcome", () => {
     expect(sent[0].subject).toBe("Welcome to AdFlo, Mom & Pops Pizza");
     expect(sent[0].text).toContain("https://www.adflo.pro/login");
     expect(sent[0].text).not.toContain("/invite/");
-    expect(rpcs).toEqual([]); // no confirm link is made for a welcome
+    expect(rpcs.map((r) => r.fn)).toEqual(["control_client_usage"]); // no confirm link is made for a welcome
     expect(ticks).toEqual([{ client_id: "c1", step: "welcome_sent", done_by: "staff-1" }]);
   });
   it("is refused until someone has joined the workspace, and ticks nothing", async () => {

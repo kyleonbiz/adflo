@@ -16,8 +16,11 @@ type WelcomeResult = MailResult;
 export async function emailWelcome(supabase: SupabaseClient, staffUserId: string, clientId: string, requestUrl: string): Promise<WelcomeResult> {
   const t = await ownerTarget(supabase, clientId);
   if (!t.ok) return t;
-  const { data: joined } = await supabase.from("workspace_members").select("workspace_id").eq("workspace_id", t.workspaceId).limit(1);
-  if (!joined || joined.length === 0) return { ok: false, code: "not_joined", status: 409, message: "The owner has not signed in yet. Send the welcome message once they have; until then, the invitation is what they need." };
+  // Staff are not members of client workspaces, so the members table is invisible to them: the same staff-only usage count the
+  // account card uses (control_client_usage) says whether anyone has joined.
+  const { data: usage } = await supabase.rpc("control_client_usage");
+  const row = ((usage ?? []) as { client_id: string; seats_used: number }[]).find((u) => u.client_id === clientId);
+  if (!row || Number(row.seats_used) < 1) return { ok: false, code: "not_joined", status: 409, message: "The owner has not signed in yet. Send the welcome message once they have; until then, the invitation is what they need." };
   const text = welcomeMessage({ clientName: t.name, ownerName: t.ownerName, loginUrl: `${siteOrigin(requestUrl)}/login` });
   try {
     await sendOnboardingEmail({ to: t.to, subject: welcomeEmailSubject(t.name), text });
