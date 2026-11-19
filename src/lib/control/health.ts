@@ -34,10 +34,11 @@ export async function runHealthChecks(supabase: SupabaseClient): Promise<HealthC
   checks.push(getServiceRoleKey()
     ? { name: "Error logging", level: "ok", detail: "Server errors are recorded." }
     : { name: "Error logging", level: "warn", detail: "SUPABASE_SERVICE_ROLE_KEY is not set, so server errors are not recorded." });
-  const { data: runs } = await supabase.from("job_runs").select("job, ran_at, ok, detail").in("job", ["cleanup-uploads", "purge-workspaces"]);
+  const { data: runs } = await supabase.from("job_runs").select("job, ran_at, ok, detail").in("job", ["cleanup-uploads", "purge-workspaces", "stray-accounts"]);
   const lastRun = (job: string) => ((runs ?? []) as (JobRun & { job: string })[]).find((r) => r.job === job) ?? null;
   checks.push(cleanupCheck(!!process.env.CRON_SECRET, lastRun("cleanup-uploads")));
   checks.push(cleanupCheck(!!process.env.CRON_SECRET, lastRun("purge-workspaces"), Date.now(), "Closed workspaces"));
+  checks.push(cleanupCheck(!!process.env.CRON_SECRET, lastRun("stray-accounts"), Date.now(), "Stray accounts"));
   checks.push(process.env.ANTHROPIC_API_KEY
     ? { name: "Assistant (Addy)", level: "ok", detail: "An API key is configured." }
     : { name: "Assistant (Addy)", level: "warn", detail: "ANTHROPIC_API_KEY is not set, so the assistant cannot answer." });
