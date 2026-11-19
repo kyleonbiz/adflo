@@ -32,21 +32,22 @@ const para = (s: string, color = BODY, size = 16) => `<p style="margin:0 0 16px;
 
 function button(b: { label: string; url: string; caption?: string }): string {
   const url = safeUrl(b.url);
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 18px;">
-${b.caption ? `<tr><td style="padding:0 0 8px;font:600 15px/1.4 ${FONT};color:${NAVY};">${escapeHtml(b.caption)}</td></tr>` : ""}
-<tr><td bgcolor="${BLUE}" style="border-radius:8px;"><a href="${url}" style="display:inline-block;padding:13px 26px;font:600 16px/1 ${FONT};color:#ffffff;text-decoration:none;border-radius:8px;">${escapeHtml(b.label)}</a></td></tr>
-<tr><td style="padding:10px 0 0;font:12px/1.5 ${FONT};color:${MUTED};word-break:break-all;">Or paste this link into your browser:<br><a href="${url}" style="color:${BLUE};">${escapeHtml(b.url)}</a></td></tr>
+  // Every button is the same width, and its label is centered across and down. The link below it uses the full card width.
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 26px;">
+${b.caption ? `<tr><td style="padding:0 0 10px;font:600 15px/1.4 ${FONT};color:${NAVY};">${escapeHtml(b.caption)}</td></tr>` : ""}
+<tr><td align="left"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" valign="middle" bgcolor="${BLUE}" width="260" height="48" style="width:260px;height:48px;border-radius:8px;text-align:center;"><a href="${url}" style="display:block;width:260px;line-height:48px;font:600 16px/48px ${FONT};color:#ffffff;text-align:center;text-decoration:none;border-radius:8px;">${escapeHtml(b.label)}</a></td></tr></table></td></tr>
+<tr><td style="padding:12px 0 0;font:12px/1.5 ${FONT};color:${MUTED};word-break:break-all;">Or paste this link into your browser:<br><a href="${url}" style="color:${BLUE};">${escapeHtml(b.url)}</a></td></tr>
 </table>`;
 }
 
 export function brandedEmail(c: EmailContent): string {
   const logo = `${CANONICAL_ORIGIN}/logo-wordmark-light.png`;
   const panel = c.panel?.length
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${TINT}" style="margin:6px 0 22px;background:${TINT};border-radius:8px;"><tr><td style="padding:18px 22px;">
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${TINT}" style="margin:4px 0 24px;background:${TINT};border-radius:8px;"><tr><td style="padding:18px 22px;">
 ${c.panel.map(([k, v]) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:5px 0;font:600 12px/1.4 ${FONT};letter-spacing:.06em;text-transform:uppercase;color:${MUTED};vertical-align:top;" width="38%">${escapeHtml(k)}</td><td style="padding:5px 0;font:600 16px/1.4 ${FONT};color:${NAVY};vertical-align:top;">${escapeHtml(v)}</td></tr></table>`).join("\n")}
 </td></tr></table>` : "";
   const steps = c.steps?.length
-    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;">${c.steps.map((s, i) => `<tr><td style="padding:0 12px 10px 0;vertical-align:top;"><div style="width:24px;height:24px;border-radius:12px;background:${BLUE};color:#ffffff;font:600 13px/24px ${FONT};text-align:center;">${i + 1}</div></td><td style="padding:1px 0 10px;font:16px/1.5 ${FONT};color:${BODY};">${escapeHtml(s)}</td></tr>`).join("")}</table>` : "";
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;">${c.steps.map((s, i) => `<tr><td style="padding:0 14px 12px 0;vertical-align:top;"><div style="width:24px;height:24px;border-radius:12px;background:${BLUE};color:#ffffff;font:600 13px/24px ${FONT};text-align:center;">${i + 1}</div></td><td style="padding:0 0 12px;font:16px/24px ${FONT};color:${BODY};">${escapeHtml(s)}</td></tr>`).join("")}</table>` : "";
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${escapeHtml(c.headline)}</title></head>
 <body style="margin:0;padding:0;background:${PAGE};">
