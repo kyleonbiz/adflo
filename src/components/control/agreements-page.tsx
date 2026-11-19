@@ -58,7 +58,9 @@ function SentRow({ a, showClient, canDelete }: { a: SentAgreement; showClient?: 
 export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail = "" }: { clientId: string; templates: AgreementTemplate[]; sent: SentAgreement[]; canEdit: boolean; ownerEmail?: string }) {
   const router = useRouter();
   const latest = templates.filter((t) => !templates.some((o) => o.title === t.title && o.version > t.version));
-  const [templateId, setTemplateId] = useState(latest[0]?.id ?? "");
+  // Nothing is ticked to start with, so nothing goes out by accident.
+  const [picked, setPicked] = useState<string[]>([]);
+  const chosen = latest.filter((t) => picked.includes(t.id));
   const [link, setLink] = useState("");
   const [links, setLinks] = useState<{ id: string; title: string; link: string }[]>([]);
   const [copiedId, setCopiedId] = useState("");
@@ -68,10 +70,16 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  const mailing = emailIt && !!ownerEmail;
+  const sendLabel = chosen.length === 0 ? "Choose an agreement" : chosen.length === 1 ? (mailing ? "Create link and email it" : "Create link") : mailing ? `Send ${chosen.length} in one email` : `Create ${chosen.length} links`;
+
   async function send(e: React.FormEvent) {
-    e.preventDefault(); setBusy(true); setError(""); setLink(""); setLinks([]); setCopied(false); setEmailNote("");
+    e.preventDefault();
+    if (chosen.length === 0) return;
+    if (chosen.length > 1) { await sendAll(); return; }
+    setBusy(true); setError(""); setLink(""); setLinks([]); setCopied(false); setEmailNote("");
     try {
-      const res = await fetch("/api/control/agreements/send", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, templateId, email: emailIt && !!ownerEmail }) });
+      const res = await fetch("/api/control/agreements/send", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, templateId: chosen[0]!.id, email: emailIt && !!ownerEmail }) });
       const json = await res.json().catch(() => null);
       if (res.ok && json?.link) { setLink(json.link); setEmailNote(json.emailedTo ? `Emailed to ${json.emailedTo} from onboarding@adflo.pro.` : json.emailError ?? ""); router.refresh(); } else setError(json?.error?.message ?? "Could not create the link. Try again.");
     } catch { setError("Could not reach the server. Try again."); } finally { setBusy(false); }
@@ -79,7 +87,7 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
   async function sendAll() {
     setBusy(true); setError(""); setLink(""); setLinks([]); setCopiedId(""); setEmailNote("");
     try {
-      const res = await fetch("/api/control/agreements/send-all", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, templateIds: latest.map((t) => t.id), email: emailIt && !!ownerEmail }) });
+      const res = await fetch("/api/control/agreements/send-all", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ clientId, templateIds: chosen.map((t) => t.id), email: emailIt && !!ownerEmail }) });
       const json = await res.json().catch(() => null);
       if (res.ok && Array.isArray(json?.items)) { setLinks(json.items); setEmailNote(json.emailedTo ? `Emailed to ${json.emailedTo} from onboarding@adflo.pro.` : json.emailError ?? ""); router.refresh(); } else setError(json?.error?.message ?? "Could not create the links. Try again.");
     } catch { setError("Could not reach the server. Try again."); } finally { setBusy(false); }
@@ -96,10 +104,17 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
       <h2 className="font-semibold">Terms and agreements</h2>
       {canEdit && (latest.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No agreements are published yet. The Owner can add one under Agreements.</p> : (
         <form onSubmit={send} className="mt-3 flex flex-wrap items-end gap-3">
-          <div className="min-w-56 flex-1 space-y-1.5"><Label htmlFor="ag-template">Agreement</Label><select id="ag-template" value={templateId} onChange={(e) => setTemplateId(e.target.value)} className="h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30">{latest.map((t) => <option key={t.id} value={t.id}>{t.title} (v{t.version})</option>)}</select></div>
-          {ownerEmail && <label className="flex w-full items-center gap-2 text-sm"><input type="checkbox" checked={emailIt} onChange={(e) => setEmailIt(e.target.checked)} /> Also email it to {ownerEmail} from onboarding@adflo.pro</label>}
-          <Button type="submit" variant="outline" disabled={busy || !templateId}>{busy ? "Working…" : emailIt && ownerEmail ? "Create link and email it" : "Create link"}</Button>
-          {latest.length >= 2 && <Button type="button" disabled={busy} onClick={sendAll}>{busy ? "Working…" : emailIt && ownerEmail ? `Send all ${latest.length} in one email` : `Create all ${latest.length} links`}</Button>}
+          <fieldset className="w-full space-y-2">
+            <legend className="mb-1 text-sm font-medium">Choose what to send</legend>
+            {latest.map((t) => (
+              <label key={t.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-input bg-card p-3 text-sm transition-colors hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
+                <input type="checkbox" className="size-5 shrink-0 cursor-pointer accent-[var(--primary)]" checked={picked.includes(t.id)} onChange={(e) => setPicked((p) => (e.target.checked ? [...p, t.id] : p.filter((x) => x !== t.id)))} />
+                <span>{t.title} <span className="text-muted-foreground">(v{t.version})</span></span>
+              </label>
+            ))}
+          </fieldset>
+          {ownerEmail && <label className="flex w-full items-center gap-2 text-sm"><input type="checkbox" checked={emailIt} onChange={(e) => setEmailIt(e.target.checked)} /> Also email {chosen.length > 1 ? "them" : "it"} to {ownerEmail} from onboarding@adflo.pro</label>}
+          <Button type="submit" disabled={busy || chosen.length === 0}>{busy ? "Working…" : sendLabel}</Button>
         </form>
       ))}
       {link && (
