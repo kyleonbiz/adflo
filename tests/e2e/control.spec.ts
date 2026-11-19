@@ -210,7 +210,7 @@ test("onboarding tab: every client's setup progress, stalled ones flagged, rows 
   // The sample trial client is not finished, so it is listed under "In progress" with its next step.
   const birch = page.getByRole("link", { name: /Sample: Birch & Co/ });
   await expect(birch).toBeVisible();
-  await expect(birch).toContainText("Next: Welcome message sent");
+  await expect(birch).toContainText("Next: Terms and agreement sent");
   await expect(birch).toContainText("3 of 8");
   // The fully set up one only shows under Complete.
   await expect(page.getByRole("link", { name: /Sample: Acme Roofing/ })).toHaveCount(0);

@@ -1,5 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { buildControlAlerts, type ControlAlert } from "./alerts";
 import { TIERS } from "./tiers";
 import { type AuditEntry, type ClientRecord, type ClientStatus, type DirectoryEntry, type Plan, type StaffMember, type StaffRole, type Ticket, type TicketNote, type TimelineEvent, type AgreementTemplate, type SentAgreement, type AppError, type UnlinkedWorkspace } from "./types";
 
@@ -175,4 +176,16 @@ export async function loadClientProblems(supabase: SupabaseClient): Promise<{ fa
     failedDocs: new Map(((docs.data ?? []) as { client_id: string; failed: number }[]).map((r) => [r.client_id, Number(r.failed)])),
     errors: new Map(((errs.data ?? []) as { client_id: string; errors: number }[]).map((r) => [r.client_id, Number(r.errors)])),
   };
+}
+
+/** What the Control center bell shows. Best effort: a failed read just means fewer alerts, never a broken page. */
+export async function loadControlAlerts(supabase: SupabaseClient, clients?: ClientRecord[]): Promise<ControlAlert[]> {
+  const soft = async <T,>(p: Promise<T>, empty: T): Promise<T> => { try { return await p; } catch { return empty; } };
+  const [c, tickets, errors, sent] = await Promise.all([
+    clients ? Promise.resolve(clients) : soft(loadClients(supabase), [] as ClientRecord[]),
+    soft(loadTickets(supabase), [] as Ticket[]),
+    soft(loadErrors(supabase, 100), [] as AppError[]),
+    soft(loadSent(supabase), [] as SentAgreement[]),
+  ]);
+  return buildControlAlerts({ clients: c, tickets, errors, sent });
 }
