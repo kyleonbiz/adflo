@@ -173,6 +173,13 @@ describe("client deletion in the audit log", () => {
   });
 });
 
+describe("account removal in the audit log", () => {
+  it("lists who was removed", () => {
+    expect(describeAudit("client.accounts_removed", { emails: ["a@x.test", "b@x.test"] })).toBe("Removed 2 sign-in accounts: a@x.test, b@x.test");
+    expect(describeAudit("client.accounts_removed", { emails: ["a@x.test"] })).toBe("Removed 1 sign-in account: a@x.test");
+  });
+});
+
 describe("actorLabel", () => {
   it("shows the staff member's name, then their email, then System", () => {
     expect(actorLabel({ staffName: "Kyle Fulwood Jr", staffEmail: "kyleonbiz@gmail.com" })).toBe("Kyle Fulwood Jr");

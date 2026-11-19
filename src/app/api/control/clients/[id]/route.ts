@@ -50,7 +50,7 @@ export function PATCH(req: Request, ctx: RouteContext<"/api/control/clients/[id]
  * Owner deletes a client together with its workspace, in one step. The database function checks the role, the second factor, that
  * the name was typed back, that the client is not active and, when it has signed agreements, that the Owner acknowledged they are deleted too (a copy goes into the audit log), and writes the audit log. If the
  * client has a workspace its stored files and the workspace are erased first, with the same code as the nightly job: if any file
- * cannot be removed nothing is deleted. Only then is the client record removed, so a client and its workspace never part ways.
+ * cannot be removed nothing is deleted. Then the client record is removed, so a client and its workspace never part ways, and last the sign-in accounts of its members and owner (never staff, never anyone who also belongs to another client's workspace).
  */
 export function DELETE(req: Request, ctx: RouteContext<"/api/control/clients/[id]">) {
   return staffRoute(req, async ({ supabase }) => {
@@ -65,8 +65,13 @@ export function DELETE(req: Request, ctx: RouteContext<"/api/control/clients/[id
       return fail(e.status, check.error.hint === "needs_ack" ? "needs_ack" : "client", e.message);
     }
     let filesRemoved = 0;
+    // Everything of theirs goes: the workspace's members and the owner's sign-in too, unless they belong to another client or are staff.
+    // The list is read now, before the workspace (and with it the membership rows) is erased.
+    const admin = createServiceSupabase();
+    const accounts = await supabase.rpc("control_client_account_ids", { p_client: id });
+    const doomed = ((accounts.data ?? []) as { user_id: string; email: string; other_workspaces: number | string }[]).filter((a) => Number(a.other_workspaces) === 0);
+    if (doomed.length && !admin) return fail(503, "no_service_key", "Deleting needs the server's service key, which is not set. Nothing was deleted.");
     if (typeof check.data === "string") {
-      const admin = createServiceSupabase();
       if (!admin) return fail(503, "no_service_key", "Deleting needs the server's service key, which is not set. Nothing was deleted.");
       const purged = await purgeWorkspace(admin, check.data);
       if (!purged.ok) return fail(502, "purge_failed", "Some stored files could not be removed, so nothing was deleted. Try again.");
@@ -77,6 +82,14 @@ export function DELETE(req: Request, ctx: RouteContext<"/api/control/clients/[id
       const e = clientDeleteError(error.code, error.message);
       return fail(e.status, "client", e.message);
     }
-    return NextResponse.json({ ok: true, filesRemoved });
+    // The client and its workspace are gone; now their sign-in accounts. A failure here does not undo the delete: it is reported.
+    let accountsRemoved = 0;
+    const removed: string[] = [];
+    for (const a of doomed) {
+      const rm = await admin!.auth.admin.deleteUser(a.user_id);
+      if (!rm.error) { accountsRemoved++; removed.push(a.email); }
+    }
+    if (removed.length) await supabase.rpc("control_log", { p_action: "client.accounts_removed", p_entity: "client", p_entity_id: id, p_detail: { client_id: id, emails: removed } });
+    return NextResponse.json({ ok: true, filesRemoved, accountsRemoved, accountsFailed: doomed.length - accountsRemoved });
   }, "owner");
 }

@@ -229,7 +229,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
           {deleting && (
             <div role="alertdialog" aria-label="Delete client" className="space-y-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
               <p className="font-medium">Delete {client.name} permanently?</p>
-              <p>This removes the client record with its onboarding steps, the agreements sent to them and the reminder log. Support tickets are kept but no longer linked to a client.{linked ? <> <strong>Their workspace is deleted too</strong>: its documents, stored files, records and team are erased right away, with no 30-day wait. People&apos;s sign-in accounts are kept.</> : ""} This cannot be undone.</p>
+              <p>This removes the client record with its onboarding steps, the agreements sent to them and the reminder log. Support tickets are kept but no longer linked to a client.{linked ? <> <strong>Their workspace is deleted too</strong>: its documents, stored files, records and team are erased right away, with no 30-day wait.</> : ""} The owner&apos;s and members&apos; sign-in accounts are removed too (unless they also belong to another client). This cannot be undone.</p>
               {client.status === "active" && <p className="rounded bg-white/70 px-2 py-1.5">This client is active. Cancel them first, then delete.</p>}
               {needAck && (
                 <label className="flex items-start gap-2 rounded bg-white/70 px-2 py-1.5">

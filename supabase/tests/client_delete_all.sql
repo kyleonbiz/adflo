@@ -35,6 +35,26 @@ reset role;
 select t.ok('it returns the client''s workspace id', :'got' = :ws::text);
 select t.ok('it logged the request and deleted nothing itself', (select count(*) from public.staff_audit_log where entity_id = :c1 and action = 'client.delete_requested') = 1 and (select count(*) from public.clients where id = :c1) = 1);
 
+-- the accounts that go with a client: its workspace's members and whoever signed up with the owner's email, never staff
+reset role;
+insert into auth.users (id, email) values ('7d000000-0000-4000-8000-0000000000c1', 'member@both.test'), ('7d000000-0000-4000-8000-0000000000c2', 'owner@both.test'), ('7d000000-0000-4000-8000-0000000000c3', 'shared@both.test');
+update public.clients set owner_email = 'owner@both.test' where id = :c1;
+insert into public.workspace_members (workspace_id, user_id, role, display_name, email) values
+  (:ws, '7d000000-0000-4000-8000-0000000000c1', 'editor', 'Mem', 'member@both.test'), (:ws, '7d000000-0000-4000-8000-0000000000c3', 'editor', 'Shr', 'shared@both.test');
+insert into public.workspaces (id, name, created_by) values ('7d000000-0000-4000-8000-0000000000a2', 'Other Co', null);
+insert into public.workspace_members (workspace_id, user_id, role, display_name, email) values ('7d000000-0000-4000-8000-0000000000a2', '7d000000-0000-4000-8000-0000000000c3', 'editor', 'Shr', 'shared@both.test');
+select t.as_staff(:sue::uuid);
+select t.fails('support cannot list a client''s accounts', format($q$select * from public.control_client_account_ids(%L)$q$, :c1), 'forbidden');
+select t.as_staff(:sam::uuid);
+select t.ok('the member and the owner-email account are listed', (select count(*) from public.control_client_account_ids(:c1) where email in ('member@both.test', 'owner@both.test')) = 2);
+select t.ok('staff are never listed', (select count(*) from public.control_client_account_ids(:c1) where email in (select email from public.staff_members)) = 0);
+select t.ok('someone in another workspace too is flagged so they are kept', (select other_workspaces from public.control_client_account_ids(:c1) where email = 'shared@both.test') = 1
+  and (select other_workspaces from public.control_client_account_ids(:c1) where email = 'member@both.test') = 0);
+reset role;
+delete from public.workspace_members where workspace_id in (:ws, '7d000000-0000-4000-8000-0000000000a2');
+delete from public.workspaces where id = '7d000000-0000-4000-8000-0000000000a2';
+delete from auth.users where id in ('7d000000-0000-4000-8000-0000000000c1', '7d000000-0000-4000-8000-0000000000c2', '7d000000-0000-4000-8000-0000000000c3');
+
 -- a client with signed agreements: allowed with the acknowledgement, and the signature is copied into the audit log first
 select t.as_staff(:sam::uuid);
 select public.control_check_client_delete(:c3, 'Signed Co', true);
