@@ -1,7 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { NEW_CLIENT_DAYS } from "./onboarding";
 import { TIERS } from "./tiers";
-import type { AuditEntry, ClientRecord, ClientStatus, DirectoryEntry, Plan, StaffMember, StaffRole, Ticket, TicketNote, TimelineEvent, AgreementTemplate, SentAgreement, AppError, UnlinkedWorkspace } from "./types";
+import { CHECKLIST_STEPS, type AuditEntry, type ClientRecord, type ClientStatus, type DirectoryEntry, type Plan, type StaffMember, type StaffRole, type Ticket, type TicketNote, type TimelineEvent, type AgreementTemplate, type SentAgreement, type AppError, type UnlinkedWorkspace } from "./types";
 
 interface ClientRow {
   id: string; name: string; status: ClientStatus; plan: string; seats_limit: number; owner_name: string;
@@ -38,6 +39,22 @@ export async function loadClients(supabase: SupabaseClient): Promise<ClientRecor
     c.checklist = (steps.data ?? []).filter((s: { client_id: string }) => s.client_id === c.id).map((s: { step: string }) => s.step);
   }
   return clients;
+}
+
+/** How many clients are new and still need onboarding (see NEW_CLIENT_DAYS): the number on the Onboarding menu item. Best effort: 0 if it cannot be read. */
+export async function loadNewClientCount(supabase: SupabaseClient, today: string): Promise<number> {
+  try {
+    const since = new Date(Date.parse(`${today}T00:00:00Z`) - NEW_CLIENT_DAYS * 86_400_000).toISOString().slice(0, 10);
+    const { data: rows } = await supabase.from("clients").select("id").in("status", ["trial", "active"]).gte("started_on", since);
+    const ids = ((rows ?? []) as { id: string }[]).map((r) => r.id);
+    if (ids.length === 0) return 0;
+    const { data: steps } = await supabase.from("client_checklist").select("client_id").in("client_id", ids);
+    const done = new Map<string, number>();
+    for (const s of (steps ?? []) as { client_id: string }[]) done.set(s.client_id, (done.get(s.client_id) ?? 0) + 1);
+    return ids.filter((id) => (done.get(id) ?? 0) < CHECKLIST_STEPS.length).length;
+  } catch {
+    return 0;
+  }
 }
 
 export async function loadPlans(supabase: SupabaseClient): Promise<Plan[]> {

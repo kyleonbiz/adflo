@@ -19,14 +19,14 @@ type Item = NavItem;
 export const isActive = (pathname: string, href: string, base: string) =>
   href === base ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
-export function NavLink({ item, active, onNavigate, collapsed }: { item: Item; active: boolean; onNavigate?: () => void; collapsed?: boolean }) {
+export function NavLink({ item, active, onNavigate, collapsed, badge }: { item: Item; active: boolean; onNavigate?: () => void; collapsed?: boolean; badge?: number }) {
   const Icon = item.icon ?? MODULE_ICONS[item.id] ?? FileText;
   return (
     <Link
       href={item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      aria-label={collapsed ? item.label : undefined}
+      aria-label={collapsed ? (badge ? `${item.label}, ${badge} new` : item.label) : undefined}
       title={collapsed ? item.label : undefined}
       className={cn(
         collapsed && "justify-center px-0",
@@ -34,8 +34,12 @@ export function NavLink({ item, active, onNavigate, collapsed }: { item: Item; a
         active ? "bg-brand-blue/25 bg-[image:linear-gradient(90deg,rgb(255_255_255/0.15),transparent)] text-white ring-1 ring-white/15 shadow-[inset_3px_0_0_0_var(--brand-sky),0_0_28px_-8px_var(--brand-sky)]" : "text-slate-300 hover:bg-white/8 hover:text-white",
       )}
     >
-      <Icon className="size-[18px] shrink-0" aria-hidden />
+      <span className="relative inline-flex shrink-0">
+        <Icon className="size-[18px]" aria-hidden />
+        {collapsed && !!badge && <span aria-hidden className="absolute -right-1 -top-1 size-2 rounded-full bg-amber-400 ring-2 ring-[#0b1030]" />}
+      </span>
       {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && !!badge && <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-amber-400 px-1.5 text-[11px] font-semibold leading-5 text-slate-900" aria-label={`${badge} new`}>{badge}</span>}
     </Link>
   );
 }

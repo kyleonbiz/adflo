@@ -7,7 +7,7 @@ import { AlertTriangle, BellRing, CheckCircle2, ClipboardList, Hourglass, Plus }
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { STALLED_AFTER_DAYS, summarizeOnboarding, type OnboardingRow } from "@/lib/control/onboarding";
+import { NEW_CLIENT_DAYS, STALLED_AFTER_DAYS, summarizeOnboarding, type OnboardingRow } from "@/lib/control/onboarding";
 import type { AutoStatus } from "@/lib/control/auto-due";
 import { cooldownHoursLeft, nextReminder, reminderAgo } from "@/lib/control/reminders";
 import { cn } from "@/lib/utils";
@@ -21,8 +21,11 @@ const LABEL: Record<Filter, string> = { progress: "In progress", stalled: "Stall
 export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }: { rows: OnboardingRow[]; canAdd: boolean; canRemind?: boolean; sample?: boolean; auto?: AutoStatus }) {
   const [filter, setFilter] = useState<Filter>("progress");
   const summary = useMemo(() => summarizeOnboarding(rows), [rows]);
-  const shown = rows.filter((r) => (filter === "all" ? true : filter === "progress" ? !r.complete : filter === "stalled" ? r.stalled : r.complete));
-  const count = (f: Filter) => (f === "all" ? rows.length : f === "progress" ? summary.inProgress : f === "stalled" ? summary.stalled : summary.complete);
+  // New clients that still need setting up sit in their own area at the top; the filters below work on everyone else.
+  const fresh = useMemo(() => rows.filter((r) => r.isNew), [rows]);
+  const rest = useMemo(() => rows.filter((r) => !r.isNew), [rows]);
+  const shown = rest.filter((r) => (filter === "all" ? true : filter === "progress" ? !r.complete : filter === "stalled" ? r.stalled : r.complete));
+  const count = (f: Filter) => rest.filter((r) => (f === "all" ? true : f === "progress" ? !r.complete : f === "stalled" ? r.stalled : r.complete)).length;
 
   return (
     <div className="space-y-5">
@@ -43,6 +46,21 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }
         <SummaryTile icon={CheckCircle2} label="Fully set up" value={summary.complete} tone="text-emerald-600" />
       </div>
 
+      {fresh.length > 0 && (
+        <section aria-label="New clients to onboard" className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-panel">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="warning">New</Badge>
+            <h2 className="font-semibold">New clients to onboard ({fresh.length})</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">Started in the last {NEW_CLIENT_DAYS} days and not fully set up yet. Each one leaves this area when every step is done.</p>
+          <ul className="divide-y rounded-xl border bg-card">
+            {fresh.map((r) => <OnboardingItem key={r.client.id} r={r} canRemind={canRemind && !sample} auto={auto} />)}
+          </ul>
+        </section>
+      )}
+
+      {(rest.length > 0 || fresh.length === 0) && (
+        <>
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)}
@@ -59,11 +77,22 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }
         </div>
       ) : (
         <ul className="divide-y rounded-2xl border bg-card shadow-panel">
-          {shown.map((r) => (
-            <li key={r.client.id} className="flex flex-wrap items-center gap-x-3 sm:flex-nowrap">
+          {shown.map((r) => <OnboardingItem key={r.client.id} r={r} canRemind={canRemind && !sample} auto={auto} />)}
+        </ul>
+      )}
+        </>
+      )}
+    </div>
+  );
+}
+
+/** One client's row: progress and the next step, opening their profile at the onboarding guide. */
+function OnboardingItem({ r, canRemind, auto }: { r: OnboardingRow; canRemind: boolean; auto?: AutoStatus }) {
+  return (
+            <li className="flex flex-wrap items-center gap-x-3 sm:flex-nowrap">
               <Link href={`/control/clients/${r.client.id}#onboarding`} className="grid min-w-0 flex-1 gap-x-4 gap-y-2 px-4 py-3.5 outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1.2fr)] sm:items-center">
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{r.client.name}</p>
+                  <p className="flex items-center gap-2 truncate font-medium"><span className="truncate">{r.client.name}</span>{r.isNew && <Badge variant="warning">New</Badge>}</p>
                   <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                     <StatusBadge status={r.client.status} />
                     <span>{r.daysSinceStart === 0 ? "Started today" : `Started ${r.daysSinceStart} ${r.daysSinceStart === 1 ? "day" : "days"} ago`}</span>
@@ -78,12 +107,8 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }
                 </div>
                 <p className="min-w-0 text-sm">{r.complete ? <span className="text-emerald-700">All steps done</span> : <><span className="text-muted-foreground">Next: </span>{r.next}</>}</p>
               </Link>
-              <ReminderButton row={r} canRemind={canRemind && !sample} autoDue={auto?.due[r.client.id]} />
+              <ReminderButton row={r} canRemind={canRemind} autoDue={auto?.due[r.client.id]} />
             </li>
-          ))}
-        </ul>
-      )}
-    </div>
   );
 }
 

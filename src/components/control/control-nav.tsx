@@ -23,7 +23,7 @@ const ITEMS: NavItem[] = [
 ];
 
 /** Same navy sidebar as the app, with the staff menu. */
-export function ControlNav({ onNavigate, collapsed = false }: { base?: "/app"; onNavigate?: () => void; collapsed?: boolean }) {
+export function ControlNav({ onNavigate, collapsed = false, badges }: { base?: "/app"; onNavigate?: () => void; collapsed?: boolean; badges?: Record<string, number> }) {
   const pathname = usePathname();
   return (
     <div className={cn("flex h-full flex-col gap-4 p-4", collapsed && "items-center px-2")}>
@@ -41,7 +41,7 @@ export function ControlNav({ onNavigate, collapsed = false }: { base?: "/app"; o
         <ul className="space-y-1">
           {ITEMS.map((item) => (
             <li key={item.id}>
-              <NavLink item={item} active={item.href === "/control" ? pathname === "/control" : isActive(pathname, item.href, "/control")} onNavigate={onNavigate} collapsed={collapsed} />
+              <NavLink item={item} active={item.href === "/control" ? pathname === "/control" : isActive(pathname, item.href, "/control")} onNavigate={onNavigate} collapsed={collapsed} badge={badges?.[item.id]} />
             </li>
           ))}
         </ul>

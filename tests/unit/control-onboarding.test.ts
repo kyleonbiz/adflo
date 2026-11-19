@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { daysBetween, onboardingRow, onboardingRows, summarizeOnboarding } from "@/lib/control/onboarding";
+import { NEW_CLIENT_DAYS, daysBetween, isNewClient, onboardingRow, onboardingRows, summarizeOnboarding } from "@/lib/control/onboarding";
 import { CHECKLIST_STEPS, type ClientRecord } from "@/lib/control/types";
 
 const ALL = CHECKLIST_STEPS.map((s) => s.key);
@@ -48,5 +48,25 @@ describe("onboardingRows", () => {
   it("summarizes", () => {
     const rows = onboardingRows([c({ id: "a", startedOn: "2026-10-01" }), c({ id: "b", startedOn: "2026-11-03", checklist: ["workspace"] }), c({ id: "d", checklist: ALL })], "2026-11-04");
     expect(summarizeOnboarding(rows)).toEqual({ inProgress: 2, stalled: 1, complete: 1, notStarted: 1 });
+  });
+});
+
+describe("new clients", () => {
+  it("is new for two weeks while setup is unfinished", () => {
+    expect(NEW_CLIENT_DAYS).toBe(14);
+    expect(isNewClient(c({ startedOn: "2026-11-10" }), "2026-11-12")).toBe(true);
+    expect(isNewClient(c({ startedOn: "2026-11-01" }), "2026-11-14")).toBe(true);
+    expect(isNewClient(c({ startedOn: "2026-11-01" }), "2026-11-15")).toBe(false);
+  });
+  it("leaves the New area when every step is done", () => {
+    expect(isNewClient(c({ startedOn: "2026-11-10", checklist: ALL }), "2026-11-12")).toBe(false);
+  });
+  it("is only for clients on trial or active", () => {
+    expect(isNewClient(c({ startedOn: "2026-11-10", status: "trial" }), "2026-11-12")).toBe(true);
+    expect(isNewClient(c({ startedOn: "2026-11-10", status: "suspended" }), "2026-11-12")).toBe(false);
+    expect(isNewClient(c({ startedOn: "2026-11-10", status: "cancelled" }), "2026-11-12")).toBe(false);
+  });
+  it("falls back to the created date when the start date is missing", () => {
+    expect(isNewClient(c({ startedOn: null, createdAt: "2026-11-10T08:00:00Z" }), "2026-11-12")).toBe(true);
   });
 });

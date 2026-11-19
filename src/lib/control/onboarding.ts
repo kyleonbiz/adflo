@@ -2,6 +2,8 @@ import { CHECKLIST_STEPS, type ClientRecord } from "./types";
 
 /** A client left this long without finishing setup is flagged as stalled. */
 export const STALLED_AFTER_DAYS = 7;
+/** A client who started within this many days and has not finished onboarding is "new": it sits in the New area until it is done. */
+export const NEW_CLIENT_DAYS = 14;
 
 export interface OnboardingRow {
   client: ClientRecord;
@@ -12,6 +14,8 @@ export interface OnboardingRow {
   complete: boolean;
   daysSinceStart: number;
   stalled: boolean;
+  /** Recently started, on trial or active, and not fully set up: needs addressing now. */
+  isNew: boolean;
 }
 
 /** Whole days from `from` (YYYY-MM-DD or a timestamp) to `today` (YYYY-MM-DD). Never negative. */
@@ -28,7 +32,8 @@ export function onboardingRow(client: ClientRecord, today: string): OnboardingRo
   const next = CHECKLIST_STEPS.find((s) => !client.checklist.includes(s.key))?.label ?? null;
   const complete = next === null;
   const daysSinceStart = daysBetween(client.startedOn ?? client.createdAt, today);
-  return { client, done, total, next, complete, daysSinceStart, stalled: !complete && daysSinceStart >= STALLED_AFTER_DAYS };
+  const live = client.status === "trial" || client.status === "active";
+  return { client, done, total, next, complete, daysSinceStart, stalled: !complete && daysSinceStart >= STALLED_AFTER_DAYS, isNew: live && !complete && daysSinceStart < NEW_CLIENT_DAYS };
 }
 
 /**
@@ -52,3 +57,6 @@ export function summarizeOnboarding(rows: OnboardingRow[]): OnboardingSummary {
     notStarted: rows.filter((r) => r.done === 0).length,
   };
 }
+
+/** True for a client that belongs in the New area (see NEW_CLIENT_DAYS). */
+export const isNewClient = (client: ClientRecord, today: string): boolean => onboardingRow(client, today).isNew;

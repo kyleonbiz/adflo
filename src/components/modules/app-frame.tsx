@@ -15,7 +15,7 @@ import { ControlNav } from "@/components/control/control-nav";
  * button that opens the same menu as a drawer. `topRight` holds page-specific items (workspace name,
  * sign out, the demo badge).
  */
-export function AppFrame({ base, topRight, children, variant = "app" }: { base: "/app" | "/control"; topRight?: React.ReactNode; children: React.ReactNode; variant?: "app" | "control" }) {
+export function AppFrame({ base, topRight, children, variant = "app", navBadges }: { base: "/app" | "/control"; topRight?: React.ReactNode; children: React.ReactNode; variant?: "app" | "control"; navBadges?: Record<string, number> }) {
   const control = variant === "control";
   const Nav = control ? ControlNav : SidebarNav;
   const [open, setOpen] = useState(false);
@@ -24,7 +24,7 @@ export function AppFrame({ base, topRight, children, variant = "app" }: { base: 
     <div className="app-mesh min-h-dvh lg:flex">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[60] focus:rounded-lg focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-float focus:outline-none focus:ring-2 focus:ring-ring">Skip to content</a>
       <aside id="sidebar" className={cn("hidden sidebar-glass transition-[width] duration-200 lg:sticky lg:top-0 lg:block lg:h-dvh lg:shrink-0 lg:overflow-y-auto", collapsed ? "lg:w-[4.5rem]" : "lg:w-64")}>
-        <Nav base={base as "/app"} collapsed={collapsed} />
+        <Nav base={base as "/app"} collapsed={collapsed} badges={navBadges} />
       </aside>
 
       <div className="min-w-0 flex-1">
@@ -45,7 +45,7 @@ export function AppFrame({ base, topRight, children, variant = "app" }: { base: 
                     <DialogPrimitive.Close aria-label="Close menu" className="absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full text-slate-300 hover:bg-white/10 hover:text-white focus-visible:ring-2 focus-visible:ring-brand-sky">
                       <X className="size-4" aria-hidden />
                     </DialogPrimitive.Close>
-                    <Nav base={base as "/app"} onNavigate={() => setOpen(false)} />
+                    <Nav base={base as "/app"} onNavigate={() => setOpen(false)} badges={navBadges} />
                   </DialogPrimitive.Content>
                 </DialogPrimitive.Portal>
               </DialogPrimitive.Root>

@@ -1,5 +1,6 @@
 import { AppTopBar } from "@/components/app-header";
 import { AppFrame } from "@/components/modules/app-frame";
+import { loadNewClientCount } from "./data";
 import { controlDemoEnabled, requireStaff, type Staff } from "./gate";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -12,5 +13,7 @@ export async function renderControlShell(nextPath: string, content: (ctx: Contro
   const topRight = access.mode === "live"
     ? <AppTopBar userLabel={access.staff.name} workspaceName={`Staff · ${access.staff.role}`} signOutTo="control" />
     : <AppTopBar badge={controlDemoEnabled() ? "Demo · sample data, nothing saved" : "Preview"} />;
-  return <AppFrame base="/control" variant="control" topRight={topRight}>{body}</AppFrame>;
+  // The number on the Onboarding menu item: new clients that still need setting up.
+  const newClients = access.mode === "live" ? await loadNewClientCount(access.supabase, new Date().toISOString().slice(0, 10)) : 0;
+  return <AppFrame base="/control" variant="control" topRight={topRight} navBadges={newClients ? { onboarding: newClients } : undefined}>{body}</AppFrame>;
 }

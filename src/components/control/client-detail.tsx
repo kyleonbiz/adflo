@@ -9,6 +9,8 @@ import { ClientTiles } from "./client-billing";
 import { WorkspaceCard } from "./workspace-card";
 import { OnboardingGuide } from "./onboarding-guide";
 import { ClientDialog } from "./clients-page";
+import { Badge } from "@/components/ui/badge";
+import { isNewClient } from "@/lib/control/onboarding";
 import { StatusBadge } from "./status-badge";
 
 const SECTIONS = [["account", "Account"], ["onboarding", "Onboarding"], ["billing", "Billing"], ["agreements", "Agreements"], ["support", "Support"], ["history", "History"]] as const;
@@ -23,7 +25,10 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
       <Link href="/control/clients" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden /> Clients</Link>
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">{client.name}</h1>
-        <StatusBadge status={client.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={client.status} />
+          {isNewClient(client, today) && <Badge variant="warning">New · needs onboarding</Badge>}
+        </div>
       </div>
 
       <ClientTiles client={client} plans={plans} today={today} sample={sample} openTickets={openTickets} />

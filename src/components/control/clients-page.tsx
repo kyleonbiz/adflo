@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { isAccountOn, statusAfterSwitch } from "@/lib/control/status";
 import { CLIENT_STATUSES, STATUS_LABEL, effectivePriceCents, formatMoney, isQuiet, type ClientRecord, type ClientStatus, type Plan, type UnlinkedWorkspace } from "@/lib/control/types";
 import { cn } from "@/lib/utils";
+import { isNewClient } from "@/lib/control/onboarding";
+import { Badge } from "@/components/ui/badge";
 import { LeftoverWorkspaces } from "./leftover-workspaces";
 import { StatusBadge } from "./status-badge";
 
@@ -119,7 +121,7 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
 }
 
 /** The client directory: search, filter by status, add and edit. `canEdit` is false for read-only staff and in the preview. */
-export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, leftovers = [] }: { clients: ClientRecord[]; plans: Plan[]; canEdit: boolean; isOwner?: boolean; sample?: boolean; leftovers?: UnlinkedWorkspace[] }) {
+export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, leftovers = [], today = new Date().toISOString().slice(0, 10) }: { clients: ClientRecord[]; plans: Plan[]; canEdit: boolean; isOwner?: boolean; sample?: boolean; leftovers?: UnlinkedWorkspace[]; today?: string }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<ClientStatus | "all">("all");
@@ -171,7 +173,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
             <tbody className="divide-y">
               {rows.map((c) => (
                 <tr key={c.id}>
-                  <td className="px-4 py-3 font-medium"><Link href={`/control/clients/${c.id}`} className="rounded outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">{c.name}</Link></td>
+                  <td className="px-4 py-3 font-medium"><Link href={`/control/clients/${c.id}`} className="rounded outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">{c.name}</Link>{isNewClient(c, today) && <Link href={`/control/clients/${c.id}#onboarding`} className="ml-2 align-middle" aria-label={`${c.name} is new: open onboarding`}><Badge variant="warning">New</Badge></Link>}</td>
                   <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
                   <td className="px-4 py-3 capitalize">{c.plan}</td>
                   <td className="px-4 py-3 text-right tabular-nums">{c.seatsUsed ?? "—"} / {c.seatsLimit}</td>
