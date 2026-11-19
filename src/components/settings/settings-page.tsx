@@ -9,7 +9,7 @@ import { TeamSection } from "./team-section";
 import { SetupPage } from "@/components/setup/setup-page";
 import { cn } from "@/lib/utils";
 
-export const SETTINGS_TABS = [
+const SETTINGS_TABS = [
   { id: "profile", label: "Business profile", blurb: "Your business details, used across AdFlo." },
   { id: "team", label: "Team", blurb: "Who can open this workspace, and what they can do." },
   { id: "notifications", label: "Notifications", blurb: "Which reminders you want, and how early." },
@@ -19,7 +19,7 @@ export const SETTINGS_TABS = [
   { id: "data", label: "Data and account", blurb: "Download everything in your workspace, or close it." },
   { id: "import", label: "Import from this browser", blurb: "Bring records kept in this browser from before your workspace was connected into the workspace." },
 ] as const;
-export type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
+type SettingsTab = (typeof SETTINGS_TABS)[number]["id"];
 
 export const parseTab = (v: unknown): SettingsTab => SETTINGS_TABS.find((t) => t.id === v)?.id ?? "profile";
 

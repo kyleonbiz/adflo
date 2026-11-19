@@ -3,7 +3,7 @@ import type { UploadLimits } from "./types";
 export const MB = 1024 * 1024;
 export const GB = 1024 * MB;
 
-export interface AllowedType {
+interface AllowedType {
   extension: string;
   mimeTypes: string[];
   label: string;
@@ -14,7 +14,7 @@ export interface AllowedType {
  * upload must match BOTH an extension and one of its MIME types.
  * Extend or restrict at deploy time with `DMS_EXTRA_FILE_TYPES` / `DMS_ALLOWED_EXTENSIONS`.
  */
-export const DEFAULT_ALLOWED_TYPES: AllowedType[] = [
+const DEFAULT_ALLOWED_TYPES: AllowedType[] = [
   { extension: "pdf", mimeTypes: ["application/pdf"], label: "PDF" },
   {
     extension: "docx",
@@ -58,7 +58,7 @@ export const BLOCKED_EXTENSIONS = new Set([
   "jsx", "ts", "php", "asp", "aspx", "jsp", "swf", "hta", "exe", "msi", "bat", "cmd", "com",
   "scr", "ps1", "sh", "jar", "dll", "apk", "vbs", "wsf",
 ]);
-export const BLOCKED_MIME_PATTERNS = [
+const BLOCKED_MIME_PATTERNS = [
   /^text\/html/, /^application\/xhtml/, /^image\/svg/, /xml$/, /javascript/, /ecmascript/,
   /^application\/x-(msdownload|sh|csh|httpd-php)/, /^application\/java-archive/,
 ];
@@ -70,13 +70,11 @@ export function isBlockedType(extension: string, mimeTypes: string[]): boolean {
   );
 }
 
-export const DEFAULT_MAX_FILE_SIZE = 50 * MB;
-export const DEFAULT_QUOTA = 5 * GB;
-export const DEFAULT_MAX_FILES_PER_BATCH = 10;
+const DEFAULT_MAX_FILE_SIZE = 50 * MB;
+const DEFAULT_MAX_FILES_PER_BATCH = 10;
 
 export const SIGNED_URL_TTL_SECONDS = 60;
 export const SHARE_LINK_MAX_MINUTES = 60 * 24 * 7;
-export const SHARE_LINK_DEFAULT_MINUTES = 60;
 export const DEFAULT_PAGE_SIZE = 24;
 export const MAX_PAGE_SIZE = 100;
 

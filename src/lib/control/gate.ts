@@ -26,7 +26,7 @@ export async function findStaff(supabase: SupabaseClient): Promise<Staff | null>
  */
 export const controlDemoEnabled = controlDemoActive;
 
-export type ControlAccess = { mode: "live"; staff: Staff; supabase: SupabaseClient } | { mode: "preview" };
+type ControlAccess = { mode: "live"; staff: Staff; supabase: SupabaseClient } | { mode: "preview" };
 
 /**
  * Gate for every Control center page. With a database: sign in, then be active staff, otherwise the page does

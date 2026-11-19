@@ -4,13 +4,13 @@ import { cooldownHoursLeft, isReminderKind } from "@/lib/control/reminders";
 import { issueInviteLink } from "@/lib/control/invite";
 import { hashToken, newToken } from "@/lib/control/token";
 import { signupReminderEmail } from "@/lib/control/reminder-emails";
-import { isUuid } from "@/lib/control/workspace";
+import { isUuid } from "@/lib/control/patterns";
 import { onboardingMailReady, sendOnboardingEmail } from "@/lib/mail/onboarding";
 import { agreementsEmail } from "@/lib/mail/onboarding-email";
 import { siteOrigin } from "@/lib/site-url";
+import { SENDABLE_EMAIL } from "@/lib/control/patterns";
 
 export const dynamic = "force-dynamic";
-const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/;
 
 /**
  * Emails the client's owner a reminder from the onboarding@ alias: "signup" repeats the welcome message (their account is
@@ -28,7 +28,7 @@ export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/
     const { data: client } = await supabase.from("clients").select("name, owner_name, owner_email, workspace_id").eq("id", id).maybeSingle();
     if (!client) return fail(404, "not_found", "Client not found.");
     const to = typeof client.owner_email === "string" ? client.owner_email.trim() : "";
-    if (!EMAIL.test(to)) return fail(409, "no_owner_email", "Add the owner's email to the client first (Edit).");
+    if (!SENDABLE_EMAIL.test(to)) return fail(409, "no_owner_email", "Add the owner's email to the client first (Edit).");
     if (!onboardingMailReady()) return fail(503, "mail_off", "Email is not switched on yet (SMTP_USER and SMTP_PASSWORD are not set).");
 
     const { data: last } = await supabase.from("client_reminders").select("sent_at").eq("client_id", id).order("sent_at", { ascending: false }).limit(1).maybeSingle();

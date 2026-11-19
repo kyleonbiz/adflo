@@ -154,12 +154,3 @@ function runReport(topic: string, mode: "summary" | "explain" | "export", ctx: D
   return { text: `Here is where things stand. ⚠ marks something to look at.\n${reports.map(line).join("\n")}`, link: base };
 }
 
-/** Plain-language list of what Addy may do by itself, for the model's instructions and the help text. */
-export const DIRECT_ABILITIES = [
-  "add something to the owner's to-do list for today",
-  "set a reminder for the owner (from tomorrow up to 60 days away)",
-  "tick off one of the owner's to-dos for today",
-  "run a read-only report on the owner's records, explain it in plain language, and offer it as a CSV or Excel download",
-] as const;
-
-

@@ -9,7 +9,7 @@ export interface TargetField {
 /** Target field key -> index of the source column, or null when the field is not mapped. */
 export type Mapping = Record<string, number | null>;
 
-export const normalizeHeader = (h: string) => h.toLowerCase().replace(/[^a-z0-9]/g, "");
+const normalizeHeader = (h: string) => h.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 /**
  * Suggests which column feeds each target field. Exact matches on the key, label or an alias win;

@@ -71,7 +71,7 @@ export function can(role: Role, action: Action): boolean {
   return RANK[role] >= RANK[MIN_ROLE[action]];
 }
 
-export interface ServiceDeps {
+interface ServiceDeps {
   repo: DocumentRepository;
   /** Membership persistence; omit where team management is not offered (public demo). */
   team?: TeamRepository;
@@ -655,7 +655,7 @@ export function dedupeTags(tags: string[]): string[] {
   return [...seen.values()];
 }
 
-export function randomToken(): string {
+function randomToken(): string {
   const bytes = new Uint8Array(32);
   globalThis.crypto.getRandomValues(bytes);
   let s = "";

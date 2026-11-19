@@ -6,7 +6,7 @@
  */
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
-export const FAKE_AGREEMENT_TOKEN = "FAKE".repeat(10) + "FAK"; // 43 characters, like a real link
+const FAKE_AGREEMENT_TOKEN = "FAKE".repeat(10) + "FAK"; // 43 characters, like a real link
 
 const enabled = () => !getSupabaseEnv() && process.env.NODE_ENV !== "production" && process.env.NEXT_PUBLIC_E2E_SEED === "1";
 const state = globalThis as { __fakeAgreementAccepted?: { name: string; at: string } | null };

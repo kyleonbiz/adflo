@@ -10,7 +10,7 @@ import { safeSegment, uniquePath, zipStream, type ZipDocument } from "./zip-stre
 const PAGE = 1000;
 const DEFAULT_MAX_BYTES = 1.5 * 1024 ** 3;
 /** The most stored data one export will carry. Past this the stream could outlast the function, so the owner is asked to contact support. */
-export const exportMaxBytes = (env: Record<string, string | undefined> = process.env): number => {
+const exportMaxBytes = (env: Record<string, string | undefined> = process.env): number => {
   const n = Number(env.DMS_EXPORT_MAX_BYTES);
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_MAX_BYTES;
 };
@@ -35,7 +35,7 @@ export async function exportSize(db: SupabaseClient, workspaceId: string, maxByt
   return { documents: docs.length, bytes, tooLarge: bytes > maxBytes };
 }
 
-export interface WorkspaceExport {
+interface WorkspaceExport {
   tooLarge: boolean;
   totalBytes: number;
   documentCount: number;

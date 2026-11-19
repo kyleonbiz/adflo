@@ -30,7 +30,7 @@ export function shareEmail(d: { senderName: string; fileName: string; url: strin
 }
 
 /** The address shared-document emails are sent from. Override with SHARE_FROM. It must be an alias of the SMTP mailbox (see README). */
-export const SHARE_FROM_DEFAULT = "AdFlo <documents@adflo.pro>";
+const SHARE_FROM_DEFAULT = "AdFlo <documents@adflo.pro>";
 
 /** The "From" header for a shared-document email: the person's name "via AdFlo", sent from the documents@ alias (SHARE_FROM). */
 export function shareFromHeader(senderName: string, env: Record<string, string | undefined> = process.env): string {

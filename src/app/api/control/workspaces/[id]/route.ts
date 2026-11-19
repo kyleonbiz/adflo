@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
-import { isUuid, workspaceErrorMessage } from "@/lib/control/workspace";
+import { isUuid } from "@/lib/control/patterns";
+import { workspaceErrorMessage } from "@/lib/control/workspace";
 import { purgeWorkspace } from "@/lib/dms/server/purge-workspaces";
 import { createServiceSupabase } from "@/lib/supabase/server";
 

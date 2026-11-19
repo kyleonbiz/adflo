@@ -1,8 +1,8 @@
 import type { ProjectTemplate } from "./templates";
 
 export const NEW_TYPE = "__new__";
-export const CUSTOM_PREFIX = "custom-";
-export const MAX_TASKS = 30;
+const CUSTOM_PREFIX = "custom-";
+const MAX_TASKS = 30;
 
 export interface CustomTypeInput { name: string; summary: string; durationDays: string; tasks: string }
 

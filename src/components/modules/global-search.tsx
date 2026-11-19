@@ -12,7 +12,7 @@ const RECORD_NOUN: Record<string, string> = {
   documents: "documents", invoices: "invoices", licenses: "licenses", vendors: "vendors", crm: "contacts", projects: "tasks and projects", forms: "forms",
 };
 
-export interface SearchResult { key: string; title: string; detail: string; href: string }
+interface SearchResult { key: string; title: string; detail: string; href: string }
 
 /** Everything the box offers for `query`: matching services, then a "search inside" link per service that has records. */
 export function searchResults(query: string, scope: string): SearchResult[] {
@@ -29,7 +29,7 @@ export function searchResults(query: string, scope: string): SearchResult[] {
 }
 
 /** Services whose name or summary contains every word typed, name matches first. */
-export function matchModules(query: string) {
+function matchModules(query: string) {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
   return MODULES.flatMap((m) => {

@@ -20,7 +20,7 @@ import { Overview } from "./overview";
 import { ScheduledReports } from "./scheduled-reports";
 
 const OVERVIEW = "overview";
-export const CUSTOM = "custom";
+const CUSTOM = "custom";
 
 /** The records saved in this browser (or a test's seeds, see `e2e-seed`) laid over what the server loaded. */
 function withLive(src: ReportSources, live: DashboardSources & { contacts: Contact[] }): ReportSources {

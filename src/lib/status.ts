@@ -1,8 +1,8 @@
 import { getSupabaseEnv } from "@/lib/supabase/env";
 
 export type ServiceLevel = "operational" | "degraded" | "down";
-export interface ServiceStatus { name: string; level: ServiceLevel; detail: string }
-export interface StatusReport { level: ServiceLevel; checkedAt: string; services: ServiceStatus[] }
+interface ServiceStatus { name: string; level: ServiceLevel; detail: string }
+interface StatusReport { level: ServiceLevel; checkedAt: string; services: ServiceStatus[] }
 
 const SLOW_MS = 1500;
 const TIMEOUT_MS = 5000;

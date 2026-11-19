@@ -13,7 +13,7 @@ import { agreementState, type AgreementTemplate, type SentAgreement } from "@/li
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" });
 const STATE = { accepted: ["success", "Accepted"], waiting: ["warning", "Waiting"], expired: ["muted", "Expired"] } as const;
 
-export function SentList({ sent, showClient, canDelete }: { sent: SentAgreement[]; showClient?: boolean; canDelete?: boolean }) {
+function SentList({ sent, showClient, canDelete }: { sent: SentAgreement[]; showClient?: boolean; canDelete?: boolean }) {
   if (sent.length === 0) return <p className="text-sm text-muted-foreground">Nothing sent yet.</p>;
   return <ul className="divide-y">{sent.map((a) => <SentRow key={a.id} a={a} showClient={showClient} canDelete={!!canDelete} />)}</ul>;
 }

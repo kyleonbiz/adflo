@@ -60,7 +60,7 @@ function queryString(q: DocumentQuery): string {
 }
 
 /** Streams the file to storage with real progress events and abort support. */
-export function xhrUpload(
+function xhrUpload(
   target: UploadTarget,
   file: File,
   opts: { onProgress?: (loaded: number, total: number) => void; signal?: AbortSignal },

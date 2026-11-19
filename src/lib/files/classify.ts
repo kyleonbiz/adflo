@@ -2,7 +2,7 @@ import { splitName, splitPath } from "./paths";
 
 export type Category = "invoices" | "receipts" | "contracts" | "tax" | "hr" | "images" | "sheets" | "slides" | "archives";
 
-export const TO_SORT = "00 To Sort";
+const TO_SORT = "00 To Sort";
 export const DUPLICATES_FOLDER = "_Duplicates (review)";
 
 export const FOLDER_FOR: Record<Category, string> = {

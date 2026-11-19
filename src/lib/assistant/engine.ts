@@ -7,7 +7,7 @@ import { liveIndustries, TEAM_SIZES, type Industry, type SetupConfig, type TeamS
 export interface Link { label: string; href: string }
 export interface Turn { role: "assistant" | "user"; text: string; chips?: string[]; links?: Link[]; download?: { name: string; headers: string[]; rows: (string | number)[][] } }
 export type Pending = "name" | "industry" | "size" | "confirm" | null;
-export interface Reply { turns: Turn[]; config: SetupConfig; pending: Pending }
+interface Reply { turns: Turn[]; config: SetupConfig; pending: Pending }
 
 const moduleName = (id: string) => MODULES.find((m) => m.id === id)?.name ?? id;
 const link = (id: string): Link | null => {

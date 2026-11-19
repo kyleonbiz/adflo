@@ -4,7 +4,7 @@ import { TicketDetail } from "@/components/control/ticket-detail";
 import { loadDirectory, loadTicket } from "@/lib/control/data";
 import { renderControlShell } from "@/lib/control/shell";
 import { canEditClients } from "@/lib/control/types";
-import { isUuid } from "@/lib/control/validation";
+import { isUuid } from "@/lib/control/patterns";
 
 export const metadata: Metadata = { title: "Ticket · Control center" };
 export const dynamic = "force-dynamic";

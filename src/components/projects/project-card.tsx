@@ -36,7 +36,7 @@ export interface ProjectActions {
 }
 
 /** Where to go to see the contact or vendor a project is for. */
-export const linkHref = (p: Project): string | null =>
+const linkHref = (p: Project): string | null =>
   p.linked ? `${p.linked.kind === "vendor" ? "/app/vendors" : "/app/contacts"}?q=${encodeURIComponent(p.linked.name)}` : null;
 
 function MilestonesAndUpdates({ project, today, actions }: { project: Project; today: string; actions: ProjectActions }) {

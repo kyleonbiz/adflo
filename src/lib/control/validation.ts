@@ -1,7 +1,8 @@
+import { isUuid } from "./patterns";
 import { cleanFeatures, type FeatureKey } from "./tiers";
 import { CHECKLIST_STEPS, CLIENT_STATUSES, STAFF_ROLES, TICKET_PRIORITIES, TICKET_STATUSES, type ChecklistStep, type ClientStatus, type StaffRole, type TicketPriority, type TicketStatus } from "./types";
 
-export interface ClientInput {
+interface ClientInput {
   name: string;
   status: ClientStatus;
   plan: string;
@@ -13,7 +14,7 @@ export interface ClientInput {
   priceNote: string;
 }
 
-export type ParsedClient =
+type ParsedClient =
   | { ok: true; value: Partial<ClientInput> }
   | { ok: false; errors: Partial<Record<keyof ClientInput, string>> };
 
@@ -98,7 +99,7 @@ export function parseDollars(v: unknown): number | null {
   return cents <= 100_000_000 ? cents : null;
 }
 
-export type Parsed<T> = { ok: true; value: T } | { ok: false; errors: Record<string, string> };
+type Parsed<T> = { ok: true; value: T } | { ok: false; errors: Record<string, string> };
 
 export function parsePlanInput(raw: unknown, partial = false): Parsed<{ name?: string; priceCents?: number; seatsIncluded?: number; active?: boolean; features?: FeatureKey[] }> {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
@@ -164,8 +165,6 @@ function describeGeneric(action: string, detail: Record<string, unknown>): strin
   return `${head}${subject ? ` ${subject}` : ""}${rest ? ` (${rest})` : ""}`;
 }
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-export const isUuid = (v: unknown): v is string => typeof v === "string" && UUID_RE.test(v);
 
 const body_ = (v: unknown) => (typeof v === "string" ? v.replace(CONTROL, "").trim() : "");
 

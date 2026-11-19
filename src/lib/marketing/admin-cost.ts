@@ -9,7 +9,7 @@
 /** Working weeks in a year. 48, not 52, so holidays and leave are not counted as admin time. */
 export const WEEKS_PER_YEAR = 48;
 /** A full-time working week, used only to say the hours as "working weeks". */
-export const HOURS_PER_WORKING_WEEK = 40;
+const HOURS_PER_WORKING_WEEK = 40;
 
 export const LIMITS = {
   hoursPerWeek: { min: 0, max: 400 },
@@ -21,7 +21,7 @@ export const LIMITS = {
 export const DEFAULT_SAVED_PCT = 40;
 export const DEFAULT_USED_PCT = 50;
 
-export interface AdminCostInput {
+interface AdminCostInput {
   hoursPerWeek: number;
   hourlyValue: number;
   /** Percent of the admin time the platform could take over. */
@@ -30,7 +30,7 @@ export interface AdminCostInput {
   usedPct: number;
 }
 
-export interface AdminCostEstimate {
+interface AdminCostEstimate {
   /** Hours spent on admin in a year. */
   hoursPerYear: number;
   /** That time as 40-hour working weeks. */

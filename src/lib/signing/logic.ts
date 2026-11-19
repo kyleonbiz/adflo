@@ -27,7 +27,7 @@ export interface SigningRequest {
   createdBy: string;
 }
 
-export type SigningStatus = "waiting" | "partly" | "signed";
+type SigningStatus = "waiting" | "partly" | "signed";
 
 export const MAX_SIGNERS = 10;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

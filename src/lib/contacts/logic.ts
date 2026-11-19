@@ -142,7 +142,7 @@ export function updateChanges(target: Contact, value: ContactInput, matchedKey: 
   return changes;
 }
 
-export interface ApplyResult {
+interface ApplyResult {
   contacts: Contact[];
   added: number;
   updated: number;
@@ -239,7 +239,7 @@ export function isStale(c: Contact, today: string): boolean {
   return !c.lastContacted || daysBetween(c.lastContacted, today) >= STALE_DAYS;
 }
 
-export interface ContactSummary { total: number; duplicatePairs: number; missingEmail: number; missingPhone: number; stale: number }
+interface ContactSummary { total: number; duplicatePairs: number; missingEmail: number; missingPhone: number; stale: number }
 
 export function summarize(contacts: Contact[], today: string, pairs: DuplicatePair[] = contactDuplicates(contacts)): ContactSummary {
   return {

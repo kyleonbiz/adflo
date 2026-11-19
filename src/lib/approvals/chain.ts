@@ -2,14 +2,14 @@
  * An approval chain is an ordered list of approvers. Each one signs off in turn; the item is approved
  * only after the last, and a decline at any step stops it there.
  */
-export interface ApprovalEntry {
+interface ApprovalEntry {
   by: string;
   on: string;
   decision: "approved" | "declined";
   comment: string;
 }
 
-export interface ApprovalProgress {
+interface ApprovalProgress {
   /** The approvers, in order. */
   steps: string[];
   /** Decisions made so far, oldest first. */
@@ -27,7 +27,7 @@ export const CHAIN_KINDS = [
 export type ChainKind = (typeof CHAIN_KINDS)[number]["id"];
 export type ChainConfig = Record<ChainKind, string[]>;
 
-export const emptyChains = (): ChainConfig => ({ requests: [], forms: [] });
+const emptyChains = (): ChainConfig => ({ requests: [], forms: [] });
 
 /** Names trimmed, blanks and repeats dropped, capped. */
 export function cleanSteps(steps: string[]): string[] {
@@ -53,7 +53,7 @@ export function currentApprover(p: ApprovalProgress): string | null {
   return p.steps[stepIndex(p)] ?? null;
 }
 
-export type Outcome = "pending" | "approved" | "declined";
+type Outcome = "pending" | "approved" | "declined";
 
 /** Records the current approver's decision. Returns the new progress and whether the whole chain is now settled. */
 export function advance(p: ApprovalProgress, decision: "approved" | "declined", today: string, comment = ""): { progress: ApprovalProgress; outcome: Outcome } {

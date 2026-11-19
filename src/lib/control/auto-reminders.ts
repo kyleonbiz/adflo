@@ -1,11 +1,11 @@
 import { REMIND_COOLDOWN_HOURS, nextReminder, type ReminderKind } from "./reminders";
 
 /** Days a client may sit without acting before the daily job reminds them (override with ONBOARDING_REMIND_AFTER_DAYS). */
-export const AUTO_REMIND_AFTER_DAYS = 3;
+const AUTO_REMIND_AFTER_DAYS = 3;
 /** The job stops after this many automatic reminders per client; staff can still remind by hand. */
 export const AUTO_REMIND_MAX = 3;
 /** At most this many emails per run, so one bad day cannot flood anyone. */
-export const AUTO_REMIND_RUN_LIMIT = 25;
+const AUTO_REMIND_RUN_LIMIT = 25;
 
 export interface AutoClient { id: string; status: string; ownerEmail: string; workspaceId: string | null }
 export interface AutoInput {
@@ -18,7 +18,7 @@ export interface AutoInput {
   waiting: { clientId: string; sentAt: string }[];
   reminders: { clientId: string; sentAt: string; auto: boolean }[];
 }
-export interface DueReminder { clientId: string; kind: ReminderKind }
+interface DueReminder { clientId: string; kind: ReminderKind }
 
 export const autoRemindDays = (env: Record<string, string | undefined> = process.env): number => {
   const n = Number(env.ONBOARDING_REMIND_AFTER_DAYS);

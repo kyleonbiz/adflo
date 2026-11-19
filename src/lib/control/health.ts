@@ -3,10 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServiceRoleKey } from "@/lib/supabase/env";
 import type { HealthCheck } from "./types";
 
-export interface JobRun { ran_at: string; ok: boolean; detail: string }
+interface JobRun { ran_at: string; ok: boolean; detail: string }
 
 /** The job is scheduled daily; a run older than this (a missed night plus slack) means the schedule is not firing. */
-export const CLEANUP_STALE_HOURS = 36;
+const CLEANUP_STALE_HOURS = 36;
 
 /** What the Monitoring page says about the nightly cleanup: that it is set up, and, from its last recorded run, that it really runs. */
 export function cleanupCheck(secretSet: boolean, run: JobRun | null, now = Date.now(), name = "Scheduled cleanup"): HealthCheck {

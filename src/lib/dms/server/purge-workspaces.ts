@@ -6,7 +6,7 @@ import { DOCUMENTS_BUCKET } from "../supabase/storage";
 const PAGE = 1000;
 const REMOVE_BATCH = 100;
 /** One night's work is bounded: this many workspaces at most (the database function also caps the list). */
-export interface PurgeResult { found: number; deleted: number; failed: number; objectsRemoved: number; accountsRemoved: number }
+interface PurgeResult { found: number; deleted: number; failed: number; objectsRemoved: number; accountsRemoved: number }
 
 async function storageKeys(admin: SupabaseClient, workspaceId: string): Promise<string[]> {
   const keys = new Set<string>();

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { invitationMessage, isUuid, parseWorkspaceRequest, welcomeMessage, workspaceErrorMessage } from "@/lib/control/workspace";
+import { isUuid } from "@/lib/control/patterns";
+import { invitationMessage, parseWorkspaceRequest, welcomeMessage, workspaceErrorMessage } from "@/lib/control/workspace";
 
 const ID = "7a000000-0000-4000-8000-0000000000c1";
 

@@ -8,12 +8,12 @@ import type { ClientStatus } from "./types";
 export const isAccountOn = (s: ClientStatus): boolean => s === "trial" || s === "active";
 
 /** The status when the switch is turned off. Nothing is deleted. */
-export const STATUS_WHEN_OFF: ClientStatus = "suspended";
+const STATUS_WHEN_OFF: ClientStatus = "suspended";
 
 /**
  * The status when the switch is turned on again: back to where the client started if that was in service
  * (a trial turned off and on stays a trial), otherwise active.
  */
-export const statusWhenOn = (started: ClientStatus): ClientStatus => (isAccountOn(started) ? started : "active");
+const statusWhenOn = (started: ClientStatus): ClientStatus => (isAccountOn(started) ? started : "active");
 
 export const statusAfterSwitch = (started: ClientStatus, on: boolean): ClientStatus => (on ? statusWhenOn(started) : STATUS_WHEN_OFF);

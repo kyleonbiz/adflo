@@ -108,7 +108,7 @@ export type HealthLevel = "ok" | "warn" | "down";
 export interface HealthCheck { name: string; level: HealthLevel; detail: string }
 
 /** A client is quiet when nobody has signed in for this many days. */
-export const QUIET_DAYS = 30;
+const QUIET_DAYS = 30;
 export function isQuiet(c: Pick<ClientRecord, "status" | "lastActive" | "workspaceId">, now = Date.now()): boolean {
   if (c.status !== "active" || !c.workspaceId) return false;
   return !c.lastActive || now - Date.parse(c.lastActive) > QUIET_DAYS * 86_400_000;

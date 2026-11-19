@@ -5,8 +5,8 @@ import type { ChecklistStep } from "./types";
  * ticked off when it is done. Some steps tick themselves (see `auto`); every step can also be ticked or unticked by hand.
  * `jump` goes to a section lower on the same page; `edit` opens the client's details; `link` goes to another screen.
  */
-export interface GuideAction { label: string; kind: "edit" | "jump" | "link"; /** `#section` for jump; a path builder for link. */ to?: (clientId: string) => string }
-export interface GuideStep { key: ChecklistStep; why: string; how: string[]; auto?: string; actions: GuideAction[] }
+interface GuideAction { label: string; kind: "edit" | "jump" | "link"; /** `#section` for jump; a path builder for link. */ to?: (clientId: string) => string }
+interface GuideStep { key: ChecklistStep; why: string; how: string[]; auto?: string; actions: GuideAction[] }
 
 /** The page sections a `jump` can go to. */
 export const GUIDE_SECTIONS = ["details", "onboarding", "account", "billing", "agreements", "support", "history"] as const;

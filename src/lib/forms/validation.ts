@@ -29,5 +29,4 @@ export const formBuilderSchema = z
     }
   });
 
-export type FormBuilderInput = z.input<typeof formBuilderSchema>;
 export type FormBuilderValues = z.output<typeof formBuilderSchema>;

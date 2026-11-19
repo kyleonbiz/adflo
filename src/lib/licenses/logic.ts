@@ -5,14 +5,14 @@ import type { License, LicenseAlert, LicenseStatus, RenewalTask } from "./types"
 /** Within this many days of expiry a license counts as "expiring". */
 export const EXPIRING_DAYS = 30;
 /** Within this many days (or expired) the missing-document alert becomes critical. */
-export const CRITICAL_DAYS = 14;
+const CRITICAL_DAYS = 14;
 
 export function daysLeft(license: License, today: string): number {
   return daysBetween(today, license.expiresOn);
 }
 
 /** The largest reminder lead time; the renewal window opens this many days before expiry. */
-export function renewalWindowDays(license: License): number {
+function renewalWindowDays(license: License): number {
   return Math.max(EXPIRING_DAYS, ...license.reminderDays);
 }
 
@@ -132,7 +132,7 @@ export function renewLicense(license: License, today: string, input: RenewalInpu
   };
 }
 
-export interface LicenseSummary {
+interface LicenseSummary {
   total: number;
   active: number;
   /** Inside the renewal window but more than `EXPIRING_DAYS` out. */

@@ -12,7 +12,7 @@ const MIME: Record<string, string> = {
 const bytesFor = (name: string) => (/\.(docx|xlsx)$/i.test(name) ? Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), Buffer.from(name)]) : Buffer.from(`%PDF-1.4 ${name}`));
 
 /** A few typical files, so a test has something to look at in an otherwise empty workspace. */
-export const SOME_DOCUMENTS = [
+const SOME_DOCUMENTS = [
   "Invoice_INV-2041_Northwind.pdf",
   "Master_Services_Agreement_Harbor.pdf",
   "NDA_Summit_Property_Group.docx",

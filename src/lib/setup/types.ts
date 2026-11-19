@@ -10,7 +10,7 @@ export type Industry = (typeof INDUSTRIES)[number];
  * Owner opens or closes each one in Control center > Industries, which saves the list in `live_industries`.
  * Contractors only until that says otherwise.
  */
-export const DEFAULT_LIVE: readonly Industry[] = ["Construction & trades"];
+const DEFAULT_LIVE: readonly Industry[] = ["Construction & trades"];
 /** NEXT_PUBLIC_LIVE_INDUSTRIES (the fallback when nothing is saved, and for tests): "all", or industry names separated by "|". */
 const fromEnv = (raw: string | undefined): readonly Industry[] => {
   if (!raw?.trim()) return DEFAULT_LIVE;

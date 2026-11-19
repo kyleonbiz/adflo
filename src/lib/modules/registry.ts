@@ -1,6 +1,6 @@
-export type ModuleStatus = "available" | "planned";
+type ModuleStatus = "available" | "planned";
 
-export interface PlatformModule {
+interface PlatformModule {
   id: string;
   number: string;
   name: string;

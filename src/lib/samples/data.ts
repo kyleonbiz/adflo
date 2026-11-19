@@ -16,7 +16,7 @@ export interface SampleRecords {
 
 export type SampleSetId = "small" | "large";
 
-export interface SampleSet {
+interface SampleSet {
   id: SampleSetId;
   label: string;
   blurb: string;
@@ -81,7 +81,7 @@ function task(id: string, title: string, assignee: string, dueOn: string | null,
 
 /* ---------- small shop: a handful of records, one clear story ---------- */
 
-export function smallSample(today: string): SampleRecords {
+function smallSample(today: string): SampleRecords {
   const from = "Riverside Print & Sign";
   const inv = (n: number, client: string, description: string, cents: number, issuedAgo: number, status: Invoice["status"], termDays = 30) =>
     invoice({ n, id: `demo-inv-${n}`, client, description, cents, issuedAgo, termDays, status, today, from });
@@ -151,7 +151,7 @@ const LICENSE_KINDS: [string, LicenseCategory, string][] = [
 ];
 const SITES = ["Nashville HQ", "Memphis plant", "Atlanta distribution", "Dallas office", "Phoenix lab", "Denver depot"];
 
-export function largeSample(today: string): SampleRecords {
+function largeSample(today: string): SampleRecords {
   const from = "Meridian Industrial Group";
   const invoices = Array.from({ length: 48 }, (_, i): Invoice => {
     const status: Invoice["status"] = i % 11 === 10 ? "draft" : i % 7 === 6 ? "void" : i < 18 ? "paid" : "sent";

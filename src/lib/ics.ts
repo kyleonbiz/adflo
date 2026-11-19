@@ -11,12 +11,12 @@ export interface CalendarEvent {
 const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g;
 
 /** RFC 5545 text escaping: backslash, semicolon, comma and line breaks. */
-export function icsEscape(s: string): string {
+function icsEscape(s: string): string {
   return s.replace(CONTROL, "").replace(/\\/g, "\\\\").replace(/;/g, "\;").replace(/,/g, "\\,").replace(/\r\n|\r|\n/g, "\\n");
 }
 
 /** Folds a content line at 75 octets, never splitting a multi-byte character. */
-export function foldLine(line: string): string {
+function foldLine(line: string): string {
   const enc = new TextEncoder();
   if (enc.encode(line).length <= 75) return line;
   const parts: string[] = [];

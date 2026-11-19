@@ -1,4 +1,4 @@
-export const THEME_KEY = "adflo.theme";
+const THEME_KEY = "adflo.theme";
 
 /**
  * AdFlo is Day only. Runs before first paint (see the root layout): it clears any Night choice saved earlier

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { fileTypeGroupOf, getExtension } from "@/lib/dms/validation";
 
-export interface FileKind {
+interface FileKind {
   id: string;
   label: string;
   /** Human noun used in headings, e.g. "Spreadsheet". */

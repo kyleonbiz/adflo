@@ -2,7 +2,7 @@ import { MODULES } from "@/lib/modules/registry";
 import { TEMPLATE_IDS, templatesFor } from "./templates";
 import { INDUSTRIES, TEAM_SIZES, emptyConfig, type Industry, type SetupCheck, type SetupConfig, type TeamSize } from "./types";
 
-export interface Recommendation { id: string; reason: string }
+interface Recommendation { id: string; reason: string }
 
 const BASE: Recommendation[] = [
   { id: "documents", reason: "Keep every file in one searchable place." },

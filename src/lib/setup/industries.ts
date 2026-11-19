@@ -15,7 +15,7 @@ import type { Industry, SetupConfig } from "./types";
  * numbers and names that differ; the libraries themselves live with their services. Change a row here
  * to change what that industry gets (the choices are listed under "Working notes" in README.md).
  */
-export interface IndustryPreset {
+interface IndustryPreset {
   /** Which licenses library to draw from. */
   licenses: BusinessTypeId;
   /** Which paperwork library to draw from. */
@@ -61,7 +61,7 @@ export const BUNDLES = [
   { id: "bundle:reminders", label: "Reminder lead time", needs: "licenses" },
   { id: "bundle:home", label: "Dashboard starting points", needs: "" },
 ] as const;
-export type BundleId = (typeof BUNDLE_ID_LIST)[number];
+type BundleId = (typeof BUNDLE_ID_LIST)[number];
 
 /** Bundles that make sense for the services chosen. */
 export const bundlesFor = (modules: readonly string[]) => BUNDLES.filter((b) => !b.needs || modules.includes(b.needs) || (b.id === "bundle:approvals" && modules.includes("forms")));

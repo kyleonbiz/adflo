@@ -1,4 +1,4 @@
-export interface SupabaseEnv {
+interface SupabaseEnv {
   url: string;
   anonKey: string;
 }

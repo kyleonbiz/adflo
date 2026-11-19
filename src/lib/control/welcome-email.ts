@@ -6,7 +6,7 @@ import { logAppError } from "./errors";
 import { ownerTarget, type MailResult } from "./invitation-email";
 import { welcomeEmailSubject, welcomeMessage } from "./workspace";
 
-export type WelcomeResult = MailResult;
+type WelcomeResult = MailResult;
 
 /**
  * Emails the welcome message to a client's owner from the onboarding@ alias and ticks the "Welcome message sent" step. It is

@@ -2,7 +2,7 @@ import path from "node:path";
 import { ExtractError } from "./errors";
 
 /** Image types the text reader (OCR) accepts. */
-export const OCR_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "bmp"] as const;
+const OCR_EXTENSIONS = ["png", "jpg", "jpeg", "webp", "bmp"] as const;
 
 export const isOcrFile = (fileName: string): boolean => {
   const i = fileName.lastIndexOf(".");

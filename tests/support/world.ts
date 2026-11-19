@@ -6,7 +6,7 @@ import type { Role, UploadLimits } from "@/lib/dms/types";
 
 export const WS_A = SAMPLE_WORKSPACE_ID;
 export const WS_B = "00000000-0000-4000-8000-000000000002";
-export const USER_A = "00000000-0000-4000-8000-0000000000aa";
+const USER_A = "00000000-0000-4000-8000-0000000000aa";
 export const USER_B = "00000000-0000-4000-8000-0000000000b2";
 export const FOLDER_B = "00000000-0000-4000-8000-000000000b10";
 export const DOC_B = "00000000-0000-4000-8000-000000000b01";

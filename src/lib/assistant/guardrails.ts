@@ -11,9 +11,9 @@ import { VENDOR_CATEGORIES } from "@/lib/vendors/types";
  * service's own "new" form with the details already in. The owner reads it and presses the save button.
  * That is the whole of its power over records, so it cannot delete, approve, pay, send, sign or edit.
  */
-export type FieldKind = "text" | "email" | "date" | "amount" | "choice";
-export interface FieldRule { kind: FieldKind; max: number; options?: readonly string[] }
-export interface DraftService {
+type FieldKind = "text" | "email" | "date" | "amount" | "choice";
+interface FieldRule { kind: FieldKind; max: number; options?: readonly string[] }
+interface DraftService {
   id: "invoices" | "contacts" | "vendors" | "projects" | "licenses";
   /** What it is called in a sentence: "a draft invoice". */
   noun: string;
@@ -93,7 +93,7 @@ export function looksSensitive(value: string): boolean {
   return false;
 }
 
-export type DraftResult =
+type DraftResult =
   | { ok: true; service: DraftService; href: string; used: string[]; dropped: string[] }
   | { ok: false; error: string };
 

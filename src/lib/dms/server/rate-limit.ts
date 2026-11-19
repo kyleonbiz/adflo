@@ -5,7 +5,7 @@ export interface RateRule {
   windowMs: number;
 }
 
-export interface RateResult {
+interface RateResult {
   ok: boolean;
   retryAfterSec: number;
 }

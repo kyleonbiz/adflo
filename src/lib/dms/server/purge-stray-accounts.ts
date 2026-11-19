@@ -1,8 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export const STRAY_GRACE_DAYS = 7;
-export interface StrayResult { found: number; removed: number; failed: number }
+const STRAY_GRACE_DAYS = 7;
+interface StrayResult { found: number; removed: number; failed: number }
 
 /**
  * Removes sign-in accounts that belong to nobody: in no workspace, not staff, not the owner of a trial or active client, with no

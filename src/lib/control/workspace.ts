@@ -1,11 +1,10 @@
 /** Connecting a client record to its AdFlo workspace, and getting the owner in. Pure helpers; the database does the work. */
-export const WORKSPACE_ACTIONS = ["link", "unlink", "provision", "invite"] as const;
-export type WorkspaceAction = (typeof WORKSPACE_ACTIONS)[number];
+const WORKSPACE_ACTIONS = ["link", "unlink", "provision", "invite"] as const;
+type WorkspaceAction = (typeof WORKSPACE_ACTIONS)[number];
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export const isUuid = (v: unknown): v is string => typeof v === "string" && UUID.test(v);
+import { isUuid } from "./patterns";
 
-export type ParsedWorkspaceRequest =
+type ParsedWorkspaceRequest =
   | { ok: true; action: "link"; workspaceId: string }
   | { ok: true; action: "unlink" | "provision" | "invite" }
   | { ok: false; message: string };

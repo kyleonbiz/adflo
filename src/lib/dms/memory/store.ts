@@ -30,14 +30,14 @@ import type {
 
 type StoredVersion = DocumentVersion & { status: "pending" | "ready"; workspaceId: string };
 
-export interface StoredAudit extends AuditEntry {
+interface StoredAudit extends AuditEntry {
   id: string;
   workspaceId: string;
   actorId: string;
   createdAt: string;
 }
 
-export interface StoredShare {
+interface StoredShare {
   id: string;
   workspaceId: string;
   documentId: string;
@@ -48,8 +48,8 @@ export interface StoredShare {
   createdBy: string;
 }
 
-export type StoredMember = Member & { workspaceId: string };
-export type StoredInvite = Invite & { workspaceId: string };
+type StoredMember = Member & { workspaceId: string };
+type StoredInvite = Invite & { workspaceId: string };
 
 /** Plain data container so a store can be seeded, shared and inspected in tests. */
 export class MemoryStore {

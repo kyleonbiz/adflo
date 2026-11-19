@@ -28,7 +28,7 @@ export function daysBetween(from: string | null, today: string): number {
  * True once the owner has got in: someone has joined the workspace, a sign-in is on record, or staff ticked "First sign-in completed".
  * Until then the client is "new" and sits in the New area, however many days that takes.
  */
-export const ownerHasSignedIn = (c: Pick<ClientRecord, "seatsUsed" | "lastActive" | "checklist">): boolean =>
+const ownerHasSignedIn = (c: Pick<ClientRecord, "seatsUsed" | "lastActive" | "checklist">): boolean =>
   (c.seatsUsed ?? 0) > 0 || c.lastActive != null || c.checklist.includes("first_login");
 
 export function onboardingRow(client: ClientRecord, today: string): OnboardingRow {
@@ -52,7 +52,7 @@ export function onboardingRows(clients: ClientRecord[], today: string): Onboardi
     .sort((a, b) => Number(b.stalled) - Number(a.stalled) || Number(a.complete) - Number(b.complete) || a.done - b.done || a.client.name.localeCompare(b.client.name));
 }
 
-export interface OnboardingSummary { inProgress: number; stalled: number; complete: number; notStarted: number }
+interface OnboardingSummary { inProgress: number; stalled: number; complete: number; notStarted: number }
 
 export function summarizeOnboarding(rows: OnboardingRow[]): OnboardingSummary {
   return {

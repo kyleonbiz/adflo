@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { issueInviteLink } from "@/lib/control/invite";
-import { isUuid } from "@/lib/control/workspace";
+import { isUuid } from "@/lib/control/patterns";
 import { siteOrigin } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";

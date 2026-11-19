@@ -37,10 +37,6 @@ export class DmsError extends Error {
   }
 }
 
-export function isDmsError(e: unknown): e is DmsError {
-  return e instanceof DmsError;
-}
-
 /** Maps any thrown value to a DmsError without leaking internals. */
 export function toDmsError(e: unknown): DmsError {
   if (e instanceof DmsError) return e;

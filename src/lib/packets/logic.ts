@@ -10,7 +10,7 @@ export interface PacketItem {
   formId?: string;
 }
 
-export interface PacketTemplate {
+interface PacketTemplate {
   id: string;
   name: string;
   audience: "Employee" | "Vendor" | "Client";

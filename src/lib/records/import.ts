@@ -36,7 +36,7 @@ export const SERVICES: readonly Service[] = [
 /** The largest record the database accepts. A bigger one would be refused, and retried for ever, so it is left out. */
 export const MAX_RECORD_BYTES = 200_000;
 /** The built-in sample records ("Small shop" and "Large company") all have ids that start with this. */
-export const SAMPLE_PREFIX = "demo-";
+const SAMPLE_PREFIX = "demo-";
 
 /** What this browser holds for one service, sorted into what can be imported and what cannot. */
 export interface BrowserCopy {

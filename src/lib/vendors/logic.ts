@@ -160,10 +160,10 @@ export function editDistance(a: string, b: string): number {
 
 const domain = (email: string) => email.toLowerCase().split("@")[1] ?? "";
 
-export interface Candidate { name: string; email: string; taxId: string }
+interface Candidate { name: string; email: string; taxId: string }
 
 /** Why two vendor records may be the same company. Empty when nothing matches. */
-export function duplicateReasons(a: Candidate, b: Candidate): string[] {
+function duplicateReasons(a: Candidate, b: Candidate): string[] {
   const reasons: string[] = [];
   const na = normalizeName(a.name);
   const nb = normalizeName(b.name);
@@ -226,7 +226,7 @@ export function duplicatePairs(vendors: Vendor[]): DuplicatePair[] {
 
 // --- Summary and export --------------------------------------------------
 
-export interface VendorSummary {
+interface VendorSummary {
   vendors: number;
   active: number;
   onboarding: number;

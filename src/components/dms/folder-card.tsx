@@ -12,7 +12,7 @@ import type { FolderColor } from "@/lib/dms/types";
 import { cn } from "@/lib/utils";
 import { FOLDER_STYLES } from "./folder-style";
 
-export interface FolderCardProps {
+interface FolderCardProps {
   name: string;
   count: number;
   color: FolderColor;

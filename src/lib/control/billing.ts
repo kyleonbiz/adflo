@@ -56,7 +56,7 @@ export function parseDollars(input: string): number | null {
 }
 
 export interface InvoiceForm { clientId: string; description: string; amount: string; issuedOn: string; dueOn: string; note: string }
-export type InvoiceFormResult =
+type InvoiceFormResult =
   | { ok: true; value: { clientId: string; description: string; amountCents: number; issuedOn: string; dueOn: string; note: string } }
   | { ok: false; errors: Partial<Record<keyof InvoiceForm, string>> };
 
@@ -75,7 +75,7 @@ export function validateInvoiceForm(f: InvoiceForm, clientIds: string[]): Invoic
   return { ok: true, value: { clientId: f.clientId, description, amountCents: amountCents!, issuedOn: f.issuedOn, dueOn: f.dueOn, note: f.note.trim() } };
 }
 
-export interface BillingSummary { outstandingCents: number; overdueCents: number; overdueCount: number; paidThisMonthCents: number; draftCents: number }
+interface BillingSummary { outstandingCents: number; overdueCents: number; overdueCount: number; paidThisMonthCents: number; draftCents: number }
 
 export function summarize(list: BillingInvoice[], today: string): BillingSummary {
   const month = today.slice(0, 7);

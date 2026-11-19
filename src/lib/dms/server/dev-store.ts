@@ -10,7 +10,7 @@ interface Download {
   expiresAt: number;
 }
 
-export interface DevKit {
+interface DevKit {
   store: MemoryStore;
   repo: MemoryRepository;
   storage: MemoryStorage;

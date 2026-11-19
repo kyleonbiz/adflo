@@ -55,7 +55,7 @@ const isLive = (p: Project) => p.status !== "completed" && p.status !== "on_hold
  * Project administration. Projects and tasks live in this component's state (starting empty)
  * until the database is connected, so nothing here is saved between visits and no notifications are sent.
  */
-export type ProjectsViewName = "tasks" | "projects";
+type ProjectsViewName = "tasks" | "projects";
 
 export function ProjectsPage({ preview, initialQuery = "", initialView = "tasks", startNew, draft }: { preview?: string; initialQuery?: string; initialView?: ProjectsViewName; startNew?: boolean; draft?: ProjectDraft }) {
   const today = useToday();

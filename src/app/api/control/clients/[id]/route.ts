@@ -6,15 +6,15 @@ import { findDuplicateClient } from "@/lib/control/duplicates";
 import { purgeWorkspace } from "@/lib/dms/server/purge-workspaces";
 import { createServiceSupabase } from "@/lib/supabase/server";
 import { parseClientInput } from "@/lib/control/validation";
+import { isUuid } from "@/lib/control/patterns";
 
 export const dynamic = "force-dynamic";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export function PATCH(req: Request, ctx: RouteContext<"/api/control/clients/[id]">) {
   return staffRoute(req, async ({ supabase }) => {
     const { id } = await ctx.params;
-    if (!UUID.test(id)) return fail(404, "not_found", "Client not found.");
+    if (!isUuid(id)) return fail(404, "not_found", "Client not found.");
     const body = await req.json().catch(() => null);
     const parsed = parseClientInput(body, true);
     if (!parsed.ok) return NextResponse.json({ ok: false, error: { code: "invalid", message: "Check the highlighted fields.", fields: parsed.errors } }, { status: 400 });
@@ -55,7 +55,7 @@ export function PATCH(req: Request, ctx: RouteContext<"/api/control/clients/[id]
 export function DELETE(req: Request, ctx: RouteContext<"/api/control/clients/[id]">) {
   return staffRoute(req, async ({ supabase }) => {
     const { id } = await ctx.params;
-    if (!UUID.test(id)) return fail(404, "not_found", "That client no longer exists.");
+    if (!isUuid(id)) return fail(404, "not_found", "That client no longer exists.");
     const body = (await req.json().catch(() => null)) as { confirm?: unknown; acknowledgeAgreements?: unknown } | null;
     const confirm = typeof body?.confirm === "string" ? body.confirm.slice(0, 200) : "";
     const check = await supabase.rpc("control_check_client_delete", { p_client: id, p_confirm: confirm, p_ack: body?.acknowledgeAgreements === true });

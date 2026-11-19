@@ -4,12 +4,12 @@ import type { License } from "@/lib/licenses/types";
 
 interface Base { id: string; module: string; name: string; description: string }
 
-export interface FormTpl extends Base {
+interface FormTpl extends Base {
   kind: "form";
   fields: Omit<FormField, "id">[];
   documentTemplate: string;
 }
-export interface LicenseTpl extends Base {
+interface LicenseTpl extends Base {
   kind: "license";
   items: { name: string; category: License["category"]; issuer: string; termMonths: number; reminderDays: number[]; documents: string[] }[];
 }

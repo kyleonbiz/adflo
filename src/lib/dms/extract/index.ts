@@ -7,14 +7,14 @@ import { decodeText, normalizeText } from "./text";
 
 export type ContentStatus = "pending" | "indexed" | "unsupported" | "failed";
 
-export interface ExtractResult {
+interface ExtractResult {
   status: Exclude<ContentStatus, "pending">;
   /** Present for unsupported/failed, and `truncated` for indexed-but-partial text. */
   reason: ExtractReason | "truncated" | null;
   text: string;
 }
 
-export interface ExtractInput {
+interface ExtractInput {
   bytes: Uint8Array;
   fileName: string;
   mimeType?: string;
@@ -28,7 +28,7 @@ const extOf = (name: string) => {
 };
 
 /** File types we can read. Everything else is reported as unsupported, never guessed at. */
-export const EXTRACTABLE_EXTENSIONS = ["pdf", "docx", "xlsx", "pptx", "csv", "txt"] as const;
+const EXTRACTABLE_EXTENSIONS = ["pdf", "docx", "xlsx", "pptx", "csv", "txt"] as const;
 
 export function canExtract(fileName: string, ocr = false): boolean {
   return (EXTRACTABLE_EXTENSIONS as readonly string[]).includes(extOf(fileName)) || (ocr && isOcrFile(fileName));

@@ -1,4 +1,4 @@
-export type AgreementBlock =
+type AgreementBlock =
   | { kind: "heading"; level: 1 | 2 | 3; text: string }
   | { kind: "paragraph"; text: string }
   | { kind: "list"; ordered: boolean; items: string[] };

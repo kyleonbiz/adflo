@@ -18,7 +18,7 @@ const rid = () => `sg-${Math.random().toString(36).slice(2, 10)}`;
 const STATUS = { waiting: ["Waiting", "muted"], partly: ["Partly signed", "warning"], signed: ["Signed", "success"] } as const;
 const MAX_FILE = 10 * 1024 * 1024;
 
-export interface SignableSubmission { id: string; label: string; text: string }
+interface SignableSubmission { id: string; label: string; text: string }
 
 function download(data: Uint8Array, name: string) {
   const url = URL.createObjectURL(new Blob([data as BlobPart], { type: "application/pdf" }));

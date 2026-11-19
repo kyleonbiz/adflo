@@ -72,7 +72,7 @@ export function byDay(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
   return map;
 }
 
-export interface GridDay { day: string; inMonth: boolean }
+interface GridDay { day: string; inMonth: boolean }
 
 /** The weeks that show a month, Sunday first, padded with the neighbouring months' days. `month` is `YYYY-MM-01`. */
 export function monthGrid(month: string): GridDay[][] {
@@ -104,8 +104,8 @@ export function agenda(events: CalendarEvent[], today: string, days = 60): Calen
   return events.filter((e) => e.day <= last);
 }
 
-export interface WeekGroup { start: string; end: string; events: CalendarEvent[] }
-export interface NextMonth { month: string; label: string; total: number; byKind: Partial<Record<EventKind, number>>; weeks: WeekGroup[] }
+interface WeekGroup { start: string; end: string; events: CalendarEvent[] }
+interface NextMonth { month: string; label: string; total: number; byKind: Partial<Record<EventKind, number>>; weeks: WeekGroup[] }
 
 /**
  * What falls in the calendar month after `today`'s, grouped into Sunday-to-Saturday weeks (the first and last

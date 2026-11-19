@@ -83,13 +83,13 @@ export function workspaceOfKey(key: string): string | null {
 /* Upload validation                                                   */
 /* ------------------------------------------------------------------ */
 
-export interface FileCandidate {
+interface FileCandidate {
   name: string;
   size: number;
   type: string;
 }
 
-export type UploadValidation =
+type UploadValidation =
   | { ok: true; displayName: string; extension: string; mimeType: string }
   | { ok: false; reason: string };
 
@@ -154,7 +154,7 @@ export function magicBytesMatch(extension: string, head: Uint8Array): boolean {
 /* File-type groups (filter chips) & formatting                        */
 /* ------------------------------------------------------------------ */
 
-export interface FileTypeGroup {
+interface FileTypeGroup {
   id: string;
   label: string;
   match: (mimeType: string, extension: string) => boolean;
@@ -205,7 +205,7 @@ export const folderNameSchema = z
   .max(60, "Folder name is too long")
   .regex(/^[^\\/:*?"<>|\u0000-\u001f]+$/, "Folder name contains invalid characters");
 
-export const folderColorSchema = z.enum([
+const folderColorSchema = z.enum([
   "violet",
   "blue",
   "emerald",
@@ -223,7 +223,7 @@ export const createFolderSchema = z.object({
 
 export const renameFolderSchema = z.object({ name: folderNameSchema });
 
-export const categorySchema = z.enum(CATEGORIES);
+const categorySchema = z.enum(CATEGORIES);
 
 export const initiateUploadSchema = z.object({
   fileName: z.string().min(1).max(500),
@@ -234,7 +234,6 @@ export const initiateUploadSchema = z.object({
   /** When set, uploads a new version of an existing document. */
   documentId: uuid.optional(),
 });
-export type InitiateUploadInput = z.infer<typeof initiateUploadSchema>;
 
 export const updateDocumentSchema = z
   .object({
@@ -256,11 +255,7 @@ export const shareLinkSchema = z.object({
   message: z.string().max(1000).optional(),
 });
 
-export const createWorkspaceSchema = z.object({
-  name: z.string().trim().min(2, "Name is too short").max(80, "Name is too long"),
-});
-
-export const roleSchema = z.enum(["viewer", "editor", "admin", "owner"]);
+const roleSchema = z.enum(["viewer", "editor", "admin", "owner"]);
 
 export const inviteMemberSchema = z.object({
   email: z

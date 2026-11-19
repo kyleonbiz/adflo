@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { agreementDeleteError } from "@/lib/control/agreements";
-import { isUuid } from "@/lib/control/workspace";
+import { isUuid } from "@/lib/control/patterns";
 
 export const dynamic = "force-dynamic";
 

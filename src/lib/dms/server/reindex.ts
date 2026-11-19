@@ -3,7 +3,7 @@ import { computeContent, type ContentOutcome } from "../index-content";
 import type { ObjectStorage } from "../ports";
 import { SupabaseStorage } from "../supabase/storage";
 
-export interface ReindexResult {
+interface ReindexResult {
   found: number;
   indexed: number;
   unsupported: number;

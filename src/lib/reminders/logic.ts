@@ -15,7 +15,7 @@ export interface Reminder {
   on: string;
 }
 
-export const REMINDER_PREFIX = "rem-";
+const REMINDER_PREFIX = "rem-";
 export const MAX_REMINDERS = 100;
 
 export const REMIND_CHOICES = [

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
-import { isUuid, parseWorkspaceRequest, workspaceErrorMessage } from "@/lib/control/workspace";
+import { isUuid } from "@/lib/control/patterns";
+import { parseWorkspaceRequest, workspaceErrorMessage } from "@/lib/control/workspace";
 import { emailInvitation } from "@/lib/control/invitation-email";
 import { purgeWorkspace } from "@/lib/dms/server/purge-workspaces";
 import { createServiceSupabase } from "@/lib/supabase/server";
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
  * and the answer says why, so staff can use "Copy invitation" instead.
  */
 export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/workspace">) {
-  return staffRoute(req, async ({ supabase, staff }) => {
+  return staffRoute(req, async ({ supabase }) => {
     const { id } = await ctx.params;
     if (!isUuid(id)) return fail(404, "not_found", "Client not found.");
     const req_ = parseWorkspaceRequest(await req.json().catch(() => null));

@@ -18,10 +18,10 @@ export function normalizeClientName(name: string): string {
     .trim();
 }
 
-export const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
-export interface ClientIdentity { id: string; name: string; owner_email: string | null }
-export type DuplicateField = "name" | "ownerEmail";
+interface ClientIdentity { id: string; name: string; owner_email: string | null }
+type DuplicateField = "name" | "ownerEmail";
 export interface Duplicate { field: DuplicateField; clientName: string; message: string }
 
 /**

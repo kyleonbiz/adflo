@@ -97,7 +97,7 @@ export function reopenTask(tasks: Task[], taskId: string): Task[] {
   return tasks.map((t) => (t.id === taskId ? { ...t, done: false, doneOn: null } : t));
 }
 
-export interface TaskAlert {
+interface TaskAlert {
   projectId: string;
   projectName: string;
   task: Task;
@@ -209,8 +209,8 @@ export function projectsReport(projects: Project[], today: string): string {
 
 // ---- milestones, updates and the recurring-work project
 
-export const MAX_MILESTONES = 20;
-export const MAX_UPDATES = 200;
+const MAX_MILESTONES = 20;
+const MAX_UPDATES = 200;
 
 export const milestonesOf = (p: Project): Milestone[] => [...(p.milestones ?? [])].sort((a, b) => a.dueOn.localeCompare(b.dueOn));
 export const updatesOf = (p: Project) => p.updates ?? [];
@@ -244,7 +244,7 @@ export function addUpdate(p: Project, u: { text: string; by: string; on: string 
 }
 
 /** The one project where repeating work lives. Every repeating task added from the project page or installed by setup goes here. */
-export const RECURRING_PROJECT_ID = "recurring-work";
+const RECURRING_PROJECT_ID = "recurring-work";
 export const isRecurringProject = (p: Project) => p.id === RECURRING_PROJECT_ID;
 
 /** The status report as a spreadsheet: one row per task, with its project's details alongside. */

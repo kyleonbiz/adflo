@@ -5,9 +5,9 @@ import { hashToken, newToken } from "@/lib/control/token";
 import { parseSendAllInput } from "@/lib/control/validation";
 import { agreementsEmail } from "@/lib/mail/onboarding-email";
 import { onboardingMailReady, sendOnboardingEmail } from "@/lib/mail/onboarding";
+import { SENDABLE_EMAIL } from "@/lib/control/patterns";
 
 export const dynamic = "force-dynamic";
-const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/;
 
 /**
  * Creates one acceptance link per agreement (for example Terms and Privacy Policy) for one client and, with `email: true`,
@@ -37,7 +37,7 @@ export function POST(req: Request) {
     if (email) {
       const { data: client } = await supabase.from("clients").select("name, owner_name, owner_email").eq("id", clientId).maybeSingle();
       const to = typeof client?.owner_email === "string" ? client.owner_email.trim() : "";
-      if (!EMAIL.test(to)) body.emailError = "This client has no owner email on file, so nothing was emailed.";
+      if (!SENDABLE_EMAIL.test(to)) body.emailError = "This client has no owner email on file, so nothing was emailed.";
       else if (!onboardingMailReady()) body.emailError = "Email is not switched on yet (SMTP_USER and SMTP_PASSWORD are not set), so nothing was emailed.";
       else {
         try {

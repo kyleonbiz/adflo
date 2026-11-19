@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { parsePlanInput } from "@/lib/control/validation";
+import { isUuid } from "@/lib/control/patterns";
 
 export const dynamic = "force-dynamic";
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 export function PATCH(req: Request, ctx: RouteContext<"/api/control/plans/[id]">) {
   return staffRoute(req, async ({ supabase }) => {
     const { id } = await ctx.params;
-    if (!UUID.test(id)) return fail(404, "not_found", "Plan not found.");
+    if (!isUuid(id)) return fail(404, "not_found", "Plan not found.");
     const parsed = parsePlanInput(await req.json().catch(() => null), true);
     if (!parsed.ok) return NextResponse.json({ ok: false, error: { code: "invalid", message: "Check the highlighted fields.", fields: parsed.errors } }, { status: 400 });
     const v = parsed.value;

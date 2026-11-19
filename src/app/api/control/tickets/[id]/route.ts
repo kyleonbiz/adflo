@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
-import { isUuid, parseTicketPatch } from "@/lib/control/validation";
+import { isUuid } from "@/lib/control/patterns";
+import { parseTicketPatch } from "@/lib/control/validation";
 
 export const dynamic = "force-dynamic";
 

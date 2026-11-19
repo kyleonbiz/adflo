@@ -5,7 +5,7 @@ import type { Invoice, InvoiceAlert, InvoiceItem, InvoiceState, Recurrence } fro
 /** Within this many days of the due date an unpaid invoice is "due soon". */
 export const DUE_SOON_DAYS = 7;
 /** An invoice this many days late (or more) is a critical alert. */
-export const SEVERELY_OVERDUE_DAYS = 14;
+const SEVERELY_OVERDUE_DAYS = 14;
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -52,7 +52,7 @@ export function daysOverdue(inv: Invoice, today: string): number {
 }
 
 /** Unpaid and sent: money the client still owes. */
-export const isOutstanding = (inv: Invoice) => inv.status === "sent";
+const isOutstanding = (inv: Invoice) => inv.status === "sent";
 
 export function invoiceAlerts(inv: Invoice, today: string): InvoiceAlert[] {
   const state = invoiceState(inv, today);
@@ -188,7 +188,7 @@ export function invoicesToCsv(invoices: Invoice[], today: string): string {
   return [header, ...rows].map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
 }
 
-export interface InvoiceGroup {
+interface InvoiceGroup {
   key: "overdue" | "due_soon" | "draft" | "sent" | "closed";
   label: string;
   invoices: Invoice[];

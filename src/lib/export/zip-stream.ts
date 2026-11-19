@@ -31,7 +31,7 @@ export function uniquePath(used: Set<string>, folder: string, name: string): str
 }
 
 export interface ZipDocument { path: string; key: string }
-export interface ZipSource {
+interface ZipSource {
   /** Small files written first (README, record exports, indexes). */
   files: { path: string; text: string }[];
   /** Stored files, added one after another. */

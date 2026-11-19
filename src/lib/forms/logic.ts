@@ -2,8 +2,8 @@ import { formatDayLong, isDay } from "@/lib/dates";
 import { toCsv } from "@/lib/csv";
 import type { FormField, FormTemplate, Submission } from "./types";
 
-export const MAX_SHORT = 200;
-export const MAX_LONG = 2000;
+const MAX_SHORT = 200;
+const MAX_LONG = 2000;
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 export type FieldErrors = Record<string, string>;

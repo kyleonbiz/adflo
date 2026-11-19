@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hashToken, newToken } from "./token";
 
-export type InviteLinkResult = { ok: true; link: string; expiresAt: string } | { ok: false; status: number; message: string };
+type InviteLinkResult = { ok: true; link: string; expiresAt: string } | { ok: false; status: number; message: string };
 
 /**
  * Makes a fresh confirm link for the client's open owner invitation. Only its hash is stored, so the link exists only in

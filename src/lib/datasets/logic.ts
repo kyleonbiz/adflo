@@ -52,7 +52,7 @@ export function validateDataset(parsed: ParsedCsv, columns: Column[], dedupe: bo
   );
 }
 
-export interface ColumnStats {
+interface ColumnStats {
   filled: number;
   blank: number;
   distinct: number;
@@ -82,7 +82,7 @@ export function columnStats(dataset: Dataset, index: number): ColumnStats {
 
 export type Aggregate = "sum" | "avg" | "count";
 /** `group` is the display label ("March 2026"); `key` is the sortable value ("2026-03") used in exports. */
-export interface GroupRow { group: string; key: string; rows: number; value: number }
+interface GroupRow { group: string; key: string; rows: number; value: number }
 
 const BLANK = "(blank)";
 const monthLabel = (key: string) =>

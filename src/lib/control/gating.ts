@@ -13,7 +13,7 @@ const ITEM_FEATURE: Record<string, FeatureKey> = {
   invoices: "invoices", licenses: "licenses_basic", reporting: "reporting", activity: "activity", assistant: "assistant_rules",
 };
 
-export function featureForPath(path: string): FeatureKey | null {
+function featureForPath(path: string): FeatureKey | null {
   if (path === "/app") return "documents";
   return ROUTE_FEATURE.find(([p]) => path === p || path.startsWith(`${p}/`))?.[1] ?? null;
 }

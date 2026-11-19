@@ -3,11 +3,11 @@ import { MAX_FILES, isSystemFile, normalizePath } from "./paths";
 import type { FileEntry, SkippedFile } from "./types";
 
 /** Files bigger than this are compared by size and name only. */
-export const MAX_HASH_BYTES = 50 * 1024 * 1024;
+const MAX_HASH_BYTES = 50 * 1024 * 1024;
 /** After this many bytes have been read, the rest are compared by size and name only. */
-export const HASH_BUDGET_BYTES = 500 * 1024 * 1024;
+const HASH_BUDGET_BYTES = 500 * 1024 * 1024;
 
-export interface ScanResult {
+interface ScanResult {
   files: FileEntry[];
   skipped: SkippedFile[];
   /** Files that were not read, so duplicates among them are only "likely". */

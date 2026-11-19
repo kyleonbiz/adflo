@@ -1,11 +1,11 @@
 import type { Category, DocumentRecord, Folder, FolderColor, Workspace } from "@/lib/dms/types";
 import { MB } from "@/lib/dms/config";
 import { MemoryRepository, MemoryStorage, MemoryStore } from "@/lib/dms/memory/store";
-import { makeCsv, makeImage, makePdf } from "./sample-files";
+import { makeCsv, makePdf } from "./sample-files";
 
 export const SAMPLE_WORKSPACE_ID = "00000000-0000-4000-8000-000000000001";
 export const SAMPLE_USER_ID = "00000000-0000-4000-8000-0000000000aa";
-export const SAMPLE_USER_NAME = "Kyle Johnson";
+const SAMPLE_USER_NAME = "Kyle Johnson";
 
 const uid = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
@@ -59,7 +59,7 @@ const DOCS: SampleDoc[] = [
   { name: "Team_Photo_Retreat.jpg", folder: null, category: "other", size: 2_936_012, daysAgo: 33, tags: ["Marketing"] },
 ];
 
-export interface SampleKit {
+interface SampleKit {
   store: MemoryStore;
   repo: MemoryRepository;
   storage: MemoryStorage;
@@ -220,20 +220,6 @@ export function createSampleSynthesizer(store: MemoryStore) {
     if (out) cache.set(key, out);
     return out;
   };
-}
-
-/** Pre-renders image samples (needs a canvas, so browser only). */
-export async function prepareSampleImages(store: MemoryStore, storage: MemoryStorage) {
-  for (const d of store.documents.values()) {
-    const ext = d.originalName.split(".").pop()!.toLowerCase();
-    if (ext !== "png" && ext !== "jpg") continue;
-    for (const v of store.versions.get(d.id) ?? []) {
-      if (store.blobs.has(v.storageKey)) continue;
-      const mime = ext === "png" ? "image/png" : "image/jpeg";
-      const bytes = await makeImage(d.displayName.replace(/_/g, " "), mime);
-      if (bytes) storage.put(v.storageKey, bytes, mime);
-    }
-  }
 }
 
 export function createSampleKit(now?: Date): SampleKit {

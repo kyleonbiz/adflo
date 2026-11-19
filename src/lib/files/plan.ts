@@ -3,7 +3,7 @@ import { DUPLICATES_FOLDER, FOLDER_FOR, LABEL_FOR, misplacedCategory, suggestedF
 import { joinPath, normalizePath, splitName, splitPath } from "./paths";
 import type { Change, FileEntry, PlanOptions, SkippedFile } from "./types";
 
-export interface DuplicateGroup {
+interface DuplicateGroup {
   kind: "identical" | "likely";
   keep: string;
   others: string[];

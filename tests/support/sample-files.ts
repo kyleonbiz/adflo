@@ -39,30 +39,3 @@ export function makeCsv(rows: string[][]): Uint8Array {
     rows.map((r) => r.map((c) => (/[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c)).join(",")).join("\n"),
   );
 }
-
-/** Browser-only: draws a pastel placeholder image. Returns null where no canvas exists. */
-export async function makeImage(
-  label: string,
-  mimeType: "image/png" | "image/jpeg",
-): Promise<Uint8Array | null> {
-  if (typeof document === "undefined") return null;
-  const canvas = document.createElement("canvas");
-  canvas.width = 640;
-  canvas.height = 420;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-  const g = ctx.createLinearGradient(0, 0, 640, 420);
-  g.addColorStop(0, "#c7d2fe");
-  g.addColorStop(1, "#ddd6fe");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 640, 420);
-  ctx.fillStyle = "#3436b9";
-  ctx.font = "600 28px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(label, 320, 200);
-  ctx.font = "16px system-ui, sans-serif";
-  ctx.fillStyle = "#6d28d9";
-  ctx.fillText("Aurum Ventura sample image", 320, 236);
-  const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, mimeType));
-  return blob ? new Uint8Array(await blob.arrayBuffer()) : null;
-}

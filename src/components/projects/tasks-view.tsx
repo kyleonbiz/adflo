@@ -17,7 +17,7 @@ import { TaskForm, dueText, type ProjectActions } from "./project-card";
 import { TASK_BADGE } from "./status";
 
 export type TaskFilter = "all" | "overdue" | "week" | "repeating";
-export const TASK_FILTER_LABEL: Record<TaskFilter, string> = { all: "All tasks", overdue: "Overdue", week: "Due this week", repeating: "Repeating" };
+const TASK_FILTER_LABEL: Record<TaskFilter, string> = { all: "All tasks", overdue: "Overdue", week: "Due this week", repeating: "Repeating" };
 const NO_PROJECT = "none";
 
 /** Adds a task, optionally to a project; without one it goes to the built-in "General tasks". */

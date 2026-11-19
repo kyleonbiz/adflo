@@ -8,7 +8,7 @@ import { guardrailPrompt } from "./guardrails";
 import { TOOL_DEFS, runTool, type ToolState } from "./tools";
 
 export interface ChatMessage { role: "user" | "assistant"; content: string }
-export interface LlmResult { text: string; config: SetupConfig; links: Link[] }
+interface LlmResult { text: string; config: SetupConfig; links: Link[] }
 
 export const assistantConfigured = () => !!process.env.ANTHROPIC_API_KEY;
 

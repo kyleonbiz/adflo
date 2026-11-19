@@ -7,7 +7,7 @@ export const REMINDER_GAP_DAYS = 7;
 /** This many reminders with no reply and the vendor counts as gone quiet. */
 export const GHOSTED_AFTER = 3;
 
-export type FollowUpState = "none" | "waiting" | "due" | "ghosted";
+type FollowUpState = "none" | "waiting" | "due" | "ghosted";
 
 /** Required documents the vendor still owes: missing, expired or about to expire. Inactive and rejected vendors owe nothing. */
 export function owed(v: Vendor, today: string): VendorDocument[] {

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useRecordsRaw, writeRecords } from "@/lib/records/storage";
 import type { SigningRequest } from "./logic";
 
-export function parseRequests(raw: string): SigningRequest[] {
+function parseRequests(raw: string): SigningRequest[] {
   try {
     const data: unknown = JSON.parse(raw);
     if (!Array.isArray(data)) return [];

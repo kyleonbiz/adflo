@@ -1,7 +1,7 @@
 export const COMPANY_SIZES = ["1–10", "11–50", "51–200", "201–1,000", "1,000+"] as const;
 
-export type DemoRequest = { name: string; email: string; company: string; size: string; message: string };
-export type DemoParse = { ok: true; value: DemoRequest } | { ok: false; errors: Record<string, string> };
+type DemoRequest = { name: string; email: string; company: string; size: string; message: string };
+type DemoParse = { ok: true; value: DemoRequest } | { ok: false; errors: Record<string, string> };
 
 const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/;
 const clean = (v: unknown, max: number) => (typeof v === "string" ? v.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").trim().slice(0, max) : "");

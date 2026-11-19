@@ -9,7 +9,7 @@ export const HIGHLIGHT_START = "\uE000";
 export const HIGHLIGHT_END = "\uE001";
 
 /** Filename and metadata match: every whitespace-separated word must appear somewhere. */
-export function matchesSearch(doc: DocumentRecord, term: string): boolean {
+function matchesSearch(doc: DocumentRecord, term: string): boolean {
   const t = term.trim().toLowerCase();
   if (!t) return true;
   const haystacks = [

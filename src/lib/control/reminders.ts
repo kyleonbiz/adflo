@@ -1,4 +1,5 @@
 import type { ClientRecord } from "./types";
+import { SENDABLE_EMAIL } from "./patterns";
 
 /** Reminders to one client are spaced out: no second one within this many hours. */
 export const REMIND_COOLDOWN_HOURS = 24;
@@ -6,16 +7,15 @@ export const REMIND_COOLDOWN_HOURS = 24;
 export type ReminderKind = "signup" | "agreement";
 export const isReminderKind = (v: unknown): v is ReminderKind => v === "signup" || v === "agreement";
 
-export interface NextReminder { kind: ReminderKind; label: string; what: string }
+interface NextReminder { kind: ReminderKind; label: string; what: string }
 
-const EMAIL = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/;
 
 /**
  * What a reminder to this client's owner would be about, or null when there is nothing to remind them of (no owner email,
  * or the owner has signed up and nothing is waiting for them). Signing up comes before accepting agreements.
  */
 export function nextReminder(c: Pick<ClientRecord, "ownerEmail" | "workspaceId" | "seatsUsed" | "agreementsWaiting">): NextReminder | null {
-  if (!EMAIL.test(c.ownerEmail.trim())) return null;
+  if (!SENDABLE_EMAIL.test(c.ownerEmail.trim())) return null;
   if (c.workspaceId && (c.seatsUsed ?? 0) === 0) return { kind: "signup", label: "Remind to sign up", what: "to sign up" };
   if ((c.agreementsWaiting ?? 0) > 0) return { kind: "agreement", label: "Remind to accept", what: "to accept their agreement" };
   return null;

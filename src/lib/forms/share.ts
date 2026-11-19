@@ -94,7 +94,7 @@ export function responseMailto(form: SharedForm, submittedBy: string, values: Re
   return `mailto:${encodeURIComponent(form.replyTo)}?subject=${encodeURIComponent(`Answers: ${form.name}`)}&body=${encodeURIComponent(responseMessage(form, submittedBy, values))}`;
 }
 
-export interface ParsedResponses { responses: { submittedBy: string; values: Record<string, string> }[]; problems: string[] }
+interface ParsedResponses { responses: { submittedBy: string; values: Record<string, string> }[]; problems: string[] }
 
 /** Reads every AdFlo answer line out of pasted email text, keeping only answers that belong to `form` and still fit it. */
 export function parseResponses(text: string, form: FormTemplate): ParsedResponses {

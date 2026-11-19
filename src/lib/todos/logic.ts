@@ -14,7 +14,7 @@ const isAppPath = (v: unknown): v is string => typeof v === "string" && /^\/app(
 export const newTodoId = (): string => `todo-${Math.random().toString(36).slice(2, 10)}`;
 
 export const MAX_TITLE = 120;
-export const MAX_TODOS = 200;
+const MAX_TODOS = 200;
 
 /** Adds a task for `day`; blank titles are ignored, long ones trimmed to fit. */
 export function addTodo(todos: Todo[], title: string, day: string, id: string, link?: { href: string; area: string }): Todo[] {

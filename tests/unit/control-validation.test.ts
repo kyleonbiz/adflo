@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actorLabel, isQuiet, agreementState } from "@/lib/control/types";
-import { parseAcceptInput, parseAgreementInput, parseSendInput, isAgreementToken, describeAudit, isUuid, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
+import { isUuid } from "@/lib/control/patterns";
+import { parseAcceptInput, parseAgreementInput, parseSendInput, isAgreementToken, describeAudit, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
 import { effectivePriceCents, formatMoney } from "@/lib/control/types";
 
 const OWNER = { ownerName: "Pat Lee", ownerEmail: "pat@acme.com" };
