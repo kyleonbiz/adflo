@@ -138,9 +138,9 @@ function AccountSwitch({ client, onChanged }: { client: ClientRecord; onChanged:
   }
   const on = isAccountOn(client.status);
   return (
-    <div className="flex items-center gap-2" title={on ? "Turn off to pause this account, for example for missed payments" : "Paused. Turn on to restore access"}>
+    <div className="flex items-center gap-2.5" title={on ? "Turn off to pause this account, for example for missed payments" : "Paused. Turn on to restore access"}>
       <Switch aria-label={`${client.name} account on`} checked={on} disabled={busy || client.status === "cancelled"} onCheckedChange={change} />
-      <span className={cn("text-xs font-medium", on ? "text-emerald-700" : "text-amber-800")}>{client.status === "cancelled" ? "Cancelled" : on ? "On" : "Paused"}</span>
+      <span className={cn("w-14 text-xs font-medium", on ? "text-emerald-700" : "text-amber-800")}>{client.status === "cancelled" ? "Cancelled" : on ? "On" : "Paused"}</span>
       {error && <span role="alert" className="text-xs text-destructive">{error}</span>}
     </div>
   );
@@ -208,7 +208,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
                   <td className="px-3 py-3 text-right tabular-nums">{(() => { const p = effectivePriceCents(c, plans); return p == null ? "—" : formatMoney(p); })()}</td>
                   <td className="px-3 py-3 text-muted-foreground">{c.lastActive ? new Date(c.lastActive).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "—"}{isQuiet(c) && <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">Quiet</span>}</td>
                   <td className="px-3 py-3"><div>{c.ownerName || "—"}</div><div className="text-xs text-muted-foreground">{c.ownerEmail}</div></td>
-                  <td className="px-3 py-3"><div className="flex items-center gap-3 whitespace-nowrap">{c.workspaceId ? <span className="text-emerald-700">Created</span> : <Link href={`/control/clients/${c.id}`} className="text-amber-800 hover:underline">Not created</Link>}{canEdit && <AccountSwitch client={c} onChanged={() => router.refresh()} />}</div></td>
+                  <td className="px-3 py-3 pr-6"><div className="flex items-center gap-4 whitespace-nowrap">{c.workspaceId ? <span className="w-[5.5rem] text-emerald-700">Created</span> : <Link href={`/control/clients/${c.id}`} className="w-[5.5rem] text-amber-800 hover:underline">Not created</Link>}{canEdit && <AccountSwitch client={c} onChanged={() => router.refresh()} />}</div></td>
                   <td className="px-3 py-3 text-right">{canEdit && <Button variant="outline" size="sm" onClick={() => setDialog(c)} aria-label={`Edit ${c.name}`}>Edit</Button>}</td>
                 </tr>
               ))}
