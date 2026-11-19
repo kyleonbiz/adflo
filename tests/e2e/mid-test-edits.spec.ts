@@ -50,7 +50,8 @@ test.describe("contacts", () => {
     await page.goto("/app/contacts");
     const row = page.getByTestId("contact-row").first();
     await expect(row.getByTestId("contact-details")).toHaveCount(0);
-    await row.locator("p").first().click();
+    // Click the row's own padding, away from the name link (which opens the contact's profile instead).
+    await row.click({ position: { x: 4, y: 4 } });
     await expect(row.getByTestId("contact-details")).toBeVisible();
     await row.getByRole("button", { name: /^Hide details/ }).click();
     await expect(row.getByTestId("contact-details")).toHaveCount(0);
