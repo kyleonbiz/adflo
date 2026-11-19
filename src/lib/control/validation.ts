@@ -205,14 +205,16 @@ export function parseResetEmail(raw: unknown): Parsed<{ email: string }> {
   return EMAIL.test(email) && email.length <= 254 ? { ok: true, value: { email } } : { ok: false, errors: { email: "Enter a valid email address." } };
 }
 
-export function parseAgreementInput(raw: unknown): Parsed<{ title: string; body: string }> {
+export function parseAgreementInput(raw: unknown): Parsed<{ title: string; body: string; effectiveDate: string }> {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const errors: Record<string, string> = {};
   const title = clean(r.title);
   if (title.length < 1 || title.length > 120) errors.title = "Enter a title (up to 120 characters).";
   const body = body_(r.body);
   if (body.length < 1 || body.length > 60000) errors.body = "Enter the agreement text (up to 60,000 characters).";
-  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { title, body } };
+  const effectiveDate = clean(r.effectiveDate);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(effectiveDate) || new Date(`${effectiveDate}T00:00:00Z`).toISOString().slice(0, 10) !== effectiveDate) errors.effectiveDate = "Choose the date it takes effect.";
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { title, body, effectiveDate } };
 }
 
 export function parseSendInput(raw: unknown): Parsed<{ clientId: string; templateId: string; email: boolean }> {

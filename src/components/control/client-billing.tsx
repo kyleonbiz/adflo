@@ -6,14 +6,15 @@ import { AlertTriangle, Armchair, CircleDollarSign, Clock, LifeBuoy, Plus, Tag }
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { SAMPLE_INVOICES, STATUS_TEXT, displayStatus, summarize, type BillingInvoice } from "@/lib/control/billing";
+import { SAMPLE_INVOICES } from "@/lib/control/billing";
 import { useSavedInvoices } from "@/lib/control/billing-storage";
+import { invoiceState, summarize } from "@/lib/invoices/logic";
+import type { Invoice } from "@/lib/invoices/types";
+import { STATE_BADGE, STATE_LABEL } from "@/components/invoices/status";
 import { effectivePriceCents, formatMoney, type ClientRecord, type Plan } from "@/lib/control/types";
 
-const VARIANT = { draft: "muted", sent: "default", paid: "success", void: "outline", overdue: "danger" } as const;
-
 /** This client's invoices from the same browser-saved list the Billing screen uses. */
-function useClientInvoices(clientId: string, today: string, sample: boolean): BillingInvoice[] {
+function useClientInvoices(clientId: string, today: string, sample: boolean): Invoice[] {
   const saved = useSavedInvoices();
   return useMemo(() => (saved ?? (sample ? SAMPLE_INVOICES(today) : [])).filter((i) => i.clientId === clientId), [saved, sample, today, clientId]);
 }
@@ -60,14 +61,14 @@ export function ClientBilling({ client, today, sample }: { client: ClientRecord;
           <table className="w-full min-w-[30rem] text-left text-sm">
             <tbody className="divide-y">
               {rows.map((i) => {
-                const st = displayStatus(i, today);
+                const st = invoiceState(i, today);
                 return (
                   <tr key={i.id}>
                     <td className="whitespace-nowrap py-2.5 pr-3 font-mono text-xs">{i.number}</td>
                     <td className="py-2.5 pr-3 text-muted-foreground">{i.description}</td>
                     <td className="py-2.5 pr-3 text-right tabular-nums">{formatMoney(i.amountCents)}</td>
                     <td className="whitespace-nowrap py-2.5 pr-3 tabular-nums"><Clock className="mr-1 inline size-3 text-muted-foreground" aria-hidden />{i.dueOn}</td>
-                    <td className="py-2.5"><Badge variant={VARIANT[st]}>{STATUS_TEXT[st]}</Badge></td>
+                    <td className="py-2.5"><Badge variant={STATE_BADGE[st]}>{STATE_LABEL[st]}</Badge></td>
                   </tr>
                 );
               })}

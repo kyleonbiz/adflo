@@ -141,12 +141,13 @@ export const SAMPLE_TICKETS: Ticket[] = [
   { id: "sample-t2", clientId: "sample-2", clientName: "Sample: Birch & Co", subject: "Add a seat for a new hire", body: "", status: "pending", priority: "normal", assignee: null, createdAt: "2026-11-02T10:00:00Z", updatedAt: "2026-11-02T10:00:00Z" },
 ];
 
-export const SAMPLE_TEMPLATES: AgreementTemplate[] = [{ id: "sample-a1", title: "Terms of Service", version: 2, body: "# Terms of Service\nSample text. The real agreement appears here once the Owner publishes it.\n\n## What you agree to\n- Pay invoices when they are due\n- Keep your account details up to date\n\n## Next steps\n1. Read the terms\n2. Tick both boxes and accept", createdAt: "2026-10-01T00:00:00Z" }];
+export const SAMPLE_TEMPLATES: AgreementTemplate[] = [{ id: "sample-a1", title: "Terms of Service", version: 2, body: "# Terms of Service\nSample text. The real agreement appears here once the Owner publishes it.\n\n## What you agree to\n- Pay invoices when they are due\n- Keep your account details up to date\n\n## Next steps\n1. Read the terms\n2. Tick both boxes and accept", effectiveDate: "2026-10-01", createdAt: "2026-10-01T00:00:00Z" },
+  { id: "sample-a2", title: "Privacy Policy", version: 1, body: "# Privacy Policy\nThe privacy policy will be added here.", effectiveDate: "2026-10-01", createdAt: "2026-10-01T00:00:00Z" }];
 
 export async function loadTemplates(supabase: SupabaseClient): Promise<AgreementTemplate[]> {
-  const { data, error } = await supabase.from("agreement_templates").select("id, title, version, body, created_at").order("title").order("version", { ascending: false });
+  const { data, error } = await supabase.from("agreement_templates").select("id, title, version, body, effective_date, created_at").order("title").order("version", { ascending: false });
   if (error) throw new Error("Could not load agreements.");
-  return (data ?? []).map((t) => ({ id: t.id as string, title: t.title as string, version: t.version as number, body: t.body as string, createdAt: t.created_at as string }));
+  return (data ?? []).map((t) => ({ id: t.id as string, title: t.title as string, version: t.version as number, body: t.body as string, effectiveDate: t.effective_date as string, createdAt: t.created_at as string }));
 }
 
 export async function loadSent(supabase: SupabaseClient, clientId?: string): Promise<SentAgreement[]> {

@@ -11,6 +11,7 @@ import { AgreementText } from "./agreement-text";
 import { agreementState, type AgreementTemplate, type SentAgreement } from "@/lib/control/types";
 
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" });
+const todayUtc = () => new Date().toISOString().slice(0, 10);
 const STATE = { accepted: ["success", "Accepted"], waiting: ["warning", "Waiting"], expired: ["muted", "Expired"] } as const;
 
 function SentList({ sent, showClient, canDelete }: { sent: SentAgreement[]; showClient?: boolean; canDelete?: boolean }) {
@@ -144,7 +145,7 @@ function TemplateRow({ t, canDelete }: { t: AgreementTemplate; canDelete: boolea
   return (
     <li className="py-2.5 text-sm">
       <details>
-        <summary className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="font-medium">{t.title}</span> <span className="text-muted-foreground">v{t.version} · {day(t.createdAt)}</span></summary>
+        <summary className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="font-medium">{t.title}</span> <span className="text-muted-foreground">v{t.version} · effective {day(t.effectiveDate)}</span></summary>
         <div className="mt-2 max-h-64 overflow-y-auto rounded-lg bg-muted p-3"><AgreementText body={t.body} /></div>
       </details>
       {canDelete && (
@@ -164,7 +165,7 @@ function TemplateRow({ t, canDelete }: { t: AgreementTemplate; canDelete: boolea
 /** The Agreements screen: published versions, publishing (Owner), and everything sent. */
 export function AgreementsPage({ templates, sent, canPublish, sample }: { templates: AgreementTemplate[]; sent: SentAgreement[]; canPublish: boolean; sample?: boolean }) {
   const router = useRouter();
-  const [f, setF] = useState({ title: "", body: "" });
+  const [f, setF] = useState({ title: "", body: "", effectiveDate: todayUtc() });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -173,7 +174,7 @@ export function AgreementsPage({ templates, sent, canPublish, sample }: { templa
     try {
       const res = await fetch("/api/control/agreements", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
       const json = await res.json().catch(() => null);
-      if (res.ok) { setF({ title: "", body: "" }); router.refresh(); } else { setErrors(json?.error?.fields ?? {}); setMessage(json?.error?.message ?? "Could not save. Try again."); }
+      if (res.ok) { setF({ title: "", body: "", effectiveDate: todayUtc() }); router.refresh(); } else { setErrors(json?.error?.fields ?? {}); setMessage(json?.error?.message ?? "Could not save. Try again."); }
     } catch { setMessage("Could not reach the server. Try again."); } finally { setBusy(false); }
   }
   return (
@@ -191,6 +192,7 @@ export function AgreementsPage({ templates, sent, canPublish, sample }: { templa
           <h2 className="font-semibold">Publish an agreement or a new version</h2>
           <p className="text-xs text-muted-foreground">Use the same title as an existing agreement to publish its next version.</p>
           <div className="space-y-1.5"><Label htmlFor="ap-title">Title</Label><Input id="ap-title" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} aria-invalid={!!errors.title} />{errors.title && <p role="alert" className="text-xs text-destructive">{errors.title}</p>}</div>
+          <div className="space-y-1.5"><Label htmlFor="ap-date">Effective date</Label><Input id="ap-date" type="date" value={f.effectiveDate} onChange={(e) => setF({ ...f, effectiveDate: e.target.value })} aria-invalid={!!errors.effectiveDate} className="sm:max-w-48" />{errors.effectiveDate && <p role="alert" className="text-xs text-destructive">{errors.effectiveDate}</p>}</div>
           <div className="space-y-1.5"><Label htmlFor="ap-body">Text</Label><p className="text-xs text-muted-foreground">Formatting: # Heading, ## Subheading, - bullet, 1. numbered item. Leave a blank line between paragraphs.</p><textarea id="ap-body" rows={8} value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />{errors.body && <p role="alert" className="text-xs text-destructive">{errors.body}</p>}</div>
           {message && <p role="alert" className="text-sm text-destructive">{message}</p>}
           <Button type="submit" disabled={busy}>{busy ? "Publishing…" : "Publish"}</Button>

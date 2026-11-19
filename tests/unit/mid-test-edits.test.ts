@@ -3,21 +3,28 @@ import { blankDocument, layoutTemplate } from "@/lib/forms/layout";
 import { PAPERWORK } from "@/lib/forms/paperwork";
 import { starterForms } from "@/lib/forms/starter-forms";
 import { FIELD_TYPES } from "@/lib/forms/types";
-import { invoiceText } from "@/lib/invoices/share";
+import { invoiceToPdf } from "@/lib/invoices/pdf";
 import { projectsReportCsv } from "@/lib/projects/logic";
 import { PROJECT_TEMPLATES } from "@/lib/projects/templates";
 import { parseReminders, reminderId, setReminderOn } from "@/lib/reminders/logic";
-import { textToPdf } from "@/lib/forms/pdf";
 
 describe("invoice PDF", () => {
-  it("builds a real PDF from the invoice text", () => {
-    const text = invoiceText({
+  it("builds a laid-out PDF: positioned text for the title, parties, items and totals, not one run of text", () => {
+    const pdf = new TextDecoder("latin1").decode(invoiceToPdf({
       number: "INV-1", client: "Acme", clientEmail: "a@b.co", items: [{ description: "Work", qty: 2, rateCents: 5000 }], taxRate: 0,
-      sender: { name: "Me", address: "", phone: "", email: "" }, paymentMethods: [], issuedOn: "2026-01-01", dueOn: "2026-02-01", status: "sent", paidOn: null, notes: "",
-    });
-    expect(text).toContain("INV-1");
-    expect(text).toContain("TOTAL: $100.00");
-    expect(new TextDecoder().decode(textToPdf(text).slice(0, 5))).toBe("%PDF-");
+      sender: { name: "Me", address: "1 Main St", phone: "", email: "" }, paymentMethods: ["Cash"], issuedOn: "2026-01-01", dueOn: "2026-02-01", status: "sent", paidOn: null, notes: "Thanks",
+    }));
+    expect(pdf.startsWith("%PDF-")).toBe(true);
+    for (const text of ["(INVOICE)", "(INV-1)", "(Issue date: 2026-01-01)", "(Acme)", "(Work)", "($100.00)", "(Total)", "(Thanks)", "(- Cash)"]) expect(pdf).toContain(text);
+    expect(pdf).not.toContain("?"); // no stand-ins for line breaks
+  });
+  it("starts a new page when the items run past the first", () => {
+    const items = Array.from({ length: 30 }, (_, i) => ({ description: `Line ${i + 1}`, qty: 1, rateCents: 100 }));
+    const pdf = new TextDecoder("latin1").decode(invoiceToPdf({
+      number: "INV-2", client: "Acme", clientEmail: "", items, taxRate: 0, sender: { name: "Me", address: "", phone: "", email: "" },
+      paymentMethods: [], issuedOn: "2026-01-01", dueOn: "2026-02-01", status: "draft", paidOn: null, notes: "",
+    }));
+    expect(pdf).toMatch(/\/Count 2\b/);
   });
 });
 

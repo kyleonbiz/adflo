@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
@@ -15,6 +15,10 @@ import { RECURRENCES, type Invoice } from "@/lib/invoices/types";
 import { invoiceFormSchema, parseDollars, type InvoiceFormInput, type InvoiceFormValues } from "@/lib/invoices/validation";
 
 const SENDER_KEY = "adflo.invoice.sender";
+
+/** The AdFlo clients the Control center can bill, and the "From" details its invoices start with. */
+export interface BillableClient { id: string; name: string; email: string }
+export type SenderDefaults = Pick<InvoiceFormInput, "fromName" | "fromAddress" | "fromPhone" | "fromEmail" | "paymentMethods">;
 const emptyItem = { description: "", qty: "1", rate: "" };
 const TEXTAREA =
   "flex w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground aria-invalid:border-destructive focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30";
@@ -22,7 +26,7 @@ const TEXTAREA =
 type Remembered = Pick<InvoiceFormInput, "fromName" | "fromAddress" | "fromPhone" | "fromEmail" | "paymentMethods">;
 
 /** The business details and payment methods last used in this browser, so each new invoice starts filled in. */
-function remembered(existing: Invoice[]): Remembered {
+function remembered(existing: Invoice[], key: string, fallback?: SenderDefaults): Remembered {
   const last = [...existing].sort((a, b) => (a.issuedOn < b.issuedOn ? 1 : -1))[0];
   if (last) {
     return {
@@ -31,19 +35,19 @@ function remembered(existing: Invoice[]): Remembered {
     };
   }
   try {
-    const saved = JSON.parse(localStorage.getItem(SENDER_KEY) ?? "null");
+    const saved = JSON.parse(localStorage.getItem(key) ?? "null");
     if (saved && typeof saved === "object") {
       const str = (v: unknown) => (typeof v === "string" ? v : "");
       return { fromName: str(saved.fromName), fromAddress: str(saved.fromAddress), fromPhone: str(saved.fromPhone), fromEmail: str(saved.fromEmail), paymentMethods: str(saved.paymentMethods) };
     }
   } catch { /* storage unavailable: start blank */ }
-  return { fromName: "", fromAddress: "", fromPhone: "", fromEmail: "", paymentMethods: "" };
+  return fallback ?? { fromName: "", fromAddress: "", fromPhone: "", fromEmail: "", paymentMethods: "" };
 }
 
 /** Details an assistant draft can start a new invoice with. */
 export interface InvoiceDraft { client?: string; clientEmail?: string; description?: string; amount?: string; dueOn?: string; recurrence?: string }
 
-function defaults(invoice: Invoice | undefined, today: string, existing: Invoice[], draft?: InvoiceDraft): InvoiceFormInput {
+function defaults(invoice: Invoice | undefined, today: string, existing: Invoice[], draft: InvoiceDraft | undefined, key: string, fallback?: SenderDefaults): InvoiceFormInput {
   if (invoice) {
     return {
       number: invoice.number,
@@ -58,7 +62,7 @@ function defaults(invoice: Invoice | undefined, today: string, existing: Invoice
   }
   return {
     number: generateInvoiceNumber(today, existing.map((i) => i.number)),
-    ...remembered(existing),
+    ...remembered(existing, key, fallback),
     client: draft?.client ?? "", clientEmail: draft?.clientEmail ?? "",
     items: [{ ...emptyItem, ...(draft?.description ? { description: draft.description } : {}), ...(draft?.amount ? { qty: "1", rate: draft.amount } : {}) }],
     taxRate: "", issuedOn: today, dueOn: draft?.dueOn ?? addDays(today, 30),
@@ -85,7 +89,7 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 /** Create or edit an invoice. `invoice` present means edit. */
 export function InvoiceFormDialog({
-  open, invoice, draft, existing, today, onOpenChange, onSubmit,
+  open, invoice, draft, existing, today, onOpenChange, onSubmit, clients, draftClientId, senderKey = SENDER_KEY, senderDefaults,
 }: {
   open: boolean;
   invoice?: Invoice;
@@ -93,18 +97,29 @@ export function InvoiceFormDialog({
   existing: Invoice[];
   today: string;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: InvoiceFormValues) => void;
+  onSubmit: (values: InvoiceFormValues, clientId?: string) => void;
+  /** Control center: lets the invoice be addressed to one of these clients (the name and email fill in). */
+  clients?: BillableClient[];
+  /** Control center: the client a new invoice starts with (the one the draft was made for). */
+  draftClientId?: string;
+  /** Where the last-used "From" details are remembered, so the Control center keeps its own. */
+  senderKey?: string;
+  /** "From" details a first invoice starts with. */
+  senderDefaults?: SenderDefaults;
 }) {
-  const { register, control, handleSubmit, reset, setError, formState } = useForm<InvoiceFormInput, unknown, InvoiceFormValues>({
+  // The client picked in this dialog; until one is, the invoice's own or the draft's.
+  const [picked, setPicked] = useState<string | null>(null);
+  const clientId = picked ?? invoice?.clientId ?? draftClientId ?? "";
+  const { register, control, handleSubmit, reset, setError, setValue, formState } = useForm<InvoiceFormInput, unknown, InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
-    defaultValues: defaults(invoice, today, existing, draft),
+    defaultValues: defaults(invoice, today, existing, draft, senderKey, senderDefaults),
   });
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const { errors } = formState;
   const watched = useWatch({ control, name: ["items", "taxRate"] });
 
   useEffect(() => {
-    if (open) reset(defaults(invoice, today, existing, draft));
+    if (open) reset(defaults(invoice, today, existing, draft, senderKey, senderDefaults));
     // `existing` only seeds the suggested number and sender when the dialog opens.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, invoice, today, reset]);
@@ -122,14 +137,15 @@ export function InvoiceFormDialog({
       return;
     }
     try {
-      localStorage.setItem(SENDER_KEY, JSON.stringify({
+      localStorage.setItem(senderKey, JSON.stringify({
         fromName: values.fromName, fromAddress: values.fromAddress, fromPhone: values.fromPhone, fromEmail: values.fromEmail,
         paymentMethods: values.paymentMethods.join("\n"),
       }));
     } catch { /* storage unavailable: nothing remembered */ }
-    onSubmit(values);
-    onOpenChange(false);
+    onSubmit(values, clients ? clientId || undefined : undefined);
+    close(false);
   });
+  const close = (o: boolean) => { if (!o) setPicked(null); onOpenChange(o); };
   const invalid = (name: string, message?: string) => ({
     "aria-invalid": !!message,
     "aria-describedby": message ? `${name}-error` : undefined,
@@ -137,7 +153,7 @@ export function InvoiceFormDialog({
   const itemsError = typeof errors.items?.message === "string" ? errors.items.message : errors.items?.root?.message;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={close}>
       <DialogContent className="sm:max-w-2xl">
         <div className="border-b px-5 py-4 pr-14">
           <DialogTitle>{invoice ? "Edit invoice" : "New invoice"}</DialogTitle>
@@ -172,6 +188,23 @@ export function InvoiceFormDialog({
             </Section>
 
             <Section title="Bill to">
+              {clients && (
+                <div className="sm:col-span-2">
+                  <Field id="inv-pick" label="AdFlo client">
+                    <select
+                      id="inv-pick" value={clientId} className="h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30"
+                      onChange={(e) => {
+                        setPicked(e.target.value);
+                        const c = clients.find((x) => x.id === e.target.value);
+                        if (c) { setValue("client", c.name, { shouldValidate: true }); setValue("clientEmail", c.email, { shouldValidate: true }); }
+                      }}
+                    >
+                      <option value="">Someone else (type the details below)</option>
+                      {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                  </Field>
+                </div>
+              )}
               <Field id="inv-client" label="Client" error={errors.client?.message}>
                 <Input id="inv-client" autoComplete="off" {...invalid("inv-client", errors.client?.message)} {...register("client")} />
               </Field>
@@ -243,7 +276,7 @@ export function InvoiceFormDialog({
             </Section>
           </div>
           <div className="flex justify-end gap-2 border-t px-5 py-3">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => close(false)}>Cancel</Button>
             <Button type="submit">{invoice ? "Save changes" : "Create invoice"}</Button>
           </div>
         </form>

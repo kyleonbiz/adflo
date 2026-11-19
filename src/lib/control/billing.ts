@@ -1,159 +1,67 @@
-import { toCsv } from "@/lib/csv";
-import { effectivePriceCents, formatMoney, type ClientRecord, type Plan } from "./types";
+import { addDays } from "@/lib/dates";
+import { describeItems, generateInvoiceNumber, invoiceTotals } from "@/lib/invoices/logic";
+import type { Invoice } from "@/lib/invoices/types";
+import { effectivePriceCents, type ClientRecord, type Plan } from "./types";
 
 /**
- * Manual invoicing for AdFlo's own clients. Records live in the browser for now (no payment processor, nothing
- * is emailed, no database table), so everything here is plain data and pure functions.
+ * The Control center bills AdFlo's own clients with the same invoices the client app uses (items, tax, a link the
+ * client can open, download, send, reminders). Records live in the browser for now: no payment processor, no table.
  */
-export const INVOICE_STATUSES = ["draft", "sent", "paid", "void"] as const;
-export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
-/** What the table shows: a sent invoice past its due date reads "overdue". */
-export type DisplayStatus = InvoiceStatus | "overdue";
-
-export const PAYMENT_METHODS = ["Bank transfer", "Check", "Cash", "Card (outside AdFlo)", "Other"] as const;
-
-export interface BillingInvoice {
-  id: string;
-  number: string;
-  clientId: string;
-  clientName: string;
-  description: string;
-  amountCents: number;
-  issuedOn: string; // YYYY-MM-DD
-  dueOn: string;
-  status: InvoiceStatus;
-  paidOn: string | null;
-  method: string;
-  note: string;
-}
-
-export const STATUS_TEXT: Record<DisplayStatus, string> = { draft: "Draft", sent: "Sent", paid: "Paid", void: "Void", overdue: "Overdue" };
-
-const ISO = /^\d{4}-\d{2}-\d{2}$/;
-const isDate = (v: string) => ISO.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v;
-
-export function addDays(iso: string, days: number): string {
-  const d = new Date(`${iso}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-export const displayStatus = (inv: Pick<BillingInvoice, "status" | "dueOn">, today: string): DisplayStatus =>
-  inv.status === "sent" && inv.dueOn < today ? "overdue" : inv.status;
-
-/** Next free number: AF-0001, AF-0002, ... (never reuses a voided one). */
-export function nextNumber(list: Pick<BillingInvoice, "number">[]): string {
-  const max = list.reduce((m, i) => Math.max(m, Number(/^AF-(\d+)$/.exec(i.number)?.[1] ?? 0)), 0);
-  return `AF-${String(max + 1).padStart(4, "0")}`;
-}
-
-/** "$1,200.50", "1200", "1,200.5" -> cents; null when it is not a positive amount with at most two decimals. */
-export function parseDollars(input: string): number | null {
-  const s = input.trim().replace(/^\$/, "").replace(/,/g, "");
-  if (!/^\d+(\.\d{1,2})?$/.test(s)) return null;
-  const cents = Math.round(Number(s) * 100);
-  return cents > 0 && cents <= 100_000_000 ? cents : null;
-}
-
-export interface InvoiceForm { clientId: string; description: string; amount: string; issuedOn: string; dueOn: string; note: string }
-type InvoiceFormResult =
-  | { ok: true; value: { clientId: string; description: string; amountCents: number; issuedOn: string; dueOn: string; note: string } }
-  | { ok: false; errors: Partial<Record<keyof InvoiceForm, string>> };
-
-export function validateInvoiceForm(f: InvoiceForm, clientIds: string[]): InvoiceFormResult {
-  const errors: Partial<Record<keyof InvoiceForm, string>> = {};
-  if (!clientIds.includes(f.clientId)) errors.clientId = "Choose a client.";
-  const description = f.description.trim();
-  if (description.length < 2 || description.length > 200) errors.description = "Describe what this is for (2 to 200 characters).";
-  const amountCents = parseDollars(f.amount);
-  if (amountCents == null) errors.amount = "Enter an amount above $0, like 99 or 1,200.50.";
-  if (!isDate(f.issuedOn)) errors.issuedOn = "Enter the issue date.";
-  if (!isDate(f.dueOn)) errors.dueOn = "Enter the due date.";
-  else if (isDate(f.issuedOn) && f.dueOn < f.issuedOn) errors.dueOn = "The due date cannot be before the issue date.";
-  if (f.note.length > 500) errors.note = "Keep the note under 500 characters.";
-  if (Object.keys(errors).length) return { ok: false, errors };
-  return { ok: true, value: { clientId: f.clientId, description, amountCents: amountCents!, issuedOn: f.issuedOn, dueOn: f.dueOn, note: f.note.trim() } };
-}
-
-interface BillingSummary { outstandingCents: number; overdueCents: number; overdueCount: number; paidThisMonthCents: number; draftCents: number }
-
-export function summarize(list: BillingInvoice[], today: string): BillingSummary {
-  const month = today.slice(0, 7);
-  const s: BillingSummary = { outstandingCents: 0, overdueCents: 0, overdueCount: 0, paidThisMonthCents: 0, draftCents: 0 };
-  for (const i of list) {
-    const st = displayStatus(i, today);
-    if (st === "sent" || st === "overdue") s.outstandingCents += i.amountCents;
-    if (st === "overdue") { s.overdueCents += i.amountCents; s.overdueCount += 1; }
-    if (st === "paid" && i.paidOn?.startsWith(month)) s.paidThisMonthCents += i.amountCents;
-    if (st === "draft") s.draftCents += i.amountCents;
-  }
-  return s;
-}
+export const ADFLO_SENDER = { fromName: "AdFlo", fromAddress: "", fromPhone: "", fromEmail: "billing@adflo.pro", paymentMethods: "Bank transfer\nCheck" } as const;
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 export const monthLabel = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(0, 4)}`;
 
+const sender = { name: ADFLO_SENDER.fromName, address: ADFLO_SENDER.fromAddress, phone: ADFLO_SENDER.fromPhone, email: ADFLO_SENDER.fromEmail };
+
+/** One subscription invoice as a draft: a single line, due in two weeks. */
+function draftInvoice(c: Pick<ClientRecord, "id" | "name" | "ownerEmail">, description: string, cents: number, today: string, number: string, id: string): Invoice {
+  const items = [{ description, qty: 1, rateCents: cents }];
+  return {
+    id, number, clientId: c.id, client: c.name, clientEmail: c.ownerEmail, description: describeItems(items), items, taxRate: 0, sender,
+    paymentMethods: ADFLO_SENDER.paymentMethods.split("\n"), amountCents: invoiceTotals(items, 0).totalCents, issuedOn: today, dueOn: addDays(today, 14),
+    status: "draft", paidOn: null, recurrence: "none", reminderDays: [7, 1], notes: "Thank you for choosing AdFlo. Questions about this invoice? Just reply to the email.",
+  };
+}
+
 /**
  * Drafts for this month's subscriptions: one per ACTIVE client with a price, skipping any client that already
- * has an invoice for the month (voided ones do not count). Trials, suspended and cancelled clients are not billed.
+ * has an invoice for the month (voided ones do not count). Trials, paused and cancelled clients are not billed.
  */
-export function monthlyDrafts(clients: ClientRecord[], plans: Plan[], existing: BillingInvoice[], today: string, dueDays = 14): BillingInvoice[] {
+export function monthlyDrafts(clients: ClientRecord[], plans: Plan[], existing: Invoice[], today: string): Invoice[] {
   const label = monthLabel(today);
-  const out: BillingInvoice[] = [];
+  const out: Invoice[] = [];
   for (const c of clients) {
     if (c.status !== "active") continue;
     const cents = effectivePriceCents(c, plans);
     if (!cents || cents <= 0) continue;
-    const description = `AdFlo ${c.plan} · ${label}`;
-    if (existing.some((i) => i.clientId === c.id && i.description === description && i.status !== "void")) continue;
-    out.push({
-      id: `inv-${c.id}-${today.slice(0, 7)}`, number: nextNumber([...existing, ...out]), clientId: c.id, clientName: c.name, description,
-      amountCents: cents, issuedOn: today, dueOn: addDays(today, dueDays), status: "draft", paidOn: null, method: "", note: "",
-    });
+    const line = `AdFlo ${c.plan} · ${label}`;
+    if (existing.some((i) => i.clientId === c.id && i.status !== "void" && i.items.some((it) => it.description === line))) continue;
+    out.push(draftInvoice(c, line, cents, today, generateInvoiceNumber(today, [...existing, ...out].map((i) => i.number)), `inv-${c.id}-${today.slice(0, 7)}`));
   }
   return out;
 }
 
-export function invoicesCsv(list: BillingInvoice[], today: string): string {
-  return toCsv([
-    ["Number", "Client", "Description", "Amount", "Issued", "Due", "Status", "Paid on", "Method", "Note"],
-    ...list.map((i) => [i.number, i.clientName, i.description, (i.amountCents / 100).toFixed(2), i.issuedOn, i.dueOn, STATUS_TEXT[displayStatus(i, today)], i.paidOn ?? "", i.method, i.note]),
-  ]);
+/** What "New invoice" for one client starts with: their name, owner email and monthly price. */
+export function clientDraft(c: ClientRecord, plans: Plan[], today: string) {
+  const cents = effectivePriceCents(c, plans);
+  return { client: c.name, clientEmail: c.ownerEmail, description: `AdFlo ${c.plan} · ${monthLabel(today)}`, ...(cents ? { amount: (cents / 100).toFixed(2) } : {}) };
 }
 
-/** Plain text of one invoice, for pasting into an email. */
-export function invoiceText(i: BillingInvoice): string {
-  return [
-    `Invoice ${i.number}`, `To: ${i.clientName}`, `For: ${i.description}`, `Amount due: ${formatMoney(i.amountCents)}`,
-    `Issued: ${i.issuedOn}`, `Due: ${i.dueOn}`, ...(i.note ? [`Note: ${i.note}`] : []), "", "Thank you. AdFlo",
-  ].join("\n");
-}
+/** Labelled examples shown in the preview before anything is saved. */
+export const SAMPLE_INVOICES = (today: string): Invoice[] => {
+  const acme = { id: "sample-1", name: "Sample: Acme Roofing", ownerEmail: "pat@example.com" };
+  const paid: Invoice = { ...draftInvoice(acme, `AdFlo standard · ${monthLabel(addDays(today, -35))}`, 9900, addDays(today, -35), "INV-261001-1001", "s-1"), status: "paid", paidOn: addDays(today, -18) };
+  const sent: Invoice = { ...draftInvoice(acme, `AdFlo standard · ${monthLabel(today)}`, 9900, addDays(today, -5), "INV-261002-1002", "s-2"), status: "sent" };
+  const late: Invoice = { ...draftInvoice({ id: "sample-2", name: "Sample: Birch & Co", ownerEmail: "sam@example.com" }, "Setup and onboarding", 25000, addDays(today, -30), "INV-261003-1003", "s-3"), status: "sent" };
+  return [paid, sent, late];
+};
 
-/** What the browser sends to email an invoice. Checked again on the server; the owner's email comes from the client record, never from here. */
-export function parseSendInvoice(raw: unknown): { ok: true; value: BillingInvoice } | { ok: false; message: string } {
-  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const s = (v: unknown, max: number) => (typeof v === "string" && v.length <= max ? v.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, " ").trim() : "");
-  const clientId = s(r.clientId, 64);
-  const number = s(r.number, 20);
-  const description = s(r.description, 200);
-  const amountCents = typeof r.amountCents === "number" && Number.isInteger(r.amountCents) && r.amountCents > 0 && r.amountCents <= 100_000_000 ? r.amountCents : 0;
-  const issuedOn = s(r.issuedOn, 10);
-  const dueOn = s(r.dueOn, 10);
-  const form = validateInvoiceForm({ clientId, description, amount: (amountCents / 100).toFixed(2), issuedOn, dueOn, note: s(r.note, 500) }, [clientId]);
-  if (!/^AF-\d{4,}$/.test(number) || !form.ok || !amountCents) return { ok: false, message: "This invoice is incomplete. Check the amount, dates and description." };
-  return { ok: true, value: { ...form.value, id: "", number, clientName: "", status: "sent", paidOn: null, method: "" } };
+/** Invoices saved by the earlier Control center screen (one amount, no items) become single-line invoices. */
+export function fromLegacy(o: Record<string, unknown>): Invoice | null {
+  const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max) : "");
+  if (typeof o.id !== "string" || typeof o.amountCents !== "number" || !Number.isInteger(o.amountCents) || o.amountCents <= 0) return null;
+  if (!["draft", "sent", "paid", "void"].includes(o.status as string)) return null;
+  const base = draftInvoice({ id: str(o.clientId, 80), name: str(o.clientName, 120), ownerEmail: "" }, str(o.description, 200) || "Invoice", o.amountCents, str(o.issuedOn, 10), str(o.number, 20), str(o.id, 80));
+  return { ...base, dueOn: str(o.dueOn, 10), status: o.status as Invoice["status"], paidOn: typeof o.paidOn === "string" ? o.paidOn.slice(0, 10) : null, notes: str(o.note, 500) };
 }
-
-/** The email for one invoice. `owner` is who it is addressed to; everything typed by staff is already one line. */
-export function invoiceEmail(i: BillingInvoice, owner: string): { subject: string; text: string } {
-  return {
-    subject: `Invoice ${i.number} from AdFlo: ${formatMoney(i.amountCents)} due ${i.dueOn}`,
-    text: [`Hi ${owner.trim().split(/\s+/)[0] || "there"},`, "", "Here is your invoice from AdFlo.", "", invoiceText(i), "", "Questions about this invoice? Just reply to this email."].join("\n"),
-  };
-}
-
-export const SAMPLE_INVOICES = (today: string): BillingInvoice[] => [
-  { id: "s-1", number: "AF-0001", clientId: "sample-1", clientName: "Sample: Acme Roofing", description: `AdFlo standard · ${monthLabel(addDays(today, -35))}`, amountCents: 9900, issuedOn: addDays(today, -35), dueOn: addDays(today, -21), status: "paid", paidOn: addDays(today, -18), method: "Bank transfer", note: "" },
-  { id: "s-2", number: "AF-0002", clientId: "sample-1", clientName: "Sample: Acme Roofing", description: `AdFlo standard · ${monthLabel(addDays(today, -5))}`, amountCents: 9900, issuedOn: addDays(today, -5), dueOn: addDays(today, 9), status: "sent", paidOn: null, method: "", note: "" },
-  { id: "s-3", number: "AF-0003", clientId: "sample-2", clientName: "Sample: Birch & Co", description: "Setup and onboarding", amountCents: 25000, issuedOn: addDays(today, -30), dueOn: addDays(today, -16), status: "sent", paidOn: null, method: "", note: "Second reminder sent" },
-];

@@ -31,6 +31,8 @@ export interface Sender {
 export interface Invoice {
   id: string;
   number: string;
+  /** Control center only: the AdFlo client this invoice is for. */
+  clientId?: string;
   client: string;
   /** Where "Send" addresses the email. Empty until set. */
   clientEmail: string;

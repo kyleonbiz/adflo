@@ -1,10 +1,6 @@
 import { expect, test } from "@playwright/test";
 
 // No seeded records here: this follows one real record through the app, the way a person would.
-test.beforeEach(async ({ page }) => {
-  // These tests start from a truly blank workspace, so the first-visit sample must not load itself.
-  await page.addInitScript(() => { try { localStorage.setItem("adflo.sample-auto.v1", "1"); } catch { /* ignore */ } });
-});
 
 test.describe("records carry through the app", () => {
   test("an invoice you create shows on the Dashboard and in Reporting, and is still there after leaving and reloading", async ({ page }) => {

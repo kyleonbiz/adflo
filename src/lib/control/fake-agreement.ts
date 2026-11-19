@@ -16,7 +16,7 @@ export const isFakeAgreement = (token: unknown) => enabled() && token === FAKE_A
 export function fakeAgreementView() {
   const a = state.__fakeAgreementAccepted ?? null;
   return {
-    title: "Terms of Service", version: 1, client_name: "Sample: Acme Roofing", expired: false,
+    title: "Terms of Service", version: 1, effective_date: "2026-11-01", client_name: "Sample: Acme Roofing", expired: false,
     accepted_at: a?.at ?? null, accepted_name: a?.name ?? null,
     body: "# Terms of Service\nThese sample terms are for testing.\n\n## What you agree to\n- Pay invoices when they are due\n- Keep your account details up to date\n\n## Next steps\n1. Read the terms\n2. Tick both boxes and accept",
   };

@@ -9,7 +9,7 @@ export function POST(req: Request) {
   return staffRoute(req, async ({ supabase }) => {
     const parsed = parseAgreementInput(await req.json().catch(() => null));
     if (!parsed.ok) return NextResponse.json({ ok: false, error: { code: "invalid", message: "Check the highlighted fields.", fields: parsed.errors } }, { status: 400 });
-    const { error } = await supabase.rpc("control_publish_agreement", { p_title: parsed.value.title, p_body: parsed.value.body });
+    const { error } = await supabase.rpc("control_publish_agreement", { p_title: parsed.value.title, p_body: parsed.value.body, p_effective: parsed.value.effectiveDate });
     if (error) {
       if (error.code === "42501") return fail(403, "owner_only", "Only the Owner can publish agreements.");
       throw error;

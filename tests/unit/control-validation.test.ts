@@ -119,7 +119,9 @@ describe("agreements", () => {
   const id = "00000000-0000-4000-8000-000000000001";
   const token = "A".repeat(43);
   it("checks a published agreement and a send request", () => {
-    expect(parseAgreementInput({ title: " Terms ", body: "Text" })).toEqual({ ok: true, value: { title: "Terms", body: "Text" } });
+    expect(parseAgreementInput({ title: " Terms ", body: "Text", effectiveDate: "2026-12-01" })).toEqual({ ok: true, value: { title: "Terms", body: "Text", effectiveDate: "2026-12-01" } });
+    expect(parseAgreementInput({ title: "Terms", body: "Text" }).ok).toBe(false);
+    expect(parseAgreementInput({ title: "Terms", body: "Text", effectiveDate: "2026-02-31" }).ok).toBe(false);
     expect(parseAgreementInput({ title: "", body: "" }).ok).toBe(false);
     expect(parseSendInput({ clientId: id, templateId: id }).ok).toBe(true);
     expect(parseSendInput({ clientId: id }).ok).toBe(false);

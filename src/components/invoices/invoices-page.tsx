@@ -23,7 +23,7 @@ import { mailtoLink } from "@/lib/vendors/follow-up";
 import type { Invoice, InvoiceState } from "@/lib/invoices/types";
 import type { InvoiceFormValues } from "@/lib/invoices/validation";
 import { InvoiceCard, type InvoiceActions } from "./invoice-card";
-import { InvoiceFormDialog, type InvoiceDraft } from "./invoice-form-dialog";
+import { InvoiceFormDialog, type BillableClient, type InvoiceDraft, type SenderDefaults } from "./invoice-form-dialog";
 import { InvoicePreview } from "./invoice-preview";
 import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 import { publicOrigin } from "@/lib/public-origin";
@@ -47,14 +47,49 @@ function downloadCsv(text: string, name: string) {
 }
 
 /**
- * Invoice administration. Records live in this component's state (starting empty) until the
- * database is connected, so nothing here is saved between visits and no reminder emails are sent.
+ * Invoice administration in the client app. Records come from the workspace's saved invoices (the browser, or the
+ * database when one is connected).
  */
 export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { preview?: string; startNew?: boolean; draft?: InvoiceDraft; initialQuery?: string }) {
-  const today = useToday();
   const loading = useRecordsLoading(); // saved invoices are still arriving from the database
   const audit = useAudit();
   const [edited, setEdited] = useRecordsState<Invoice>("invoices");
+  const invoices = useMemo(() => edited ?? e2eSeed<Invoice>("invoices") ?? [], [edited]);
+  return (
+    <InvoicesView
+      invoices={invoices} loading={loading} onChange={setEdited} audit={(verb, what) => audit(verb, what, "Invoices", "/app/invoices")}
+      preview={preview} startNew={startNew} draft={draft} initialQuery={initialQuery}
+    />
+  );
+}
+
+export interface InvoicesViewProps {
+  invoices: Invoice[];
+  loading?: boolean;
+  /** Called with the whole new list whenever anything changes. */
+  onChange: (next: Invoice[]) => void;
+  audit: (verb: string, what: string) => void;
+  preview?: string;
+  startNew?: boolean;
+  draft?: InvoiceDraft;
+  initialQuery?: string;
+  /** Control center: the clients invoices can be addressed to, "From" details and where they are remembered. */
+  clients?: BillableClient[];
+  draftClientId?: string;
+  senderKey?: string;
+  senderDefaults?: SenderDefaults;
+  /** Extra buttons beside "New invoice". */
+  headerActions?: React.ReactNode;
+  title?: string;
+  subtitle?: string;
+}
+
+/** The invoice screen itself: create, view, download, send, chase and mark paid. It does not care where the list is kept. */
+export function InvoicesView({
+  invoices, loading = false, onChange, audit, preview, startNew, draft, initialQuery = "", clients, draftClientId, senderKey, senderDefaults, headerActions,
+  title = "Invoices", subtitle = "Track what is owed, repeat recurring invoices and chase overdue payments.",
+}: InvoicesViewProps) {
+  const today = useToday();
   const [query, setQuery] = useState(initialQuery);
   const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
   const [formFor, setFormFor] = useState<Invoice | "new" | null>(startNew ? "new" : null);
@@ -64,8 +99,6 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
   const [paying, setPaying] = useState<Invoice | null>(null);
   const [payDate, setPayDate] = useState("");
   const [notice, setNotice] = useState("");
-
-  const invoices = useMemo(() => edited ?? e2eSeed<Invoice>("invoices") ?? [], [edited]);
 
   if (!today || loading) {
     return (
@@ -77,14 +110,14 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
     );
   }
 
-  const update = (fn: (all: Invoice[]) => Invoice[]) => setEdited(fn(invoices));
+  const update = (fn: (all: Invoice[]) => Invoice[]) => onChange(fn(invoices));
   const patch = (id: string, change: (i: Invoice) => Invoice) => update((all) => all.map((i) => (i.id === id ? change(i) : i)));
 
   const actions: InvoiceActions = {
     onView: (i) => setViewing(i),
     onEdit: (i) => setFormFor(i),
     onDelete: (i) => setDeleting(i),
-    onSend: (i) => { patch(i.id, markSent); audit("marked as sent", `invoice ${i.number}`, "Invoices", "/app/invoices"); setNotice(`${i.number} marked as sent.`); },
+    onSend: (i) => { patch(i.id, markSent); audit("marked as sent", `invoice ${i.number}`); setNotice(`${i.number} marked as sent.`); },
     onPay: (i) => { setPayDate(today); setPaying(i); },
     onVoid: (i) => setVoiding(i),
     onReopen: (i) => {
@@ -94,13 +127,13 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
     onEmail: (i) => {
       window.location.href = invoiceMailto(i, publicOrigin());
       if (i.status === "draft") patch(i.id, markSent);
-      audit("emailed", `invoice ${i.number}`, "Invoices", "/app/invoices");
+      audit("emailed", `invoice ${i.number}`);
       setNotice(`Opened your email app for ${i.number}${i.clientEmail ? ` to ${i.clientEmail}` : ""}${i.status === "draft" ? "; marked as sent." : "."}`);
     },
     onChase: (i) => {
       const mail = chaseEmail(i, today);
       window.location.href = mailtoLink(mail);
-      audit("sent a payment reminder for", `invoice ${i.number}`, "Invoices", "/app/invoices");
+      audit("sent a payment reminder for", `invoice ${i.number}`);
       setNotice(`Opened your email app with a payment reminder for ${i.number}${i.clientEmail ? ` to ${i.clientEmail}` : ""}.`);
     },
     onCopyLink: async (i) => {
@@ -113,15 +146,15 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
       const next = nextRecurringInvoice(i, invoices, newId());
       if (!next) return;
       update((all) => [...all, next]);
-      audit("created", `invoice ${next.number} as the next in the series`, "Invoices", "/app/invoices");
+      audit("created", `invoice ${next.number} as the next in the series`);
       setNotice(`Draft ${next.number} created for ${formatDayLong(next.issuedOn)}.`);
     },
   };
 
-  const saveForm = (values: InvoiceFormValues) => {
+  const saveForm = (values: InvoiceFormValues, clientId?: string) => {
     const items = values.items.map((i) => ({ description: i.description, qty: i.qty, rateCents: i.rate }));
     const fields = {
-      number: values.number, client: values.client, clientEmail: values.clientEmail,
+      number: values.number, client: values.client, clientEmail: values.clientEmail, ...(clients ? { clientId } : {}),
       items, taxRate: values.taxRate, description: describeItems(items), amountCents: invoiceTotals(items, values.taxRate).totalCents,
       sender: { name: values.fromName, address: values.fromAddress, phone: values.fromPhone, email: values.fromEmail },
       paymentMethods: values.paymentMethods, issuedOn: values.issuedOn, dueOn: values.dueOn,
@@ -130,13 +163,13 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
     if (formFor && formFor !== "new") {
       const updated = { ...formFor, ...fields };
       patch(formFor.id, () => updated);
-      audit("edited", `invoice ${values.number}`, "Invoices", "/app/invoices");
+      audit("edited", `invoice ${values.number}`);
       setNotice(`${values.number} updated.`);
     } else {
       const created: Invoice = { ...fields, id: newId(), status: "draft", paidOn: null };
       update((all) => [...all, created]);
       setViewing(created);
-      audit("created", `invoice ${values.number}`, "Invoices", "/app/invoices");
+      audit("created", `invoice ${values.number}`);
       setNotice(`${values.number} created as a draft.`);
     }
   };
@@ -154,10 +187,11 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
-          <p className="text-sm text-muted-foreground">Track what is owed, repeat recurring invoices and chase overdue payments.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {headerActions}
           <Button
             variant="outline"
             onClick={() => downloadCsv(invoicesToCsv(groups.flatMap((g) => g.invoices), today), `invoice-report-${today}.csv`)}
@@ -236,6 +270,10 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
         today={today}
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
+        clients={clients}
+        draftClientId={draftClientId}
+        senderKey={senderKey}
+        senderDefaults={senderDefaults}
       />
 
       <InvoicePreview invoice={viewing} today={today} onOpenChange={(o) => !o && setViewing(null)} onEdit={(i) => setFormFor(i)} />
@@ -253,7 +291,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
               onClick={() => {
                 if (voiding) {
                   patch(voiding.id, voidInvoice);
-                  audit("voided", `invoice ${voiding.number}`, "Invoices", "/app/invoices");
+                  audit("voided", `invoice ${voiding.number}`);
                   setNotice(`${voiding.number} voided.`);
                 }
                 setVoiding(null);
@@ -288,7 +326,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
               onClick={() => {
                 if (paying && !payError) {
                   patch(paying.id, (x) => markPaid(x, payDate));
-                  audit("marked as paid", `invoice ${paying.number}`, "Invoices", "/app/invoices");
+                  audit("marked as paid", `invoice ${paying.number}`);
                   setNotice(`${paying.number} marked as paid.`);
                   setPaying(null);
                 }
@@ -313,7 +351,7 @@ export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { 
               onClick={() => {
                 if (deleting) {
                   update((all) => all.filter((i) => i.id !== deleting.id));
-                  audit("deleted", `invoice ${deleting.number}`, "Invoices", "/app/invoices");
+                  audit("deleted", `invoice ${deleting.number}`);
                   setNotice(`${deleting.number} deleted.`);
                 }
                 setDeleting(null);

@@ -127,41 +127,35 @@ test.describe("on a device set to dark mode", () => {
   });
 });
 
-test("billing: create, send and pay an invoice by hand, saved in this browser, export CSV", async ({ page }) => {
+test("billing: the same invoice screen as the client app, with a client picker, saved in this browser, export CSV", async ({ page }) => {
   await page.goto("/control/billing");
   await expect(page.getByRole("heading", { name: "Billing" })).toBeVisible();
-  await expect(page.getByRole("cell", { name: "AF-0003", exact: true })).toBeVisible(); // labelled examples on first visit
-
-  // The overdue example is counted and flagged.
-  await page.getByRole("button", { name: /^Overdue/ }).click();
-  await expect(page.getByRole("cell", { name: "AF-0003", exact: true })).toBeVisible();
-  await expect(page.getByRole("cell", { name: "AF-0002", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: /^All/ }).click();
+  await expect(page.getByTestId("invoice-card")).toHaveCount(3); // labelled examples on first visit
+  await expect(page.getByTestId("invoice-card").filter({ hasText: "INV-261003-1003" })).toContainText("Overdue");
 
   // A bad form is refused with reasons.
   await page.getByRole("button", { name: "New invoice" }).click();
-  await page.getByRole("button", { name: "Save draft" }).click();
-  await expect(page.getByText("Describe what this is for")).toBeVisible();
-  await expect(page.getByText("Enter an amount above $0")).toBeVisible();
+  await page.getByRole("button", { name: "Create invoice" }).click();
+  await expect(page.getByRole("dialog").getByRole("alert").first()).toBeVisible();
 
-  // A good one becomes the next number, as a draft.
-  await page.getByLabel("What it is for").fill("Custom setup day");
-  await page.getByLabel("Amount ($)").fill("1,200.50");
-  await page.getByRole("button", { name: "Save draft" }).click();
-  await expect(page.getByRole("cell", { name: "AF-0004", exact: true })).toBeVisible();
-  await expect(page.getByRole("cell", { name: "$1,200.50", exact: true })).toBeVisible();
-
-  await page.getByRole("button", { name: "Mark AF-0004 sent" }).click();
-  await page.getByRole("button", { name: "Mark AF-0004 paid" }).click();
-  await page.getByRole("button", { name: "Mark paid", exact: true }).click();
-  await expect(page.getByRole("row", { name: /AF-0004/ })).toContainText("Paid");
+  // Choosing an AdFlo client fills in their name and owner email; AdFlo is the sender.
+  await page.getByLabel("AdFlo client").selectOption({ label: "Sample: Birch & Co" });
+  await expect(page.getByLabel("Client", { exact: true })).toHaveValue("Sample: Birch & Co");
+  await expect(page.getByLabel("Business name")).toHaveValue("AdFlo");
+  await page.locator("#inv-item-0-description").fill("Custom setup day");
+  await page.locator("#inv-item-0-rate").fill("1200.50");
+  await page.getByRole("button", { name: "Create invoice" }).click();
+  await expect(page.getByRole("status")).toContainText("created as a draft");
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("invoice-card")).toHaveCount(4);
+  await expect(page.getByTestId("invoice-card").filter({ hasText: "Custom setup day" })).toContainText("$1,200.50");
 
   // It is still there after a reload (and the examples did not come back over it).
   await page.reload();
-  await expect(page.getByRole("row", { name: /AF-0004/ })).toContainText("Paid");
+  await expect(page.getByTestId("invoice-card")).toHaveCount(4);
 
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Export CSV" }).click()]);
-  expect(download.suggestedFilename()).toMatch(/^adflo-invoices-\d{4}-\d{2}-\d{2}\.csv$/);
+  expect(download.suggestedFilename()).toMatch(/^invoice-report-\d{4}-\d{2}-\d{2}\.csv$/);
 });
 
 test("client profile: everything about a client in one place, and New invoice opens for that client", async ({ page }) => {
@@ -187,8 +181,8 @@ test("client profile: everything about a client in one place, and New invoice op
 
   // This client's invoices only (the examples have two for Acme and one for Birch).
   const billing = page.getByRole("region", { name: "Billing" });
-  await expect(billing.getByText("AF-0001")).toBeVisible();
-  await expect(billing.getByText("AF-0003")).toHaveCount(0);
+  await expect(billing.getByText("INV-261001-1001")).toBeVisible();
+  await expect(billing.getByText("INV-261003-1003")).toHaveCount(0);
 
   // Read-only staff and the preview see no status switch.
   await expect(page.getByRole("switch", { name: "Account on" })).toHaveCount(0);
@@ -196,8 +190,8 @@ test("client profile: everything about a client in one place, and New invoice op
   // New invoice goes to Billing with this client already chosen.
   await billing.getByRole("link", { name: "New invoice" }).click();
   await expect(page.getByRole("heading", { name: "New invoice" })).toBeVisible();
-  await expect(page.getByLabel("Client")).toHaveValue("sample-1");
-  await expect(page.getByLabel("Amount ($)")).toHaveValue("99.00");
+  await expect(page.getByLabel("AdFlo client")).toHaveValue("sample-1");
+  await expect(page.locator("#inv-item-0-rate")).toHaveValue("99.00");
 });
 
 test("onboarding tab: every client's setup progress, stalled ones flagged, rows open the profile", async ({ page }) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Database } from "lucide-react";
 import { useToday } from "@/components/modules/use-today";
 import { Button } from "@/components/ui/button";
@@ -48,47 +48,20 @@ function Picker({ today, hasRecords, heading }: { today: string; hasRecords: boo
   );
 }
 
-const AUTO_KEY = "adflo.sample-auto.v1";
-const autoDecided = () => { try { return window.localStorage.getItem(AUTO_KEY) !== null; } catch { return true; } };
-const markAutoDecided = () => { try { window.localStorage.setItem(AUTO_KEY, "1"); return true; } catch { return false; } };
-
 /**
- * The first thing on an empty Dashboard: try AdFlo with sample data, or start blank. Once a sample is loaded it
- * becomes a one-line reminder with a way to clear it. Shows nothing until the browser has answered, so the
- * server's first paint never flashes it.
+ * A workspace always opens empty. This banner only appears when sample data was loaded on purpose (Settings > Demo
+ * data), as a reminder that none of it is real, with a way to clear it.
  */
 export function SampleDataBanner() {
-  const today = useToday();
   const loaded = useLoadedSample();
-  const hasRecords = useHasSavedRecords();
   const inDatabase = useRecordsInDatabase(); // a real workspace never gets sample data
-
-  // Until records are stored in a database, a first visit would show an empty Dashboard. So the first time (and only
-  // the first time) the workspace is blank, the small-shop sample loads itself. After that the choice is yours: clearing it
-  // leaves the workspace blank, and it never comes back on its own.
-  useEffect(() => {
-    if (!today || inDatabase || autoDecided()) return;
-    const mustLoad = !loaded && !hasRecords;
-    if (!markAutoDecided() || !mustLoad) return; // storage blocked, or you already have records: leave things as they are
-    loadSample("small", today);
-  }, [today, inDatabase, loaded, hasRecords]);
-
-  if (!today || inDatabase) return null;
-  if (loaded) {
-    const label = SAMPLE_SETS.find((s) => s.id === loaded)?.label ?? "Sample";
-    return (
-      <div role="note" data-testid="sample-loaded" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm text-sky-900">
-        <span>You are looking at sample data ({label.toLowerCase()}). Nothing here is real.</span>
-        <Button size="sm" variant="outline" onClick={clearAllRecords}>Clear sample data</Button>
-      </div>
-    );
-  }
-  if (hasRecords) return null;
+  if (!loaded || inDatabase) return null;
+  const label = SAMPLE_SETS.find((s) => s.id === loaded)?.label ?? "Sample";
   return (
-    <section aria-label="Try with sample data" data-testid="sample-picker" className="rounded-2xl border bg-card p-4 shadow-panel">
-      <Picker today={today} hasRecords={false} heading="See AdFlo with sample data" />
-      <p className="mt-3 text-sm text-muted-foreground">Or start with a blank workspace and add your own records. You can clear sample data any time in Settings.</p>
-    </section>
+    <div role="note" data-testid="sample-loaded" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm text-sky-900">
+      <span>You are looking at sample data ({label.toLowerCase()}). Nothing here is real.</span>
+      <Button size="sm" variant="outline" onClick={clearAllRecords}>Clear sample data</Button>
+    </div>
   );
 }
 

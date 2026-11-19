@@ -10,7 +10,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Agreement", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
-interface View { title: string; version: number; body: string; client_name: string; accepted_at: string | null; accepted_name: string | null; expired: boolean }
+interface View { title: string; version: number; body: string; client_name: string; accepted_at: string | null; accepted_name: string | null; expired: boolean; effective_date: string }
 
 export default async function AgreementPage({ params }: PageProps<"/agreement/[token]">) {
   const { token } = await params;
@@ -34,7 +34,7 @@ export default async function AgreementPage({ params }: PageProps<"/agreement/[t
                 <section className="rounded-2xl bg-card p-6 shadow-float sm:p-8" aria-label="Agreement text">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Prepared for {view.client_name}</p>
                   <h1 className="mt-1 text-2xl font-semibold tracking-tight">{view.title}</h1>
-                  <p className="mb-4 text-sm text-muted-foreground">Version {view.version}</p>
+                  <p className="mb-4 text-sm text-muted-foreground">Version {view.version} · Effective {new Date(`${view.effective_date}T00:00:00Z`).toLocaleDateString("en-US", { dateStyle: "long", timeZone: "UTC" })}</p>
                   <article className="max-h-[32rem] overflow-y-auto rounded-xl bg-muted p-4 outline-none focus-visible:ring-2 focus-visible:ring-ring" tabIndex={0}><AgreementText body={view.body} /></article>
                 </section>
                 <section className="rounded-2xl bg-card p-6 shadow-float sm:p-8" aria-label="Acceptance">
