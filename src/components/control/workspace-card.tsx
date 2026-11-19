@@ -33,13 +33,16 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   const [ack, setAck] = useState(false);
   const [typed, setTyped] = useState("");
   const [copied, setCopied] = useState(false);
+  // Which of the owner-access buttons is working, and whether the message on screen belongs to them (so it shows right under them).
+  const [working, setWorking] = useState<"invite" | "email" | null>(null);
+  const [msgInAccess, setMsgInAccess] = useState(false);
   const [expires, setExpires] = useState<string | null>(null);
   const linked = client.workspaceId != null;
   const hasOwnerEmail = client.ownerEmail.trim() !== "";
   const joined = (client.seatsUsed ?? 0) > 0;
 
-  async function run(body: Record<string, string>, done: string) {
-    setBusy(true); setMsg(null); setConfirmUnlink(false);
+  async function run(body: Record<string, string>, done: string, access?: "invite") {
+    setBusy(true); setMsg(null); setConfirmUnlink(false); setCopied(false); setMsgInAccess(!!access); setWorking(access ?? null);
     try {
       const res = await fetch(`/api/control/clients/${client.id}/workspace`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const json = await res.json().catch(() => null);
@@ -47,11 +50,11 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
       if (json.expiresAt) setExpires(day(json.expiresAt));
       setMsg({ ok: true, text: done });
       router.refresh();
-    } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); }
+    } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); setWorking(null); }
   }
 
   async function eraseWorkspace() {
-    setBusy(true); setMsg(null);
+    setBusy(true); setMsg(null); setMsgInAccess(false);
     try {
       const res = await fetch(`/api/control/clients/${client.id}/workspace`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: typed }) });
       const json = await res.json().catch(() => null);
@@ -63,7 +66,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   }
 
   async function changeStatus(to: ClientRecord["status"]) {
-    setBusy(true); setMsg(null); setConfirming(null);
+    setBusy(true); setMsg(null); setMsgInAccess(false); setConfirming(null);
     try {
       const res = await fetch(`/api/control/clients/${client.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: to }) });
       if (!res.ok) { setMsg({ ok: false, text: (await res.json().catch(() => null))?.error?.message ?? "Could not change the status." }); return; }
@@ -72,7 +75,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   }
 
   async function deleteClient() {
-    setBusy(true); setMsg(null);
+    setBusy(true); setMsg(null); setMsgInAccess(false);
     try {
       const res = await fetch(`/api/control/clients/${client.id}`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: typed, acknowledgeAgreements: ack }) });
       const json = await res.json().catch(() => null);
@@ -83,17 +86,18 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   }
 
   async function emailWelcome() {
-    setBusy(true); setMsg(null); setCopied(false);
+    setBusy(true); setMsg(null); setCopied(false); setMsgInAccess(true); setWorking("email");
     try {
       const res = await fetch(`/api/control/clients/${client.id}/welcome`, { method: "POST" });
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not send the email. Try again." }); return; }
       setMsg({ ok: true, text: `Welcome email sent to ${json.emailedTo} from onboarding@adflo.pro.` });
       router.refresh();
-    } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); }
+    } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); setWorking(null); }
   }
 
   async function copyWelcome() {
+    setMsg(null); setMsgInAccess(true);
     const text = welcomeMessage({ clientName: client.name, ownerName: client.ownerName, ownerEmail: client.ownerEmail, signupUrl: `${publicOrigin()}/signup`, expiresOn: expires });
     try { await navigator.clipboard.writeText(text); setCopied(true); } catch { setCopied(false); setMsg({ ok: false, text: "Could not copy. Select the text from the invitation and copy it by hand." }); }
   }
@@ -187,10 +191,15 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
             <p className="text-sm text-muted-foreground">Workspace connected. {joined ? `${client.seatsUsed} ${client.seatsUsed === 1 ? "person has" : "people have"} joined.` : "Nobody has joined yet."}</p>
             {canEdit && hasOwnerEmail && (
               <div className="flex flex-wrap items-center gap-2">
-                {!joined && <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation renewed for another 14 days. No email was sent: use Email welcome message to send one.")}><Mail /> Renew invitation</Button>}
-                <Button variant="outline" disabled={busy} onClick={emailWelcome}><Send /> Email welcome message</Button>
-                <Button variant="outline" onClick={copyWelcome}>Copy welcome message</Button>
+                {!joined && <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation renewed for another 14 days. No email was sent: use Email welcome message to send one.", "invite")}><Mail /> {working === "invite" ? "Renewing…" : "Renew invitation"}</Button>}
+                <Button variant="outline" disabled={busy} onClick={emailWelcome}><Send /> {working === "email" ? "Sending…" : "Email welcome message"}</Button>
+                <Button variant="outline" onClick={copyWelcome}>{copied ? "Copied" : "Copy welcome message"}</Button>
               </div>
+            )}
+            {canEdit && hasOwnerEmail && (working || copied || (msgInAccess && msg)) && (
+              <p role={!working && !copied && msg && !msg.ok ? "alert" : "status"} className={!working && !copied && msg ? (msg.ok ? "text-sm text-emerald-700" : "text-sm text-destructive") : "text-sm text-muted-foreground"}>
+                {working === "invite" ? "Renewing the invitation…" : working === "email" ? "Sending the welcome email…" : copied ? "Copied. Paste it into your email." : msg?.text}
+              </p>
             )}
             {!joined && hasOwnerEmail && <p className="text-xs text-muted-foreground">The owner joins automatically when they sign up with {client.ownerEmail}. Renew invitation extends the invitation without emailing anyone. Email welcome message sends it from onboarding@adflo.pro; Copy welcome message gives you the text to send yourself.</p>}
           </div>
@@ -250,8 +259,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
         </div>
       )}
 
-      {copied && <p role="status" className="text-sm text-muted-foreground">Copied. Paste it into your email.</p>}
-      {msg && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-emerald-700" : "text-sm text-destructive"}>{msg.text}</p>}
+      {msg && !msgInAccess && <p role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-sm text-emerald-700" : "text-sm text-destructive"}>{msg.text}</p>}
     </section>
   );
 }
