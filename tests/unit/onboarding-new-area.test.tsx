@@ -13,7 +13,7 @@ const TODAY = "2026-11-19";
 
 describe("the New area on the Onboarding page", () => {
   it("lists a new, unfinished client under New with a New badge and its next step", () => {
-    const rows = onboardingRows([client({}), client({ id: "c2", name: "Old Co", startedOn: "2026-09-01", checklist: ["details"] })], TODAY);
+    const rows = onboardingRows([client({}), client({ id: "c2", name: "Old Co", startedOn: "2026-09-01", checklist: ["details"], seatsUsed: 2 })], TODAY);
     render(<OnboardingPage rows={rows} canAdd={false} />);
     const area = screen.getByRole("region", { name: "New clients to onboard" });
     expect(within(area).getByText("New clients to onboard (1)")).toBeInTheDocument();
@@ -24,8 +24,8 @@ describe("the New area on the Onboarding page", () => {
     expect(screen.getByText("Old Co")).toBeInTheDocument();
   });
 
-  it("shows no New area when nobody is new, and a finished client leaves it", () => {
-    const done = client({ checklist: CHECKLIST_STEPS.map((s) => s.key) });
+  it("shows no New area when nobody is new, and a client leaves it once the owner has signed in", () => {
+    const done = client({ checklist: CHECKLIST_STEPS.map((s) => s.key), seatsUsed: 1 });
     render(<OnboardingPage rows={onboardingRows([done], TODAY)} canAdd={false} />);
     expect(screen.queryByRole("region", { name: "New clients to onboard" })).toBeNull();
   });

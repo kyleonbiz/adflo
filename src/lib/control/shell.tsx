@@ -13,7 +13,7 @@ export async function renderControlShell(nextPath: string, content: (ctx: Contro
   const topRight = access.mode === "live"
     ? <AppTopBar userLabel={access.staff.name} workspaceName={`Staff · ${access.staff.role}`} signOutTo="control" />
     : <AppTopBar badge={controlDemoEnabled() ? "Demo · sample data, nothing saved" : "Preview"} />;
-  // The number on the Onboarding menu item: new clients that still need setting up.
-  const newClients = access.mode === "live" ? await loadNewClientCount(access.supabase, new Date().toISOString().slice(0, 10)) : 0;
+  // The number on the Onboarding menu item: new clients whose owner has not signed in yet.
+  const newClients = access.mode === "live" ? await loadNewClientCount(access.supabase) : 0;
   return <AppFrame base="/control" variant="control" topRight={topRight} navBadges={newClients ? { onboarding: newClients } : undefined}>{body}</AppFrame>;
 }

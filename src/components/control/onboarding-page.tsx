@@ -7,7 +7,7 @@ import { AlertTriangle, BellRing, CheckCircle2, ClipboardList, Hourglass, Plus }
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { NEW_CLIENT_DAYS, STALLED_AFTER_DAYS, summarizeOnboarding, type OnboardingRow } from "@/lib/control/onboarding";
+import { STALLED_AFTER_DAYS, summarizeOnboarding, type OnboardingRow } from "@/lib/control/onboarding";
 import type { AutoStatus } from "@/lib/control/auto-due";
 import { cooldownHoursLeft, nextReminder, reminderAgo } from "@/lib/control/reminders";
 import { cn } from "@/lib/utils";
@@ -52,7 +52,7 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }
             <Badge variant="warning">New</Badge>
             <h2 className="font-semibold">New clients to onboard ({fresh.length})</h2>
           </div>
-          <p className="text-sm text-muted-foreground">Started in the last {NEW_CLIENT_DAYS} days and not fully set up yet. Each one leaves this area when every step is done.</p>
+          <p className="text-sm text-muted-foreground">Waiting for the owner&apos;s first sign-in. Each one leaves this area once the owner has signed in, however many steps are left.</p>
           <ul className="divide-y rounded-xl border bg-card">
             {fresh.map((r) => <OnboardingItem key={r.client.id} r={r} canRemind={canRemind && !sample} auto={auto} />)}
           </ul>

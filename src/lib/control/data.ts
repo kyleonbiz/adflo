@@ -1,8 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { NEW_CLIENT_DAYS } from "./onboarding";
 import { TIERS } from "./tiers";
-import { CHECKLIST_STEPS, type AuditEntry, type ClientRecord, type ClientStatus, type DirectoryEntry, type Plan, type StaffMember, type StaffRole, type Ticket, type TicketNote, type TimelineEvent, type AgreementTemplate, type SentAgreement, type AppError, type UnlinkedWorkspace } from "./types";
+import { type AuditEntry, type ClientRecord, type ClientStatus, type DirectoryEntry, type Plan, type StaffMember, type StaffRole, type Ticket, type TicketNote, type TimelineEvent, type AgreementTemplate, type SentAgreement, type AppError, type UnlinkedWorkspace } from "./types";
 
 interface ClientRow {
   id: string; name: string; status: ClientStatus; plan: string; seats_limit: number; owner_name: string;
@@ -41,17 +40,20 @@ export async function loadClients(supabase: SupabaseClient): Promise<ClientRecor
   return clients;
 }
 
-/** How many clients are new and still need onboarding (see NEW_CLIENT_DAYS): the number on the Onboarding menu item. Best effort: 0 if it cannot be read. */
-export async function loadNewClientCount(supabase: SupabaseClient, today: string): Promise<number> {
+/** How many clients are new (on trial or active, owner not signed in yet): the number on the Onboarding menu item. Best effort: 0 if it cannot be read. */
+export async function loadNewClientCount(supabase: SupabaseClient): Promise<number> {
   try {
-    const since = new Date(Date.parse(`${today}T00:00:00Z`) - NEW_CLIENT_DAYS * 86_400_000).toISOString().slice(0, 10);
-    const { data: rows } = await supabase.from("clients").select("id").in("status", ["trial", "active"]).gte("started_on", since);
-    const ids = ((rows ?? []) as { id: string }[]).map((r) => r.id);
-    if (ids.length === 0) return 0;
-    const { data: steps } = await supabase.from("client_checklist").select("client_id").in("client_id", ids);
-    const done = new Map<string, number>();
-    for (const s of (steps ?? []) as { client_id: string }[]) done.set(s.client_id, (done.get(s.client_id) ?? 0) + 1);
-    return ids.filter((id) => (done.get(id) ?? 0) < CHECKLIST_STEPS.length).length;
+    const [{ data: rows }, usage, steps] = await Promise.all([
+      supabase.from("clients").select("id, workspace_id").in("status", ["trial", "active"]),
+      supabase.rpc("control_client_usage"),
+      supabase.from("client_checklist").select("client_id").eq("step", "first_login"),
+    ]);
+    const joined = new Map(((usage.data ?? []) as { client_id: string; seats_used: number; last_active: string | null }[]).map((u) => [u.client_id, u]));
+    const ticked = new Set(((steps.data ?? []) as { client_id: string }[]).map((s) => s.client_id));
+    return ((rows ?? []) as { id: string; workspace_id: string | null }[]).filter((c) => {
+      const u = c.workspace_id ? joined.get(c.id) : undefined;
+      return !(ticked.has(c.id) || (u && (Number(u.seats_used) > 0 || u.last_active != null)));
+    }).length;
   } catch {
     return 0;
   }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NEW_CLIENT_DAYS, daysBetween, isNewClient, onboardingRow, onboardingRows, summarizeOnboarding } from "@/lib/control/onboarding";
+import { daysBetween, isNewClient, onboardingRow, onboardingRows, summarizeOnboarding } from "@/lib/control/onboarding";
 import { CHECKLIST_STEPS, type ClientRecord } from "@/lib/control/types";
 
 const ALL = CHECKLIST_STEPS.map((s) => s.key);
@@ -52,21 +52,22 @@ describe("onboardingRows", () => {
 });
 
 describe("new clients", () => {
-  it("is new for two weeks while setup is unfinished", () => {
-    expect(NEW_CLIENT_DAYS).toBe(14);
-    expect(isNewClient(c({ startedOn: "2026-11-10" }), "2026-11-12")).toBe(true);
-    expect(isNewClient(c({ startedOn: "2026-11-01" }), "2026-11-14")).toBe(true);
-    expect(isNewClient(c({ startedOn: "2026-11-01" }), "2026-11-15")).toBe(false);
+  const today = "2026-11-19";
+  it("is new until the owner signs in, however long that takes", () => {
+    expect(isNewClient(c({ startedOn: "2026-11-18" }), today)).toBe(true);
+    expect(isNewClient(c({ startedOn: "2026-06-01" }), today)).toBe(true);
   });
-  it("leaves the New area when every step is done", () => {
-    expect(isNewClient(c({ startedOn: "2026-11-10", checklist: ALL }), "2026-11-12")).toBe(false);
+  it("stops being new once a member has joined, a sign-in is on record, or the step is ticked", () => {
+    expect(isNewClient(c({ seatsUsed: 1 }), today)).toBe(false);
+    expect(isNewClient(c({ lastActive: "2026-11-18T10:00:00Z" }), today)).toBe(false);
+    expect(isNewClient(c({ checklist: ["first_login"] }), today)).toBe(false);
+  });
+  it("stays new after steps are done if nobody has signed in yet", () => {
+    expect(isNewClient(c({ checklist: ["details", "workspace", "owner_invited", "welcome_sent"] }), today)).toBe(true);
   });
   it("is only for clients on trial or active", () => {
-    expect(isNewClient(c({ startedOn: "2026-11-10", status: "trial" }), "2026-11-12")).toBe(true);
-    expect(isNewClient(c({ startedOn: "2026-11-10", status: "suspended" }), "2026-11-12")).toBe(false);
-    expect(isNewClient(c({ startedOn: "2026-11-10", status: "cancelled" }), "2026-11-12")).toBe(false);
-  });
-  it("falls back to the created date when the start date is missing", () => {
-    expect(isNewClient(c({ startedOn: null, createdAt: "2026-11-10T08:00:00Z" }), "2026-11-12")).toBe(true);
+    expect(isNewClient(c({ status: "trial" }), today)).toBe(true);
+    expect(isNewClient(c({ status: "suspended" }), today)).toBe(false);
+    expect(isNewClient(c({ status: "cancelled" }), today)).toBe(false);
   });
 });
