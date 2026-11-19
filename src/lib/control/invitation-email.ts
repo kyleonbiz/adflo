@@ -4,7 +4,7 @@ import { onboardingMailReady, sendOnboardingEmail } from "@/lib/mail/onboarding"
 import { siteOrigin } from "@/lib/site-url";
 import { logAppError } from "./errors";
 import { issueInviteLink } from "./invite";
-import { invitationEmailSubject, invitationMessage } from "./workspace";
+import { invitationEmailSubject, invitationHtml, invitationMessage } from "./workspace";
 import { SENDABLE_EMAIL } from "./patterns";
 
 const expiryDay = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
@@ -36,7 +36,7 @@ export async function emailInvitation(supabase: SupabaseClient, clientId: string
   if (!invite.ok) return { ok: false, code: "no_invite", status: invite.status, message: invite.message };
   const text = invitationMessage({ clientName: t.name, ownerName: t.ownerName, ownerEmail: t.to, inviteUrl: invite.link, expiresOn: expiryDay(invite.expiresAt) });
   try {
-    await sendOnboardingEmail({ to: t.to, subject: invitationEmailSubject(t.name), text });
+    await sendOnboardingEmail({ to: t.to, subject: invitationEmailSubject(t.name), text, html: invitationHtml({ clientName: t.name, ownerName: t.ownerName, ownerEmail: t.to, inviteUrl: invite.link, expiresOn: expiryDay(invite.expiresAt) }) });
   } catch (e) {
     // Only the kind of error and where it happened are kept, so the Monitoring page can show that email is failing.
     await logAppError("POST /api/control/clients/:id (invitation email)", e, { status: 502 });

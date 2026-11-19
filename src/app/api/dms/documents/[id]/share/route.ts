@@ -44,7 +44,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/dms/documents/[
         const senderName = (data.user?.user_metadata?.full_name as string | undefined) || data.user?.email?.split("@")[0] || "";
         const expiresAtLabel = new Date(expiresAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC";
         const mail = shareEmail({ senderName, fileName: doc.displayName, url, expiresAtLabel, message });
-        await sendMail({ from: shareFromHeader(senderName), replyTo: data.user?.email ?? undefined, to: emailTo, subject: mail.subject, text: mail.text });
+        await sendMail({ from: shareFromHeader(senderName), replyTo: data.user?.email ?? undefined, to: emailTo, subject: mail.subject, text: mail.text, html: mail.html });
         result.emailedTo = emailTo;
       } catch {
         result.emailError = "The link was created but the email could not be sent. Copy the link and send it yourself.";

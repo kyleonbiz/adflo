@@ -4,7 +4,7 @@ import { sendOnboardingEmail } from "@/lib/mail/onboarding";
 import { siteOrigin } from "@/lib/site-url";
 import { logAppError } from "./errors";
 import { ownerTarget, type MailResult } from "./invitation-email";
-import { welcomeEmailSubject, welcomeMessage } from "./workspace";
+import { welcomeEmailSubject, welcomeHtml, welcomeMessage } from "./workspace";
 
 type WelcomeResult = MailResult;
 
@@ -21,9 +21,10 @@ export async function emailWelcome(supabase: SupabaseClient, staffUserId: string
   const { data: usage } = await supabase.rpc("control_client_usage");
   const row = ((usage ?? []) as { client_id: string; seats_used: number }[]).find((u) => u.client_id === clientId);
   if (!row || Number(row.seats_used) < 1) return { ok: false, code: "not_joined", status: 409, message: "The owner has not signed in yet. Send the welcome message once they have; until then, the invitation is what they need." };
-  const text = welcomeMessage({ clientName: t.name, ownerName: t.ownerName, loginUrl: `${siteOrigin(requestUrl)}/login` });
+  const loginUrl = `${siteOrigin(requestUrl)}/login`;
+  const text = welcomeMessage({ clientName: t.name, ownerName: t.ownerName, loginUrl });
   try {
-    await sendOnboardingEmail({ to: t.to, subject: welcomeEmailSubject(t.name), text });
+    await sendOnboardingEmail({ to: t.to, subject: welcomeEmailSubject(t.name), text, html: welcomeHtml({ clientName: t.name, ownerName: t.ownerName, loginUrl }) });
   } catch (e) {
     await logAppError("POST /api/control/clients/:id (welcome email)", e, { status: 502 });
     return { ok: false, code: "mail_failed", status: 502, message: "The email could not be sent. Use Copy welcome message and send it yourself." };

@@ -2,6 +2,7 @@
 const WORKSPACE_ACTIONS = ["link", "unlink", "provision", "invite"] as const;
 type WorkspaceAction = (typeof WORKSPACE_ACTIONS)[number];
 
+import { brandedEmail } from "@/lib/mail/layout";
 import { isUuid } from "./patterns";
 
 type ParsedWorkspaceRequest =
@@ -39,6 +40,18 @@ export function invitationMessage(o: { clientName: string; ownerName: string; ow
   ].join("\n");
 }
 
+/** The invitation as a branded email: what the owner does, in three steps, with a button for the first. */
+export function invitationHtml(o: { clientName: string; ownerName: string; ownerEmail: string; inviteUrl: string; expiresOn?: string | null; reminder?: boolean }): string {
+  return brandedEmail({
+    preheader: `You are invited to AdFlo for ${oneLine(o.clientName)}.`,
+    headline: o.reminder ? "Your invitation is still waiting" : `You are invited to AdFlo`,
+    intro: [firstName(o.ownerName), `${o.reminder ? "A friendly reminder: your AdFlo invitation is waiting for you. " : ""}You are invited to AdFlo for ${oneLine(o.clientName)}. You will land in the workspace as its owner, and from there you can invite your team.`],
+    panel: [["Workspace", oneLine(o.clientName)], ["Sign up with", oneLine(o.ownerEmail)], ...(o.expiresOn ? [["Open until", o.expiresOn] as [string, string]] : [])],
+    steps: ["Confirm your invitation with the button below.", `Create your account using this email address: ${oneLine(o.ownerEmail)}`, "Confirm your email when AdFlo asks, then sign in."],
+    buttons: [{ label: "Confirm your invitation", url: o.inviteUrl }],
+  });
+}
+
 /** Subject line for the welcome email, sent once the owner is in. */
 export const welcomeEmailSubject = (clientName: string) => `Welcome to AdFlo${oneLine(clientName) ? `, ${oneLine(clientName)}` : ""}`;
 
@@ -55,6 +68,17 @@ export function welcomeMessage(o: { clientName: string; ownerName: string; login
     "If anything is unclear, just reply to this email.",
     "", "Thank you,", "AdFlo",
   ].join("\n");
+}
+
+/** The welcome as a branded email, with a button to sign in. */
+export function welcomeHtml(o: { clientName: string; ownerName: string; loginUrl: string }): string {
+  return brandedEmail({
+    preheader: `The ${oneLine(o.clientName)} workspace is ready.`,
+    headline: "Welcome to AdFlo",
+    intro: [firstName(o.ownerName), `The ${oneLine(o.clientName)} workspace is ready. AdFlo is your administrative management platform: records, deadlines, compliance and equipment live in one place, so the paperwork takes less of your time. Here is how to get started.`],
+    steps: ["Open Settings, then Guided setup. A few short questions pick the right services and templates for your business.", "Add your business details under Business profile, and invite your team under Team.", "Add your first records: licenses, vendors, projects, equipment and documents."],
+    buttons: [{ label: "Sign in to AdFlo", url: o.loginUrl }],
+  });
 }
 
 /** Database messages written for staff (SQLSTATE 23505, P0002, 22023) are safe to show; anything else is not. */
