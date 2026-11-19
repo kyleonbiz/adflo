@@ -18,7 +18,7 @@ beforeEach(() => {
   calls.length = 0; release = null;
   vi.stubGlobal("fetch", vi.fn((url: string, init?: { body?: string }) => {
     calls.push(`${url} ${init?.body ?? ""}`.trim());
-    const done = () => new Response(JSON.stringify({ ok: true, emailedTo: "pat@acme.com", expiresAt: "2026-12-01T00:00:00Z" }), { status: 200 });
+    const done = () => new Response(JSON.stringify({ ok: true, emailedTo: "pat@acme.com", link: "https://www.adflo.pro/invite/test-link", expiresAt: "2026-12-01T00:00:00Z" }), { status: 200 });
     // The welcome call stays pending until released, so the in-between state can be looked at.
     return url.endsWith("/welcome") ? new Promise((res) => { release = () => res(done()); }) : Promise.resolve(done());
   }));
@@ -45,11 +45,14 @@ describe("WorkspaceCard: invitation and welcome buttons", () => {
     expect(calls.some((c) => c.includes("/workspace"))).toBe(false);
   });
 
-  it("Copy welcome message only copies: nothing is sent", async () => {
+  it("Copy welcome message makes a fresh confirm link and copies it: nothing is emailed", async () => {
     setup();
     await userEvent.click(screen.getByRole("button", { name: /Copy welcome message/ }));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1);
-    expect(calls).toHaveLength(0);
+    await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(1));
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain("/invite-link");
+    expect(calls.some((c) => c.includes("/welcome"))).toBe(false);
+    expect(vi.mocked(navigator.clipboard.writeText).mock.calls[0][0]).toContain("https://www.adflo.pro/invite/test-link");
   });
 
   it("while one is running, the others are not greyed out together with it", async () => {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { fail, staffRoute } from "@/lib/control/api";
 import { cooldownHoursLeft, isReminderKind } from "@/lib/control/reminders";
+import { issueInviteLink } from "@/lib/control/invite";
 import { hashToken, newToken } from "@/lib/control/token";
 import { signupReminderEmail } from "@/lib/control/reminder-emails";
 import { isUuid } from "@/lib/control/workspace";
@@ -40,7 +41,9 @@ export function POST(req: Request, ctx: RouteContext<"/api/control/clients/[id]/
 
     if (kind === "signup") {
       if (!client.workspace_id) return fail(409, "no_workspace", "Create or connect the workspace first, so the owner has somewhere to land.");
-      try { await sendOnboardingEmail({ to, ...signupReminderEmail({ clientName, ownerName, ownerEmail: to, origin }) }); }
+      const invite = await issueInviteLink(supabase, id, origin);
+      if (!invite.ok) return fail(invite.status, "no_invite", invite.message);
+      try { await sendOnboardingEmail({ to, ...signupReminderEmail({ clientName, ownerName, ownerEmail: to, inviteUrl: invite.link }) }); }
       catch { return fail(502, "mail_failed", "The email could not be sent. Try again in a moment."); }
     } else {
       const { data: waiting } = await supabase.from("agreements_sent").select("id, template_id").eq("client_id", id).is("accepted_at", null);

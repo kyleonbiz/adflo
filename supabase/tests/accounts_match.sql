@@ -25,6 +25,27 @@ select t.fails('and the door is closed again afterwards', $$insert into public.w
 select t.fails('a stranger cannot sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), 'random@nowhere.test')$$, 'sign-up is by invitation');
 select t.fails('an account with no email cannot sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), null)$$, 'sign-up is by invitation');
 select t.fails('someone who is a client but was never invited by email cannot sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), 'mia2@match.test')$$, 'sign-up is by invitation');
+-- An owner invitation must be confirmed first.
+select t.fails('the owner cannot sign up before confirming the invitation', $$insert into auth.users (id, email) values (gen_random_uuid(), 'mia@match.test')$$, 'sign-up is by invitation');
+select t.as_staff(:stf::uuid);
+select public.control_invite_link(:cl, repeat('a', 64));
+reset role;
+select t.ok('a link alone does not open sign-up', (select not confirmed from public.invite_public_view(repeat('a', 64))));
+select t.fails('still cannot sign up with an unconfirmed link', $$insert into auth.users (id, email) values (gen_random_uuid(), 'mia@match.test')$$, 'sign-up is by invitation');
+select t.ok('an unknown link confirms nothing', public.invite_public_confirm(repeat('b', 64)) is null);
+select t.ok('the link shows the client and the invited email', (select client_name || '|' || email from public.invite_public_view(repeat('a', 64))) = 'Match Co|mia@match.test');
+-- Re-inviting starts over: the old link stops working.
+select t.as_staff(:stf::uuid);
+select public.control_invite_owner(:cl);
+reset role;
+select t.ok('re-inviting withdraws the earlier link', not exists (select 1 from public.invite_public_view(repeat('a', 64))));
+select t.ok('and the withdrawn link confirms nothing', public.invite_public_confirm(repeat('a', 64)) is null);
+select t.as_staff(:stf::uuid);
+select public.control_invite_link(:cl, repeat('c', 64));
+reset role;
+select t.ok('confirming returns the invited email', public.invite_public_confirm(repeat('c', 64)) = 'mia@match.test');
+select t.ok('confirming twice is harmless', public.invite_public_confirm(repeat('c', 64)) = 'mia@match.test');
+select t.ok('the invitation now shows as confirmed', (select confirmed from public.invite_public_view(repeat('c', 64))));
 select t.ok('the invited owner can sign up, in any letter case', (select count(*) from (select 1 from public.workspace_invites where email = 'mia@match.test' and accepted_at is null) q) = 1);
 insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000f3', 'Mia@Match.test');
 select t.ok('...and the account exists', exists (select 1 from auth.users where id = 'ac000000-0000-4000-8000-0000000000f3'));
@@ -32,6 +53,7 @@ insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000f4
 select t.ok('staff can sign up with their own email', exists (select 1 from auth.users where id = 'ac000000-0000-4000-8000-0000000000f4'));
 
 update public.workspace_invites set expires_at = now() - interval '1 day' where email = 'mia@match.test';
+select t.ok('an expired link shows as expired and confirms nothing', (select expired from public.invite_public_view(repeat('c', 64))) and public.invite_public_confirm(repeat('c', 64)) is null);
 select t.fails('an expired invitation no longer lets anyone sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), 'mia@match.test')$$, 'sign-up is by invitation');
 
 -- The client history names the staff member (from the team list), not just their email.

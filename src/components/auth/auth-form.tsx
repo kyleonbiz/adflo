@@ -19,7 +19,7 @@ type SignInValues = z.infer<typeof signInSchema>;
 type SignUpValues = z.infer<typeof signUpSchema>;
 
 /** `demo` (no database connected): nothing is checked or sent anywhere; submitting just opens the in-browser demo workspace. */
-export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup"; next?: string; demo?: boolean }) {
+export function AuthForm({ mode, next, demo = false, invitedEmail }: { mode: "login" | "signup"; next?: string; demo?: boolean; /** The confirmed invitation's email: filled in and read-only. */ invitedEmail?: string }) {
   const router = useRouter();
   const [formError, setFormError] = useState("");
   const [info, setInfo] = useState("");
@@ -31,7 +31,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
   const form = useForm<SignUpValues>({
     // Demo mode checks nothing, so Log in can be pressed with the fields empty.
     resolver: demo ? undefined : zodResolver(isSignup ? signUpSchema : (signInSchema as unknown as typeof signUpSchema)),
-    defaultValues: { email: "", password: "", fullName: "" },
+    defaultValues: { email: invitedEmail ?? "", password: "", fullName: "" },
   });
   const { register, handleSubmit, formState } = form;
 
@@ -57,7 +57,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
       if (error) {
         // The database refuses an email AdFlo has not invited, and Supabase reports that as a generic "database error".
         const refused = error.code === "unexpected_failure" || /database error/i.test(error.message);
-        return setFormError(refused ? "Sign-up is by invitation. Use the email address your invitation was sent to, or contact support@adflo.pro." : error.message);
+        return setFormError(refused ? "Sign-up is by invitation. Open the link in your invitation email and confirm it first, then sign up with the email it was sent to. Need help? Contact support@adflo.pro." : error.message);
       }
       if (!data.session) {
         setUnconfirmed(values.email);
@@ -103,7 +103,7 @@ export function AuthForm({ mode, next, demo = false }: { mode: "login" | "signup
       )}
       <Field id="email" label="Email" error={formState.errors.email?.message}>
         <IconInput icon={Mail}>
-          <Input id="email" type="email" placeholder="Email" autoComplete="email" className="auth-input" aria-invalid={!!formState.errors.email} {...register("email")} />
+          <Input id="email" type="email" placeholder="Email" autoComplete="email" readOnly={!!invitedEmail} className="auth-input" aria-invalid={!!formState.errors.email} {...register("email")} />
         </IconInput>
       </Field>
       <Field id="password" label="Password" error={formState.errors.password?.message}>

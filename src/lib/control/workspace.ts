@@ -21,15 +21,15 @@ export function parseWorkspaceRequest(raw: unknown): ParsedWorkspaceRequest {
 export const welcomeEmailSubject = (clientName: string) => `Your AdFlo account${clientName.replace(/[\r\n\u0000-\u001f]+/g, " ").trim() ? ` for ${clientName.replace(/[\r\n\u0000-\u001f]+/g, " ").trim()}` : ""} is ready`;
 
 /**
- * The welcome note: emailed from the onboarding@ alias, or copied and sent by hand. It tells the owner to sign up with the
- * exact email the invite was made for, because that is what joins them to the workspace.
+ * The invitation note: emailed from the onboarding@ alias, or copied and sent by hand. The link confirms the invitation;
+ * only after that can the owner create their account, and it must be with the exact email the invitation was made for.
  */
-export function welcomeMessage(o: { clientName: string; ownerName: string; ownerEmail: string; signupUrl: string; expiresOn?: string | null }): string {
+export function welcomeMessage(o: { clientName: string; ownerName: string; ownerEmail: string; inviteUrl: string; expiresOn?: string | null }): string {
   const hello = o.ownerName.trim() ? `Hi ${o.ownerName.trim().split(/\s+/)[0]},` : "Hi,";
   return [
     hello, "",
-    `Your AdFlo account for ${o.clientName} is ready.`, "",
-    `1. Open ${o.signupUrl}`,
+    `You are invited to AdFlo for ${o.clientName}.`, "",
+    `1. Open this link and confirm your invitation: ${o.inviteUrl}`,
     `2. Create your account using this email address: ${o.ownerEmail}`,
     "3. Confirm your email when AdFlo asks, then sign in.", "",
     `You will land in the ${o.clientName} workspace as its owner. From there you can invite your team.`,

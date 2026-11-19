@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { deleteConfirmationMatches } from "@/lib/control/client-delete";
 import { welcomeMessage } from "@/lib/control/workspace";
 import { STATUS_LABEL, effectivePriceCents, formatMoney, type ClientRecord, type Plan, type UnlinkedWorkspace } from "@/lib/control/types";
-import { publicOrigin } from "@/lib/public-origin";
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
 const dayOrNever = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "Never");
@@ -98,7 +97,15 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
 
   async function copyWelcome() {
     setMsg(null); setMsgInAccess(true);
-    const text = welcomeMessage({ clientName: client.name, ownerName: client.ownerName, ownerEmail: client.ownerEmail, signupUrl: `${publicOrigin()}/signup`, expiresOn: expires });
+    // The message carries a fresh confirm link, so one is made first (nothing is emailed).
+    let link: string, until: string | null = expires;
+    try {
+      const res = await fetch(`/api/control/clients/${client.id}/invite-link`, { method: "POST" });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) { setCopied(false); setMsg({ ok: false, text: json?.error?.message ?? "Could not make the invitation link. Try again." }); return; }
+      link = json.link; if (json.expiresAt) { until = day(json.expiresAt); setExpires(until); }
+    } catch { setCopied(false); setMsg({ ok: false, text: "Could not reach the server. Try again." }); return; }
+    const text = welcomeMessage({ clientName: client.name, ownerName: client.ownerName, ownerEmail: client.ownerEmail, inviteUrl: link, expiresOn: until });
     try { await navigator.clipboard.writeText(text); setCopied(true); } catch { setCopied(false); setMsg({ ok: false, text: "Could not copy. Select the text from the invitation and copy it by hand." }); }
   }
 

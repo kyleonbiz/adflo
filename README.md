@@ -242,6 +242,11 @@ Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app 
    "Confirm email" on (with it off, anyone could claim an invite by typing the address).
    Invites expire after 14 days. A person who already has a workspace keeps it as their
    primary one; the new membership exists but there is no workspace switcher yet.
+   **Client owners are invited from the Control center and must confirm first.** Inviting the owner emails them a
+   link (`/invite/<secret>`; only its SHA-256 hash is stored, and each new email or copied message replaces the
+   earlier link). They open it and press **Confirm invitation**, and only then does the database accept their
+   sign-up (`auth_signup_must_match` checks `confirmed_at`). `/signup?email=` arrives with the invited address
+   filled in. Team invites above are not affected.
 7. **Scheduled cleanup** (recommended): set `CRON_SECRET` (16+ random characters) and
    `SUPABASE_SERVICE_ROLE_KEY`, then call `/api/maintenance/cleanup-uploads` daily — see
    [Deployment](#deployment).

@@ -18,11 +18,12 @@ describe("parseWorkspaceRequest", () => {
 });
 
 describe("welcomeMessage", () => {
-  const base = { clientName: "Acme Roofing", ownerName: "Pat Example", ownerEmail: "pat@acme.test", signupUrl: "https://app.test/signup" };
+  const base = { clientName: "Acme Roofing", ownerName: "Pat Example", ownerEmail: "pat@acme.test", inviteUrl: "https://app.test/invite/abc" };
   it("names the exact email to sign up with and the link", () => {
     const m = welcomeMessage({ ...base, expiresOn: "Dec 1, 2026" });
     expect(m).toContain("Hi Pat,");
-    expect(m).toContain("https://app.test/signup");
+    expect(m).toContain("https://app.test/invite/abc");
+    expect(m).toContain("confirm your invitation");
     expect(m).toContain("pat@acme.test");
     expect(m).toContain("open until Dec 1, 2026");
   });

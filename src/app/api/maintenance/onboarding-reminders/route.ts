@@ -65,7 +65,12 @@ async function run(req: Request) {
     const to = c.owner_email.trim();
     try {
       if (d.kind === "signup") {
-        await sendOnboardingEmail({ to, ...signupReminderEmail({ clientName: c.name, ownerName: c.owner_name ?? "", ownerEmail: to, origin }) });
+        // A fresh confirm link for the open invitation (the job has no staff session, so it writes the hash directly).
+        const token = newToken();
+        const { data: marked, error: e } = await admin.from("workspace_invites").update({ confirm_hash: hashToken(token) })
+          .eq("workspace_id", c.workspace_id).eq("email", to.toLowerCase()).is("accepted_at", null).gt("expires_at", new Date().toISOString()).select("id");
+        if (e || !marked?.length) throw e ?? new Error("no open invitation");
+        await sendOnboardingEmail({ to, ...signupReminderEmail({ clientName: c.name, ownerName: c.owner_name ?? "", ownerEmail: to, inviteUrl: `${origin}/invite/${token}` }) });
       } else {
         const old = waitingRows.filter((w) => w.client_id === c.id);
         const templateIds = [...new Set(old.map((w) => w.template_id))];
