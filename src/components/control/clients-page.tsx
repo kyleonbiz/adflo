@@ -194,10 +194,10 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border bg-card shadow-panel">
-          <table className="w-full min-w-[56rem] text-left text-sm">
+          <table className="w-full min-w-[64rem] text-left text-sm">
             <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                {["Client", "Status", "Plan", "Seats", "Last sign-in", "Workspace"].map((h) => <th key={h} scope="col" className="whitespace-nowrap px-4 py-3 font-medium">{h}</th>)}
+                {["Client", "Status", "Plan", "Seats", "Last sign-in", "Owner", "Workspace"].map((h) => <th key={h} scope="col" className="whitespace-nowrap px-4 py-3 font-medium">{h}</th>)}
                 {canEdit && <th scope="col" className="whitespace-nowrap px-4 py-3 font-medium">Account</th>}
                 <th scope="col" className="px-4 py-3"><span className="sr-only">Actions</span></th>
               </tr>
@@ -207,17 +207,17 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
                 const price = effectivePriceCents(c, plans);
                 return (
                   <tr key={c.id} className="align-middle">
-                    <td className="max-w-[18rem] px-4 py-3">
+                    <td className="max-w-[16rem] px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Link href={`/control/clients/${c.id}`} className="truncate rounded font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">{c.name}</Link>
                         {isNewClient(c, today) && <Link href={`/control/clients/${c.id}#onboarding`} className="shrink-0" aria-label={`${c.name} is new: open onboarding`}><Badge variant="warning">New</Badge></Link>}
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">{c.ownerName || "No owner name"}{c.ownerEmail ? ` · ${c.ownerEmail}` : ""}</p>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3"><StatusBadge status={c.status} /></td>
                     <td className="whitespace-nowrap px-4 py-3"><div className="capitalize">{c.plan}</div><div className="mt-0.5 text-xs tabular-nums text-muted-foreground">{price == null ? "No price" : `${formatMoney(price)} / mo`}</div></td>
                     <td className="whitespace-nowrap px-4 py-3 tabular-nums">{c.seatsUsed ?? "—"} / {c.seatsLimit}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{c.lastActive ? new Date(c.lastActive).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "—"}{isQuiet(c) && <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">Quiet</span>}</td>
+                    <td className="max-w-[14rem] px-4 py-3"><div className="truncate">{c.ownerName || "—"}</div>{c.ownerEmail && <div className="mt-0.5 truncate text-xs text-muted-foreground">{c.ownerEmail}</div>}</td>
                     <td className="whitespace-nowrap px-4 py-3">{c.workspaceId ? <span className="text-emerald-700">Created</span> : <Link href={`/control/clients/${c.id}`} className="text-amber-800 hover:underline">Not created</Link>}</td>
                     {canEdit && <td className="whitespace-nowrap px-4 py-3"><AccountSwitch client={c} onChanged={() => router.refresh()} /></td>}
                     <td className="whitespace-nowrap px-4 py-3 text-right">{canEdit && <Button variant="outline" size="sm" onClick={() => setDialog(c)} aria-label={`Edit ${c.name}`}>Edit</Button>}</td>
