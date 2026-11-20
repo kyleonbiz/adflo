@@ -14,5 +14,20 @@ Paste each file in **Supabase dashboard > Authentication > Emails (Templates)**,
 | Reset password | `reset-password.html` | Reset your AdFlo password |
 | Change email address | `change-email.html` | Confirm your new email address |
 
-They use Supabase's `{{ .ConfirmationURL }}` variable, so nothing else needs filling in. The logo loads from
+The other Supabase emails are branded the same way:
+
+| Email | File | Subject |
+| --- | --- | --- |
+| Verification code | `reauthentication.html` | {{ .Token }} is your AdFlo verification code |
+| Password changed | `password-changed.html` | Your AdFlo password was changed |
+| Email changed | `email-changed.html` | Your AdFlo email address was changed |
+| Phone changed | `phone-changed.html` | Your AdFlo phone number was changed |
+| Verification method added | `mfa-added.html` | A new verification method was added to your AdFlo account |
+| Verification method removed | `mfa-removed.html` | A verification method was removed from your AdFlo account |
+| Sign-in method linked | `identity-linked.html` | A new sign-in method was linked to your AdFlo account |
+| Sign-in method removed | `identity-unlinked.html` | A sign-in method was removed from your AdFlo account |
+
+The account-changed notices are switched off in Supabase (Authentication > Emails > Notifications), so they are only sent once turned on.
+
+They use Supabase's `{{ .ConfirmationURL }}` variable, so nothing else needs filling in (the notices use Supabase's own `{{ .Email }}`, `{{ .OldEmail }}` and similar variables). The logo loads from
 `https://www.adflo.pro/logo-wordmark-light.png`.

@@ -13,6 +13,8 @@ export interface EmailContent {
   intro?: string[];
   /** Key details in a tinted panel: label on the left, value on the right. */
   panel?: [label: string, value: string][];
+  /** A short code to type somewhere (shown large, centered). */
+  code?: string;
   /** Numbered steps. */
   steps?: string[];
   /** Further agreements or links, each with its own button. */
@@ -46,6 +48,7 @@ export function brandedEmail(c: EmailContent): string {
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${TINT}" style="margin:4px 0 24px;background:${TINT};border-radius:8px;"><tr><td style="padding:18px 22px;">
 ${c.panel.map(([k, v]) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="padding:5px 0;font:600 12px/1.4 ${FONT};letter-spacing:.06em;text-transform:uppercase;color:${MUTED};vertical-align:top;" width="38%">${escapeHtml(k)}</td><td style="padding:5px 0;font:600 16px/1.4 ${FONT};color:${NAVY};vertical-align:top;">${escapeHtml(v)}</td></tr></table>`).join("\n")}
 </td></tr></table>` : "";
+  const code = c.code ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${TINT}" style="margin:4px 0 24px;background:${TINT};border-radius:8px;"><tr><td align="center" style="padding:24px 16px;font:700 34px/1 ${FONT};letter-spacing:.3em;color:${NAVY};">${escapeHtml(c.code)}</td></tr></table>` : "";
   const steps = c.steps?.length
     ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 22px;">${c.steps.map((s, i) => `<tr><td style="padding:0 14px 12px 0;vertical-align:top;"><div style="width:24px;height:24px;border-radius:12px;background:${BLUE};color:#ffffff;font:600 13px/24px ${FONT};text-align:center;">${i + 1}</div></td><td style="padding:0 0 12px;font:16px/24px ${FONT};color:${BODY};">${escapeHtml(s)}</td></tr>`).join("")}</table>` : "";
   return `<!doctype html>
@@ -58,7 +61,7 @@ ${c.panel.map(([k, v]) => `<table role="presentation" width="100%" cellpadding="
 <tr><td style="padding:34px 32px 12px;">
 <h1 style="margin:0 0 20px;font:600 28px/1.25 ${FONT};color:${NAVY};">${escapeHtml(c.headline)}</h1>
 ${(c.intro ?? []).map((p) => para(p)).join("\n")}
-${panel}${steps}${(c.buttons ?? []).map(button).join("\n")}
+${panel}${code}${steps}${(c.buttons ?? []).map(button).join("\n")}
 ${(c.fine ?? []).map((p) => para(p, MUTED, 13)).join("\n")}
 </td></tr>
 <tr><td style="padding:8px 32px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid #e5e9f2;padding-top:18px;font:13px/1.6 ${FONT};color:${MUTED};">Questions? Just reply to this email.<br><strong style="color:${NAVY};">AdFlo</strong> &middot; The administrative management platform for contractors and property managers.<br><a href="${CANONICAL_ORIGIN}" style="color:${MUTED};">adflo.pro</a></td></tr></table></td></tr>
