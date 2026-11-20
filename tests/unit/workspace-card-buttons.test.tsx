@@ -98,3 +98,39 @@ describe("WorkspaceCard: where messages show", () => {
     expect(screen.getByRole("button", { name: /Email invitation/ })).toBeEnabled();
   });
 });
+
+describe("WorkspaceCard: remind the owner about a pending invitation", () => {
+  const remind = () => screen.getByRole("button", { name: /Remind the owner about their invitation/ });
+
+  it("sends the signup reminder (and nothing else) and says who it went to", async () => {
+    setup();
+    await userEvent.click(remind());
+    await waitFor(() => expect(calls).toHaveLength(1));
+    expect(calls[0]).toContain("/remind");
+    expect(calls[0]).toContain('"kind":"signup"');
+    expect(await screen.findByText(/Reminder sent to pat@acme.com/)).toBeInTheDocument();
+  });
+
+  it("says when they were last reminded, and waits out the daily limit", () => {
+    const recent = new Date(Date.now() - 2 * 3_600_000).toISOString();
+    render(<WorkspaceCard client={{ ...client, lastReminderAt: recent }} plans={[]} unlinked={[]} canEdit />);
+    expect(remind()).toBeDisabled();
+    expect(screen.getByText(/Last reminded today/)).toBeInTheDocument();
+    expect(screen.getByText(/remind them again in about 22 hours/)).toBeInTheDocument();
+  });
+
+  it("can be used again a day later", () => {
+    const old = new Date(Date.now() - 3 * 86_400_000).toISOString();
+    render(<WorkspaceCard client={{ ...client, lastReminderAt: old }} plans={[]} unlinked={[]} canEdit />);
+    expect(remind()).toBeEnabled();
+    expect(screen.getByText(/Last reminded 3 days ago/)).toBeInTheDocument();
+  });
+
+  it("is not offered once the owner has joined, or to read-only staff", () => {
+    const { unmount } = render(<WorkspaceCard client={{ ...client, seatsUsed: 1 }} plans={[]} unlinked={[]} canEdit />);
+    expect(screen.queryByRole("button", { name: /Remind the owner/ })).toBeNull();
+    unmount();
+    render(<WorkspaceCard client={client} plans={[]} unlinked={[]} canEdit={false} />);
+    expect(screen.queryByRole("button", { name: /Remind the owner/ })).toBeNull();
+  });
+});

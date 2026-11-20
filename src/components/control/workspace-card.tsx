@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Link2, Link2Off, Mail, Pencil, Rocket, Send, Trash2 } from "lucide-react";
+import { BellRing, Link2, Link2Off, Mail, Pencil, Rocket, Send, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { isAccountOn, statusAfterSwitch } from "@/lib/control/status";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { deleteConfirmationMatches } from "@/lib/control/client-delete";
+import { cooldownHoursLeft, reminderAgo } from "@/lib/control/reminders";
 import { invitationMessage, welcomeMessage } from "@/lib/control/workspace";
 import { publicOrigin } from "@/lib/public-origin";
 import { STATUS_LABEL, effectivePriceCents, formatMoney, type ClientRecord, type Plan, type UnlinkedWorkspace } from "@/lib/control/types";
@@ -34,12 +35,14 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   const [typed, setTyped] = useState("");
   const [copied, setCopied] = useState<"" | "invitation" | "welcome">("");
   // Which of the owner-access buttons is working, and whether the message on screen belongs to them (so it shows right under them).
-  const [working, setWorking] = useState<"invite" | "invitation" | "email" | null>(null);
+  const [working, setWorking] = useState<"invite" | "invitation" | "email" | "remind" | null>(null);
   const [msgInAccess, setMsgInAccess] = useState(false);
   const [expires, setExpires] = useState<string | null>(null);
   const linked = client.workspaceId != null;
   const hasOwnerEmail = client.ownerEmail.trim() !== "";
   const joined = (client.seatsUsed ?? 0) > 0;
+  const remindWait = cooldownHoursLeft(client.lastReminderAt);
+  const remindedAgo = reminderAgo(client.lastReminderAt);
 
   async function run(body: Record<string, string>, done: string, access?: "invite") {
     setBusy(true); setMsg(null); setConfirmUnlink(false); setCopied(""); setMsgInAccess(!!access); setWorking(access ?? null);
@@ -106,6 +109,18 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not send the email. Try again." }); return; }
       setMsg({ ok: true, text: `Invitation email sent to ${json.emailedTo} from onboarding@adflo.pro.` });
+      router.refresh();
+    } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); setWorking(null); }
+  }
+
+  /** The "your invitation is waiting" reminder: a fresh confirm link with a friendly lead-in. Once a day, and logged. */
+  async function remindNow() {
+    setBusy(true); setMsg(null); setCopied(""); setMsgInAccess(true); setWorking("remind");
+    try {
+      const res = await fetch(`/api/control/clients/${client.id}/remind`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "signup" }) });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not send the reminder. Try again." }); return; }
+      setMsg({ ok: true, text: `Reminder sent to ${json.emailedTo} from onboarding@adflo.pro.` });
       router.refresh();
     } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); setWorking(null); }
   }
@@ -226,7 +241,9 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
                       <Button variant="outline" disabled={busy} onClick={() => run({ action: "invite" }, "Invitation renewed for another 14 days.", "invite")}><Mail /> {working === "invite" ? "Renewing…" : "Renew invitation"}</Button>
                       <Button variant="outline" disabled={busy} onClick={emailInvitationNow}><Send /> {working === "invitation" ? "Sending…" : "Email invitation"}</Button>
                       <Button variant="outline" onClick={copyInvitation}>{copied === "invitation" ? "Copied" : "Copy invitation"}</Button>
+                      <Button disabled={busy || remindWait > 0} onClick={remindNow} aria-label="Remind the owner about their invitation"><BellRing /> {working === "remind" ? "Sending…" : "Remind owner"}</Button>
                     </div>
+                    <p className="text-xs text-muted-foreground">Invitation pending: the owner has not confirmed it yet.{remindedAgo ? ` Last reminded ${remindedAgo}.` : " Nobody has reminded them yet."}{remindWait > 0 ? ` You can remind them again in about ${remindWait} ${remindWait === 1 ? "hour" : "hours"}.` : ""}</p>
                   </div>
                 )}
                 <div className="space-y-1.5">
@@ -240,7 +257,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
             )}
             {canEdit && hasOwnerEmail && (working || copied || (msgInAccess && msg)) && (
               <p role={!working && !copied && msg && !msg.ok ? "alert" : "status"} className={!working && !copied && msg ? (msg.ok ? "text-sm text-emerald-700" : "text-sm text-destructive") : "text-sm text-muted-foreground"}>
-                {working === "invite" ? "Renewing the invitation…" : working === "invitation" ? "Sending the invitation email…" : working === "email" ? "Sending the welcome email…" : copied ? "Copied. Paste it into your email." : msg?.text}
+                {working === "invite" ? "Renewing the invitation…" : working === "invitation" ? "Sending the invitation email…" : working === "remind" ? "Sending the reminder…" : working === "email" ? "Sending the welcome email…" : copied ? "Copied. Paste it into your email." : msg?.text}
               </p>
             )}
             {!joined && hasOwnerEmail && <p className="text-xs text-muted-foreground">The owner opens the link in their invitation, confirms it, then signs up with {client.ownerEmail}. Each new invitation email or copy replaces the earlier link. The welcome message is a separate email for after they have signed in.</p>}
