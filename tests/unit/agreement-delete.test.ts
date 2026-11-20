@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agreementDeleteError } from "@/lib/control/agreements";
+import { agreementDeleteError, agreementEditError } from "@/lib/control/agreements";
 
 describe("agreementDeleteError", () => {
   it("shows the database's own messages for the two cases written for people", () => {
@@ -22,5 +22,14 @@ describe("sentAgreementDeleteError", () => {
     expect(sentAgreementDeleteError("P0002", undefined)).toEqual({ status: 404, message: "That agreement is no longer on this client." });
     expect(sentAgreementDeleteError("42501", "x").status).toBe(403);
     expect(sentAgreementDeleteError("XX000", "secret detail").message).not.toMatch(/secret/);
+  });
+});
+
+describe("agreementEditError", () => {
+  it("shows the messages written for the Owner and hides anything unexpected", () => {
+    expect(agreementEditError("22023", "A client has accepted this version, so it is locked.")).toEqual({ status: 409, message: "A client has accepted this version, so it is locked." });
+    expect(agreementEditError("P0002", undefined).status).toBe(404);
+    expect(agreementEditError("42501", "x").status).toBe(403);
+    expect(agreementEditError("XX000", "secret detail").message).not.toMatch(/secret/);
   });
 });

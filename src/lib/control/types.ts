@@ -92,7 +92,7 @@ export interface TicketNote { id: string; authorEmail: string; body: string; cre
 export interface DirectoryEntry { userId: string; displayName: string; role: StaffRole }
 export interface TimelineEvent { at: string; staffEmail: string; staffName: string; action: string; detail: Record<string, unknown> }
 
-export interface AgreementTemplate { id: string; title: string; version: number; body: string; /** `YYYY-MM-DD`: when this version takes effect. */ effectiveDate: string; createdAt: string }
+export interface AgreementTemplate { id: string; title: string; version: number; body: string; /** `YYYY-MM-DD`: when this version takes effect. */ effectiveDate: string; createdAt: string; /** A client has accepted this version, so it is locked. */ accepted: boolean }
 export interface SentAgreement {
   id: string; clientId: string; clientName: string; title: string; version: number;
   sentAt: string; expiresAt: string; acceptedAt: string | null; acceptedName: string | null;

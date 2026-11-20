@@ -54,13 +54,41 @@ function SentRow({ a, showClient, canDelete }: { a: SentAgreement; showClient?: 
   );
 }
 
-/** Send an agreement to one client and copy the link. */
-export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail = "" }: { clientId: string; templates: AgreementTemplate[]; sent: SentAgreement[]; canEdit: boolean; ownerEmail?: string }) {
+/** Edit one published version's text and effective date, until a client accepts it. Used on the Agreements page and beside each agreement when sending. */
+function AgreementEditor({ t, onDone }: { t: AgreementTemplate; onDone: () => void }) {
+  const router = useRouter();
+  const [draft, setDraft] = useState({ body: t.body, effectiveDate: t.effectiveDate });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  async function save(e: React.FormEvent) {
+    e.preventDefault(); e.stopPropagation(); setBusy(true); setError(""); setErrors({});
+    try {
+      const res = await fetch(`/api/control/agreements/${t.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(draft) });
+      const json = await res.json().catch(() => null);
+      if (res.ok && json?.ok) { onDone(); router.refresh(); return; }
+      setErrors(json?.error?.fields ?? {}); setError(json?.error?.message ?? "Could not save. Try again.");
+    } catch { setError("Could not reach the server. Try again."); } finally { setBusy(false); }
+  }
+  return (
+    <form onSubmit={save} className="mt-3 space-y-3 rounded-xl border bg-card p-4" noValidate aria-label={`Edit ${t.title} version ${t.version}`}>
+      <p className="text-xs text-muted-foreground">You can change this version until a client accepts it. Anyone who already has a link will see the new text.</p>
+      <div className="space-y-1.5"><Label htmlFor={`ed-date-${t.id}`}>Effective date</Label><Input id={`ed-date-${t.id}`} type="date" value={draft.effectiveDate} onChange={(e) => setDraft({ ...draft, effectiveDate: e.target.value })} aria-invalid={!!errors.effectiveDate} className="sm:max-w-48" />{errors.effectiveDate && <p role="alert" className="text-xs text-destructive">{errors.effectiveDate}</p>}</div>
+      <div className="space-y-1.5"><Label htmlFor={`ed-body-${t.id}`}>Text</Label><textarea id={`ed-body-${t.id}`} rows={14} value={draft.body} onChange={(e) => setDraft({ ...draft, body: e.target.value })} className="w-full rounded-lg border border-input bg-card px-3 py-2 font-mono text-xs outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />{errors.body && <p role="alert" className="text-xs text-destructive">{errors.body}</p>}</div>
+      {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
+      <div className="flex gap-2"><Button type="submit" size="sm" disabled={busy}>{busy ? "Saving…" : "Save changes"}</Button><Button type="button" variant="outline" size="sm" disabled={busy} onClick={onDone}>Cancel</Button></div>
+    </form>
+  );
+}
+
+/** Send an agreement to one client and copy the link. The Owner can edit an agreement here first, until a client has accepted it. */
+export function SendAgreement({ clientId, templates, sent, canEdit, isOwner = false, ownerEmail = "" }: { clientId: string; templates: AgreementTemplate[]; sent: SentAgreement[]; canEdit: boolean; isOwner?: boolean; ownerEmail?: string }) {
   const router = useRouter();
   const latest = templates.filter((t) => !templates.some((o) => o.title === t.title && o.version > t.version));
   // Nothing is ticked to start with, so nothing goes out by accident.
   const [picked, setPicked] = useState<string[]>([]);
   const chosen = latest.filter((t) => picked.includes(t.id));
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [link, setLink] = useState("");
   const [links, setLinks] = useState<{ id: string; title: string; link: string }[]>([]);
   const [copiedId, setCopiedId] = useState("");
@@ -103,19 +131,28 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
     <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Agreements">
       <h2 className="font-semibold">Terms and agreements</h2>
       {canEdit && (latest.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">No agreements are published yet. The Owner can add one under Agreements.</p> : (
-        <form onSubmit={send} className="mt-3 flex flex-wrap items-end gap-3">
+        <div className="mt-3 space-y-3">
           <fieldset className="w-full space-y-2">
             <legend className="mb-1 text-sm font-medium">Choose what to send</legend>
             {latest.map((t) => (
-              <label key={t.id} className="flex cursor-pointer items-center gap-3 rounded-xl border border-input bg-card p-3 text-sm transition-colors hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
-                <input type="checkbox" className="size-5 shrink-0 cursor-pointer accent-[var(--primary)]" checked={picked.includes(t.id)} onChange={(e) => setPicked((p) => (e.target.checked ? [...p, t.id] : p.filter((x) => x !== t.id)))} />
-                <span>{t.title} <span className="text-muted-foreground">(v{t.version})</span></span>
-              </label>
+              <div key={t.id}>
+                <div className="flex items-center gap-2">
+                  <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-xl border border-input bg-card p-3 text-sm transition-colors hover:bg-muted has-[:checked]:border-primary has-[:checked]:bg-accent has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring">
+                    <input type="checkbox" className="size-5 shrink-0 cursor-pointer accent-[var(--primary)]" checked={picked.includes(t.id)} onChange={(e) => setPicked((p) => (e.target.checked ? [...p, t.id] : p.filter((x) => x !== t.id)))} />
+                    <span>{t.title} <span className="text-muted-foreground">(v{t.version} · effective {day(t.effectiveDate)})</span></span>
+                  </label>
+                  {isOwner && !t.accepted && <Button type="button" variant="outline" size="sm" onClick={() => setEditingId(editingId === t.id ? null : t.id)} aria-expanded={editingId === t.id} aria-label={`Edit ${t.title} version ${t.version}`}>Edit</Button>}
+                </div>
+                {editingId === t.id && <AgreementEditor t={t} onDone={() => setEditingId(null)} />}
+              </div>
             ))}
           </fieldset>
-          {ownerEmail && <label className="flex w-full items-center gap-2 text-sm"><input type="checkbox" checked={emailIt} onChange={(e) => setEmailIt(e.target.checked)} /> Also email {chosen.length > 1 ? "them" : "it"} to {ownerEmail} from onboarding@adflo.pro</label>}
-          <Button type="submit" disabled={busy || chosen.length === 0}>{busy ? "Working…" : sendLabel}</Button>
-        </form>
+          {/* Only the send controls are a form: the editors above are forms of their own, and forms cannot be nested. */}
+          <form onSubmit={send} className="flex flex-wrap items-end gap-3">
+            {ownerEmail && <label className="flex w-full items-center gap-2 text-sm"><input type="checkbox" checked={emailIt} onChange={(e) => setEmailIt(e.target.checked)} /> Also email {chosen.length > 1 ? "them" : "it"} to {ownerEmail} from onboarding@adflo.pro</label>}
+            <Button type="submit" disabled={busy || chosen.length === 0}>{busy ? "Working…" : sendLabel}</Button>
+          </form>
+        </div>
       ))}
       {link && (
         <div className="mt-3 space-y-2 rounded-xl bg-accent p-3 text-sm">
@@ -142,12 +179,13 @@ export function SendAgreement({ clientId, templates, sent, canEdit, ownerEmail =
   );
 }
 
-/** One published version, with its text and (Owner) a two-step delete. */
+/** One published version, with its text, (Owner) editing until a client accepts it, and a two-step delete. */
 function TemplateRow({ t, canDelete }: { t: AgreementTemplate; canDelete: boolean }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [editing, setEditing] = useState(false);
   async function remove() {
     setBusy(true); setError("");
     try {
@@ -160,11 +198,13 @@ function TemplateRow({ t, canDelete }: { t: AgreementTemplate; canDelete: boolea
   return (
     <li className="py-2.5 text-sm">
       <details>
-        <summary className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="font-medium">{t.title}</span> <span className="text-muted-foreground">v{t.version} · effective {day(t.effectiveDate)}</span></summary>
+        <summary className="cursor-pointer rounded outline-none focus-visible:ring-2 focus-visible:ring-ring"><span className="font-medium">{t.title}</span> <span className="text-muted-foreground">v{t.version} · effective {day(t.effectiveDate)}{t.accepted ? " · accepted, locked" : ""}</span></summary>
         <div className="mt-2 max-h-64 overflow-y-auto rounded-lg bg-muted p-3"><AgreementText body={t.body} /></div>
       </details>
       {canDelete && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
+          {!t.accepted && !editing && <Button type="button" variant="outline" size="sm" onClick={() => { setEditing(true); setError(""); }} aria-label={`Edit ${t.title} version ${t.version}`}>Edit</Button>}
+          {t.accepted && <span className="text-xs text-muted-foreground">A client has accepted this version, so it can no longer be edited. Publish a new version to change it.</span>}
           {!confirm ? <Button type="button" variant="ghost" size="sm" onClick={() => { setConfirm(true); setError(""); }} aria-label={`Delete ${t.title} version ${t.version}`}>Delete</Button> : (
             <span className="flex flex-wrap items-center gap-2 text-sm">Delete {t.title} v{t.version}? This cannot be undone. Links sent from it that nobody has accepted stop working.
               <Button type="button" variant="destructive" size="sm" disabled={busy} onClick={remove}>{busy ? "Deleting…" : "Delete it"}</Button>
@@ -172,6 +212,7 @@ function TemplateRow({ t, canDelete }: { t: AgreementTemplate; canDelete: boolea
           )}
         </div>
       )}
+      {editing && <AgreementEditor t={t} onDone={() => setEditing(false)} />}
       {error && <p role="alert" className="mt-1 text-xs text-destructive">{error}</p>}
     </li>
   );
@@ -194,7 +235,7 @@ export function AgreementsPage({ templates, sent, canPublish, sample }: { templa
   }
   return (
     <div className="space-y-5">
-      <div><h1 className="text-2xl font-semibold tracking-tight">Agreements</h1><p className="text-sm text-muted-foreground">Terms and agreements you send to clients. A change is a new version; published versions never change.</p></div>
+      <div><h1 className="text-2xl font-semibold tracking-tight">Agreements</h1><p className="text-sm text-muted-foreground">Terms and agreements you send to clients. You can edit a version until a client accepts it; after that a change is a new version.</p></div>
       {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample agreements.</p>}
       <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Published">
         <h2 className="font-semibold">Published</h2>

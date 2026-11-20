@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { actorLabel, isQuiet, agreementState } from "@/lib/control/types";
 import { isUuid } from "@/lib/control/patterns";
-import { parseAcceptInput, parseAgreementInput, parseSendInput, isAgreementToken, describeAudit, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
+import { parseAcceptInput, parseAgreementEdit, parseAgreementInput, parseSendInput, isAgreementToken, describeAudit, parseNote, parseResetEmail, parseTicketInput, parseTicketPatch, parseChecklistInput, parseClientInput, parseDollars, parsePlanInput, parseStaffInput } from "@/lib/control/validation";
 import { effectivePriceCents, formatMoney } from "@/lib/control/types";
 
 const OWNER = { ownerName: "Pat Lee", ownerEmail: "pat@acme.com" };
@@ -118,6 +118,11 @@ describe("support input", () => {
 describe("agreements", () => {
   const id = "00000000-0000-4000-8000-000000000001";
   const token = "A".repeat(43);
+  it("checks an edit to a published version: text and effective date only", () => {
+    expect(parseAgreementEdit({ body: "New text", effectiveDate: "2026-12-01" })).toEqual({ ok: true, value: { body: "New text", effectiveDate: "2026-12-01" } });
+    expect(parseAgreementEdit({ body: "", effectiveDate: "2026-12-01" }).ok).toBe(false);
+    expect(parseAgreementEdit({ body: "Text", effectiveDate: "nope" }).ok).toBe(false);
+  });
   it("checks a published agreement and a send request", () => {
     expect(parseAgreementInput({ title: " Terms ", body: "Text", effectiveDate: "2026-12-01" })).toEqual({ ok: true, value: { title: "Terms", body: "Text", effectiveDate: "2026-12-01" } });
     expect(parseAgreementInput({ title: "Terms", body: "Text" }).ok).toBe(false);

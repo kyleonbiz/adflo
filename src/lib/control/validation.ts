@@ -217,6 +217,13 @@ export function parseAgreementInput(raw: unknown): Parsed<{ title: string; body:
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { title, body, effectiveDate } };
 }
 
+/** Editing a published version: its text and effective date (the title and number never change). */
+export function parseAgreementEdit(raw: unknown): Parsed<{ body: string; effectiveDate: string }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const parsed = parseAgreementInput({ title: "x", body: r.body, effectiveDate: r.effectiveDate });
+  return parsed.ok ? { ok: true, value: { body: parsed.value.body, effectiveDate: parsed.value.effectiveDate } } : { ok: false, errors: parsed.errors };
+}
+
 export function parseSendInput(raw: unknown): Parsed<{ clientId: string; templateId: string; email: boolean }> {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   if (!isUuid(r.clientId) || !isUuid(r.templateId)) return { ok: false, errors: { templateId: "Choose a client and an agreement." } };
