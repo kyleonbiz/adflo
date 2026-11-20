@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Search } from "lucide-react";
+import { BellRing, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { isAccountOn, statusAfterSwitch } from "@/lib/control/status";
 import { CLIENT_STATUSES, STATUS_LABEL, effectivePriceCents, formatMoney, isQuiet, type ClientRecord, type ClientStatus, type Plan, type UnlinkedWorkspace } from "@/lib/control/types";
 import { cn } from "@/lib/utils";
 import { isNewClient } from "@/lib/control/onboarding";
+import { cooldownHoursLeft, nextReminder, reminderAgo } from "@/lib/control/reminders";
 import { Badge } from "@/components/ui/badge";
 import { LeftoverWorkspaces } from "./leftover-workspaces";
 import { StatusBadge } from "./status-badge";
@@ -146,6 +147,40 @@ function AccountSwitch({ client, onChanged }: { client: ClientRecord; onChanged:
   );
 }
 
+/**
+ * "Remind" for a client whose owner has not accepted their invitation yet: emails them the invitation reminder (a fresh confirm
+ * link), after a confirm. Once a day per client; the reason it is waiting shows in the tooltip. Nothing shows when there is nothing
+ * to remind them of.
+ */
+function RemindInvitation({ client, onSent }: { client: ClientRecord; onSent: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const next = nextReminder(client);
+  if (next?.kind !== "signup") return null;
+  const wait = cooldownHoursLeft(client.lastReminderAt);
+  const ago = reminderAgo(client.lastReminderAt);
+  async function send() {
+    if (!window.confirm(`Email ${client.ownerEmail} a reminder about their invitation to ${client.name}? It includes a fresh confirm link, and the earlier link stops working.`)) return;
+    setBusy(true); setMsg(null);
+    try {
+      const res = await fetch(`/api/control/clients/${client.id}/remind`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "signup" }) });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.ok) { setMsg({ ok: false, text: json?.error?.message ?? "Could not send the reminder. Try again." }); return; }
+      setMsg({ ok: true, text: `Reminder sent to ${json.emailedTo}.` });
+      onSent();
+    } catch { setMsg({ ok: false, text: "Could not reach the server. Try again." }); } finally { setBusy(false); }
+  }
+  return (
+    <div className="mt-1 flex flex-col items-start gap-1">
+      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" disabled={busy || wait > 0} onClick={send} aria-label={`Remind ${client.name} about their invitation`}
+        title={wait > 0 ? `Reminded ${ago ?? "today"}. Again in about ${wait} ${wait === 1 ? "hour" : "hours"}.` : ago ? `Last reminded ${ago}` : "Invitation not accepted yet"}>
+        <BellRing /> {busy ? "Sending…" : "Remind"}
+      </Button>
+      {msg && <span role={msg.ok ? "status" : "alert"} className={cn("max-w-[11rem] whitespace-normal text-xs", msg.ok ? "text-emerald-700" : "text-destructive")}>{msg.text}</span>}
+    </div>
+  );
+}
+
 /** The client directory: search, filter by status, add and edit. `canEdit` is false for read-only staff and in the preview. */
 export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, leftovers = [], today = new Date().toISOString().slice(0, 10) }: { clients: ClientRecord[]; plans: Plan[]; canEdit: boolean; isOwner?: boolean; sample?: boolean; leftovers?: UnlinkedWorkspace[]; today?: string }) {
   const router = useRouter();
@@ -194,12 +229,12 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
         </div>
       ) : (
         <div className="overflow-x-auto rounded-2xl border bg-card shadow-panel">
-          <table className="w-full min-w-[64rem] text-left text-sm">
+          <table className="w-full min-w-[58rem] text-left text-sm">
             <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                {["Client", "Status", "Plan", "Seats", "Last sign-in", "Owner", "Workspace"].map((h) => <th key={h} scope="col" className="whitespace-nowrap px-4 py-3 font-medium">{h}</th>)}
-                {canEdit && <th scope="col" className="whitespace-nowrap px-4 py-3 font-medium">Account</th>}
-                <th scope="col" className="px-4 py-3"><span className="sr-only">Actions</span></th>
+                {["Client", "Status", "Plan", "Seats", "Last sign-in", "Owner", "Workspace"].map((h) => <th key={h} scope="col" className="whitespace-nowrap px-3 py-3 font-medium">{h}</th>)}
+                {canEdit && <th scope="col" className="whitespace-nowrap px-3 py-3 font-medium">Account</th>}
+                <th scope="col" className="px-3 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -207,20 +242,20 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
                 const price = effectivePriceCents(c, plans);
                 return (
                   <tr key={c.id} className="align-middle">
-                    <td className="max-w-[16rem] px-4 py-3">
+                    <td className="max-w-[16rem] px-3 py-3">
                       <div className="flex items-center gap-2">
                         <Link href={`/control/clients/${c.id}`} className="truncate rounded font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">{c.name}</Link>
                         {isNewClient(c, today) && <Link href={`/control/clients/${c.id}#onboarding`} className="shrink-0" aria-label={`${c.name} is new: open onboarding`}><Badge variant="warning">New</Badge></Link>}
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3"><StatusBadge status={c.status} /></td>
-                    <td className="whitespace-nowrap px-4 py-3"><div className="capitalize">{c.plan}</div><div className="mt-0.5 text-xs tabular-nums text-muted-foreground">{price == null ? "No price" : `${formatMoney(price)} / mo`}</div></td>
-                    <td className="whitespace-nowrap px-4 py-3 tabular-nums">{c.seatsUsed ?? "—"} / {c.seatsLimit}</td>
-                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">{c.lastActive ? new Date(c.lastActive).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "—"}{isQuiet(c) && <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">Quiet</span>}</td>
-                    <td className="max-w-[14rem] px-4 py-3"><div className="truncate">{c.ownerName || "—"}</div>{c.ownerEmail && <div className="mt-0.5 truncate text-xs text-muted-foreground">{c.ownerEmail}</div>}</td>
-                    <td className="whitespace-nowrap px-4 py-3">{c.workspaceId ? <span className="text-emerald-700">Created</span> : <Link href={`/control/clients/${c.id}`} className="text-amber-800 hover:underline">Not created</Link>}</td>
-                    {canEdit && <td className="whitespace-nowrap px-4 py-3"><AccountSwitch client={c} onChanged={() => router.refresh()} /></td>}
-                    <td className="whitespace-nowrap px-4 py-3 text-right">{canEdit && <Button variant="outline" size="sm" onClick={() => setDialog(c)} aria-label={`Edit ${c.name}`}>Edit</Button>}</td>
+                    <td className="whitespace-nowrap px-3 py-3"><StatusBadge status={c.status} /></td>
+                    <td className="whitespace-nowrap px-3 py-3"><div className="capitalize">{c.plan}</div><div className="mt-0.5 text-xs tabular-nums text-muted-foreground">{price == null ? "No price" : `${formatMoney(price)} / mo`}</div></td>
+                    <td className="whitespace-nowrap px-3 py-3 tabular-nums">{c.seatsUsed ?? "—"} / {c.seatsLimit}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">{c.lastActive ? new Date(c.lastActive).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "—"}{isQuiet(c) && <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">Quiet</span>}</td>
+                    <td className="max-w-[14rem] px-3 py-3"><div className="truncate">{c.ownerName || "—"}</div>{c.ownerEmail && <div className="mt-0.5 truncate text-xs text-muted-foreground">{c.ownerEmail}</div>}</td>
+                    <td className="px-3 py-3">{c.workspaceId ? <span className="text-emerald-700">Created</span> : <Link href={`/control/clients/${c.id}`} className="whitespace-nowrap text-amber-800 hover:underline">Not created</Link>}{canEdit && !sample && <RemindInvitation client={c} onSent={() => router.refresh()} />}</td>
+                    {canEdit && <td className="whitespace-nowrap px-3 py-3"><AccountSwitch client={c} onChanged={() => router.refresh()} /></td>}
+                    <td className="whitespace-nowrap px-3 py-3 text-right">{canEdit && <Button variant="outline" size="sm" onClick={() => setDialog(c)} aria-label={`Edit ${c.name}`}>Edit</Button>}</td>
                   </tr>
                 );
               })}
