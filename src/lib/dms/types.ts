@@ -7,6 +7,7 @@ export const CATEGORIES = [
   "tax",
   "contract",
   "hr",
+  "insurance",
   "other",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
@@ -17,6 +18,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   tax: "Tax document",
   contract: "Contract",
   hr: "HR document",
+  insurance: "Insurance",
   other: "Other",
 };
 

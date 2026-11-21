@@ -73,8 +73,14 @@ insert into public.workspace_members (workspace_id, user_id, role, display_name,
 
 select id as folder_a from public.document_folders where workspace_id = :'wsa' limit 1 \gset
 select t.as_user(:alice);
-select t.ok('create_workspace seeds 5 system folders',
-  (select count(*) from public.document_folders where workspace_id = :'wsa' and is_system) = 5);
+select t.ok('create_workspace seeds 6 system folders, including Insurance',
+  (select count(*) from public.document_folders where workspace_id = :'wsa' and is_system) = 6
+  and (select default_category from public.document_folders where workspace_id = :'wsa' and name = 'Insurance' and is_system) = 'insurance');
+select t.ok('folders and documents accept the insurance category',
+  (select pg_get_constraintdef(oid) from pg_constraint where conname = 'document_folders_default_category_check') like '%insurance%'
+  and (select pg_get_constraintdef(oid) from pg_constraint where conname = 'documents_category_check') like '%insurance%');
+select t.ok('document search knows the word insurance',
+  pg_get_functiondef('public.dms_query_documents'::regproc) like '%when ''insurance'' then ''insurance''%');
 select t.ok('owner sees only own workspace', (select count(*) from public.workspaces) = 1);
 select t.ok('owner membership row exists', public.dms_role(:'wsa') = 'owner');
 

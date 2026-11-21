@@ -298,6 +298,7 @@ export function categoryForFolderName(name: string): Category {
   if (n.includes("receipt")) return "receipt";
   if (n.includes("tax")) return "tax";
   if (n.includes("contract")) return "contract";
+  if (n.includes("insurance")) return "insurance";
   if (n.includes("hr")) return "hr";
   return "other";
 }

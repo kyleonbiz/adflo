@@ -92,7 +92,7 @@ select t.fails('provisioning needs the owner''s email', $$select public.control_
 select public.control_provision_workspace('7a000000-0000-4000-8000-0000000000d2');
 reset role;
 select t.ok('provisioning links a new workspace named after the client', t.count($$select 1 from public.clients c join public.workspaces w on w.id = c.workspace_id where c.name = 'Fresh Co' and w.name = 'Fresh Co'$$) = 1);
-select t.ok('...with the standard folders', (select count(*) from public.document_folders f join public.clients c on c.workspace_id = f.workspace_id where c.name = 'Fresh Co') = 5);
+select t.ok('...with the standard folders', (select count(*) from public.document_folders f join public.clients c on c.workspace_id = f.workspace_id where c.name = 'Fresh Co') = 6);
 select t.as_staff(:sue::uuid);
 select t.ok('...ticks workspace and owner invited', t.count($$select 1 from public.client_checklist where client_id = '7a000000-0000-4000-8000-0000000000d2' and step in ('workspace', 'owner_invited')$$) = 2);
 select t.ok('...and staff are not members of it', (select seats_used from public.control_client_usage() where client_id = '7a000000-0000-4000-8000-0000000000d2') = 0);
