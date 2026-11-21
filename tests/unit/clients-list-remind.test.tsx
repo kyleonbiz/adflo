@@ -24,7 +24,6 @@ beforeEach(() => {
     calls.push(`${url} ${init?.body ?? ""}`.trim());
     return Promise.resolve(new Response(JSON.stringify({ ok: true, emailedTo: "pat@pending.test" }), { status: 200 }));
   }));
-  vi.stubGlobal("confirm", vi.fn(() => true));
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -41,17 +40,18 @@ describe("Clients list: Remind about a pending invitation", () => {
   it("asks first, then sends the signup reminder and says who it went to", async () => {
     page();
     await userEvent.click(screen.getByRole("button", { name: /Remind Pending Co/ }));
+    expect(calls).toHaveLength(0);
+    await userEvent.click(await screen.findByRole("button", { name: "Send" }));
     await waitFor(() => expect(calls).toHaveLength(1));
-    expect(window.confirm).toHaveBeenCalled();
     expect(calls[0]).toContain("/api/control/clients/7a000000-0000-4000-8000-0000000000c1/remind");
     expect(calls[0]).toContain('"kind":"signup"');
     expect(await screen.findByText(/Reminder sent to pat@pending.test/)).toBeInTheDocument();
   });
 
   it("sends nothing when the confirm is declined", async () => {
-    vi.stubGlobal("confirm", vi.fn(() => false));
     page();
     await userEvent.click(screen.getByRole("button", { name: /Remind Pending Co/ }));
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
     expect(calls).toHaveLength(0);
   });
 

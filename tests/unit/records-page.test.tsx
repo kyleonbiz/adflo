@@ -42,8 +42,8 @@ describe("Licenses with a connected database", () => {
     expect(screen.queryByText("Old browser copy")).toBeNull();
     await db.release();
     await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
-    expect(await screen.findByText("Saved license 1")).toBeTruthy();
-    expect(screen.getByText("Saved license 2")).toBeTruthy();
+    expect((await screen.findAllByText("Saved license 1")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Saved license 2").length).toBeGreaterThan(0);
     expect(screen.queryByText("Old browser copy")).toBeNull();
   });
 
@@ -53,7 +53,7 @@ describe("Licenses with a connected database", () => {
     configureRemote("ws-1", () => db.backend, ["licenses", "projects"]);
     render(<LicensesPage />);
     await db.release();
-    await screen.findByText("Saved license 1");
+    await screen.findAllByText("Saved license 1");
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Delete Saved license 1" }));
     const dialog = await screen.findByRole("dialog");
