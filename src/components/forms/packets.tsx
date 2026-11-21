@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileText, PenLine, Plus, Printer, ScrollText, Trash2 } from "lucide-react";
+import { Download, FileText, PenLine, Plus, Printer, Save, ScrollText, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -18,7 +18,7 @@ const rid = () => `pk-${Math.random().toString(36).slice(2, 10)}`;
 const ICON: Record<ItemKind, typeof FileText> = { form: ScrollText, document: FileText, signature: PenLine };
 
 /** Packets of paperwork for a new hire, vendor or client: start one for a person and tick items off as they arrive. */
-export function Packets({ today, onFillForm }: { today: string; onFillForm: (formId: string) => void }) {
+export function Packets({ today, onFillForm, onSave }: { today: string; onFillForm: (formId: string) => void; onSave: (title: string, pdf: Uint8Array, fileName: string) => void }) {
   const list = useAssignments();
   const [starting, setStarting] = useState(false);
   const [templateId, setTemplateId] = useState(PACKETS[0].id);
@@ -55,6 +55,7 @@ export function Packets({ today, onFillForm }: { today: string; onFillForm: (for
                     {isComplete(a) ? <Badge variant="success">Complete</Badge> : isStale(a, today) ? <Badge variant="warning">Waiting {STALE_PACKET_DAYS}+ days</Badge> : null}
                   </div>
                   <div className="flex gap-2">
+                    <Button size="sm" variant="outline" aria-label={`Save checklist for ${a.recipient}`} onClick={() => onSave(`${a.templateName} packet for ${a.recipient}`, textToPdf(packetText(a)), `${a.templateName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${a.recipient.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`)}><Save /> Save</Button>
                     <Button size="sm" variant="outline" aria-label={`Print checklist for ${a.recipient}`} onClick={() => printText(`${a.templateName} packet`, packetText(a))}><Printer /> Print</Button>
                     <Button size="sm" variant="outline" aria-label={`Download PDF for ${a.recipient}`} onClick={() => {
                       const url = URL.createObjectURL(new Blob([textToPdf(packetText(a)) as BlobPart], { type: "application/pdf" }));

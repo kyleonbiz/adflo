@@ -38,6 +38,8 @@ import { FormCard, type FormActions } from "./form-card";
 import { SendFormDialog } from "./send-form-dialog";
 import { Packets } from "./packets";
 import { Signatures } from "./signatures";
+import { savePdfToDocuments, type SaveResult } from "@/lib/forms/save-document";
+import { toDmsError } from "@/lib/dms/errors";
 import { DocumentReadyDialog } from "./document-ready-dialog";
 import { PaperworkDialog } from "./paperwork-dialog";
 
@@ -102,6 +104,19 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
     );
   }
 
+  /** Save: file the PDF in Documents. The no-database preview has no shared Documents, so there it says where the record stays. */
+  const saveToDocuments = async (title: string, pdf: Uint8Array, name: string): Promise<SaveResult> => {
+    if (preview) return { ok: true, message: `${title} is kept in this browser. Connect a workspace to file PDFs in Documents.` };
+    try {
+      await savePdfToDocuments(pdf, name);
+      audit("saved to Documents", title, "Forms", "/app/forms");
+      return { ok: true, message: `${title} saved to Documents.` };
+    } catch (e) {
+      return { ok: false, message: `Could not save ${title}: ${toDmsError(e).message}` };
+    }
+  };
+  const saveAndTell = async (title: string, pdf: Uint8Array, name: string) => setNotice((await saveToDocuments(title, pdf, name)).message);
+
   const actions: FormActions = {
     onSend: (f) => setSending(f),
     onFill: (f) => setFilling(f),
@@ -115,6 +130,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
       setNotice(`Response by ${s.submittedBy} ${done ? "marked done" : "reopened"}.`);
     },
     onDocument: (f, s) => download(generateDocument(f, s), fileName(f, s, "txt"), "text/plain"),
+    onSave: (f, s) => void saveAndTell(`${f.name}, ${s.submittedBy}`, docToPdf(formDocument(f, s, docBusiness())), fileName(f, s, "pdf")),
     onPdf: (f, s) => download(docToPdf(formDocument(f, s, docBusiness())), fileName(f, s, "pdf"), "application/pdf"),
     onPrint: (f, s) => printDoc(formDocument(f, s, docBusiness())),
     onExport: (f, list) => download(submissionsToCsv(f, list), `${slug(f.name)}-submissions-${today}.csv`, "text/csv"),
@@ -220,6 +236,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
 
       <Packets
         today={today}
+        onSave={(t, pdf, n) => void saveAndTell(t, pdf, n)}
         onFillForm={(formId) => {
           const form = forms.find((x) => x.id === formId) ?? PAPERWORK.find((p) => p.form.id === formId)?.form;
           if (!form) return;
@@ -230,6 +247,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
 
       <Signatures
         today={today}
+        onSave={(t, pdf, n) => void saveAndTell(t, pdf, n)}
         by="You"
         submissions={subs.flatMap((s) => {
           const f = forms.find((x) => x.id === s.formId);
@@ -249,10 +267,12 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
       />
 
       <DocumentReadyDialog
+        key={`ready-${ready?.sub.id ?? "none"}`}
         open={ready !== null}
         title={ready?.form.name ?? ""}
         contact={ready ? (() => { const p = personFromSubmission(ready.form, ready.sub.values, ready.sub.submittedBy); return p ? { name: p.name, href: addContactLink(p) } : null; })() : null}
         onOpenChange={(o) => !o && setReady(null)}
+        onSave={() => (ready ? saveToDocuments(ready.form.name, docToPdf(formDocument(ready.form, ready.sub, docBusiness())), fileName(ready.form, ready.sub, "pdf")) : Promise.resolve({ ok: false, message: "Nothing to save." }))}
         onPrint={() => ready && printDoc(formDocument(ready.form, ready.sub, docBusiness()))}
         onPdf={() => ready && download(docToPdf(formDocument(ready.form, ready.sub, docBusiness())), fileName(ready.form, ready.sub, "pdf"), "application/pdf")}
         onText={() => ready && download(generateDocument(ready.form, ready.sub), fileName(ready.form, ready.sub, "txt"), "text/plain")}
