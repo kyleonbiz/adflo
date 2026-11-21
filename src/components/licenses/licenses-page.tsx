@@ -2,7 +2,7 @@
 
 import { PreviewNote } from "@/components/ui/preview-note";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CalendarClock, CalendarPlus, FileText, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
+import { AlertTriangle, BellRing, CalendarClock, CalendarPlus, FileText, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { toIcs } from "@/lib/ics";
+import { dueLicenseFollowUps, licenseReminderEmail, logLicenseReminder } from "@/lib/licenses/follow-up";
 import { downloadText } from "@/components/import/csv-source";
 import { compliance, expiryText, licenseCalendarEvents, renewalSpend, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { TemplateDialog } from "./template-dialog";
@@ -146,6 +147,16 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const standing = compliance(licenses, today);
   const spend = renewalSpend(licenses, today);
   const tasks = renewalTasks(licenses, today);
+  const followUps = dueLicenseFollowUps(licenses, today);
+  const chase = (l: License) => {
+    const mail = licenseReminderEmail(l, today);
+    patch(l.id, (x) => logLicenseReminder(x, today));
+    audit("prepared a renewal reminder for", `the ${l.name} license`, "Licenses", "/app/licenses");
+    say(`Reminder logged for ${l.name}. Your email app opens with the message ready to send.`);
+    const a = document.createElement("a");
+    a.href = `mailto:?subject=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}`;
+    a.click();
+  };
   const q = query.trim().toLowerCase();
   const matchesFilter = (l: License) => {
     if (statusFilter === "all") return true;
@@ -213,6 +224,25 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
           </>
         )}
       </div>
+
+      {followUps.length > 0 && (
+        <section aria-labelledby="license-followups" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="license-followups">
+          <h2 id="license-followups" className="flex items-center gap-2 text-base font-semibold"><BellRing className="size-4 text-amber-600" aria-hidden /> Follow up today</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Renewals that are not submitted yet. A reminder is due when none has gone out, or the last one is a week old.</p>
+          <ul className="mt-2 divide-y">
+            {followUps.map(({ license, sent, left }) => (
+              <li key={license.id} data-testid="license-followup-row" className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                <span className="min-w-0 flex-1">
+                  <span className="font-medium">{license.name}</span>
+                  <span className="text-muted-foreground"> · {expiryText(left)}</span>
+                </span>
+                <Badge variant="muted">{sent === 0 ? "Not chased yet" : `${sent} sent`}</Badge>
+                <Button size="sm" variant="outline" aria-label={`Send renewal reminder for ${license.name}`} onClick={() => chase(license)}>Send reminder</Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {summary.needsReview > 0 && (
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900" data-testid="review-banner">
