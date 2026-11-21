@@ -435,7 +435,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
       />
 
       <Dialog open={!!merging} onOpenChange={(o) => !o && setMerging(null)}>
-        <DialogContent className="p-6">
+        <DialogContent variant="alert">
           <DialogTitle>Merge vendors</DialogTitle>
           <DialogDescription className="mt-1">
             {merging && <>Keep <strong>{merging.keep.name}</strong> and fold <strong>{merging.drop.name}</strong> into it. Blank details and missing documents are filled in from {merging.drop.name}, which is then removed.</>}
