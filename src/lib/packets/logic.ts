@@ -13,7 +13,7 @@ export interface PacketItem {
 interface PacketTemplate {
   id: string;
   name: string;
-  audience: "Employee" | "Vendor" | "Client";
+  audience: "Client" | "Customer";
   blurb: string;
   items: PacketItem[];
 }
@@ -35,32 +35,22 @@ const sig = (id: string, label: string): PacketItem => ({ id, kind: "signature",
 
 export const PACKETS: readonly PacketTemplate[] = [
   {
-    id: "pk-employee", name: "New employee", audience: "Employee", blurb: "Everything a new hire hands in during their first week.",
-    items: [
-      form("e1", "New employee information", "pw-employee-onboarding"),
-      form("e2", "Confidentiality acknowledgment", "pw-nda"),
-      doc("e3", "Government-issued ID"),
-      doc("e4", "Tax withholding form"),
-      doc("e5", "Direct deposit details"),
-      sig("e6", "Employee handbook acknowledgment"),
-    ],
-  },
-  {
-    id: "pk-vendor", name: "New vendor", audience: "Vendor", blurb: "What a supplier owes you before the first purchase.",
-    items: [
-      form("v1", "W-9 request", "pw-w9-request"),
-      doc("v2", "Certificate of insurance"),
-      doc("v3", "Business license copy"),
-      sig("v4", "Vendor agreement"),
-    ],
-  },
-  {
-    id: "pk-client", name: "New client", audience: "Client", blurb: "Get a client set up and agreed on scope.",
+    id: "pk-client", name: "New client", audience: "Client", blurb: "Get a client set up and agreed on what is and is not included.",
     items: [
       form("c1", "Client intake", "pw-client-intake"),
-      form("c2", "Engagement acknowledgment", "pw-engagement"),
-      doc("c3", "Billing contact and payment details"),
+      form("c2", "Scope of work confirmation", "pw-scope-confirmation"),
+      form("c3", "Confidentiality acknowledgment", "pw-nda"),
       sig("c4", "Service agreement"),
+    ],
+  },
+  {
+    id: "pk-closeout", name: "Job closeout", audience: "Customer", blurb: "What a contractor hands over, and gets signed, when a job is finished.",
+    items: [
+      form("j1", "Certificate of completion", "pw-completion"),
+      form("j2", "Warranty certificate", "pw-warranty"),
+      doc("j3", "Final inspection sign-off"),
+      doc("j4", "Permit closed out"),
+      sig("j5", "Owner acceptance"),
     ],
   },
 ];

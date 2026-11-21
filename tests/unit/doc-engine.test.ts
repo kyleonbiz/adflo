@@ -38,7 +38,7 @@ describe("form documents", () => {
 
   it("gives each kind of paperwork its own signature lines", () => {
     const lines = (id: string) => blankFormDocument(PAPERWORK.find((p) => p.form.id === id)!.form).blocks.flatMap((b) => (b.t === "cells" && b.sign ? b.cells.map((c) => c.label) : []));
-    expect(lines("pw-time-off")).toEqual(["Requested by", "Date", "Approved by", "Date"]);
+    expect(lines("pw-meeting-minutes")).toEqual(["Recorded by", "Date", "Approved by", "Date"]);
     expect(lines("pw-incident")).toContain("Reviewed by");
     expect(lines("pw-nda")).toEqual(["Signature", "Date"]);
     expect(lines("pw-temp-log")).toEqual([]);
@@ -46,15 +46,15 @@ describe("form documents", () => {
 
   it("gives every contractor document its own signers and terms", () => {
     const construction = PAPERWORK.filter((p) => p.industry === "construction");
-    expect(construction.length).toBeGreaterThanOrEqual(8);
+    expect(construction.length).toBeGreaterThanOrEqual(7);
     for (const p of construction) {
       const doc = blankFormDocument(p.form);
       expect(doc.blocks.some((b) => b.t === "terms"), p.form.name).toBe(true);
       expect(doc.blocks.some((b) => b.t === "cells" && b.sign), p.form.name).toBe(true);
     }
     const signers = (id: string) => blankFormDocument(PAPERWORK.find((p) => p.form.id === id)!.form).blocks.flatMap((b) => (b.t === "cells" && b.sign ? b.cells.map((c) => c.label).filter((l) => l !== "Date") : []));
-    expect(signers("pw-change-order")).toEqual(["Contractor", "Owner approval"]);
-    expect(signers("pw-lien-waiver")).toEqual(["Claimant signature"]);
+    expect(signers("pw-completion")).toEqual(["Contractor", "Owner acceptance"]);
+    expect(signers("pw-warranty")).toEqual(["Contractor"]);
   });
 
   it("builds a page for every built-in form, with every field on it", () => {

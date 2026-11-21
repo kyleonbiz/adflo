@@ -25,8 +25,8 @@ describe("validateSubmission", () => {
     });
   });
   it("checks dates, lengths and required checkboxes", () => {
-    const leave = forms.find((x) => x.id === "form-leave")!;
-    expect(validateSubmission(leave, { "l-name": "A", "l-from": "2026-02-30", "l-to": "2026-03-01", "l-type": "Sick" })["l-from"]).toBe("Enter a valid date");
+    const visitor = forms.find((x) => x.id === "form-visitor")!;
+    expect(validateSubmission(visitor, { "vs-name": "A", "vs-date": "2026-02-30", "vs-host": "B", "vs-purpose": "Meeting" })["vs-date"]).toBe("Enter a valid date");
     expect(validateSubmission(vendor, { ...goodVendor, "v-notes": "x".repeat(2001) })["v-notes"]).toMatch(/under 2000/);
     const consent: FormTemplate = { ...feedback, fields: [{ id: "c", label: "I agree", type: "checkbox", required: true, options: [] }] };
     expect(validateSubmission(consent, { c: "false" })).toEqual({ c: "This must be checked" });
@@ -68,9 +68,9 @@ describe("generateDocument", () => {
     expect(doc).not.toMatch(/Status:|Decision/);
   });
   it("uses a default layout without a template, with formatted dates", () => {
-    const leave = forms.find((x) => x.id === "form-leave")!;
-    const doc = generateDocument(leave, sampleSubmissions(TODAY).find((s) => s.id === "s-3")!);
-    expect(doc).toContain("First day off: Nov 8, 2026");
+    const visitor = forms.find((x) => x.id === "form-visitor")!;
+    const doc = generateDocument(visitor, sampleSubmissions(TODAY).find((s) => s.id === "s-3")!);
+    expect(doc).toContain("Visit date: Oct 24, 2026");
   });
   it("expands placeholders once, so submitted text cannot inject more", () => {
     const sneaky = { ...sub, values: { ...sub.values, "v-notes": "{{Contact email}}", "v-name": "{{Notes}}" } };

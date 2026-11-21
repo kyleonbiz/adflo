@@ -37,7 +37,7 @@ export const PRESETS: Record<Industry, IndustryPreset> = {
   "Construction & trades": { licenses: "construction", paperwork: "construction", vendorDocs: ["Workers' compensation certificate", "Lien waiver"], chains: two("Project manager", "Owner"), leadDays: 30 },
   "Healthcare practice": { licenses: "health", paperwork: "health", vendorDocs: ["Business associate agreement"], chains: two("Practice manager", "Owner"), leadDays: 60 },
   "Restaurant & hospitality": { licenses: "food", paperwork: "food", vendorDocs: ["Food safety certificate"], chains: chain(["General manager"]), leadDays: 60 },
-  Nonprofit: { licenses: "general", paperwork: "general", vendorDocs: [], chains: two("Program director", "Treasurer"), leadDays: 30 },
+  Nonprofit: { licenses: "general", paperwork: "nonprofit", vendorDocs: [], chains: two("Program director", "Treasurer"), leadDays: 30 },
   "Real estate": { licenses: "realestate", paperwork: "realestate", vendorDocs: ["Signed contract"], chains: chain(["Managing broker"]), leadDays: 60 },
   "Auto & fleet": { licenses: "vehicle", paperwork: "vehicle", vendorDocs: ["Garage liability certificate"], chains: two("Fleet manager", "Owner"), leadDays: 30 },
   "Home services": { licenses: "construction", paperwork: "construction", vendorDocs: ["Workers' compensation certificate"], chains: two("Office manager", "Owner"), leadDays: 30 },

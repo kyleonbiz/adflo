@@ -26,7 +26,7 @@ const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
     { id: "licenses", reason: "Trade licenses, bonds and insurance must stay current." },
     { id: "vendors", reason: "Subcontractors need insurance certificates on file." },
     { id: "projects", reason: "Jobs have tasks and deadlines." },
-    { id: "forms", reason: "Change orders and job forms." },
+    { id: "forms", reason: "Safety checklists, job forms and signed acknowledgments." },
     { id: "equipment", reason: "Tools, trucks and equipment need service and inspection dates tracked." },
   ],
   "Healthcare practice": [
@@ -38,7 +38,7 @@ const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
     { id: "licenses", reason: "Health, liquor and business permits renew." },
     { id: "vendors", reason: "Food and supply vendors." },
     { id: "reporting", reason: "Weekly sales and cost reports." },
-    { id: "forms", reason: "Staff time-off and incident forms." },
+    { id: "forms", reason: "Incident reports, safety checklists and signed acknowledgments." },
   ],
   Nonprofit: [
     { id: "crm", reason: "Donors and volunteers are your contact list." },

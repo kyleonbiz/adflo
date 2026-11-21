@@ -15,11 +15,11 @@ describe("industry presets", () => {
       expect(PRESETS[i]).toBeDefined();
       expect(recommendModules(i, "2-5 people").length).toBeGreaterThan(3);
       expect(licensesFor(i).length, `${i} licenses`).toBeGreaterThan(1);
-      expect(paperworkFor(i).length, `${i} paperwork`).toBeGreaterThanOrEqual(i === "Retail & e-commerce" ? 0 : 1);
+      expect(paperworkFor(i).length, `${i} paperwork`).toBeGreaterThan(1);
       expect(projectsFor(i).length, `${i} projects`).toBeGreaterThan(0);
       expect(PRESETS[i].chains.requests.length).toBeGreaterThan(0);
       expect(beginIdsFor(i).length).toBeGreaterThan(2);
-      for (const b of BUNDLES) if (!(b.id === "bundle:paperwork" && i === "Retail & e-commerce")) expect(describeBundle(b.id, i).items.length).toBeGreaterThan(0);
+      for (const b of BUNDLES) expect(describeBundle(b.id, i).items.length).toBeGreaterThan(0);
     }
   });
 
@@ -50,7 +50,7 @@ describe("industry presets", () => {
     expect(licenses.length).toBe(licensesFor("Construction & trades").length);
     expect(new Set(licenses.map((l) => l.id)).size).toBe(licenses.length);
     expect(licenses.every((l) => l.expiresOn > T && l.requiredDocuments.length > 0)).toBe(true);
-    expect(industryForms(c).map((f) => f.name)).toContain("Change order");
+    expect(industryForms(c).map((f) => f.name)).toContain("Jobsite safety inspection");
     expect(industryVendorDocs(c)).toContain("Workers' compensation certificate");
     expect(industryChains(c).requests).toEqual(["Project manager", "Owner"]);
     expect(industryProjects(c).map((p) => p.id)).toContain("job-closeout");

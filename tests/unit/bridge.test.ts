@@ -17,11 +17,11 @@ describe("contacts and forms", () => {
   });
 
   it("treats a company field as the company, not the person's name", () => {
-    const w9 = form("pw-w9-request");
-    const filled = prefillFromPerson(w9, { name: "Dana Whitfield", company: "Acme" });
-    expect(w9.fields.filter((f) => fieldKey(f) === "company").map((f) => f.label)).toContain("Business name");
+    const nda = form("pw-nda");
+    const filled = prefillFromPerson(nda, { name: "Dana Whitfield", company: "Acme" });
+    expect(nda.fields.filter((f) => fieldKey(f) === "company").map((f) => f.label)).toContain("Company");
     expect(Object.values(filled)).toContain("Acme");
-    expect(Object.values(filled)).toContain("Dana Whitfield"); // "Legal name" is the person
+    expect(Object.values(filled)).toContain("Dana Whitfield"); // "Full name" is the person
   });
 
   it("finds the person behind a submission, falling back to who filled it in", () => {

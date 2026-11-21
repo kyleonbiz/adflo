@@ -58,7 +58,7 @@ test.describe("industry setup", () => {
     await page.getByRole("button", { name: "Save" }).click();
 
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card").filter({ hasText: "Vehicle inspection checklist" })).toBeVisible();
+    await expect(page.getByTestId("form-card").filter({ hasText: "Vehicle inspection report" })).toBeVisible();
     await expect(page.getByTestId("form-card").filter({ hasText: "Conflict check" })).toHaveCount(0);
     await page.goto("/app/licenses");
     await expect(page.getByTestId("license-card").filter({ hasText: "Vehicle registration" })).toBeVisible();

@@ -38,14 +38,19 @@ const KINDS: Record<Kind, KindStyle> = {
   intake: { sign: ["Completed by"], checks: "Confirmations" },
 };
 
-/** Which kind each built-in paperwork is. Anything not listed gets a request-style page when it names an approver, otherwise intake. */
+/** Which kind each built-in paperwork is. Anything not listed is guessed from its name, then falls back to intake. */
 const KIND_OF: Record<string, Kind> = {
-  "proposal-contract": "agreement", "change-order": "agreement", "lien-waiver": "agreement", "engagement": "agreement", "tax-engagement": "agreement", 
-  "time-off": "request",
-  "incident": "report", "accident": "report", "injury-report": "report", "ncr": "report", "jsa": "report", "conflict-check": "report",
-  "temp-log": "log", "equipment-log": "log", "sanitation-log": "log", "patch-test": "log",
-  "inspection": "checklist", "opening-checklist": "checklist", "safety-walk": "checklist", "move-in": "checklist", "doc-checklist": "checklist",
-  "nda": "consent", "hipaa-ack": "consent", "client-consent": "consent", "pickup-auth": "consent",
+  "proposal-contract": "agreement", "completion": "agreement", "warranty": "agreement", "scope-confirmation": "agreement", "scope-of-services": "agreement",
+  "incident": "report", "accident": "report", "injury-report": "report", "ncr": "report", "sharps-log": "report", "conflict-check": "report",
+  "jsa": "report",
+  "temp-log": "log", "thermometer-calibration": "log", "cleaning-log": "log", "pest-control-log": "log", "equipment-log": "log", "sanitation-log": "log",
+  "pedicure-log": "log", "patch-test": "log", "medication-log": "log", "drill-log": "log", "refused-sale": "log", "records-destruction": "log",
+  "toolbox-talk": "log", "meeting-minutes": "log", "board-minutes": "log",
+  "site-inspection": "checklist", "food-safety-inspection": "checklist", "inspection": "checklist", "hazwaste-inspection": "checklist", "store-safety": "checklist",
+  "safety-walk": "checklist", "loto-inspection": "checklist", "security-review": "checklist", "move-in": "checklist",
+  "nda": "consent", "hipaa-ack": "consent", "client-consent": "consent", "pickup-auth": "consent", "medication-auth": "consent", "field-trip": "consent",
+  "volunteer-agreement": "consent", "lead-paint": "consent", "coi-disclosure": "consent",
+  "client-intake": "intake", "matter-intake": "intake", "sub-compliance": "intake", "notice-to-enter": "intake", "recall-record": "intake", "file-closing": "intake",
 };
 
 /** Wording for particular forms where a generic line would be wrong. */
@@ -55,11 +60,6 @@ const TERMS: Record<string, string> = {
   "jsa": "Work does not start until the crew has read the hazards and controls above and the supervisor has signed. Stop and re-assess if conditions change.",
   "completion": "The owner confirms the work described is complete except for any items listed, which the contractor will finish. The warranty period begins on the date shown.",
   "warranty": "The contractor will repair defects in the work covered that appear during the warranty period and are reported in writing. Normal wear, misuse, and damage caused by others are not covered.",
-  "sub-agreement": "The subcontractor confirms the details above are correct and will keep the insurance shown in force while on the job. Send a new certificate before any policy expires.",
-  "change-order": "This change order adjusts the original agreement. The contract sum and completion date are changed as shown, and all other terms stay as agreed.",
-  "lien-waiver": "Use your state's statutory waiver form where one is required. This record shows the payment that was received and the period it covers.",
-  "engagement": "By signing, the client confirms the scope and fee above and agrees that work begins once this page is returned.",
-  "tax-engagement": "By signing, the client confirms the services and fee above, and that the information provided is complete and accurate to the best of their knowledge.",
   "nda": "The person signing agrees to keep the information shared with them private and to use it only for the purpose it was given.",
   "hipaa-ack": "The patient confirms they were offered the notice of privacy practices and had the chance to ask questions about it.",
   "client-consent": "The client has described any allergies or sensitivities above, understands the service, and agrees to proceed.",
@@ -67,22 +67,62 @@ const TERMS: Record<string, string> = {
   "incident": "Keep this report on file. Complete it as soon as possible after the incident, while the details are fresh.",
   "injury-report": "A parent or guardian is told the same day. Keep a copy in the child's file.",
   "accident": "Keep this report with the vehicle's records and give a copy to your insurer.",
-  "w9-request": "Return this page with a signed W-9. Tax details are kept private and used only for reporting payments.",
+  "sub-compliance": "The subcontractor confirms the details above are correct and will keep the insurance shown in force while on the job. Send a new certificate before any policy expires.",
+  "site-inspection": "Record what was found and who will fix it, with a date. Keep inspection records with the project's safety file.",
+  "thermometer-calibration": "Check thermometers on a regular schedule and whenever one is dropped. Replace any that cannot be adjusted to read true.",
+  "cleaning-log": "Keep cleaning records where an inspector can see them.",
+  "food-safety-inspection": "Use this to find problems before an inspection does. Your local health department's requirements come first.",
+  "pest-control-log": "Keep each service report with this log.",
+  "inspection": "The driver signs the report. If a defect is listed, a mechanic or manager signs once it is repaired or confirmed not needed, before the vehicle goes out again. Keep reports for at least three months.",
+  "hazwaste-inspection": "Inspect storage areas as often as your state requires (weekly in many states) and keep these records with your waste manifests. Your state's rules decide how long to keep them.",
+  "scope-confirmation": "By signing, the client confirms the scope and deliverables above and that anything not listed is not included. Changes are agreed in writing before work on them begins.",
+  "scope-of-services": "By signing, the client confirms the services above and what is not included, and agrees to provide the information listed.",
+  "move-in": "Both parties confirm the condition recorded above. Use the same record at move-out so the two can be compared, and give the tenant a copy.",
+  "lead-paint": "Federal law requires this disclosure before a lease begins for housing built before 1978. Keep the signed copy for at least three years.",
+  "notice-to-enter": "Notice periods and allowed reasons depend on your state and city. Confirm yours before relying on this notice.",
+  "equipment-log": "Keep sterilization monitoring results with the cleaning record, and follow up on any failed test.",
+  "sharps-log": "Keep the injured person's identity private. Record each injury soon after it happens.",
+  "pedicure-log": "Keep each tub or basin's log available for clients and inspectors. Rules differ by state.",
+  "medication-auth": "Staff give only the medication listed here, as directed. Record each dose on the medication administration log.",
+  "medication-log": "Record each dose when it is given.",
+  "drill-log": "Keep drill records for your licensing inspector. Run drills as often as your state requires.",
+  "field-trip": "The parent or guardian gives permission for this trip only. Staff will call the emergency number above if there is a problem.",
+  "loto-inspection": "Done at least once a year for each procedure, by an authorized person other than the employee using it. Fix any deficiency and note the correction.",
+  "conflict-check": "Complete before any advice is given or an engagement letter is signed.",
+  "file-closing": "Retention periods are set by your bar rules and firm policy. A closing letter helps show the relationship has ended.",
+  "security-review": "Review the firm's written information security plan at least once a year and whenever systems or operations change. Keep this record with the plan.",
+  "records-destruction": "Destroy records only after the retention period ends and any hold is lifted. Keep this log as proof of when and how they were destroyed.",
+  "refused-sale": "Keep this log with your age-restricted sales policy.",
+  "recall-record": "Keep this record with the recall notice for your files.",
+  "store-safety": "Fix problems found and note who did it and when.",
+  "coi-disclosure": "Disclose any interest that could conflict with the organization's, and step out of any vote on the matter. Review this at least once a year.",
+  "board-minutes": "Minutes record the discussion, each action taken, and any conflict declared. Keep them permanently with the organization's records.",
+  "volunteer-agreement": "This is a general form. Have a lawyer review the release wording for your state, especially for minors and photo use.",
+  "meeting-minutes": "Minutes are approved at the next meeting and kept with the organization's records.",
 };
 
-/** Who signs, where the generic pair would be wrong for a contractor's paperwork. */
+/** Who signs, where the generic pair for the kind would be wrong. */
 const SIGNERS: Record<string, string[]> = {
   "proposal-contract": ["Contractor signature", "Owner acceptance"],
-  "change-order": ["Contractor", "Owner approval"],
-  "lien-waiver": ["Claimant signature"],
-  "sub-agreement": ["Subcontractor", "Contractor"],
-  "completion": ["Contractor", "Owner acceptance"],
-  "warranty": ["Contractor"],
-  "toolbox-talk": ["Led by", "Reviewed by"],
-  "jsa": ["Supervisor", "Safety lead"],
+  "completion": ["Contractor", "Owner acceptance"], "warranty": ["Contractor"],
+  "jsa": ["Supervisor", "Safety lead"], "toolbox-talk": ["Led by", "Reviewed by"], "site-inspection": ["Inspected by", "Superintendent"],
+  "sub-compliance": ["Verified by", "Project manager"],
+  "food-safety-inspection": ["Inspected by", "Manager"], "hazwaste-inspection": ["Inspected by", "Manager"],
+  "inspection": ["Driver", "Mechanic or manager"], "accident": ["Driver", "Reviewed by"],
+  "scope-confirmation": ["Client", "Provider"], "scope-of-services": ["Client", "Firm"],
+  "move-in": ["Tenant", "Property manager"], "lead-paint": ["Lessor or agent", "Tenant"], "notice-to-enter": ["Issued by"],
+  "hipaa-ack": ["Patient or guardian"], "equipment-log": ["Reviewed by"], "sharps-log": ["Recorded by", "Reviewed by"],
+  "client-consent": ["Client"], "pickup-auth": ["Parent or guardian"], "injury-report": ["Staff member", "Parent or guardian"],
+  "medication-auth": ["Parent or guardian", "Staff member"], "drill-log": ["Conducted by", "Reviewed by"], "field-trip": ["Parent or guardian"],
+  "loto-inspection": ["Inspector", "Supervisor"], "conflict-check": ["Checked by", "Approved by"], "file-closing": ["Responsible attorney"],
+  "security-review": ["Reviewed by", "Firm owner"], "records-destruction": ["Performed by", "Approved by"],
+  "store-safety": ["Inspected by", "Manager"], "recall-record": ["Completed by", "Manager"],
+  "coi-disclosure": ["Disclosing person", "Board chair"], "board-minutes": ["Secretary", "Board chair"],
+  "volunteer-agreement": ["Volunteer", "Parent or guardian (if under 18)"], "meeting-minutes": ["Recorded by", "Approved by"],
 };
 
-const NO_SIGN_LINES = new Set(["temp-log"]);
+/** Logs where every entry already carries the name or initials of whoever made it, so no separate signature is wanted. */
+const NO_SIGN_LINES = new Set(["temp-log", "thermometer-calibration", "cleaning-log", "pedicure-log", "medication-log", "refused-sale", "sanitation-log", "patch-test"]);
 
 const idKey = (form: FormTemplate) => form.id.replace(/^(pw|tpl)-/, "").replace(/^form-/, "");
 
@@ -92,7 +132,7 @@ function kindFor(form: FormTemplate): Kind {
   const n = form.name.toLowerCase();
   if (/log|record/.test(n)) return "log";
   if (/checklist|inspection/.test(n)) return "checklist";
-  if (/request|reimbursement|claim|time-off/.test(n)) return "request";
+  if (/request/.test(n)) return "request";
   if (/report|incident/.test(n)) return "report";
   if (/proposal|contract|agreement|estimate|engagement/.test(n)) return "agreement";
   return "intake";
@@ -163,12 +203,13 @@ function build(form: FormTemplate, values: Record<string, string>, filled: boole
   const walk = (fields: FormField[], growLast: boolean) => {
     const lastLong = fields.map((f) => f.type).lastIndexOf("longtext");
     const longCount = fields.filter((f) => f.type === "longtext").length;
+    const crowded = fields.filter((f) => f.type === "checkbox").length >= 6; // a long checklist leaves less room for the writing areas
     let i = 0;
     while (i < fields.length) {
       const f = fields[i]!;
       if (f.type === "longtext") {
         blocks.push({ t: "heading", text: f.label });
-        blocks.push({ t: "box", text: val(f), min: filled ? (agreement ? 130 : 46) : longCount === 1 ? 150 : longCount === 2 ? 100 : longCount === 3 ? 70 : 52, grow: growLast && !filled && i === lastLong });
+        blocks.push({ t: "box", text: val(f), min: filled ? (agreement ? 130 : 46) : crowded ? 56 : longCount === 1 ? 150 : longCount === 2 ? 100 : longCount === 3 ? 70 : 52, grow: growLast && !filled && i === lastLong });
         i++;
       } else {
         const isCheck = f.type === "checkbox";

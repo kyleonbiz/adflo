@@ -40,7 +40,7 @@ export function Packets({ today, onFillForm }: { today: string; onFillForm: (for
       </div>
 
       {list.length === 0 ? (
-        <p className="rounded-2xl border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">No packets started. Pick New employee, New vendor or New client to begin.</p>
+        <p className="rounded-2xl border border-dashed bg-card/60 p-6 text-center text-sm text-muted-foreground">No packets started. Pick New client or Job closeout to begin.</p>
       ) : (
         <ul className="space-y-3">
           {list.map((a) => {

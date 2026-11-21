@@ -56,7 +56,7 @@ describe("answers coming back", () => {
   it("explains what went wrong instead of adding bad answers", () => {
     expect(parseResponses("hello", vendor).problems[0]).toMatch(/No AdFlo answers/);
     expect(parseResponses("ADFLO-RESPONSE:abc", vendor).problems[0]).toMatch(/Could not read/);
-    const other = sampleForms().find((f) => f.id === "form-leave")!;
+    const other = sampleForms().find((f) => f.id === "form-visitor")!;
     expect(parseResponses(responseMessage(shared, "Dana", good), other).problems[0]).toMatch(/different form/);
     const edited = { ...vendor, fields: vendor.fields.map((f) => (f.id === "v-notes" ? { ...f, required: true } : f)) };
     const blank = responseMessage(shared, "Dana", { ...good, "v-notes": "" });
