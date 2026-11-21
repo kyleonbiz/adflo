@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, ChevronDown, Download, FileText, Inbox, Pencil, Play, Printer, Send, Trash2, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SelectBox } from "@/components/ui/bulk-bar";
 import { formatDayLong } from "@/lib/dates";
 import { displayValue } from "@/lib/forms/logic";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
@@ -51,7 +52,7 @@ function ResponseRow({ form, s, actions }: { form: FormTemplate; s: Submission; 
   );
 }
 
-export function FormCard({ form, submissions, actions }: { form: FormTemplate; submissions: Submission[]; actions: FormActions }) {
+export function FormCard({ form, submissions, actions, selected, onSelect }: { form: FormTemplate; submissions: Submission[]; actions: FormActions; selected?: boolean; onSelect?: () => void }) {
   const [open, setOpen] = useState(false);
   const unread = submissions.filter((s) => s.status === "new").length;
   const panelId = `form-subs-${form.id}`;
@@ -61,6 +62,7 @@ export function FormCard({ form, submissions, actions }: { form: FormTemplate; s
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
+            {onSelect && <SelectBox checked={!!selected} onChange={onSelect} label={`Select ${form.name}`} />}
             <h3 className="truncate text-base font-semibold">{form.name}</h3>
             {unread > 0 && <Badge variant="default">{unread} new</Badge>}
           </div>

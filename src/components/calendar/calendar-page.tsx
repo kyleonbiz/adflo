@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { agenda, buildEvents, byDay, EVENT_KINDS, monthGrid, monthLabel, monthOf, nextMonth, type CalendarEvent, type EventKind } from "@/lib/calendar/logic";
+import { saveReminders, useReminders } from "@/lib/reminders/storage";
+import { setReminderOn } from "@/lib/reminders/logic";
+import { Input } from "@/components/ui/input";
 import { useCalendarSources } from "@/lib/calendar/sources";
 import { addDays, addMonths, formatDayLong, formatDayShort } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -45,10 +48,12 @@ function EventRow({ e, testId }: { e: CalendarEvent; testId: string }) {
 export function CalendarPage({ preview, live = false }: { preview?: string; live?: boolean }) {
   const today = useToday();
   const sources = useCalendarSources(today, live);
-  const [view, setView] = useState<"month" | "agenda" | "next">("month");
+  const [view, setView] = useState<"month" | "week" | "agenda" | "next">("month");
   const [month, setMonth] = useState<string | null>(null);
   const [kind, setKind] = useState<"all" | EventKind>("all");
   const [selected, setSelected] = useState<string | null>(null);
+  const reminders = useReminders();
+  const [note, setNote] = useState("");
   const [window, setWindow] = useState<30 | 60 | 90>(60);
 
   const all = useMemo(() => (today ? buildEvents(sources, today) : []), [sources, today]);
@@ -67,6 +72,7 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
   const shownMonth = month ?? monthOf(today);
   const grid = monthGrid(shownMonth);
   const chosen = selected ?? today;
+  const weekStart = addDays(chosen, -new Date(`${chosen}T00:00:00Z`).getUTCDay());
   const chosenEvents = days.get(chosen) ?? [];
   const upcoming = agenda(events, today, window);
   const late = upcoming.filter((e) => e.late);
@@ -97,12 +103,12 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
           )}
           <Button type="button" variant="outline" disabled={events.length === 0} onClick={() => downloadText(toIcs(events.filter((e) => !e.late).map((e) => ({ uid: e.id, day: e.day, summary: e.title, description: e.detail })), today), `adflo-calendar-${today}.ics`, "text/calendar")}><CalendarPlus /> Download .ics</Button>
           <div role="tablist" aria-label="Calendar view" className="flex rounded-lg border bg-card p-0.5">
-            {(["month", "agenda", "next"] as const).map((v) => (
+            {(["month", "week", "agenda", "next"] as const).map((v) => (
               <button
                 key={v} type="button" role="tab" aria-selected={view === v} onClick={() => setView(v)}
                 className={cn("rounded-md px-3 py-1.5 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring", view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
               >
-                {{ month: "Month", agenda: "Agenda", next: "Next month" }[v]}
+                {{ month: "Month", week: "Week", agenda: "Agenda", next: "Next month" }[v]}
               </button>
             ))}
           </div>
@@ -144,6 +150,28 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
               </div>
             ))
           )}
+        </section>
+      ) : view === "week" ? (
+        <section aria-label="Week" className="space-y-3" data-testid="week-view">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg font-semibold">{formatDayShort(weekStart)} to {formatDayShort(addDays(weekStart, 6))}</h2>
+            <div className="flex items-center gap-1">
+              <Button type="button" size="icon-sm" variant="outline" aria-label="Previous week" onClick={() => setSelected(addDays(weekStart, -7))}><ChevronLeft /></Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setSelected(null)}>This week</Button>
+              <Button type="button" size="icon-sm" variant="outline" aria-label="Next week" onClick={() => setSelected(addDays(weekStart, 7))}><ChevronRight /></Button>
+            </div>
+          </div>
+          <div className="grid gap-2 md:grid-cols-7">
+            {Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)).map((day) => {
+              const list = days.get(day) ?? [];
+              return (
+                <div key={day} data-testid="week-day" className={cn("rounded-xl border bg-card p-2 shadow-panel", day === today && "ring-2 ring-primary/40")}>
+                  <h3 className="text-xs font-semibold text-muted-foreground">{formatDayShort(day)}{day === today ? " · Today" : ""}</h3>
+                  {list.length === 0 ? <p className="mt-1 text-xs text-muted-foreground">Nothing due</p> : <ul className="mt-1 divide-y">{list.map((e) => <EventRow key={e.id} e={e} testId="week-event" />)}</ul>}
+                </div>
+              );
+            })}
+          </div>
         </section>
       ) : view === "month" ? (
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -188,6 +216,19 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
             ) : (
               <ul className="mt-2 divide-y">{chosenEvents.map((e) => <EventRow key={e.id} e={e} testId="calendar-day-event" />)}</ul>
             )}
+            <form
+              className="mt-3 flex gap-2 border-t pt-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const text = note.trim();
+                if (!text) return;
+                saveReminders(setReminderOn(reminders, { id: `rem-note-${Math.random().toString(36).slice(2, 8)}`, text, area: "Tasks", href: "/app/calendar" }, chosen));
+                setNote("");
+              }}
+            >
+              <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a reminder for this day" aria-label="Add a reminder for this day" maxLength={160} className="h-9" />
+              <Button type="submit" size="sm" disabled={!note.trim()}>Add</Button>
+            </form>
           </aside>
         </div>
       ) : (

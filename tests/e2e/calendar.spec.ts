@@ -66,6 +66,18 @@ test.describe("calendar", () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
+  test("week view shows seven days and a reminder added on the day appears in it", async ({ page }) => {
+    await page.goto("/app/calendar");
+    await page.getByRole("tab", { name: "Month", exact: true }).click();
+    await page.getByLabel("Add a reminder for this day").fill("Call the insurance agent");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await page.getByRole("tab", { name: "Week" }).click();
+    await expect(page.getByTestId("week-day")).toHaveCount(7);
+    await expect(page.getByTestId("week-event").filter({ hasText: "Call the insurance agent" })).toBeVisible();
+    await page.getByRole("button", { name: "Next week" }).click();
+    await expect(page.getByTestId("week-day")).toHaveCount(7);
+  });
+
   test.describe("next month view", () => {
     const monthName = (day: string) => new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
     const nextMonthDay = () => { const d = addMonths(`${todayLocal().slice(0, 7)}-01`, 1); return `${d.slice(0, 7)}-15`; };

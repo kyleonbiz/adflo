@@ -1,6 +1,8 @@
 "use client";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
 import { PreviewNote } from "@/components/ui/preview-note";
 import { useMemo, useState } from "react";
 import { CheckCircle2, FileInput, Inbox, Plus, Search, Send } from "lucide-react";
@@ -69,6 +71,8 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   const [justCreated, setJustCreated] = useState<string | null>(null); // the form whose Send dialog opened straight after it was made
   const [adding, setAdding] = useState<FormTemplate | null>(null);
   const [deleting, setDeleting] = useState<FormTemplate | null>(null);
+  const sel = useSelection();
+  const [bulkDelete, setBulkDelete] = useState(false);
   const [notice, setNotice] = useState("");
 
   const setup = useSetupConfig();
@@ -194,9 +198,15 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
             {forms.length === 0 ? "No forms yet. Create your first one." : "No forms match your search."}
           </div>
         ) : (
+          <>
+          <BulkBar count={sel.size} total={visible.length} onSelectAll={() => sel.set(visible.map((f) => f.id))} onClear={sel.clear}>
+            <Button size="sm" variant="outline" onClick={() => { setEditedSubs(subs.map((x) => (sel.has(x.formId) && x.status === "new" ? markDone(x, true) : x))); audit("marked done the responses to", `${sel.size} forms`, "Forms", "/app/forms"); setNotice("Responses on the selected forms marked done."); sel.clear(); }}>Mark responses done</Button>
+            <Button size="sm" variant="destructive" onClick={() => setBulkDelete(true)}>Delete</Button>
+          </BulkBar>
           <ul className="space-y-3">
-            {visible.map((f) => <FormCard key={f.id} form={f} submissions={subs.filter((s) => s.formId === f.id)} actions={actions} />)}
+            {visible.map((f) => <FormCard key={f.id} form={f} submissions={subs.filter((s) => s.formId === f.id)} actions={actions} selected={sel.has(f.id)} onSelect={() => sel.toggle(f.id)} />)}
           </ul>
+          </>
         )}
       </section>
 
@@ -291,6 +301,12 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
         }}
       />
 
+      <ConfirmDialog
+        open={bulkDelete} title={`Delete ${sel.size} form${sel.size === 1 ? "" : "s"}?`} confirmLabel="Delete"
+        description="They and all of their responses will be removed."
+        onCancel={() => setBulkDelete(false)}
+        onConfirm={() => { setEditedForms(forms.filter((f) => !sel.has(f.id))); setEditedSubs(subs.filter((x) => !sel.has(x.formId))); audit("deleted", `${sel.size} forms`, "Forms", "/app/forms"); setNotice(`${sel.size} forms deleted.`); sel.clear(); setBulkDelete(false); }}
+      />
       <ConfirmDialog open={!!deleting} title="Delete form?" description={<>{deleting?.name} and all of its responses will be removed.</>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
                   setEditedForms(forms.filter((f) => f.id !== deleting.id));
