@@ -140,8 +140,13 @@ module (also on Calendar and Home); fixed `.ics` semicolon escaping.
 the address bar on Invoices, Licenses and Forms (Vendors already did this); "Find files for this license in Documents" link on
 licenses; Equipment report in Reporting; Addy can open an equipment draft; Control center "Remind all" on Onboarding.
 
-**Still not done:** a combined timeline on profiles; a document picker that attaches a real file to a license requirement; filters in
-the address bar for Tasks; Equipment on the dashboard workload chart; a bell alert for document expiry (the Documents panel and
-Calendar show it); Activity dead-link handling (entries link to module pages, not single records, so there is little to break);
-splitting `projects-page.tsx`; sharing the stepper between the two CSV importers; the Reporting tabs/dropdown focus check.
-Nothing was run against a hosted Supabase project, so the `equipment` migration is untested there.
+**Fourth round:** Tasks filters kept in the address bar; Equipment row on the Home workload chart (shown once any equipment exists);
+a Timeline on contact profiles (added, invoices issued and paid, last contacted).
+
+**Checked and dropped:** the Reporting "dual navigation" is two different levels (section picker and report tabs), not a duplicate;
+Activity dead links (entries link to module pages, not single records).
+
+**Deliberately left:** splitting `projects-page.tsx` and sharing one stepper between the two CSV importers (maintainability only,
+high churn for no user-visible change); a document picker that attaches a real file to a license requirement; a bell alert for
+document expiry (the Documents panel and Calendar show it). Nothing was run against a hosted Supabase project, so the `equipment`
+migration is untested there.
