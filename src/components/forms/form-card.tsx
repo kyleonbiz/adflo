@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, ChevronDown, Download, FileText, Inbox, Pencil, Play, Printer, Send, Trash2, Undo2 } from "lucide-react";
+import { CheckCircle2, ChevronDown, Download, FileText, Inbox, Pencil, Play, Printer, Save, Send, Trash2, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SelectBox } from "@/components/ui/bulk-bar";
@@ -20,6 +20,7 @@ export interface FormActions {
   onAddResponses: (form: FormTemplate) => void;
   onMarkDone: (form: FormTemplate, s: Submission, done: boolean) => void;
   onDocument: (form: FormTemplate, s: Submission) => void;
+  onSave: (form: FormTemplate, s: Submission) => void;
   onPdf: (form: FormTemplate, s: Submission) => void;
   onPrint: (form: FormTemplate, s: Submission) => void;
   onExport: (form: FormTemplate, subs: Submission[]) => void;
@@ -43,6 +44,7 @@ function ResponseRow({ form, s, actions }: { form: FormTemplate; s: Submission; 
         ) : (
           <Button size="sm" variant="ghost" aria-label={`Reopen response by ${s.submittedBy}`} onClick={() => actions.onMarkDone(form, s, false)}><Undo2 /> Reopen</Button>
         )}
+        <Button size="sm" variant="ghost" aria-label={`Save response by ${s.submittedBy}`} onClick={() => actions.onSave(form, s)}><Save /> Save</Button>
         <Button size="sm" variant="ghost" aria-label={`Document for response by ${s.submittedBy}`} onClick={() => actions.onDocument(form, s)}><FileText /> Document</Button>
         <Button size="sm" variant="ghost" aria-label={`PDF for response by ${s.submittedBy}`} onClick={() => actions.onPdf(form, s)}><Download /> PDF</Button>
         <Button size="sm" variant="ghost" aria-label={`Print response by ${s.submittedBy}`} onClick={() => actions.onPrint(form, s)}><Printer /> Print</Button>

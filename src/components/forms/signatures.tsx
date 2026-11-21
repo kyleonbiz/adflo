@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BellRing, Download, PenLine, Plus, Trash2 } from "lucide-react";
+import { BellRing, Download, PenLine, Plus, Save, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -182,7 +182,7 @@ function SignDialog({ target, onClose }: { target: { request: SigningRequest; si
 }
 
 /** Documents out for signature. Saved in this browser; a typed name and an explicit agreement count as the signature. */
-export function Signatures({ submissions, today, by }: { submissions: SignableSubmission[]; today: string; by: string }) {
+export function Signatures({ submissions, today, by, onSave }: { submissions: SignableSubmission[]; today: string; by: string; onSave: (title: string, pdf: Uint8Array, fileName: string) => void }) {
   const list = useSigningRequests();
   const [requesting, setRequesting] = useState(false);
   const [signing, setSigning] = useState<{ request: SigningRequest; signerId: string } | null>(null);
@@ -210,6 +210,7 @@ export function Signatures({ submissions, today, by }: { submissions: SignableSu
                     <Badge variant={variant}>{label}</Badge>
                   </div>
                   <div className="flex gap-2">
+                    <Button size="sm" variant="outline" aria-label={`Save signed copy of ${r.title}`} onClick={() => onSave(`${r.title} (signed copy)`, textToPdf(signedCopyText(r)), `${r.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-signed.pdf`)}><Save /> Save</Button>
                     <Button size="sm" variant="outline" aria-label={`Download signed copy of ${r.title}`} onClick={() => download(textToPdf(signedCopyText(r)), `${r.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-signed.pdf`)}><Download /> Signed copy</Button>
                     <Button size="icon-sm" variant="ghost" aria-label={`Delete signing request ${r.title}`} onClick={() => saveRequests(list.filter((x) => x.id !== r.id))}><Trash2 /></Button>
                   </div>

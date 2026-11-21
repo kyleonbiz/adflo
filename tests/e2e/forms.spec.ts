@@ -285,6 +285,10 @@ test.describe("forms module", () => {
     await dialog.getByRole("button", { name: "Submit" }).click();
 
     await expect(page.getByRole("heading", { name: "Your paperwork is ready" })).toBeVisible();
+    // Save sits first, ahead of Download PDF, Print and the rest. In the no-database preview it says where the record stays.
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("dialog").getByRole("status")).toContainText("kept in this browser");
+    await expect(page.getByRole("button", { name: "Saved" })).toBeDisabled();
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Download PDF" }).click();
     const file = await download;
@@ -362,6 +366,8 @@ test.describe("forms module", () => {
       await packet.getByRole("checkbox", { name: `${label} for Sam Ito` }).check();
     }
     await expect(packet).toContainText("Complete");
+    await packet.getByRole("button", { name: "Save checklist for Sam Ito" }).click();
+    await expect(page.getByRole("status").filter({ hasText: "kept in this browser" })).toBeVisible();
     const pdf = page.waitForEvent("download");
     await packet.getByRole("button", { name: "Download PDF for Sam Ito" }).click();
     expect((await pdf).suggestedFilename()).toBe("new-client-sam-ito.pdf");
