@@ -22,6 +22,7 @@ const KIND_STYLE: Record<EventKind, string> = {
   Licenses: "bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-100",
   Tasks: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
   Vendors: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
+  Equipment: "bg-orange-100 text-orange-900 dark:bg-orange-950 dark:text-orange-100",
   Documents: "bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-100",
   Reminders: "bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-100",
 };

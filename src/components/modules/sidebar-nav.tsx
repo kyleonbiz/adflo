@@ -105,7 +105,7 @@ function NavGroup({ item, base, active, onNavigate, collapsed }: { item: Item; b
  */
 const GROUPS: { label: string | null; ids: string[] }[] = [
   { label: null, ids: ["overview", "assistant"] },
-  { label: "Records", ids: ["documents", "invoices", "licenses", "crm"] },
+  { label: "Records", ids: ["documents", "invoices", "licenses", "equipment", "crm"] },
   { label: "Work", ids: ["projects", "forms", "calendar"] },
   { label: "Insights", ids: ["reporting", "activity"] },
 ];

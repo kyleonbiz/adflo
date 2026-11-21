@@ -20,7 +20,7 @@ describe("recommendModules", () => {
     expect(ids("Other").slice(0, 2)).toEqual(["documents", "invoices"]);
   });
   it("adds modules for the industry", () => {
-    expect(ids("Construction & trades")).toEqual(["documents", "invoices", "licenses", "vendors", "projects", "forms"]);
+    expect(ids("Construction & trades")).toEqual(["documents", "invoices", "licenses", "vendors", "projects", "forms", "equipment"]);
     expect(ids("Nonprofit")).toContain("crm");
     expect(ids("Restaurant & hospitality")).toContain("reporting");
   });
@@ -161,6 +161,6 @@ describe("runSetupChecks", () => {
     for (const m of AVAILABLE_MODULE_IDS) expect(ids.has(m)).toBe(true);
     expect(AVAILABLE_MODULE_IDS).not.toContain("setup");
     expect(AVAILABLE_MODULE_IDS).not.toContain("file-reset"); // a one-time tool, not a service
-    expect(AVAILABLE_MODULE_IDS).toHaveLength(8);
+    expect(AVAILABLE_MODULE_IDS).toHaveLength(9);
   });
 });

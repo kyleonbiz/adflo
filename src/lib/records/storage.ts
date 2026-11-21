@@ -9,7 +9,7 @@ import { RECORDS_EVENT, isRemote, remoteActive, remoteList, remoteLoading, remot
  * (see `remote.ts`); the rest stay in the browser until they are moved over.
  */
 export type RecordKind =
-  | "invoices" | "licenses" | "vendors" | "contacts" | "projects"
+  | "invoices" | "licenses" | "vendors" | "contacts" | "projects" | "equipment"
   | "todos" | "reminders" | "signing" | "packets" | "schedules" | "projecttypes"
   | "settings" | "setup" | "chains";
 

@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { createHttpApi } from "@/lib/dms/client/http-api";
 import { e2eSeed } from "@/lib/e2e-seed";
+import type { Equipment } from "@/lib/equipment/types";
+import { useStoredRecords } from "@/lib/records/storage";
 import type { Invoice } from "@/lib/invoices/types";
 import type { License } from "@/lib/licenses/types";
 import type { Project } from "@/lib/projects/types";
@@ -22,6 +24,7 @@ export function useCalendarSources(today: string | null, live = false): Calendar
   const setup = useSetupConfig();
   const reminders = useReminders();
   const documents = useDocumentExpiries(live);
+  const equipment = useStoredRecords<Equipment>("equipment");
   return useMemo(() => {
     if (!today) return { invoices: [], licenses: [], projects: [], vendors: [], reminders: [], documents: [] };
     const starters = installedLicenses(setup?.completedOn ? setup.templates : [], today);
@@ -33,8 +36,9 @@ export function useCalendarSources(today: string | null, live = false): Calendar
       vendors: e2eSeed<Vendor>("vendors") ?? [],
       reminders,
       documents,
+      equipment: equipment ?? e2eSeed<Equipment>("equipment") ?? [],
     };
-  }, [today, setup, reminders, documents]);
+  }, [today, setup, reminders, documents, equipment]);
 }
 
 const emptyDocs: NonNullable<CalendarSources["documents"]> = [];

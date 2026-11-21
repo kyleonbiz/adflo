@@ -2,13 +2,14 @@ import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 const NAMES = [
-  "Dashboard", "Addy", "Documents", "Invoices", "Licenses & Renewals", "Contacts", "Tasks", "Forms & Paperwork",
+  "Dashboard", "Addy", "Documents", "Invoices", "Licenses & Renewals", "Equipment", "Contacts", "Tasks", "Forms & Paperwork",
   "Calendar", "Reporting", "Activity", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });
 
 test.describe("module sidebar on a wide screen", () => {
   test("lists every module in a vertical column with Setup apart at the bottom", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 1100 }); // tall enough that no item has to scroll
     await page.goto("/app/overview");
     await expect(nav(page)).toBeVisible();
     const links = nav(page).getByRole("link");
@@ -22,11 +23,11 @@ test.describe("module sidebar on a wide screen", () => {
     for (let i = 1; i < boxes.length; i++) expect(boxes[i]!.y).toBeGreaterThan(boxes[i - 1]!.y);
     for (const b of boxes) expect(b!.x + b!.width).toBeLessThanOrEqual(270); // inside a sidebar about 256px wide, no sideways scrolling
 
-    const gapBeforeSetup = boxes[11]!.y - (boxes[10]!.y + boxes[10]!.height);
+    const gapBeforeSetup = boxes[12]!.y - (boxes[11]!.y + boxes[11]!.height);
     const gapBetweenOthers = boxes[3]!.y - (boxes[2]!.y + boxes[2]!.height); // two neighbours in the same group
     expect(gapBeforeSetup).toBeGreaterThan(gapBetweenOthers + 20); // set apart
     const viewport = page.viewportSize()!;
-    expect(boxes[11]!.y + boxes[11]!.height).toBeGreaterThan(viewport.height - 120); // down at the bottom
+    expect(boxes[12]!.y + boxes[12]!.height).toBeGreaterThan(viewport.height - 120); // down at the bottom
   });
 
   test("highlights the current module and moves the highlight when you navigate", async ({ page }) => {
