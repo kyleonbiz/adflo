@@ -39,11 +39,11 @@ function Body({ invoice, today, onDownload, onEdit }: { invoice: Invoice; today:
   return (
     <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
       <div className="flex items-start justify-between gap-4 border-b pb-4">
-        <div>
+        <div className="min-w-0">
           <DialogTitle className="text-3xl font-extrabold tracking-tight">INVOICE</DialogTitle>
           <DialogDescription className="mt-1 flex items-center gap-2 text-base"><Building2 className="size-4" aria-hidden />{s.name}</DialogDescription>
         </div>
-        <div className="pr-8 text-right">
+        <div className="shrink-0 whitespace-nowrap pr-8 text-right">
           <p className="text-xl font-bold text-emerald-600">{invoice.number}</p>
           <p className="text-xs text-muted-foreground">Issue date: {invoice.issuedOn}</p>
           <p className="text-xs text-muted-foreground">Due date: {invoice.dueOn}</p>
