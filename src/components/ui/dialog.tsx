@@ -38,7 +38,8 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          "glass-strong fixed z-50 flex flex-col text-card-foreground outline-none",
+          // overflow-y-auto: a dialog taller than the viewport scrolls instead of being cut off.
+          "glass-strong fixed z-50 flex flex-col overflow-y-auto overscroll-contain text-card-foreground outline-none",
           variant === "float" &&
             "inset-x-0 bottom-0 top-8 animate-sheet-in rounded-t-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[calc(100dvh-3rem)] sm:w-[calc(100vw-2rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:animate-pop-in sm:rounded-2xl",
           variant === "upload" &&
@@ -46,7 +47,7 @@ function DialogContent({
           variant === "details" &&
             "inset-x-0 bottom-0 top-8 animate-sheet-in rounded-t-2xl sm:inset-auto sm:left-1/2 sm:top-1/2 sm:h-[min(760px,calc(100dvh-3rem))] sm:w-[calc(100vw-2rem)] sm:max-w-5xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl lg:left-auto lg:right-8 lg:top-1/2 lg:w-[min(1000px,calc(100vw-4rem))] lg:translate-x-0",
           variant === "alert" &&
-            "left-1/2 top-1/2 w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 animate-pop-in rounded-2xl p-6",
+            "left-1/2 top-1/2 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 animate-pop-in rounded-2xl p-6",
           className,
         )}
         {...props}
