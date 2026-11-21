@@ -137,8 +137,7 @@ describe("runSetupChecks", () => {
     expect(byId(config({ modules: ["crm"] }))["templates-crm"]).toBeUndefined(); // CRM has no templates to install
   });
   it("suggests the modules that go together", () => {
-    expect(byId(config({ modules: ["vendors"] }))["vendors-forms"].status).toBe("warn");
-    expect(byId(config({ modules: ["vendors", "forms"] }))["vendors-forms"]).toBeUndefined();
+    expect(byId(config({ modules: ["vendors"] }))["vendors-forms"]).toBeUndefined();
     expect(byId(config({ modules: ["invoices"] }))["invoices-crm"].status).toBe("warn");
     expect(byId(config({ modules: ["invoices", "crm"] }))["invoices-crm"]).toBeUndefined();
   });

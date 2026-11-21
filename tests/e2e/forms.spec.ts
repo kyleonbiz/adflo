@@ -4,14 +4,14 @@ test.describe("forms module", () => {
   test("summary, response counts and search", async ({ page }) => {
     await page.goto("/app/forms");
     await expect(page.getByRole("note")).toContainText("saved in this browser only");
-    await expect(page.getByTestId("form-card")).toHaveCount(3);
+    await expect(page.getByTestId("form-card")).toHaveCount(2);
     const summary = page.getByRole("region", { name: "Summary" });
     await expect(summary).toContainText("New responses");
     await expect(summary).not.toContainText("pproval");
-    const vendor = page.getByTestId("form-card").filter({ hasText: "New vendor intake" });
-    await expect(vendor).toContainText("1 new");
-    await expect(vendor).toContainText("sent 0 times · 2 responses");
-    await expect(vendor).not.toContainText("pproval");
+    const leaveCard = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
+    await expect(leaveCard).toContainText("1 new");
+    await expect(leaveCard).toContainText("sent 0 times · 2 responses");
+    await expect(leaveCard).not.toContainText("pproval");
 
     await page.getByRole("textbox", { name: "Search forms" }).fill("time-off");
     await expect(page.getByTestId("form-card")).toHaveCount(1);
@@ -204,21 +204,21 @@ test.describe("forms module", () => {
 
     await page.getByRole("button", { name: "Delete Equipment requests" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
-    await expect(page.getByTestId("form-card")).toHaveCount(3);
+    await expect(page.getByTestId("form-card")).toHaveCount(2);
   });
 
   test("exports responses as CSV", async ({ page }) => {
     await page.goto("/app/forms");
-    const vendor = page.getByTestId("form-card").filter({ hasText: "New vendor intake" });
+    const vendor = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
     await vendor.getByRole("button", { name: /^Responses/ }).click();
     const download = page.waitForEvent("download");
     await vendor.getByRole("button", { name: "Export CSV" }).click();
     const file = await download;
-    expect(file.suggestedFilename()).toMatch(/^new-vendor-intake-submissions-\d{4}-\d{2}-\d{2}\.csv$/);
+    expect(file.suggestedFilename()).toMatch(/^time-off-request-submissions-\d{4}-\d{2}-\d{2}\.csv$/);
     let text = "";
     for await (const chunk of await file.createReadStream()) text += chunk;
-    expect(text.split("\r\n")[0]).toContain("Company name,Contact email,Service category");
-    expect(text).toContain("Globex Software");
+    expect(text.split("\r\n")[0]).toContain("Employee name,First day off,Last day off");
+    expect(text).toContain("Marta Gill");
   });
 
   test("fits a phone screen without horizontal scroll", async ({ page }) => {

@@ -9,17 +9,6 @@ const f = (id: string, label: string, type: FormField["type"], required = true, 
 export function starterForms(): FormTemplate[] {
   const forms: FormTemplate[] = [
     {
-      id: "form-vendor", name: "New vendor intake", description: "Collect the basics before you start working with a supplier.",
-      sentCount: 0,
-      fields: [
-        f("v-name", "Company name", "text"), f("v-contact", "Contact email", "email"),
-        f("v-service", "Service category", "select", true, ["Supplies", "Software", "Professional services", "Other"]),
-        f("v-spend", "Expected annual spend", "number", false), f("v-w9", "W-9 on file", "checkbox", false),
-        f("v-notes", "Notes", "longtext", false),
-      ],
-      documentTemplate: "",
-    },
-    {
       id: "form-leave", name: "Time-off request", description: "Ask for time off.",
       sentCount: 0,
       fields: [
