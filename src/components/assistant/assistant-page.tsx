@@ -76,7 +76,9 @@ function Chat({ today }: { today: string }) {
     setText("");
     const direct = parseDirect(message);
     if (direct) { runLocally(message, direct); return; }
-    if (llm === false) { addRules(message); return; }
+    // Rules first: plain requests (open a form, what is left, help) are answered here at no cost. Only the rest goes to the model.
+    const rule = respond(stored ?? emptyConfig(), message);
+    if (rule.matched || llm === false) { setTurns((t) => [...t, ...rule.turns]); return; }
 
     const next: Turn[] = [...turns, { role: "user", text: message }];
     setTurns(next);

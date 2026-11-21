@@ -24,4 +24,8 @@ describe("assistant", () => {
     expect(empty.config.templates).toEqual([]);
     expect(run("blah").turns.at(-1)?.text).toContain("I do not set up your account");
   });
+  it("answers plain requests by rule, and leaves open questions for the AI model", () => {
+    for (const input of ["help", "What can you do?", "What is left to do?", "status", "set up my business", "new invoice", "add a contact"]) expect(run(input).matched, input).toBe(true);
+    for (const input of ["How do I set up recurring invoices?", "Why was this license flagged?", "Can you explain what a certificate of insurance is?", "blah"]) expect(run(input).matched, input).toBe(false);
+  });
 });

@@ -861,6 +861,7 @@ Databases go last. Update this section in the same commit as the work.
 - [x] "Remind me" on the flat Tasks list too, not only inside Projects (the alarm-clock button on each open task; the reminder shows in the bell, on Home and on the calendar)
 - [x] AI assistant completes a task in any service, within its limits (Addy now adds to your to-do list, sets reminders and ticks off to-dos by itself, each with Undo; everything else is still a draft you save)
 - [x] Addy no longer sets up accounts (setup is manual in Settings, so nothing is turned on or installed by mistake). It answers questions, reads what is left to do and prepares drafts. Default model is now Sonnet with prompt caching on the system prompt and tools
+- [x] Addy answers plain requests by fixed rules first (open a form, what is left, help, to-dos, reminders, reports) at no cost; only open-ended questions go to the AI model
 - [x] OCR for scanned PDFs (a PDF with no text layer now has its first 3 pages drawn and read like photos, wherever the text reader is turned on; the document index still skips OCR)
 - [ ] Sending email for vendor reminders and scheduled reports (needs a mail service)
 

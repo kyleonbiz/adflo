@@ -5,7 +5,8 @@ import type { SetupConfig } from "@/lib/setup/types";
 
 export interface Link { label: string; href: string }
 export interface Turn { role: "assistant" | "user"; text: string; chips?: string[]; links?: Link[]; download?: { name: string; headers: string[]; rows: (string | number)[][] } }
-interface Reply { turns: Turn[]; config: SetupConfig }
+/** `matched` is true when a fixed rule recognised the request; false means it only fell back to the help text, so the caller may hand it to the AI model. */
+interface Reply { turns: Turn[]; config: SetupConfig; matched?: boolean }
 
 const link = (id: string): Link | null => {
   const m = MODULES.find((x) => x.id === id);
@@ -58,19 +59,34 @@ function draftRequest(lower: string): Turn | null {
   };
 }
 
-/** One step of the conversation. Pure and read-only: it never changes `config`. */
+/** Open-ended questions go to the AI model; the rules only take them when they are one of the buttons or a plain help request. */
+const QUESTION = /^(how|why|where|when|which|who|can|could|should|does|do|is|are|what|whats|what's)\b/;
+const HELP_ASK = /^(help|what can you do|what do you do)\b/;
+const STATUS_ASK = /^(what('?s| is) (left|next)|where (am i|are we) at)\b/;
+
+/**
+ * One step of the conversation, by fixed rules. Pure and read-only: it never changes `config`.
+ * `matched` says whether a rule answered. Short, plain requests are answered here for free; anything else is
+ * reported as unmatched so the AI model (when on) can take it.
+ */
 export function respond(config: SetupConfig, input: string): Reply {
   const text = input.trim();
   const lower = text.toLowerCase();
   const user: Turn = { role: "user", text };
   const wrap = (r: Reply): Reply => ({ ...r, turns: [user, ...r.turns] });
-  if (!text) return { turns: [], config };
+  if (!text) return { turns: [], config, matched: true };
 
-  const draft = draftRequest(lower);
-  if (draft) return wrap({ turns: [draft], config });
-  if (/\b(set ?up|onboard|deploy|install)\b/.test(lower)) {
-    return wrap({ turns: [{ role: "assistant", text: "Account setup is done by you in Settings, so nothing is turned on or installed by mistake. I can tell you what is left to do.", links: [{ label: "Open Settings", href: `${SETUP_PATH}?tab=setup` }], chips: [STATUS] }], config });
+  const words = text.split(/\s+/).length;
+  const question = QUESTION.test(lower);
+
+  if (lower === HELP.toLowerCase() || HELP_ASK.test(lower)) return wrap({ turns: [{ role: "assistant", text: HELP_TEXT, chips: MAIN_CHIPS }], config, matched: true });
+  if (!question) {
+    const draft = draftRequest(lower);
+    if (draft) return wrap({ turns: [draft], config, matched: true });
+    if (words <= 8 && /\b(set ?up|onboard|deploy|install)\b/.test(lower)) {
+      return wrap({ turns: [{ role: "assistant", text: "Account setup is done by you in Settings, so nothing is turned on or installed by mistake. I can tell you what is left to do.", links: [{ label: "Open Settings", href: `${SETUP_PATH}?tab=setup` }], chips: [STATUS] }], config, matched: true });
+    }
   }
-  if (/\b(status|left|todo|to do|progress|check|health|next)\b/.test(lower)) return wrap(status(config));
-  return wrap({ turns: [{ role: "assistant", text: HELP_TEXT, chips: MAIN_CHIPS }], config });
+  if (lower === STATUS.toLowerCase() || STATUS_ASK.test(lower) || (!question && words <= 6 && /\b(status|left|todo|to do|progress|health|next)\b/.test(lower))) return wrap({ ...status(config), matched: true });
+  return wrap({ turns: [{ role: "assistant", text: HELP_TEXT, chips: MAIN_CHIPS }], config, matched: false });
 }
