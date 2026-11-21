@@ -186,6 +186,23 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
       audit("posted an update on", p.name, "Tasks", "/app/projects?view=projects");
       setNotice(`Update posted to ${p.name}.`);
     },
+    onBulkTasks: (items, mode) => {
+      const ids = new Set(items.map((i) => i.task.id));
+      const before = projects;
+      setProjects((all) => all.map((p) => {
+        const mine = items.filter((i) => i.project.id === p.id);
+        if (mine.length === 0) return p;
+        if (mode === "remove") { return { ...p, tasks: p.tasks.filter((t) => !ids.has(t.id)) }; }
+        let tasks = p.tasks;
+        for (const { task } of mine) {
+          const cur = tasks.find((t) => t.id === task.id);
+          if (cur && !cur.done) { tasks = completeTask(tasks, task.id, today, rid("t")); }
+        }
+        return { ...p, tasks };
+      }));
+      audit(mode === "done" ? "completed" : "removed", `${items.length} tasks`, "Tasks", "/app/projects");
+      setNotice(mode === "done" ? `${items.length} tasks done.` : `${items.length} tasks removed.`, () => setProjects(before));
+    },
     onRemoveTask: (p, t) => {
       const index = p.tasks.findIndex((y) => y.id === t.id);
       patch(p.id, (x) => ({ ...x, tasks: x.tasks.filter((y) => y.id !== t.id) }));

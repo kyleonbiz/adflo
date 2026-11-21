@@ -29,6 +29,8 @@ export interface ProjectActions {
   onAddTask: (project: Project, values: TaskFormValues) => void;
   onEditTask: (project: Project, task: Task, values: TaskFormValues) => void;
   onRemoveTask: (project: Project, task: Task) => void;
+  /** Finish or remove several tasks at once (the Tasks list bulk bar). */
+  onBulkTasks: (items: { project: Project; task: Task }[], mode: "done" | "remove") => void;
   onAddMilestone: (project: Project, title: string, dueOn: string) => string | null;
   onToggleMilestone: (project: Project, id: string) => void;
   onRemoveMilestone: (project: Project, id: string) => void;
