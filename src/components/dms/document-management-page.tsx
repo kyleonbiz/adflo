@@ -10,6 +10,9 @@ import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
 import { DocumentDetailsPanel } from "./document-details-panel";
 import { DocumentGrid } from "./document-grid";
 import { DocumentToolbar } from "./document-toolbar";
+import { DocumentsBulkBar } from "./documents-bulk-bar";
+import { ExpiringDocuments } from "./expiring-documents";
+import { useSelection } from "@/components/ui/bulk-bar";
 import { FolderGrid } from "./folder-grid";
 import { EmptyState, ErrorState, LoadingSkeleton } from "./states";
 import { Toaster } from "./toaster";
@@ -31,6 +34,8 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
   const [uploadFolder, setUploadFolder] = useState<string | null>(null);
   const [teamOpen, setTeamOpen] = useState(false);
   const [emptying, setEmptying] = useState(false);
+  const sel = useSelection();
+  const [expiryVersion, setExpiryVersion] = useState(0);
 
   const openUpload = () => {
     setUploadFolder(m.query.folderId);
@@ -75,7 +80,7 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
       {notice && (
         <div
           role="note"
-          className="flex items-start gap-2 rounded-t-2xl px-5 pt-3 text-[11px] text-muted-foreground sm:px-8"
+          className="flex items-start gap-2 rounded-t-2xl px-5 pt-3 text-xs text-muted-foreground sm:px-8"
         >
           {api.mode === "demo" ? <Info className="mt-px size-3 shrink-0 text-brand-indigo" aria-hidden /> : <FlaskConical className="mt-px size-3 shrink-0 text-amber-500" aria-hidden />}
           <p>{notice}</p>
@@ -106,6 +111,8 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
               onDelete={m.deleteFolder}
             />
 
+            <ExpiringDocuments api={api} version={expiryVersion} onOpen={(id) => void m.openDocument(id)} />
+
             <section aria-labelledby="library-heading" className="space-y-4">
               <div className="flex items-baseline justify-between gap-3">
                 <h3 id="library-heading" className="text-sm font-semibold">
@@ -129,8 +136,38 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
                   onClearFilters={() => m.patchQuery({ search: "", category: null, fileType: null, tag: null })}
                 />
               )}
+              {m.listState === "ready" && m.items.length > 0 && query.view !== "trash" && m.perms.write && (
+                <DocumentsBulkBar
+                  selected={m.items.filter((d) => sel.has(d.id))}
+                  total={m.items.length}
+                  folders={boot?.folders ?? []}
+                  onSelectAll={() => sel.set(m.items.map((d) => d.id))}
+                  onClear={sel.clear}
+                  onMove={async (folderId) => {
+                    const picked = m.items.filter((d) => sel.has(d.id));
+                    for (const d of picked) await m.update(d.id, { folderId });
+                    m.notify("success", `${picked.length} document${picked.length === 1 ? "" : "s"} moved.`);
+                    sel.clear();
+                  }}
+                  onTag={async (tag) => {
+                    const picked = m.items.filter((d) => sel.has(d.id));
+                    for (const d of picked) if (!d.tags.includes(tag)) await m.update(d.id, { tags: [...d.tags, tag] });
+                    m.notify("success", `Tag “${tag}” added to ${picked.length} document${picked.length === 1 ? "" : "s"}.`);
+                  }}
+                  onTrash={async () => {
+                    const picked = m.items.filter((d) => sel.has(d.id));
+                    let n = 0;
+                    for (const d of picked) if (await m.remove(d, false)) n++;
+                    sel.clear();
+                    setExpiryVersion((v) => v + 1);
+                    if (n < picked.length) m.notify("error", `${picked.length - n} could not be moved (starred documents stay).`);
+                  }}
+                />
+              )}
               {m.listState === "ready" && m.items.length > 0 && (
                 <DocumentGrid
+                  selected={sel.ids}
+                  onToggleSelect={sel.toggle}
                   items={m.items}
                   total={m.total}
                   folders={boot?.folders ?? []}

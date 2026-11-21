@@ -8,7 +8,7 @@ import { useToday } from "@/components/modules/use-today";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDayLong } from "@/lib/dates";
-import { contactsForVendor } from "@/lib/profiles/logic";
+import { contactsForVendor, projectsLinkedTo } from "@/lib/profiles/logic";
 import { useDashboardSources } from "@/lib/records/sources";
 import { useRecordsLoading } from "@/lib/records/storage";
 import { followUpState, notesOf, unansweredReminders } from "@/lib/vendors/follow-up";
@@ -21,8 +21,9 @@ const RISK_LABEL = { standard: "Standard", critical: "Critical to the business" 
 export function VendorProfile({ id }: { id: string }) {
   const today = useToday();
   const loading = useRecordsLoading();
-  const { vendors, contacts } = useDashboardSources(today);
+  const { vendors, contacts, projects } = useDashboardSources(today);
   const vendor = vendors.find((v) => v.id === id);
+  const linkedProjects = useMemo(() => (vendor ? projectsLinkedTo("vendor", vendor.name, projects) : []), [vendor, projects]);
   const people = useMemo(() => (vendor ? contactsForVendor(vendor, contacts) : []), [vendor, contacts]);
 
   if (!today || loading) return <ProfileSkeleton />;
@@ -118,6 +119,23 @@ export function VendorProfile({ id }: { id: string }) {
 
       <Section title="Notes">
         {vendor.notes ? <p className="whitespace-pre-line text-sm">{vendor.notes}</p> : <None>No notes.</None>}
+      </Section>
+
+      <Section title="Projects" count={linkedProjects.length} testId="vendor-projects">
+        {linkedProjects.length === 0 ? <None>No projects linked to this vendor. Link one from the project form.</None> : (
+          <ul className="divide-y text-sm">
+            {linkedProjects.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <Link href="/app/projects?view=projects" className={`font-medium ${profileLink}`}>{p.name}</Link>
+                <span className="text-muted-foreground">{p.tasks.filter((t) => t.done).length} of {p.tasks.length} tasks done</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section title="Documents">
+        <p className="text-sm"><Link href={`/app?q=${encodeURIComponent(vendor.name)}`} className={`text-primary ${profileLink}`}>Find documents that mention {vendor.name}</Link></p>
       </Section>
 
       {people.length > 0 && (

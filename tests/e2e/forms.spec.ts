@@ -1,6 +1,18 @@
 import { expect, test } from "./fixtures";
 
 test.describe("forms module", () => {
+  test("selects forms and deletes them in bulk", async ({ page }) => {
+    await page.goto("/app/forms");
+    const first = page.getByTestId("form-card").first();
+    await expect(first).toBeVisible();
+    const before = await page.getByTestId("form-card").count();
+    await first.getByRole("checkbox", { name: /^Select / }).check();
+    await expect(page.getByTestId("bulk-bar")).toContainText("1 selected");
+    await page.getByTestId("bulk-bar").getByRole("button", { name: "Delete" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+    await expect(page.getByTestId("form-card")).toHaveCount(before - 1);
+  });
+
   test("summary, response counts and search", async ({ page }) => {
     await page.goto("/app/forms");
     await expect(page.getByRole("note")).toContainText("saved in this browser only");

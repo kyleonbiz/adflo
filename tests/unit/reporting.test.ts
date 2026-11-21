@@ -35,8 +35,8 @@ const sum = (rows: { value: number }[]) => rows.reduce((n, r) => n + r.value, 0)
 describe("buildReports", () => {
   it("makes one report per service that holds records, in catalogue order, each linking to its page", () => {
     const reports = buildReports(full(), TODAY);
-    expect(reports.map((r) => r.id)).toEqual(["documents", "invoices", "licenses", "vendors", "crm", "projects", "forms"]);
-    expect(reports.map((r) => r.href)).toEqual(["/app", "/app/invoices", "/app/licenses", "/app/vendors", "/app/contacts", "/app/projects", "/app/forms"]);
+    expect(reports.map((r) => r.id)).toEqual(["documents", "invoices", "licenses", "vendors", "crm", "equipment", "projects", "forms"]);
+    expect(reports.map((r) => r.href)).toEqual(["/app", "/app/invoices", "/app/licenses", "/app/vendors", "/app/contacts", "/app/equipment", "/app/projects", "/app/forms"]);
     expect(reports.map((r) => r.name)).toContain("Contacts");
   });
 
@@ -92,5 +92,15 @@ describe("buildReports", () => {
   it("ignores forms that no longer exist when counting submissions", () => {
     const src = { ...full(), forms: sampleForms().filter((f) => f.id !== "form-vendor") };
     expect(by(buildReports(src, TODAY), "forms").count).toBe(3);
+  });
+});
+
+describe("equipment report", () => {
+  it("counts items and lists them with their dates", () => {
+    const src = { ...emptySources(), equipment: [{ id: "e1", name: "Van", type: "vehicle", identifier: "", location: "", assignedTo: "Sam", status: "in_service", purchasedOn: null, warrantyEndsOn: null, nextServiceOn: "2020-01-01", nextInspectionOn: null, serviceVendor: "", notes: "", createdOn: "2026-01-01" }] } as ReportSources;
+    const r = by(buildReports(src, TODAY), "equipment");
+    expect(r.count).toBe(1);
+    expect(r.metrics.find((m) => m.label === "Needs attention")?.value).toBe("1");
+    expect(r.table.rows[0]).toHaveLength(r.table.headers.length);
   });
 });

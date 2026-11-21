@@ -1,11 +1,13 @@
 import { addDays, addMonths } from "@/lib/dates";
+import { equipmentEvents } from "@/lib/equipment/logic";
+import type { Equipment } from "@/lib/equipment/types";
 import type { Invoice } from "@/lib/invoices/types";
 import type { License } from "@/lib/licenses/types";
 import type { Reminder } from "@/lib/reminders/logic";
 import type { Project } from "@/lib/projects/types";
 import type { Vendor } from "@/lib/vendors/types";
 
-export const EVENT_KINDS = ["Invoices", "Licenses", "Tasks", "Vendors", "Reminders"] as const;
+export const EVENT_KINDS = ["Invoices", "Licenses", "Tasks", "Vendors", "Documents", "Equipment", "Reminders"] as const;
 export type EventKind = (typeof EVENT_KINDS)[number];
 
 /** One thing that falls on one day. `late` marks anything whose day has already passed and is still open. */
@@ -25,6 +27,9 @@ export interface CalendarSources {
   projects: Project[];
   vendors: Vendor[];
   reminders: Reminder[];
+  /** Documents with an expiration date (from the Documents module). */
+  equipment?: Equipment[];
+  documents?: { id: string; name: string; expiresOn: string }[];
 }
 
 const isDayString = (s: unknown): s is string => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -59,6 +64,12 @@ export function buildEvents(src: CalendarSources, today: string): CalendarEvent[
       if (d.required && d.expiresOn) add({ id: `vd-${d.id}`, day: d.expiresOn, title: `${d.type} expires`, detail: v.name, kind: "Vendors", href: "/app/vendors" });
     }
     if (v.contractEndsOn) add({ id: `vc-${v.id}`, day: v.contractEndsOn, title: `Contract ends`, detail: v.name, kind: "Vendors", href: "/app/vendors" });
+  }
+  for (const q of equipmentEvents(src.equipment ?? [], today)) {
+    add({ id: q.id, day: q.day, title: q.title, detail: q.detail, kind: "Equipment", href: "/app/equipment" });
+  }
+  for (const d of src.documents ?? []) {
+    add({ id: `doc-${d.id}`, day: d.expiresOn, title: `${d.name} expires`, detail: "Document", kind: "Documents", href: `/app?q=${encodeURIComponent(d.name)}` });
   }
   for (const r of src.reminders) {
     add({ id: r.id, day: r.on, title: r.text, detail: "Reminder", kind: "Reminders", href: r.href });

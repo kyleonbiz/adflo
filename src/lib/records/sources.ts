@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { DashboardSources } from "@/lib/dashboard/logic";
 import { e2eSeed } from "@/lib/e2e-seed";
 import type { Contact } from "@/lib/contacts/types";
+import type { Equipment } from "@/lib/equipment/types";
 import type { Invoice } from "@/lib/invoices/types";
 import type { License } from "@/lib/licenses/types";
 import type { Project } from "@/lib/projects/types";
@@ -37,13 +38,15 @@ export function useDashboardSources(today: string | null): DashboardSources & { 
   const projects = useStoredRecords<Project>("projects");
   const vendors = useStoredRecords<Vendor>("vendors");
   const contacts = useStoredRecords<Contact>("contacts");
+  const equipment = useStoredRecords<Equipment>("equipment");
   const setup = useSetupConfig();
   const loading = useRecordsLoading();
-  return useMemo(() => !today || loading ? { invoices: [], licenses: [], projects: [], vendors: [], contacts: [] } : ({
+  return useMemo(() => !today || loading ? { invoices: [], licenses: [], projects: [], vendors: [], contacts: [], equipment: [] } : ({
     invoices: invoices ?? e2eSeed<Invoice>("invoices") ?? [],
     licenses: licenseRecords(licenses, today, setup),
     projects: projects ?? e2eSeed<Project>("projects") ?? [],
     vendors: vendors ?? e2eSeed<Vendor>("vendors") ?? [],
     contacts: contacts ?? e2eSeed<Contact>("contacts") ?? [],
-  }), [invoices, licenses, projects, vendors, contacts, setup, today, loading]);
+    equipment: equipment ?? e2eSeed<Equipment>("equipment") ?? [],
+  }), [invoices, licenses, projects, vendors, contacts, equipment, setup, today, loading]);
 }

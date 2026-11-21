@@ -109,10 +109,12 @@ function Chat({ today }: { today: string }) {
     }
   };
   const last = turns[turns.length - 1];
+  const fresh = turns.length === 1;
+  const reset = () => { setTurns([greeting(stored ?? emptyConfig())]); setUndoers({}); setUndone(new Set()); setText(""); };
 
   return (
     <section aria-label="Conversation with Addy" className="flex flex-col rounded-2xl border bg-card shadow-panel">
-      <ol className="max-h-[60vh] min-h-72 space-y-3 overflow-y-auto p-4" data-testid="assistant-log">
+      <ol aria-live="polite" aria-label="Conversation" className="max-h-[60vh] min-h-72 space-y-3 overflow-y-auto p-4" data-testid="assistant-log">
         {turns.map((t, i) => (
           <li key={i} className={cn("flex", t.role === "user" && "justify-end")}>
             <div className={cn("max-w-[85%] space-y-2 rounded-2xl px-4 py-2.5 text-sm", t.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted")}>
@@ -140,15 +142,26 @@ function Chat({ today }: { today: string }) {
         <div ref={end} />
       </ol>
       <div className="space-y-3 border-t p-4">
+        {fresh && (
+          <ul className="flex flex-wrap gap-2" aria-label="Things to try">
+            {["Add a license renewal", "What is due this week?", "Draft an invoice"].map((c) => (
+              <li key={c}><button type="button" onClick={() => void send(c)} className="h-8 rounded-full border bg-card px-3 text-xs font-medium text-primary outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring">{c}</button></li>
+            ))}
+          </ul>
+        )}
         {last?.role === "assistant" && last.chips && (
           <ul className="flex flex-wrap gap-2" aria-label="Suggested replies">
             {last.chips.map((c) => <li key={c}><button type="button" onClick={() => void send(c)} className="h-8 rounded-full border bg-card px-3 text-xs font-medium text-primary outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring">{c}</button></li>)}
           </ul>
         )}
         <form onSubmit={(e) => { e.preventDefault(); void send(text); }} className="flex gap-2">
-          <Input aria-label="Message Addy" value={text} maxLength={200} onChange={(e) => setText(e.target.value)} placeholder="Type a message" />
+          <Input aria-label="Message Addy" value={text} maxLength={1000} onChange={(e) => setText(e.target.value)} placeholder="Type a message" />
           <Button type="submit" disabled={!text.trim() || busy}><Send /> <span className="sr-only sm:not-sr-only">Send</span></Button>
         </form>
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span data-testid="assistant-mode">{llm === null ? "Addy answers with built-in rules unless the AI model is switched on for your plan." : llm ? "Answering with the AI model." : "Answering with built-in rules."}</span>
+          {!fresh && <button type="button" onClick={reset} className="rounded font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">New chat</button>}
+        </div>
       </div>
     </section>
   );
@@ -160,7 +173,7 @@ export function AssistantPage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Sparkles className="size-6 text-primary" aria-hidden /> AI Assistant</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Sparkles className="size-6 text-primary" aria-hidden /> Addy</h1>
         <p className="text-sm text-muted-foreground">Addy answers questions about AdFlo and your records, and prepares drafts in your services for you to review. You set up your account yourself in Settings.</p>
       </div>
       {today ? <Chat today={today} /> : <Skeleton className="h-96 rounded-2xl" aria-busy="true" />}

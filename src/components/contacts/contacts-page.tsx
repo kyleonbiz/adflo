@@ -1,5 +1,6 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Clock, Download, FileText, GitMerge, Mail, Pencil, Phone, Plus, Search, Trash2, Upload, Users, X } from "lucide-react";
@@ -7,7 +8,7 @@ import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SplitButton } from "@/components/ui/split-button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -184,7 +185,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <div role="status" aria-live="polite" className={notice ? "sticky top-2 z-20 flex items-start justify-between gap-3 rounded-xl border bg-card px-4 py-2.5 text-sm shadow-float" : "sr-only"}>
         <span>{notice}</span>
@@ -408,17 +409,9 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
       <ImportDialog open={importing} existing={contacts} onOpenChange={setImporting} onImport={runApply} />
       <MergeDialog pair={merging} onOpenChange={(o) => !o && setMerging(null)} onMerge={doMerge} />
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>{deleting && deleting.length > 1 ? `Delete ${deleting.length} contacts?` : "Delete contact?"}</DialogTitle>
-          <DialogDescription className="mt-1">
+      <ConfirmDialog open={!!deleting} title={deleting && deleting.length > 1 ? `Delete ${deleting.length} contacts?` : "Delete contact?"} description={<>
             {deleting && deleting.length === 1 ? `${deleting[0].name} will be removed.` : `${deleting?.length ?? 0} selected contacts will be removed.`} You can undo this right after.
-          </DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+          </>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
                   const ids = new Set(deleting.map((c) => c.id));
                   audit("deleted", deleting.length === 1 ? `the contact ${deleting[0].name}` : `${deleting.length} contacts`, "Contacts", "/app/contacts");
@@ -426,13 +419,7 @@ export function ContactsPage({ preview, initialQuery = "", initialAdd }: { previ
                   setSelected(new Set());
                 }
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              }} />
     </div>
   );
 }

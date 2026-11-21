@@ -9,6 +9,8 @@ export interface Signer {
   signedAt?: string;
   /** What they typed as their signature. */
   signature?: string;
+  /** Days a reminder email was prepared for this signer, oldest first. */
+  remindedOn?: string[];
 }
 
 export interface SigningRequest {
@@ -85,4 +87,30 @@ export function signedCopyText(r: SigningRequest): string {
   lines.push("", `Requested by ${r.createdBy} on ${formatDayLong(r.createdOn)}`, `Document fingerprint (SHA-256): ${r.hash}`, "",
     "A typed name with an explicit agreement was recorded as each signature. Keep this page with the original document.");
   return lines.filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n") + "\n";
+}
+
+/** Days between reminders to the same signer. */
+export const SIGNER_REMINDER_GAP_DAYS = 7;
+
+const dayGap = (a: string, b: string) => Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
+
+/** True for a signer who has not signed, has an email, and was not reminded in the last week (a request needs to be at least 2 days old). */
+export function signerDueReminder(r: SigningRequest, s: Signer, today: string): boolean {
+  if (s.signedAt || !s.email) return false;
+  const last = (s.remindedOn ?? []).at(-1);
+  return last ? dayGap(last, today) >= SIGNER_REMINDER_GAP_DAYS : dayGap(r.createdOn, today) >= 2;
+}
+
+/** The reminder to a signer who has not signed yet. */
+export function signerReminderEmail(r: SigningRequest, s: Signer): { to: string; subject: string; body: string } {
+  const n = (s.remindedOn ?? []).length;
+  return {
+    to: s.email,
+    subject: `${n === 0 ? "Please sign" : "Reminder: please sign"} ${r.title}`,
+    body: [`Hi ${s.name.split(" ")[0] || "there"},`, "", n === 0 ? `A quick reminder that "${r.title}" is waiting for your signature.` : `Following up: "${r.title}" is still waiting for your signature.`, "", "Please reply when it is done, or let me know if you have questions.", "", "Thank you"].join("\n"),
+  };
+}
+
+export function logSignerReminder(r: SigningRequest, signerId: string, today: string): SigningRequest {
+  return { ...r, signers: r.signers.map((s) => (s.id === signerId ? { ...s, remindedOn: [...(s.remindedOn ?? []), today].slice(-20) } : s)) };
 }

@@ -7,6 +7,7 @@ import { AlertTriangle, BellRing, CheckCircle2, ClipboardList, Hourglass, Plus }
 import { SummaryTile } from "@/components/modules/summary-tile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { STALLED_AFTER_DAYS, summarizeOnboarding, type OnboardingRow } from "@/lib/control/onboarding";
 import type { AutoStatus } from "@/lib/control/auto-due";
 import { cooldownHoursLeft, nextReminder, reminderAgo } from "@/lib/control/reminders";
@@ -19,7 +20,29 @@ const LABEL: Record<Filter, string> = { progress: "In progress", stalled: "Stall
 
 /** Every client's setup progress in one list, so the ones that are stuck stand out. Each row opens the client's profile. */
 export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }: { rows: OnboardingRow[]; canAdd: boolean; canRemind?: boolean; sample?: boolean; auto?: AutoStatus }) {
+  const router = useRouter();
   const [filter, setFilter] = useState<Filter>("progress");
+  const [bulkAsk, setBulkAsk] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState("");
+  // Clients who can be reminded right now: something outstanding and not reminded in the last day.
+  const remindable = useMemo(() => rows.filter((r) => nextReminder(r.client) && cooldownHoursLeft(r.client.lastReminderAt) === 0), [rows]);
+  async function remindAll() {
+    setBulkBusy(true); setBulkMsg("");
+    let sent = 0, failed = 0;
+    for (const r of remindable) {
+      const next = nextReminder(r.client);
+      if (!next) continue;
+      try {
+        const res = await fetch(`/api/control/clients/${r.client.id}/remind`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: next.kind }) });
+        const json = await res.json().catch(() => null);
+        if (res.ok && json?.ok) sent++; else failed++;
+      } catch { failed++; }
+    }
+    setBulkBusy(false); setBulkAsk(false);
+    setBulkMsg(`Sent ${sent} reminder${sent === 1 ? "" : "s"}${failed ? `; ${failed} could not be sent` : ""}.`);
+    router.refresh();
+  }
   const summary = useMemo(() => summarizeOnboarding(rows), [rows]);
   // New clients that still need setting up sit in their own area at the top; the filters below work on everyone else.
   const fresh = useMemo(() => rows.filter((r) => r.isNew), [rows]);
@@ -34,10 +57,19 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }
           <h1 className="text-2xl font-semibold tracking-tight">Onboarding</h1>
           <p className="text-sm text-muted-foreground">Where each new client is in getting set up. Open a client to work through their steps.</p>
         </div>
-        {canAdd && <Button asChild><Link href="/control/clients"><Plus /> Add a client</Link></Button>}
+        <div className="flex flex-wrap gap-2">
+          {canRemind && !sample && remindable.length > 0 && <Button variant="outline" disabled={bulkBusy} onClick={() => setBulkAsk(true)}><BellRing /> Remind all ({remindable.length})</Button>}
+          {canAdd && <Button asChild><Link href="/control/clients"><Plus /> Add a client</Link></Button>}
+        </div>
       </div>
       {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample clients.</p>}
       {auto && <AutoNote auto={auto} />}
+      {bulkMsg && <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">{bulkMsg}</p>}
+      <ConfirmDialog
+        open={bulkAsk} title={`Remind ${remindable.length} client${remindable.length === 1 ? "" : "s"}?`} confirmLabel={bulkBusy ? "Sending…" : "Send"} destructive={false}
+        description="Each owner is emailed a reminder about their next outstanding step. Fresh links replace any earlier ones. Clients reminded in the last day are skipped."
+        onCancel={() => !bulkBusy && setBulkAsk(false)} onConfirm={() => void remindAll()}
+      />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <SummaryTile icon={Hourglass} label="Being set up" value={summary.inProgress} tone="text-sky-600" />

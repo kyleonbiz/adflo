@@ -1,5 +1,6 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, CircleAlert, CircleX, ExternalLink, Rocket, Sparkles } from "lucide-react";
@@ -308,7 +309,7 @@ export function SetupPage({ base, preview }: { base: "/app"; preview?: string })
 
   return (
     <div className="space-y-5">
-      {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
+      {preview && <PreviewNote>{preview}</PreviewNote>}
       {!today ? (
         <div className="space-y-3" aria-busy="true"><Skeleton className="h-9 w-2/3" /><Skeleton className="h-64" /></div>
       ) : (

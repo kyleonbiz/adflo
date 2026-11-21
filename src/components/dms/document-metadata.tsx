@@ -20,7 +20,7 @@ import { contentStatusLabel } from "./snippet";
 
 export function SectionLabel({ children, id }: { children: React.ReactNode; id?: string }) {
   return (
-    <h4 id={id} className="mb-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <h4 id={id} className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
       {children}
     </h4>
   );

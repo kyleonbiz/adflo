@@ -1,11 +1,14 @@
 "use client";
 
+import { readParam, useUrlFilters } from "@/lib/url-filters";
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FolderKanban, ListTodo, Plus, Search, X } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { useCurrentUserName } from "@/components/current-user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -85,11 +88,12 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
     ),
   );
   const [view, setView] = useState<ProjectsViewName>(initialView);
-  const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
-  const [showDone, setShowDone] = useState(false);
-  const [query, setQuery] = useState(initialQuery);
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>(() => readParam<TaskFilter>("filter", "all", ["all", "overdue", "week", "repeating"]));
+  const [showDone, setShowDone] = useState(() => readParam<string>("done", "") === "1");
+  const [query, setQuery] = useState(() => initialQuery || readParam("q", ""));
   const [statusFilter, setStatusFilter] = useState<"all" | ProjectStatus>("all");
   const [overdueOnly, setOverdueOnly] = useState(false);
+  useUrlFilters({ q: query, filter: taskFilter, done: showDone ? "1" : "" }, { filter: "all" });
   const [sort, setSort] = useState<ProjectSort>("due");
   const [formFor, setFormFor] = useState<Project | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Project | null>(null);
@@ -183,6 +187,23 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
       patch(p.id, (x) => addUpdate(x, { text, by: me, on: today }, rid("u")));
       audit("posted an update on", p.name, "Tasks", "/app/projects?view=projects");
       setNotice(`Update posted to ${p.name}.`);
+    },
+    onBulkTasks: (items, mode) => {
+      const ids = new Set(items.map((i) => i.task.id));
+      const before = projects;
+      setProjects((all) => all.map((p) => {
+        const mine = items.filter((i) => i.project.id === p.id);
+        if (mine.length === 0) return p;
+        if (mode === "remove") { return { ...p, tasks: p.tasks.filter((t) => !ids.has(t.id)) }; }
+        let tasks = p.tasks;
+        for (const { task } of mine) {
+          const cur = tasks.find((t) => t.id === task.id);
+          if (cur && !cur.done) { tasks = completeTask(tasks, task.id, today, rid("t")); }
+        }
+        return { ...p, tasks };
+      }));
+      audit(mode === "done" ? "completed" : "removed", `${items.length} tasks`, "Tasks", "/app/projects");
+      setNotice(mode === "done" ? `${items.length} tasks done.` : `${items.length} tasks removed.`, () => setProjects(before));
     },
     onRemoveTask: (p, t) => {
       const index = p.tasks.findIndex((y) => y.id === t.id);
@@ -284,7 +305,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <div role="status" aria-live="polite" className={notice ? "sticky top-2 z-20 flex items-start justify-between gap-3 rounded-xl border bg-card px-4 py-2.5 text-sm shadow-float" : "sr-only"}>
         <span key={notice?.n}>{notice?.text}</span>
@@ -458,26 +479,12 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
         onSubmit={saveForm}
       />
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Delete project?</DialogTitle>
-          <DialogDescription className="mt-1">
+      <ConfirmDialog open={!!deleting} title="Delete project?" description={<>
             {deleting?.name}{deleting && deleting.tasks.length > 0 ? ` and its ${plural(deleting.tasks.length, "task")} will be removed.` : " will be removed."} You can undo this right after.
-          </DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+          </>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) deleteProject(deleting);
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              }} />
 
       <Dialog open={!!completing} onOpenChange={(o) => !o && setCompleting(null)}>
         <DialogContent variant="alert">

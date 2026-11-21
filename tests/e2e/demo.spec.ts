@@ -29,6 +29,20 @@ test.describe("documents preview", () => {
     await expect(open).toBeFocused();
   });
 
+  test("selects several documents, tags them together and moves them to the trash", async ({ page }) => {
+    await page.goto("/app");
+    await addDocuments(page);
+    await page.getByRole("checkbox", { name: "Select Invoice_INV-2041_Northwind.pdf" }).check();
+    await page.getByRole("checkbox", { name: "Select NDA_Summit_Property_Group.docx" }).check();
+    const bar = page.getByTestId("bulk-bar");
+    await expect(bar).toContainText("2 documents selected");
+    await bar.getByLabel("Tag to add to selected").fill("q4-review");
+    await bar.getByRole("button", { name: "Add tag" }).click();
+    await expect(page.getByText(/Tag .q4-review. added to 2 documents/)).toBeVisible();
+    await bar.getByRole("button", { name: "Move to trash" }).click();
+    await expect(page.getByTestId("document-card")).toHaveCount(2);
+  });
+
   test("unsupported formats show a download-to-view fallback", async ({ page }) => {
     await page.goto("/app");
     await addDocuments(page);

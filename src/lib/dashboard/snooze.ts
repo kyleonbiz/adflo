@@ -3,7 +3,7 @@ import { addDays } from "@/lib/dates";
 /** Item id -> the first day it shows again. */
 export type Snoozed = Record<string, string>;
 
-export const snooze = (s: Snoozed, id: string, today: string): Snoozed => ({ ...s, [id]: addDays(today, 1) });
+export const snooze = (s: Snoozed, id: string, today: string, days = 1): Snoozed => ({ ...s, [id]: addDays(today, days) });
 export const isSnoozed = (s: Snoozed, id: string, today: string): boolean => (s[id] ?? "") > today;
 
 /** Forgets snoozes that have run out, so the saved map stays small. */

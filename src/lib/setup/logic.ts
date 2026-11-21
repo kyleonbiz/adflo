@@ -27,6 +27,7 @@ const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
     { id: "vendors", reason: "Subcontractors need insurance certificates on file." },
     { id: "projects", reason: "Jobs have tasks and deadlines." },
     { id: "forms", reason: "Change orders and job forms." },
+    { id: "equipment", reason: "Tools, trucks and equipment need service and inspection dates tracked." },
   ],
   "Healthcare practice": [
     { id: "licenses", reason: "Practitioner licenses and certifications renew." },
@@ -56,12 +57,14 @@ const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
     { id: "vendors", reason: "Parts suppliers and repair shops need insurance on file." },
     { id: "forms", reason: "Inspection checklists and accident reports." },
     { id: "projects", reason: "Fleet audits and service schedules." },
+    { id: "equipment", reason: "Vehicles and shop equipment have service and inspection dates." },
   ],
   "Home services": [
     { id: "licenses", reason: "Contractor licenses, bonds and insurance must stay current." },
     { id: "projects", reason: "Every job has steps and a finish date." },
     { id: "vendors", reason: "Subcontractors and suppliers." },
     { id: "crm", reason: "Customers and repeat clients." },
+    { id: "equipment", reason: "Tools, vehicles and equipment need service dates tracked." },
   ],
   "Beauty & wellness": [
     { id: "licenses", reason: "Individual licenses and the shop permit renew on different dates." },

@@ -52,6 +52,8 @@ export interface License {
   /** What renewing costs, in whole dollars. Absent when not known. */
   renewalCost?: number | null;
   renewals?: RenewalRecord[];
+  /** Days on which a renewal reminder email was prepared, oldest first. Cleared when the license is renewed. */
+  remindedOn?: string[];
 }
 
 /** Documents a license of each category usually needs at renewal; they prefill the add form. */

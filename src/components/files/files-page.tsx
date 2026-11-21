@@ -1,5 +1,6 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, Copy, Download, FileInput, FolderOpen, FolderTree, Pencil, ShieldCheck, Undo2, Upload } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
@@ -84,7 +85,7 @@ export function FilesPage({ preview }: { preview?: string }) {
         {files && <Button variant="outline" onClick={() => { setFiles(null); setNotes(null); setApproved(false); setNotice(""); }}>Start over</Button>}
       </div>
 
-      {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
+      {preview && <PreviewNote>{preview}</PreviewNote>}
       <p role="status" aria-live="polite" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
 
       {!files || !plan || !notes ? (
@@ -93,6 +94,7 @@ export function FilesPage({ preview }: { preview?: string }) {
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" aria-hidden />
             <p className="text-sm text-muted-foreground">Files are read in your browser to compare them. <strong className="text-foreground">Nothing is uploaded, and nothing on your computer is changed or deleted.</strong> You get a plan and a script you run yourself.</p>
           </div>
+          <p className="text-xs text-muted-foreground">Limits: up to {MAX_FILES.toLocaleString()} files per run, files up to 50 MB are compared by their contents, and about 500 MB in total. Larger files are listed but not compared.</p>
           <div className="flex flex-wrap gap-2">
             <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/30 hover:bg-primary/90 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
               <FolderOpen className="size-4" aria-hidden /> Choose a folder

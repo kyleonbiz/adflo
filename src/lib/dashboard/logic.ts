@@ -1,5 +1,7 @@
 import { addDays, formatDayLong } from "@/lib/dates";
 import { formatMoney, invoiceState, summarize as invoiceSummary } from "@/lib/invoices/logic";
+import { equipmentAlerts } from "@/lib/equipment/logic";
+import type { Equipment } from "@/lib/equipment/types";
 import type { Invoice } from "@/lib/invoices/types";
 import { compliance, daysLeft, licenseStatus, needsReview, summarize as licenseSummary } from "@/lib/licenses/logic";
 import type { License } from "@/lib/licenses/types";
@@ -14,10 +16,12 @@ export interface DashboardSources {
   licenses: License[];
   projects: Project[];
   vendors: Vendor[];
+  /** Equipment and assets (optional: older callers pass none). */
+  equipment?: Equipment[];
 }
 
 export type Severity = "critical" | "warning" | "info";
-export type Area = "Invoices" | "Licenses" | "Vendors" | "Tasks" | "Documents";
+export type Area = "Invoices" | "Licenses" | "Vendors" | "Tasks" | "Documents" | "Equipment";
 
 /** One headline card: a number, where it links, and a one-line status under it. */
 export interface Kpi {
@@ -109,6 +113,17 @@ function vendorItems(vendors: Vendor[], today: string, base: string): AttentionI
   }));
 }
 
+/** Equipment with an overdue or coming-up service or inspection, or marked lost: one line per item. */
+function equipmentItems(list: Equipment[], today: string, base: string): AttentionItem[] {
+  const out: AttentionItem[] = [];
+  for (const e of list) {
+    const a = equipmentAlerts(e, today).find((x) => x.severity !== "info");
+    if (!a) continue;
+    out.push({ id: `eq-${e.id}`, area: "Equipment", href: `${base}/equipment`, severity: a.severity, label: a.severity === "critical" ? "Overdue" : "Coming up", text: `${e.name} · ${a.message}` });
+  }
+  return out;
+}
+
 /** The numbers and the action list for the dashboard, computed once for a given day. */
 export function buildDashboard(src: DashboardSources, today: string, base = "/app"): DashboardData {
   const inv = invoiceSummary(src.invoices, today);
@@ -117,6 +132,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
     ...invoiceItems(src.invoices, today, base),
     ...licenseItems(src.licenses, today, base),
     ...vendorItems(src.vendors, today, base),
+    ...equipmentItems(src.equipment ?? [], today, base),
     ...taskAlerts(src.projects, today).map((a): AttentionItem => ({
       id: `task-${a.task.id}`, area: "Tasks", href: `${base}/projects`,
       severity: a.state === "overdue" ? "critical" : "warning",
@@ -131,6 +147,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
     { label: "Licenses", open: src.licenses.length, attention: count("Licenses") },
     { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive").length, attention: count("Vendors") },
     { label: "Tasks", open: proj.openTasks, attention: count("Tasks") },
+    ...((src.equipment ?? []).length > 0 ? [{ label: "Equipment", open: (src.equipment ?? []).filter((e) => e.status === "in_service" || e.status === "in_repair").length, attention: count("Equipment") }] : []),
   ];
 
   const plural = (n: number, w: string) => `${n} ${w}`;

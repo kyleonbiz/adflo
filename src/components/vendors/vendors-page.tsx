@@ -1,11 +1,16 @@
 "use client";
 
+import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
+import { vendorSummaryText } from "@/lib/vendors/summary";
+import { printText } from "@/lib/forms/print";
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, BellRing, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, Store, X } from "lucide-react";
+import { AlertTriangle, BellRing, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Printer, Search, Store, X } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { useCurrentUserName } from "@/components/current-user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -80,6 +85,8 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
   const [statusFilter, setStatusFilter] = useState<"all" | VendorStatus>(initial.status);
   const [formFor, setFormFor] = useState<Vendor | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Vendor | null>(null);
+  const sel = useSelection();
+  const [bulkDelete, setBulkDelete] = useState(false);
   const [notice, setNotice] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | VendorCategory>(initial.category);
   const [sort, setSort] = useState<SortKey>(initial.sort);
@@ -244,7 +251,8 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
           <h1 className="text-2xl font-semibold tracking-tight">Vendors</h1>
           <p className="text-sm text-muted-foreground">Onboard suppliers, collect their documents and catch expiries and duplicates.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" disabled={vendors.length === 0} onClick={() => printText("Vendor compliance summary", vendorSummaryText(vendors, today))}><Printer /> Print summary</Button>
           <Button variant="outline" disabled={visible.length === 0} onClick={() => downloadCsv(vendorsToCsv(visible, today), `vendors-${today}.csv`)}>
             <Download /> Export CSV
           </Button>
@@ -253,7 +261,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <div role="status" aria-live="polite" className={notice ? "sticky top-2 z-20 flex items-start justify-between gap-3 rounded-xl border bg-card px-4 py-2.5 text-sm shadow-float" : "sr-only"}>
         <span>{notice}</span>
@@ -405,9 +413,15 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
             </div>
           )
         ) : (
+          <>
+          <BulkBar count={sel.size} total={visible.length} onSelectAll={() => sel.set(visible.map((v) => v.id))} onClear={sel.clear}>
+            <Button size="sm" variant="outline" onClick={() => downloadCsv(vendorsToCsv(vendors.filter((v) => sel.has(v.id)), today), `vendors-selected-${today}.csv`)}><Download /> Export</Button>
+            <Button size="sm" variant="destructive" onClick={() => setBulkDelete(true)}>Delete</Button>
+          </BulkBar>
           <ul className="space-y-3">
-            {visible.map((v) => <VendorCard key={v.id} vendor={v} today={today} actions={actions} focusKey={focus?.id === v.id ? focus.n : undefined} />)}
+            {visible.map((v) => <VendorCard key={v.id} vendor={v} today={today} actions={actions} focusKey={focus?.id === v.id ? focus.n : undefined} selected={sel.has(v.id)} onSelect={() => sel.toggle(v.id)} />)}
           </ul>
+          </>
         )}
       </section>
 
@@ -447,15 +461,13 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Delete vendor?</DialogTitle>
-          <DialogDescription className="mt-1">{deleting?.name} and its document records will be removed. Deactivate it instead to keep the history.</DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+      <ConfirmDialog
+        open={bulkDelete} title={`Delete ${sel.size} vendor${sel.size === 1 ? "" : "s"}?`} confirmLabel="Delete"
+        description="They and their document records will be removed. You can undo right after."
+        onCancel={() => setBulkDelete(false)}
+        onConfirm={() => { const before = vendors; const ids = new Set(sel.ids); update((all) => all.filter((v) => !ids.has(v.id))); audit("deleted", `${ids.size} vendors`, "Vendors", "/app/vendors"); say(`${ids.size} vendors deleted.`, before); sel.clear(); setBulkDelete(false); }}
+      />
+      <ConfirmDialog open={!!deleting} title="Delete vendor?" description={<>{deleting?.name} and its document records will be removed. Deactivate it instead to keep the history.</>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
                   const before = vendors;
                   update((all) => all.filter((v) => v.id !== deleting.id));
@@ -463,13 +475,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
                   say(`${deleting.name} deleted.`, before);
                 }
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              }} />
     </div>
   );
 }

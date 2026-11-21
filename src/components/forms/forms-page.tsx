@@ -1,11 +1,15 @@
 "use client";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
+import { readParam, useUrlFilters } from "@/lib/url-filters";
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useMemo, useState } from "react";
 import { CheckCircle2, FileInput, Inbox, Plus, Search, Send } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
-import { Button } from "@/components/ui/button";
 import { SplitButton } from "@/components/ui/split-button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
@@ -58,7 +62,9 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   const audit = useAudit();
   const [editedForms, setEditedForms] = useState<FormTemplate[] | null>(null);
   const [editedSubs, setEditedSubs] = useState<Submission[] | null>(null);
-  const [query, setQuery] = useState(initialQuery);
+  const [sort, setSort] = useState<"name" | "responses" | "new">(() => readParam<"name" | "responses" | "new">("sort", "name", ["name", "responses", "new"]));
+  const [query, setQuery] = useState(() => initialQuery || readParam("q", ""));
+  useUrlFilters({ q: query, sort }, { sort: "name" });
   const [builderFor, setBuilderFor] = useState<FormTemplate | "new" | null>(null);
   // A link from a contact opens its form straight away, with the contact's details in.
   const fromLink = initialFill ? [...starterForms(), ...PAPERWORK.map((p) => p.form)].find((f) => f.id === initialFill.formId) ?? null : null;
@@ -69,6 +75,8 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   const [justCreated, setJustCreated] = useState<string | null>(null); // the form whose Send dialog opened straight after it was made
   const [adding, setAdding] = useState<FormTemplate | null>(null);
   const [deleting, setDeleting] = useState<FormTemplate | null>(null);
+  const sel = useSelection();
+  const [bulkDelete, setBulkDelete] = useState(false);
   const [notice, setNotice] = useState("");
 
   const setup = useSetupConfig();
@@ -135,7 +143,13 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
 
   const summary = summarize(forms, subs);
   const q = query.trim().toLowerCase();
-  const visible = forms.filter((f) => !q || [f.name, f.description].some((x) => x.toLowerCase().includes(q)));
+  const responseText = (id: string) => subs.filter((x) => x.formId === id).map((x) => `${x.submittedBy} ${Object.values(x.values).join(" ")}`).join(" ").toLowerCase();
+  const countFor = (id: string, status?: string) => subs.filter((x) => x.formId === id && (!status || x.status === status)).length;
+  const visible = forms
+    .filter((f) => !q || [f.name, f.description].some((x) => x.toLowerCase().includes(q)) || responseText(f.id).includes(q))
+    .sort((a, b) => sort === "responses" ? countFor(b.id) - countFor(a.id) || a.name.localeCompare(b.name)
+      : sort === "new" ? countFor(b.id, "new") - countFor(a.id, "new") || a.name.localeCompare(b.name)
+      : a.name.localeCompare(b.name));
 
   return (
     <div className="space-y-5">
@@ -156,7 +170,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <p role="status" aria-live="polite" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
 
@@ -168,18 +182,36 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
       </section>
 
       <section aria-label="Forms" className="space-y-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search forms" aria-label="Search forms" className="pl-9" />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search forms and the responses people sent" aria-label="Search forms" className="pl-9" />
+          </div>
+          <div className="sm:w-48">
+            <Select value={sort} onValueChange={(v) => setSort(v as "name" | "responses" | "new")}>
+              <SelectTrigger aria-label="Sort forms"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Sort: name</SelectItem>
+                <SelectItem value="responses">Most responses</SelectItem>
+                <SelectItem value="new">Most new responses</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         {visible.length === 0 ? (
           <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
             {forms.length === 0 ? "No forms yet. Create your first one." : "No forms match your search."}
           </div>
         ) : (
+          <>
+          <BulkBar count={sel.size} total={visible.length} onSelectAll={() => sel.set(visible.map((f) => f.id))} onClear={sel.clear}>
+            <Button size="sm" variant="outline" onClick={() => { setEditedSubs(subs.map((x) => (sel.has(x.formId) && x.status === "new" ? markDone(x, true) : x))); audit("marked done the responses to", `${sel.size} forms`, "Forms", "/app/forms"); setNotice("Responses on the selected forms marked done."); sel.clear(); }}>Mark responses done</Button>
+            <Button size="sm" variant="destructive" onClick={() => setBulkDelete(true)}>Delete</Button>
+          </BulkBar>
           <ul className="space-y-3">
-            {visible.map((f) => <FormCard key={f.id} form={f} submissions={subs.filter((s) => s.formId === f.id)} actions={actions} />)}
+            {visible.map((f) => <FormCard key={f.id} form={f} submissions={subs.filter((s) => s.formId === f.id)} actions={actions} selected={sel.has(f.id)} onSelect={() => sel.toggle(f.id)} />)}
           </ul>
+          </>
         )}
       </section>
 
@@ -274,15 +306,13 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
         }}
       />
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Delete form?</DialogTitle>
-          <DialogDescription className="mt-1">{deleting?.name} and all of its responses will be removed.</DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+      <ConfirmDialog
+        open={bulkDelete} title={`Delete ${sel.size} form${sel.size === 1 ? "" : "s"}?`} confirmLabel="Delete"
+        description="They and all of their responses will be removed."
+        onCancel={() => setBulkDelete(false)}
+        onConfirm={() => { setEditedForms(forms.filter((f) => !sel.has(f.id))); setEditedSubs(subs.filter((x) => !sel.has(x.formId))); audit("deleted", `${sel.size} forms`, "Forms", "/app/forms"); setNotice(`${sel.size} forms deleted.`); sel.clear(); setBulkDelete(false); }}
+      />
+      <ConfirmDialog open={!!deleting} title="Delete form?" description={<>{deleting?.name} and all of its responses will be removed.</>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
                   setEditedForms(forms.filter((f) => f.id !== deleting.id));
                   setEditedSubs(subs.filter((s) => s.formId !== deleting.id));
@@ -290,13 +320,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
                   setNotice(`${deleting.name} deleted.`);
                 }
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              }} />
     </div>
   );
 }

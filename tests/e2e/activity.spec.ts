@@ -40,6 +40,6 @@ test.describe("activity", () => {
     await expect(rows.first()).toContainText("Bea Two");
     await page.getByRole("combobox", { name: "Filter activity by area" }).click();
     await page.getByRole("option", { name: "Invoices" }).click();
-    await expect(page.getByTestId("activity-empty")).toContainText("Nothing here for that area");
+    await expect(page.getByTestId("activity-empty")).toContainText("Nothing matches those filters");
   });
 });

@@ -215,3 +215,30 @@ export function groupInvoices(invoices: Invoice[], today: string): InvoiceGroup[
       .sort((a, b) => (key === "closed" ? (a.dueOn < b.dueOn ? 1 : a.dueOn > b.dueOn ? -1 : 0) : a.dueOn < b.dueOn ? -1 : a.dueOn > b.dueOn ? 1 : 0)),
   })).filter((g) => g.invoices.length > 0);
 }
+
+export type InvoiceSort = "due" | "amount" | "client" | "number";
+export type InvoiceGroupBy = "status" | "client" | "month";
+
+const sorters: Record<InvoiceSort, (a: Invoice, b: Invoice) => number> = {
+  due: (a, b) => a.dueOn.localeCompare(b.dueOn),
+  amount: (a, b) => b.amountCents - a.amountCents,
+  client: (a, b) => a.client.localeCompare(b.client) || a.dueOn.localeCompare(b.dueOn),
+  number: (a, b) => a.number.localeCompare(b.number, undefined, { numeric: true }),
+};
+
+/** Invoices in the order asked for, in the groups asked for. Grouping by status keeps the urgency groups; the others group by client or due month. */
+export function arrangeInvoices(invoices: Invoice[], today: string, groupBy: InvoiceGroupBy, sort: InvoiceSort | null): { key: string; label: string; invoices: Invoice[] }[] {
+  const order = (list: Invoice[]) => (sort ? [...list].sort(sorters[sort]) : list);
+  if (groupBy === "status") {
+    return groupInvoices(invoices, today).map((g) => ({ ...g, invoices: order(g.invoices) }));
+  }
+  const buckets = new Map<string, Invoice[]>();
+  for (const i of invoices) {
+    const key = groupBy === "client" ? i.client.trim() || "No client" : i.dueOn.slice(0, 7);
+    buckets.set(key, [...(buckets.get(key) ?? []), i]);
+  }
+  const label = (k: string) => (groupBy === "client" ? k : new Date(`${k}-01T00:00:00Z`).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" }));
+  return [...buckets.entries()]
+    .sort(([a], [b]) => (groupBy === "client" ? a.localeCompare(b) : a.localeCompare(b)))
+    .map(([key, list]) => ({ key: `${groupBy}-${key}`.replace(/[^a-z0-9-]/gi, "_"), label: label(key), invoices: order(list.sort(sorters.due)) }));
+}

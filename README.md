@@ -149,15 +149,15 @@ is no payment processor, no email and no database table yet.
 
 ## Platform modules
 
-The app is growing from a document manager into a client portal of ten service modules
-(`src/lib/modules/registry.ts`). All ten exist: **01 Documents**, **02 Invoices**
+The app is growing from a document manager into a client portal of eleven service modules
+(`src/lib/modules/registry.ts`). All eleven exist: **01 Documents**, **02 Invoices**
 (`src/lib/invoices/`, `src/components/invoices/`), **03 Licenses & renewals** (`src/lib/licenses/`,
 `src/components/licenses/`), **04 Vendors** (`src/lib/vendors/`, `src/components/vendors/`),
 **05 Contacts** (`src/lib/contacts/`, `src/components/contacts/`), **06 Tasks**
 (`src/lib/projects/`, `src/components/projects/`), **07 Forms & paperwork**
 (`src/lib/forms/`, `src/components/forms/`) and **08 Reporting**
-(`src/lib/datasets/`, `src/components/reporting/`), **09 Tidy up files** (`src/lib/files/`, `src/components/files/`) and **10 Settings**
-(`src/lib/setup/`, `src/components/setup/`). Every service starts empty and keeps its records in the browser until the database is
+(`src/lib/datasets/`, `src/components/reporting/`), **09 Tidy up files** (`src/lib/files/`, `src/components/files/`) **10 Settings**
+(`src/lib/setup/`, `src/components/setup/`) and **11 Equipment** (`src/lib/equipment/`, `src/components/equipment/`: tools, vehicles, appliances, HVAC units and keys, with service, inspection and warranty dates that feed Calendar and Home; saved like the other services, migration `20261121120000_equipment_records.sql`). Every service starts empty and keeps its records in the browser until the database is
 connected (see the limits below).
 
 **Shared import engine** (`src/lib/import/`): `parseCsv` (RFC 4180 quoting, BOM, CRLF, comma/semicolon/tab,
@@ -915,4 +915,5 @@ Sample data: `src/lib/samples/data.ts` builds two sets from today's date (small 
 Notable changes clients may care about. Newest first.
 
 ### Unreleased
+- Screen audit (`docs/screen-audit.md`) and the follow-up work: Equipment module; Addy naming, longer input, New chat and starter prompts; shared `ConfirmDialog` and `PreviewNote` (no more `window.confirm` in the Control center); Activity search, person and date filters, CSV export and Show more; Calendar document expiries (signed in), equipment dates, `.ics` download and agenda length; chasing reminders for licenses (Follow up today list) and for unsigned signers; bulk actions and selection on Invoices, Licenses, Vendors, Tasks and Equipment; Invoices sort, group by and undo on delete; print compliance summaries for Licenses and Vendors; linked projects and document search on contact and vendor profiles; Forms sort and response search; snooze for a week on Home; finish-setup nudge on Home; Billing back up and restore; fixed `.ics` semicolon escaping. Later in the same round: Documents bulk move/tag/trash, an Expiring documents panel and Revoke all share links; filters kept in the address bar on Invoices, Licenses and Forms; an Equipment report; Addy equipment drafts; Forms bulk actions; Calendar week view and add-a-reminder; Control center "Remind all" and client quick filters.
 - Support and operations material added under `docs/support/`: email templates, onboarding runbook and help articles.

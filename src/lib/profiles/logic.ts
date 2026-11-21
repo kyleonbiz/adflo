@@ -42,3 +42,23 @@ export function vendorsForContact(c: Pick<Contact, "name" | "email" | "company">
 export function contactsForVendor(v: Pick<Vendor, "name" | "email" | "contactName">, contacts: Contact[]): Contact[] {
   return contacts.filter((c) => sameEmail(c.email, v.email) || sameName(c.company, v.name) || (!!v.contactName && sameName(c.name, v.contactName) && !!c.company && sameName(c.company, v.name)));
 }
+
+/** Projects linked to a contact or vendor by name (the link a project keeps), most recently listed first. */
+export function projectsLinkedTo<P extends { linked?: { kind: "contact" | "vendor"; name: string } | null; name: string }>(kind: "contact" | "vendor", name: string, projects: P[]): P[] {
+  const k = keyOf(name);
+  return projects.filter((p) => p.linked && p.linked.kind === kind && keyOf(p.linked.name) === k);
+}
+
+export interface TimelineEntry { on: string; text: string; href?: string }
+
+/** One dated list of what happened with a contact: when they were added, each invoice issued and paid, and the last time they were contacted. Newest first. */
+export function contactTimeline(c: { name: string; createdOn: string; lastContacted?: string | null }, invoices: Invoice[]): TimelineEntry[] {
+  const out: TimelineEntry[] = [{ on: c.createdOn, text: `${c.name} added to Contacts` }];
+  if (c.lastContacted) out.push({ on: c.lastContacted, text: "Last contacted" });
+  for (const i of invoices) {
+    if (i.status === "draft") continue;
+    out.push({ on: i.issuedOn, text: `Invoice ${i.number} issued`, href: `/app/invoices?q=${encodeURIComponent(i.number)}` });
+    if (i.status === "paid" && i.paidOn) out.push({ on: i.paidOn, text: `Invoice ${i.number} paid`, href: `/app/invoices?q=${encodeURIComponent(i.number)}` });
+  }
+  return out.filter((e) => /^\d{4}-\d{2}-\d{2}/.test(e.on)).sort((a, b) => b.on.localeCompare(a.on));
+}

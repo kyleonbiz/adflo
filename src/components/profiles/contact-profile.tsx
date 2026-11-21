@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { ContactCategory } from "@/lib/contacts/types";
 import { daysBetween, formatDayLong } from "@/lib/dates";
 import { formatMoney, invoiceState } from "@/lib/invoices/logic";
-import { invoicesForContact, summarizeInvoices, vendorsForContact } from "@/lib/profiles/logic";
+import { contactTimeline, invoicesForContact, projectsLinkedTo, summarizeInvoices, vendorsForContact } from "@/lib/profiles/logic";
 import { useDashboardSources } from "@/lib/records/sources";
 import { useRecordsLoading } from "@/lib/records/storage";
 import { BackLink, Facts, None, NotFoundProfile, ProfileSkeleton, Section, profileLink } from "./parts";
@@ -24,10 +24,12 @@ const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2)
 export function ContactProfile({ id }: { id: string }) {
   const today = useToday();
   const loading = useRecordsLoading();
-  const { contacts, invoices, vendors } = useDashboardSources(today);
+  const { contacts, invoices, vendors, projects } = useDashboardSources(today);
   const contact = contacts.find((c) => c.id === id);
   const mine = useMemo(() => (contact ? invoicesForContact(contact, invoices) : []), [contact, invoices]);
   const totals = useMemo(() => (today ? summarizeInvoices(mine, today) : null), [mine, today]);
+  const linkedProjects = useMemo(() => (contact ? projectsLinkedTo("contact", contact.name, projects) : []), [contact, projects]);
+  const timeline = useMemo(() => (contact ? contactTimeline(contact, mine) : []), [contact, mine]);
   const vendorMatches = useMemo(() => (contact ? vendorsForContact(contact, vendors) : []), [contact, vendors]);
 
   if (!today || loading) return <ProfileSkeleton />;
@@ -90,6 +92,34 @@ export function ContactProfile({ id }: { id: string }) {
             </ul>
           </>
         )}
+      </Section>
+
+      <Section title="Timeline" count={timeline.length} testId="contact-timeline">
+        <ol className="space-y-1.5 text-sm">
+          {timeline.map((e, i) => (
+            <li key={i} className="flex flex-wrap items-baseline justify-between gap-2">
+              {e.href ? <Link href={e.href} className={`${profileLink} text-primary`}>{e.text}</Link> : <span>{e.text}</span>}
+              <time dateTime={e.on} className="text-xs text-muted-foreground">{formatDayLong(e.on.slice(0, 10))}</time>
+            </li>
+          ))}
+        </ol>
+      </Section>
+
+      <Section title="Projects" count={linkedProjects.length} testId="contact-projects">
+        {linkedProjects.length === 0 ? <None>No projects linked to this contact. Link one from the project form.</None> : (
+          <ul className="divide-y text-sm">
+            {linkedProjects.map((p) => (
+              <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                <Link href="/app/projects?view=projects" className={`font-medium ${profileLink}`}>{p.name}</Link>
+                <span className="text-muted-foreground">{p.tasks.filter((t) => t.done).length} of {p.tasks.length} tasks done</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section title="Documents">
+        <p className="text-sm"><Link href={`/app?q=${encodeURIComponent(contact.name)}`} className={`text-primary ${profileLink}`}>Find documents that mention {contact.name}</Link></p>
       </Section>
 
       {vendorMatches.length > 0 && (

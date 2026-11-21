@@ -128,6 +128,7 @@ export function renewLicense(license: License, today: string, input: RenewalInpu
     stage: "not_started",
     verifiedOn: today, // the issuer's new expiry and number were entered and confirmed in the renewal dialog
     requiredDocuments: license.requiredDocuments.map((d) => ({ ...d, received: false })),
+    remindedOn: [],
     renewals: [...(license.renewals ?? []), { on: today, previousExpiresOn: license.expiresOn, newExpiresOn: expiresOn }],
   };
 }

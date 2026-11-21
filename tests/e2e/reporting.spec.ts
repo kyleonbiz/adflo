@@ -26,13 +26,13 @@ test.describe("reporting module", () => {
     await page.goto("/app/reporting");
     await expect(page.getByRole("tab", { name: "Overview" })).toHaveAttribute("aria-selected", "true");
     await expect(page.getByTestId("overview-summary")).toContainText("Records tracked");
-    await expect(page.getByTestId("overview-summary")).toContainText("of 7"); // services in use
+    await expect(page.getByTestId("overview-summary")).toContainText("of 8"); // services in use
     await expect(page.getByTestId("attention-count")).toContainText("item");
     expect(await page.getByTestId("attention-item").count()).toBeGreaterThan(0);
     await expect(page.getByRole("region", { name: "Records by service" }).getByTestId("breakdown-row").first()).toBeVisible();
     const rows = page.getByTestId("service-row");
     const row = (name: string) => rows.filter({ has: page.getByRole("rowheader", { name, exact: true }) });
-    await expect(rows).toHaveCount(7);
+    await expect(rows).toHaveCount(8);
     await expect(row("Invoices")).toContainText("Outstanding");
     await expect(row("Contacts")).toContainText("Contacts");
     await expect(row("Documents")).toContainText("No records yet"); // documents are not seeded
@@ -330,7 +330,7 @@ test.describe("reporting module", () => {
     await section.click();
     await page.getByRole("option", { name: "Materials" }).click();
     await expect(page.getByTestId("materials")).toContainText("Business summary");
-    await expect(page.getByTestId("material-row")).toHaveCount(7);
+    await expect(page.getByTestId("material-row")).toHaveCount(8);
     const download = page.waitForEvent("download");
     await page.getByRole("button", { name: "Invoices spreadsheet" }).click();
     expect((await download).suggestedFilename()).toMatch(/^invoices-.*\.csv$/);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, PenLine, Plus, Trash2 } from "lucide-react";
+import { BellRing, Download, PenLine, Plus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDayLong } from "@/lib/dates";
 import { textToPdf } from "@/lib/forms/pdf";
-import { MAX_SIGNERS, parseSigners, sha256Hex, sign, signedCopyText, status, type SigningRequest } from "@/lib/signing/logic";
+import { MAX_SIGNERS, logSignerReminder, parseSigners, signerDueReminder, signerReminderEmail, sha256Hex, sign, signedCopyText, status, type SigningRequest } from "@/lib/signing/logic";
 import { saveRequests, useSigningRequests } from "@/lib/signing/storage";
 
 const textarea = "flex w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-xs focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30";
@@ -219,7 +219,19 @@ export function Signatures({ submissions, today, by }: { submissions: SignableSu
                     <li key={s.id} className="flex flex-wrap items-center gap-2 py-1.5" data-testid="signer-row">
                       <span className="min-w-0 flex-1"><span className="font-medium">{s.name}</span>{s.email && <span className="text-muted-foreground"> · {s.email}</span>}</span>
                       {s.signedAt ? <span className="text-xs text-muted-foreground">Signed {formatDayLong(s.signedAt.slice(0, 10))}</span> : (
-                        <Button size="sm" variant="outline" aria-label={`Sign as ${s.name}`} onClick={() => setSigning({ request: r, signerId: s.id })}><PenLine /> Sign</Button>
+                        <span className="flex flex-wrap items-center gap-2">
+                          {(s.remindedOn ?? []).length > 0 && <span className="text-xs text-muted-foreground">{(s.remindedOn ?? []).length} reminder{(s.remindedOn ?? []).length === 1 ? "" : "s"} sent</span>}
+                          {signerDueReminder(r, s, today) && (
+                            <Button size="sm" variant="outline" aria-label={`Send reminder to ${s.name}`} onClick={() => {
+                              const m = signerReminderEmail(r, s);
+                              saveRequests(list.map((x) => (x.id === r.id ? logSignerReminder(x, s.id, today) : x)));
+                              const a = document.createElement("a");
+                              a.href = `mailto:${encodeURIComponent(m.to)}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`;
+                              a.click();
+                            }}><BellRing /> Remind</Button>
+                          )}
+                          <Button size="sm" variant="outline" aria-label={`Sign as ${s.name}`} onClick={() => setSigning({ request: r, signerId: s.id })}><PenLine /> Sign</Button>
+                        </span>
                       )}
                     </li>
                   ))}

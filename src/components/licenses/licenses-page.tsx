@@ -1,12 +1,17 @@
 "use client";
 
+import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
+import { licenseSummaryText, licensesToCsv } from "@/lib/licenses/summary";
+import { printText } from "@/lib/forms/print";
+import { readParam, useUrlFilters } from "@/lib/url-filters";
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CalendarClock, CalendarPlus, FileText, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
+import { AlertTriangle, BellRing, CalendarClock, CalendarPlus, FileText, Download, FileWarning, Hourglass, Plus, Printer, Search, ShieldCheck, Upload } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SplitButton } from "@/components/ui/split-button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,6 +20,7 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { toIcs } from "@/lib/ics";
+import { dueLicenseFollowUps, licenseReminderEmail, logLicenseReminder } from "@/lib/licenses/follow-up";
 import { downloadText } from "@/components/import/csv-source";
 import { compliance, expiryText, licenseCalendarEvents, renewalSpend, licenseStatus, missingDocuments, needsReview, renewalTasks, renewLicense, summarize, type RenewalInput } from "@/lib/licenses/logic";
 import { TemplateDialog } from "./template-dialog";
@@ -46,10 +52,11 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const uploadInput = useRef<HTMLInputElement>(null);
   const loading = useRecordsLoading();
   const [edited, setEdited] = useRecordsState<License>("licenses");
-  const [query, setQuery] = useState(initialQuery);
-  const [statusFilter, setStatusFilter] = useState<Filter>("all");
-  const [sort, setSort] = useState<Sort>("expiry");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [query, setQuery] = useState(() => initialQuery || readParam("q", ""));
+  const [statusFilter, setStatusFilter] = useState<Filter>(() => readParam<Filter>("status", "all"));
+  const [sort, setSort] = useState<Sort>(() => readParam<Sort>("sort", "expiry", ["expiry", "name"]));
+  const [categoryFilter, setCategoryFilter] = useState<string>(() => readParam<string>("category", "all"));
+  useUrlFilters({ q: query, status: statusFilter, sort, category: categoryFilter }, { status: "all", sort: "expiry", category: "all" });
   const [formFor, setFormFor] = useState<License | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<License | null>(null);
   const [picking, setPicking] = useState(false);
@@ -58,6 +65,8 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const [formSession, setFormSession] = useState(0); // new key per opening, so notes from a previous upload never linger
   const [renewing, setRenewing] = useState<License | null>(null);
   const [focus, setFocus] = useState<{ id: string; token: number }>({ id: "", token: 0 });
+  const sel = useSelection();
+  const [bulkDelete, setBulkDelete] = useState(false);
   const [notice, setNotice] = useState<{ id: number; text: string; undo?: () => void } | null>(null);
 
   const setup = useSetupConfig();
@@ -145,6 +154,16 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const standing = compliance(licenses, today);
   const spend = renewalSpend(licenses, today);
   const tasks = renewalTasks(licenses, today);
+  const followUps = dueLicenseFollowUps(licenses, today);
+  const chase = (l: License) => {
+    const mail = licenseReminderEmail(l, today);
+    patch(l.id, (x) => logLicenseReminder(x, today));
+    audit("prepared a renewal reminder for", `the ${l.name} license`, "Licenses", "/app/licenses");
+    say(`Reminder logged for ${l.name}. Your email app opens with the message ready to send.`);
+    const a = document.createElement("a");
+    a.href = `mailto:?subject=${encodeURIComponent(mail.subject)}&body=${encodeURIComponent(mail.body)}`;
+    a.click();
+  };
   const q = query.trim().toLowerCase();
   const matchesFilter = (l: License) => {
     if (statusFilter === "all") return true;
@@ -167,6 +186,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
           <p className="text-sm text-muted-foreground">Track expiry dates, collect required documents and stay ahead of every renewal.</p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button variant="outline" disabled={licenses.length === 0} onClick={() => printText("Licenses and renewals summary", licenseSummaryText(licenses, today))}><Printer /> Print summary</Button>
           <Button variant="outline" disabled={licenses.length === 0} onClick={() => downloadText(toIcs(licenseCalendarEvents(licenses, today), today), `renewals-${today}.ics`, "text/calendar")}><CalendarPlus /> Add to calendar</Button>
           <input
             ref={uploadInput}
@@ -195,7 +215,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <div
         role="status"
@@ -212,6 +232,25 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
           </>
         )}
       </div>
+
+      {followUps.length > 0 && (
+        <section aria-labelledby="license-followups" className="rounded-2xl border bg-card p-4 shadow-panel" data-testid="license-followups">
+          <h2 id="license-followups" className="flex items-center gap-2 text-base font-semibold"><BellRing className="size-4 text-amber-600" aria-hidden /> Follow up today</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Renewals that are not submitted yet. A reminder is due when none has gone out, or the last one is a week old.</p>
+          <ul className="mt-2 divide-y">
+            {followUps.map(({ license, sent, left }) => (
+              <li key={license.id} data-testid="license-followup-row" className="flex flex-wrap items-center gap-2 py-2 text-sm">
+                <span className="min-w-0 flex-1">
+                  <span className="font-medium">{license.name}</span>
+                  <span className="text-muted-foreground"> · {expiryText(left)}</span>
+                </span>
+                <Badge variant="muted">{sent === 0 ? "Not chased yet" : `${sent} sent`}</Badge>
+                <Button size="sm" variant="outline" aria-label={`Send renewal reminder for ${license.name}`} onClick={() => chase(license)}>Send reminder</Button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {summary.needsReview > 0 && (
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900" data-testid="review-banner">
@@ -323,9 +362,16 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
             </div>
           )
         ) : (
+          <>
+          <BulkBar count={sel.size} total={visible.length} onSelectAll={() => sel.set(visible.map((l) => l.id))} onClear={sel.clear}>
+            <Button size="sm" variant="outline" onClick={() => { const ids = new Set(sel.ids); commit(licenses.map((l) => (ids.has(l.id) && !l.verifiedOn ? { ...l, verifiedOn: today } : l)), `${sel.size} marked as reviewed.`); audit("marked as reviewed", `${sel.size} licenses`, "Licenses", "/app/licenses"); sel.clear(); }}>Mark reviewed</Button>
+            <Button size="sm" variant="outline" onClick={() => downloadText(licensesToCsv(licenses.filter((l) => sel.has(l.id)), today), `licenses-selected-${today}.csv`, "text/csv")}><Download /> Export</Button>
+            <Button size="sm" variant="destructive" onClick={() => setBulkDelete(true)}>Delete</Button>
+          </BulkBar>
           <ul className="space-y-3">
-            {visible.map((l) => <LicenseCard key={l.id} license={l} today={today} actions={actions} focusToken={focus.id === l.id ? focus.token : 0} />)}
+            {visible.map((l) => <LicenseCard key={l.id} license={l} today={today} actions={actions} focusToken={focus.id === l.id ? focus.token : 0} selected={sel.has(l.id)} onSelect={() => sel.toggle(l.id)} />)}
           </ul>
+          </>
         )}
       </section>
 
@@ -344,29 +390,21 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
 
       <RenewDialog license={renewing} today={today} onCancel={() => setRenewing(null)} onConfirm={confirmRenewal} />
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Delete license?</DialogTitle>
-          <DialogDescription className="mt-1">
+      <ConfirmDialog
+        open={bulkDelete} title={`Delete ${sel.size} license${sel.size === 1 ? "" : "s"}?`} confirmLabel="Delete"
+        description="They and their reminders will be removed. You can undo right after."
+        onCancel={() => setBulkDelete(false)}
+        onConfirm={() => { audit("deleted", `${sel.size} licenses`, "Licenses", "/app/licenses"); commit(licenses.filter((l) => !sel.has(l.id)), `${sel.size} licenses deleted.`); sel.clear(); setBulkDelete(false); }}
+      />
+      <ConfirmDialog open={!!deleting} title="Delete license?" description={<>
             {deleting?.name} and its reminders will be removed.
-          </DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+          </>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
                   audit("deleted", `${deleting.name}`, "Licenses", "/app/licenses");
                   commit(licenses.filter((l) => l.id !== deleting.id), `${deleting.name} deleted.`);
                 }
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              }} />
     </div>
   );
 }

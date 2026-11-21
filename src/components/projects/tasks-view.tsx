@@ -5,6 +5,7 @@ import { FolderKanban, Pencil, Plus, Repeat, X } from "lucide-react";
 import { RemindMenu } from "@/components/modules/remind-menu";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BulkBar, SelectBox, useSelection } from "@/components/ui/bulk-bar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -106,9 +107,12 @@ export function TasksView({ projects, today, query, filter, onFilter, showDone, 
   onOpenProject: (projectId: string) => void;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
+  const [who, setWho] = useState("all");
+  const sel = useSelection();
   const all = useMemo(() => taskList(projects, today, showDone), [projects, today, showDone]);
-  const items = useMemo(() => all.filter((i) => matches(i, filter, query, today)), [all, filter, query, today]);
-  const filtered = filter !== "all" || query !== "";
+  const assignees = useMemo(() => [...new Set(all.map((i) => i.task.assignee.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [all]);
+  const items = useMemo(() => all.filter((i) => matches(i, filter, query, today)).filter((i) => who === "all" || (who === "none" ? !i.task.assignee.trim() : i.task.assignee.trim() === who)), [all, filter, query, today, who]);
+  const filtered = filter !== "all" || query !== "" || who !== "all";
   const loose = items.filter((i) => isGeneral(i.project));
   const groups = useMemo(() => {
     const map = new Map<string, { project: Project; items: TaskItem[] }>();
@@ -137,6 +141,7 @@ export function TasksView({ projects, today, query, filter, onFilter, showDone, 
         className="flex cursor-pointer flex-wrap items-center gap-x-2 gap-y-1 py-2 hover:bg-muted/30"
       >
         <div className="flex min-w-0 flex-1 basis-56 items-center gap-2 text-sm">
+          <SelectBox checked={sel.has(task.id)} onChange={() => sel.toggle(task.id)} label={`Select task ${task.title}`} />
           <input type="checkbox" aria-labelledby={`task-title-${task.id}`} checked={task.done} onChange={() => actions.onToggleTask(project, task)} className="size-4 shrink-0 cursor-pointer rounded border-input accent-primary" />
           <span id={`task-title-${task.id}`} className={cn("break-words", task.done && "text-muted-foreground line-through")}>
             {task.title}
@@ -167,6 +172,18 @@ export function TasksView({ projects, today, query, filter, onFilter, showDone, 
               <input type="checkbox" checked={showDone} onChange={(e) => onShowDone(e.target.checked)} className="size-4 rounded border-input accent-primary" />
               Show completed
             </label>
+            {assignees.length > 0 && (
+              <div className="w-40">
+                <Select value={who} onValueChange={setWho}>
+                  <SelectTrigger aria-label="Assignee"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Everyone</SelectItem>
+                    {assignees.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                    <SelectItem value="none">Unassigned</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="w-44">
               <Select value={filter} onValueChange={(v) => onFilter(v as TaskFilter)}>
                 <SelectTrigger aria-label="Filter tasks"><SelectValue /></SelectTrigger>
@@ -178,10 +195,15 @@ export function TasksView({ projects, today, query, filter, onFilter, showDone, 
           </div>
         </div>
 
+        <BulkBar count={sel.size} total={items.length} noun="tasks selected" onSelectAll={() => sel.set(items.map((i) => i.task.id))} onClear={sel.clear}>
+          <Button size="sm" variant="outline" onClick={() => { actions.onBulkTasks(items.filter((i) => sel.has(i.task.id) && !i.task.done).map((i) => ({ project: i.project, task: i.task })), "done"); sel.clear(); }}>Mark done</Button>
+          <Button size="sm" variant="destructive" onClick={() => { actions.onBulkTasks(items.filter((i) => sel.has(i.task.id)).map((i) => ({ project: i.project, task: i.task })), "remove"); sel.clear(); }}>Remove</Button>
+        </BulkBar>
+
         {items.length === 0 ? (
           <div className="space-y-3 rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
             <p>{all.length === 0 ? "No tasks yet. Add your first one above." : "No tasks match these filters."}</p>
-            {all.length > 0 && filtered && <Button variant="outline" onClick={() => onFilter("all")}>Clear filter</Button>}
+            {all.length > 0 && filtered && <Button variant="outline" onClick={() => { onFilter("all"); setWho("all"); }}>Clear filter</Button>}
           </div>
         ) : (
           <div className="space-y-4">

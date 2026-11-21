@@ -12,6 +12,8 @@ import { LICENSE_CATEGORIES, RENEWAL_STAGES } from "@/lib/licenses/types";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 import { isGeneral, progress, projectHealth, summarize as projectSummary } from "@/lib/projects/logic";
 import { PROJECT_STATUSES } from "@/lib/projects/types";
+import { statusLabel, summarize as equipmentSummary, typeLabel } from "@/lib/equipment/logic";
+import { EQUIPMENT_STATUSES, EQUIPMENT_TYPES } from "@/lib/equipment/types";
 import { STATUS_LABEL as VENDOR_STATUS, onboardingProgress, summarize as vendorSummary } from "@/lib/vendors/logic";
 
 /** Everything the reports read: the dashboard's records plus the contacts, forms and documents. */
@@ -145,6 +147,28 @@ function vendors(src: ReportSources, today: string): Omit<ModuleReport, "id" | "
   };
 }
 
+function equipment(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
+  const list = src.equipment ?? [];
+  const s = equipmentSummary(list, today);
+  return {
+    count: list.length, noun: "items",
+    metrics: [
+      { label: "Items tracked", value: String(s.total), tone: "neutral" },
+      { label: "In service", value: String(s.inService), tone: "neutral" },
+      { label: "Needs attention", value: String(s.attention), tone: tone(s.attention, "danger") },
+      { label: "Due in 30 days", value: String(s.dueSoon), tone: tone(s.dueSoon, "warning") },
+    ],
+    breakdowns: [
+      { title: "Equipment by type", rows: tally(list, (e) => typeLabel(e.type), EQUIPMENT_TYPES.map((t) => t.label)) },
+      { title: "Equipment by status", rows: tally(list, (e) => statusLabel(e.status), EQUIPMENT_STATUSES.map((t) => t.label)) },
+    ],
+    table: {
+      headers: ["Name", "Type", "Identifier", "Status", "Assigned to", "Location", "Next service", "Next inspection", "Warranty ends"],
+      rows: list.map((e) => [e.name, typeLabel(e.type), e.identifier, statusLabel(e.status), e.assignedTo, e.location, e.nextServiceOn ?? "", e.nextInspectionOn ?? "", e.warrantyEndsOn ?? ""]),
+    },
+  };
+}
+
 function contacts(src: ReportSources, today: string): Omit<ModuleReport, "id" | "name" | "href"> {
   const s = contactSummary(src.contacts, today, contactDuplicates(src.contacts));
   return {
@@ -239,7 +263,7 @@ function documents(src: ReportSources, today: string): Omit<ModuleReport, "id" |
 }
 
 const BUILDERS: Partial<Record<string, (src: ReportSources, today: string) => Omit<ModuleReport, "id" | "name" | "href">>> = {
-  documents, invoices, licenses, vendors, crm: contacts, projects, forms,
+  documents, invoices, licenses, vendors, equipment, crm: contacts, projects, forms,
 };
 
 /** One report per module that holds records, in catalogue order. */

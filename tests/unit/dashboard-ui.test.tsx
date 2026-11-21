@@ -53,9 +53,9 @@ describe("Dashboard", () => {
     expect((within(rows()[0]).getByRole("button", { name: /^Add to today/ }) as HTMLButtonElement).disabled).toBe(true);
 
     const before = rows().length;
-    await user.click(within(rows()[0]).getByRole("button", { name: /^Snooze/ }));
+    await user.click(within(rows()[0]).getByRole("button", { name: /^Snooze until tomorrow/ }));
     expect(rows()).toHaveLength(before - 1);
-    expect(screen.getByText(/snoozed until tomorrow/)).toBeTruthy();
+    expect(screen.getByText(/snoozed/)).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Restore" }));
     expect(rows()).toHaveLength(before);
   });

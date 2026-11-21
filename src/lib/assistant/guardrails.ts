@@ -1,6 +1,7 @@
 import { isDay } from "@/lib/dates";
 import { CONTACT_CATEGORIES } from "@/lib/contacts/types";
 import { RECURRENCES } from "@/lib/invoices/types";
+import { EQUIPMENT_TYPES } from "@/lib/equipment/types";
 import { LICENSE_CATEGORIES } from "@/lib/licenses/types";
 import { VENDOR_CATEGORIES } from "@/lib/vendors/types";
 
@@ -14,7 +15,7 @@ import { VENDOR_CATEGORIES } from "@/lib/vendors/types";
 type FieldKind = "text" | "email" | "date" | "amount" | "choice";
 interface FieldRule { kind: FieldKind; max: number; options?: readonly string[] }
 interface DraftService {
-  id: "invoices" | "contacts" | "vendors" | "projects" | "licenses";
+  id: "invoices" | "contacts" | "vendors" | "projects" | "licenses" | "equipment";
   /** What it is called in a sentence: "a draft invoice". */
   noun: string;
   /** The page that opens the draft. */
@@ -57,6 +58,14 @@ export const DRAFT_SERVICES: readonly DraftService[] = [
     id: "licenses", noun: "a new license record", path: "/app/licenses", open: "new=1",
     fields: { name: text(120), category: choice(LICENSE_CATEGORIES.map((c) => c.value)), issuer: text(120), expiresOn: { kind: "date", max: 10 } },
     refuses: ["marking a license reviewed or renewed", "deleting a license"],
+  },
+  {
+    id: "equipment", noun: "a new equipment record", path: "/app/equipment", open: "new=1",
+    fields: {
+      name: text(120), type: choice(EQUIPMENT_TYPES.map((t) => t.value)), identifier: text(80), location: text(80), assignedTo: text(80),
+      nextServiceOn: { kind: "date", max: 10 }, warrantyEndsOn: { kind: "date", max: 10 },
+    },
+    refuses: ["logging service as done, marking equipment lost or retired", "deleting equipment"],
   },
 ];
 

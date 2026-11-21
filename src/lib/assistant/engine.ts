@@ -50,7 +50,7 @@ const HELP_TEXT = "I can answer questions about AdFlo and your records, tell you
 /** "New invoice", "add a contact": opens that service's blank form. The assistant only opens it; the owner fills in and saves. */
 function draftRequest(lower: string): Turn | null {
   if (!/\b(new|add|create|draft|make|start)\b/.test(lower)) return null;
-  const hit = DRAFT_SERVICES.find((s) => new RegExp(`\\b${{ invoices: "invoice", admin: "request", contacts: "contact", vendors: "vendor", projects: "project", licenses: "licen[sc]e" }[s.id]}s?\\b`).test(lower));
+  const hit = DRAFT_SERVICES.find((s) => new RegExp(`\\b${{ invoices: "invoice", admin: "request", contacts: "contact", vendors: "vendor", projects: "project", licenses: "licen[sc]e", equipment: "equipment|vehicle|truck|tool" }[s.id]}s?\\b`).test(lower));
   if (!hit) return null;
   return {
     role: "assistant",

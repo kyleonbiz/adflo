@@ -181,9 +181,29 @@ export function ShareDialog({
         )}
 
         <section aria-labelledby="active-links-heading" className="mt-5 border-t pt-4">
-          <h4 id="active-links-heading" className="mb-2 text-sm font-semibold">
-            Active links
-          </h4>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h4 id="active-links-heading" className="text-sm font-semibold">
+              Active links
+            </h4>
+            {links && links.length > 1 && (
+              <Button
+                variant="ghost" size="sm" className="text-destructive hover:bg-red-50" disabled={revoking !== null}
+                onClick={async () => {
+                  setRevoking("all");
+                  try {
+                    for (const l of links) await onRevoke(l.id);
+                    await refreshLinks();
+                  } catch (e) {
+                    setError(toDmsError(e).message);
+                  } finally {
+                    setRevoking(null);
+                  }
+                }}
+              >
+                <Trash2 /> Revoke all ({links.length})
+              </Button>
+            )}
+          </div>
           {links === null ? (
             <p className="text-xs text-muted-foreground" role="status">Loading…</p>
           ) : links.length === 0 ? (
@@ -223,7 +243,7 @@ export function ShareDialog({
               ))}
             </ul>
           )}
-          <p className="mt-2 text-[11px] text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             The full link is only shown once, when it is created. Revoking stops it working immediately.
           </p>
         </section>
