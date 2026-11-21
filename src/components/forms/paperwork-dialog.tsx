@@ -21,7 +21,7 @@ export function PaperworkDialog({ open, onOpenChange, onPick }: { open: boolean;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="p-6 max-w-lg">
         <DialogTitle>Choose paperwork</DialogTitle>
         <DialogDescription className="mt-1">Pick your kind of business, then the form you need. You can print it, save it as a PDF or download it once it is filled in.</DialogDescription>
         <div className="mt-4 space-y-1.5">

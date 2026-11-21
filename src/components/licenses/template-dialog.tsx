@@ -16,7 +16,7 @@ export function TemplateDialog({ open, onOpenChange, onPick }: { open: boolean; 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="p-6 max-w-lg">
         <DialogTitle>Start from a template</DialogTitle>
         <DialogDescription className="mt-1">Pick your kind of business, then the item to track. You enter the dates from the real document.</DialogDescription>
         <div className="mt-4 space-y-1.5">

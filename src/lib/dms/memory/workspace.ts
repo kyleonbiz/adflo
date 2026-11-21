@@ -15,6 +15,7 @@ const SYSTEM_FOLDERS: { n: number; name: string; color: FolderColor; category: C
   { n: 12, name: "Tax documents", color: "amber", category: "tax" },
   { n: 13, name: "Contracts", color: "blue", category: "contract" },
   { n: 14, name: "HR Documents", color: "rose", category: "hr" },
+  { n: 15, name: "Insurance", color: "sky", category: "insurance" },
 ];
 
 /** A fresh, empty workspace: the standard folders and its owner, and no documents. */

@@ -20,7 +20,8 @@ select t.ok('first publish is version 1', public.control_publish_agreement('Term
 select t.ok('second publish is version 2', t.count($$select 1 from public.agreement_templates where title = 'Terms of Service'$$) = 1 and public.control_publish_agreement('terms of service', 'v2 text') is not null);
 select t.ok('versions are 1 and 2', t.count($$select 1 from public.agreement_templates where title = 'Terms of Service' and version in (1, 2)$$) = 2);
 select t.fails('templates cannot be edited', $$update public.agreement_templates set body = 'changed'$$);
-select t.ok('the Owner can edit a version nobody has accepted', (select public.control_edit_agreement((select id from public.agreement_templates where title = 'Terms of Service' and version = 2), 'v2 edited', '2027-01-01')) is not distinct from null and t.count($$select 1 from public.agreement_templates where title = 'Terms of Service' and version = 2 and body = 'v2 edited' and effective_date = date '2027-01-01'$$) = 1);
+select public.control_edit_agreement((select id from public.agreement_templates where title = 'Terms of Service' and version = 2), 'v2 edited', '2027-01-01');
+select t.ok('the Owner can edit a version nobody has accepted', t.count($$select 1 from public.agreement_templates where title = 'Terms of Service' and version = 2 and body = 'v2 edited' and effective_date = date '2027-01-01'$$) = 1);
 select t.fails('templates cannot be deleted', $$delete from public.agreement_templates$$);
 
 select t.as_staff(:sup::uuid);

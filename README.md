@@ -1,10 +1,28 @@
 # AdFlo
 
-The client-facing back-office platform. It started as a multi-tenant document manager:
-folders and tags, metadata, filename/metadata and **document-text search** (text-based PDF, DOCX,
-XLSX, PPTX, CSV, TXT; no OCR), private file storage, versioning,
-expiring share links and an audit trail — on Next.js, Supabase (Postgres, Auth, Storage),
-Tailwind and shadcn/ui-style components.
+**The administrative management platform**, built for contractors and property managers and ready for other industries.
+
+Running a business shouldn't mean managing endless administrative work. AdFlo gives a business one organized place for
+its records and paperwork, its licenses, insurance and deadlines, and its invoices, vendors and projects, with reminders so
+nothing slips. Compliance management and equipment and asset tracking (tools, vehicles, appliances, HVAC units, keys) are
+part of the platform, not separate products. AdFlo is not a compliance tool, an inventory system, a CRM, an accounting
+platform or a project management tool; it is the administrative side of running a business, centralized.
+
+Its built-in assistant, **Addy**, takes on the repetitive work (setting up the workspace, drafting invoices, documents and
+forms, creating tasks and reminders, running reports). Drafts open for review: nothing is saved, sent, signed, approved or
+deleted without a person's say-so. The approach is **Organize, Automate, Oversee**.
+
+**Where it fits.** AdFlo is the administrative home of the business. It works alongside accounting, payroll and
+construction management software and handles the paperwork, records, compliance deadlines and equipment those systems
+don't specialize in. That is why it holds no money, banking or accounting-sync features: those stay in the tools built for them.
+
+**Audience.** Contractors are the current focus and the go-to-market audience. Property managers are the secondary
+expansion market. Other industries are long-term. Managed services will be offered later.
+
+Under the hood it started as a multi-tenant document manager (folders and tags, metadata, filename, metadata and
+**document-text search** for text-based PDF, DOCX, XLSX, PPTX, CSV and TXT with no OCR, private file storage, versioning,
+expiring share links and an audit trail) and is built on Next.js, Supabase (Postgres, Auth, Storage), Tailwind and
+shadcn/ui-style components.
 
 The site address (`/`) is the landing page (`src/app/page.tsx`; the old `/landing` redirects to it; sign-in is at `/login` and the app at `/app`): the hero, the demo workspace, then the story sections and a Book a demo form in `src/components/marketing/sections.tsx`; the form posts to `/api/demo-request`, which emails the request to the sales inbox through the Google Workspace mailbox); Open workspace goes into the app. The earlier marketing page (hero, features, plans) is in git history at commit `534795a`.
 
@@ -17,9 +35,10 @@ The site address (`/`) is the landing page (`src/app/page.tsx`; the old `/landin
 
 ## About this app (read this first if you are reviewing it)
 
-**What it is.** A back-office tool for small businesses: one place for invoices, licenses and renewals, vendors,
-contacts, projects and tasks, forms, documents and reporting, with an AI assistant ("Addy"). It is built to remove
-admin busywork: reminders, duplicate checks and expiry tracking happen for you.
+**What it is.** An administrative management platform: one place for documents and records, invoices, licenses and
+renewals, vendors, contacts, projects and tasks, forms and signing, the calendar and reporting, with the Addy assistant on
+top. It is built to remove administrative busywork: reminders, duplicate checks and expiry tracking happen for you, and the
+Dashboard, the notification bell and Reporting all read the same records.
 
 **Choices made on purpose (please do not treat these as gaps).**
 

@@ -38,7 +38,7 @@ function NewTicketDialog({ clients, defaultClientId, onClose }: { clients: Pick<
   }
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="p-6 sm:max-w-lg">
         <DialogTitle>New ticket</DialogTitle>
         <DialogDescription>Log a request from a client so nothing gets lost.</DialogDescription>
         <form onSubmit={submit} className="space-y-4" noValidate>
