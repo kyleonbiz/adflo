@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, DollarSign, FolderKanban, Info, ListPlus, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, Receipt, FolderKanban, Info, ListPlus, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { MiniBars, ProgressRing, UpcomingChart, WorkloadChart } from "@/components/modules/dashboard-charts";
 import { SampleDataBanner } from "@/components/modules/sample-data";
@@ -16,6 +16,7 @@ import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
 import { buildDashboard } from "@/lib/dashboard/logic";
 import { useDashboardSources } from "@/lib/records/sources";
+import { useSetupConfig } from "@/lib/setup/storage";
 import { clearReminder, reminderItems } from "@/lib/reminders/logic";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { addTodo, newTodoId, hasOpenTodo, pruneTodos, todaysTodos } from "@/lib/todos/logic";
@@ -114,7 +115,7 @@ const NOTE = {
   bad: { Icon: ArrowDown, tone: "text-red-600" },
 } as const;
 const KPI_ICON: Record<string, { Icon: LucideIcon; box: string }> = {
-  money: { Icon: DollarSign, box: "bg-emerald-500" },
+  money: { Icon: Receipt, box: "bg-emerald-500" },
   tasks: { Icon: FolderKanban, box: "bg-amber-400" },
 };
 
@@ -233,6 +234,18 @@ function LicensesTab({ panel }: { panel: LicensesPanel }) {
  * The signed-in landing page. The numbers, charts and action list arrive already computed from the server
  * (`data`), so the first paint is complete; only the visitor's own to-dos and snoozes are read in the browser.
  */
+/** A short nudge until the guided setup is finished. Nothing is shown once it is done. */
+function FinishSetup() {
+  const setup = useSetupConfig();
+  if (setup?.completedOn) return null;
+  return (
+    <aside aria-label="Finish setup" data-testid="finish-setup" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
+      <p className="text-sm"><span className="font-semibold">Finish guided setup.</span> <span className="text-muted-foreground">Pick your industry and the services you use, and AdFlo sets up templates and reminders for you.</span></p>
+      <Button asChild size="sm"><Link href="/app/setup?tab=setup">Continue setup</Link></Button>
+    </aside>
+  );
+}
+
 export function Dashboard({ data, serverToday }: { base?: "/app"; data: DashboardData; serverToday: string; name?: string }) {
   const today = useToday(serverToday) ?? serverToday;
   const bars = data.workload.map((w) => w.attention);
@@ -252,6 +265,7 @@ export function Dashboard({ data, serverToday }: { base?: "/app"; data: Dashboar
       </div>
       <div id="dash-panel" role="tabpanel" aria-labelledby={`dash-tab-${tab}`} className="space-y-5">
       <SampleDataBanner />
+      <FinishSetup />
       {tab === "licenses" ? <LicensesTab panel={data.licenses} /> : (<>
       <section aria-label="At a glance" className="grid gap-4 sm:grid-cols-3">
         {data.kpis.map((k) => <KpiCard key={k.id} kpi={k} bars={bars} />)}

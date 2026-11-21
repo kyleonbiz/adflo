@@ -23,7 +23,7 @@ export const MODULES: readonly PlatformModule[] = [
   { id: "vendors", number: "04", name: "Vendors", slug: "vendors", status: "available",
     summary: "Supplier profiles, intake forms and document collection." },
   { id: "crm", number: "05", name: "Contacts", slug: "contacts", status: "available",
-    summary: "Customers, leads and vendors in one place: import, clean up duplicates, and keep each one's documents and notes together." },
+    summary: "Customers, vendors and other contacts in one place: import, clean up duplicates, and keep each one's documents and notes together." },
   { id: "equipment", number: "11", name: "Equipment", slug: "equipment", status: "available",
     summary: "Tools, vehicles, appliances, HVAC units and keys, with service, inspection and warranty dates." },
   { id: "projects", number: "06", name: "Tasks", slug: "projects", status: "available",

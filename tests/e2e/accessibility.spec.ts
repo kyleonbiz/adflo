@@ -6,7 +6,7 @@ const axeSource = readFileSync("node_modules/axe-core/axe.min.js", "utf8");
 /** The pages people use most, filled with sample records, so a failing colour or tap target on any of them is caught. */
 const PAGES = [
   "/app", "/app/overview", "/app/assistant", "/app/invoices", "/app/licenses", "/app/contacts", "/app/vendors", "/app/projects",
-  "/app/forms", "/app/reporting", "/app/calendar", "/app/activity", "/app/setup?tab=profile", "/app/setup?tab=notifications",
+  "/app/forms", "/app/equipment", "/app/reporting", "/app/calendar", "/app/activity", "/app/setup?tab=profile", "/app/setup?tab=notifications",
   "/app/setup?tab=demo", "/app/setup?tab=setup", "/app/setup?tab=data", "/app/contacts/c-2", "/app/vendors/v-2", "/privacy", "/login",
 ];
 
