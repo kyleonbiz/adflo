@@ -3,7 +3,9 @@
 import { PreviewNote } from "@/components/ui/preview-note";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
+import { downloadText } from "@/components/import/csv-source";
+import { toIcs } from "@/lib/ics";
 import { useToday } from "@/components/modules/use-today";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +22,7 @@ const KIND_STYLE: Record<EventKind, string> = {
   Licenses: "bg-violet-100 text-violet-900 dark:bg-violet-950 dark:text-violet-100",
   Tasks: "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100",
   Vendors: "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-100",
+  Documents: "bg-rose-100 text-rose-900 dark:bg-rose-950 dark:text-rose-100",
   Reminders: "bg-slate-200 text-slate-900 dark:bg-slate-800 dark:text-slate-100",
 };
 const LATE_STYLE = "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-100";
@@ -38,13 +41,14 @@ function EventRow({ e, testId }: { e: CalendarEvent; testId: string }) {
 }
 
 /** Every date from every service on one calendar: invoices due, licenses expiring, tasks, vendor documents and your reminders. */
-export function CalendarPage({ preview }: { preview?: string }) {
+export function CalendarPage({ preview, live = false }: { preview?: string; live?: boolean }) {
   const today = useToday();
-  const sources = useCalendarSources(today);
+  const sources = useCalendarSources(today, live);
   const [view, setView] = useState<"month" | "agenda" | "next">("month");
   const [month, setMonth] = useState<string | null>(null);
   const [kind, setKind] = useState<"all" | EventKind>("all");
   const [selected, setSelected] = useState<string | null>(null);
+  const [window, setWindow] = useState<30 | 60 | 90>(60);
 
   const all = useMemo(() => (today ? buildEvents(sources, today) : []), [sources, today]);
   const events = useMemo(() => (kind === "all" ? all : all.filter((e) => e.kind === kind)), [all, kind]);
@@ -63,7 +67,7 @@ export function CalendarPage({ preview }: { preview?: string }) {
   const grid = monthGrid(shownMonth);
   const chosen = selected ?? today;
   const chosenEvents = days.get(chosen) ?? [];
-  const upcoming = agenda(events, today);
+  const upcoming = agenda(events, today, window);
   const late = upcoming.filter((e) => e.late);
   const ahead = upcoming.filter((e) => !e.late);
   const next = nextMonth(events, today);
@@ -84,6 +88,13 @@ export function CalendarPage({ preview }: { preview?: string }) {
               {EVENT_KINDS.map((k) => <SelectItem key={k} value={k}>{k}</SelectItem>)}
             </SelectContent>
           </Select>
+          {view === "agenda" && (
+            <Select value={String(window)} onValueChange={(v) => setWindow(Number(v) as 30 | 60 | 90)}>
+              <SelectTrigger aria-label="Agenda length" className="w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>{[30, 60, 90].map((n) => <SelectItem key={n} value={String(n)}>Next {n} days</SelectItem>)}</SelectContent>
+            </Select>
+          )}
+          <Button type="button" variant="outline" disabled={events.length === 0} onClick={() => downloadText(toIcs(events.filter((e) => !e.late).map((e) => ({ uid: e.id, day: e.day, summary: e.title, description: e.detail })), today), `adflo-calendar-${today}.ics`, "text/calendar")}><CalendarPlus /> Download .ics</Button>
           <div role="tablist" aria-label="Calendar view" className="flex rounded-lg border bg-card p-0.5">
             {(["month", "agenda", "next"] as const).map((v) => (
               <button
@@ -158,8 +169,8 @@ export function CalendarPage({ preview }: { preview?: string }) {
                   >
                     <span className={cn("grid size-6 place-items-center rounded-full text-xs font-medium", isToday && "bg-primary text-primary-foreground")}>{Number(day.slice(8))}</span>
                     <span className="hidden flex-col gap-0.5 sm:flex">
-                      {list.slice(0, 2).map((e) => <span key={e.id} data-testid="calendar-pill" className={cn("truncate rounded px-1 py-0.5 text-[11px] leading-tight", pill(e))}>{e.title}</span>)}
-                      {list.length > 2 && <span className="px-1 text-[11px] text-muted-foreground">+{list.length - 2} more</span>}
+                      {list.slice(0, 2).map((e) => <span key={e.id} data-testid="calendar-pill" className={cn("truncate rounded px-1 py-0.5 text-xs leading-tight", pill(e))}>{e.title}</span>)}
+                      {list.length > 2 && <span className="px-1 text-xs text-muted-foreground">+{list.length - 2} more</span>}
                     </span>
                     {list.length > 0 && <span className="flex gap-0.5 sm:hidden" aria-hidden>{list.slice(0, 4).map((e) => <span key={e.id} className={cn("size-1.5 rounded-full", e.late ? "bg-red-500" : "bg-primary")} />)}</span>}
                   </button>
@@ -183,7 +194,7 @@ export function CalendarPage({ preview }: { preview?: string }) {
           {upcoming.length === 0 ? (
             <div className="rounded-2xl border bg-card p-8 text-center shadow-panel" data-testid="agenda-empty">
               <h2 className="text-lg font-semibold">Nothing coming up</h2>
-              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">Invoices due, licenses expiring, tasks and reminders for the next 60 days show here.</p>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">Invoices due, licenses expiring, tasks and reminders for the next {window} days show here.</p>
             </div>
           ) : (
             <>
