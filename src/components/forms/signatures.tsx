@@ -77,7 +77,7 @@ function RequestDialog({ open, onOpenChange, submissions, today, by }: { open: b
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="p-6 max-w-lg">
         <DialogTitle>Request signatures</DialogTitle>
         <DialogDescription className="mt-1">Choose what needs signing and who signs it. Each signer types their name and agrees; the signed copy carries a fingerprint of the document.</DialogDescription>
         <form onSubmit={create} noValidate className="mt-4 space-y-3">
@@ -143,7 +143,7 @@ function SignDialog({ target, onClose }: { target: { request: SigningRequest; si
 
   return (
     <Dialog open={target !== null} onOpenChange={(o) => !o && close()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="p-6 max-w-md">
         {target && signer && (
           <>
             <DialogTitle>Sign as {signer.name}</DialogTitle>

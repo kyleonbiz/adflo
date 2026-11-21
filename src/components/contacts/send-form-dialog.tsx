@@ -20,7 +20,7 @@ export function SendFormDialog({ person, onOpenChange }: { person: Person | null
   const [formId, setFormId] = useState(CHOICES[0].id);
   return (
     <Dialog open={person !== null} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="p-6 max-w-md">
         <DialogTitle>Fill out a form for {person?.name}</DialogTitle>
         <DialogDescription className="mt-1">Their details are put into the matching fields. You can change anything before you submit.</DialogDescription>
         <div className="mt-4 space-y-1.5">

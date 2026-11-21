@@ -67,7 +67,7 @@ function DialogContent({
 }
 
 function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
-  return <DialogPrimitive.Title className={cn("text-lg font-semibold leading-tight", className)} {...props} />;
+  return <DialogPrimitive.Title className={cn("pr-8 text-lg font-semibold leading-tight", className)} {...props} />;
 }
 
 function DialogDescription({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Description>) {

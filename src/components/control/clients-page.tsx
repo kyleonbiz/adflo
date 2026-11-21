@@ -70,7 +70,7 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+      <DialogContent className="p-6 sm:max-w-lg">
         <DialogTitle>{client ? "Edit client" : "Add client"}</DialogTitle>
         <DialogDescription>{client ? "Changes are recorded in the audit log." : "Creates the client and, if you leave the box ticked, their workspace and the owner's invitation in the same step. Fields marked * are required."}</DialogDescription>
         <form onSubmit={submit} className="space-y-4" noValidate>

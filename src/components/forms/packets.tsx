@@ -98,7 +98,7 @@ export function Packets({ today, onFillForm }: { today: string; onFillForm: (for
       )}
 
       <Dialog open={starting} onOpenChange={(o) => !o && close()}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="p-6 max-w-md">
           <DialogTitle>Start a packet</DialogTitle>
           <DialogDescription className="mt-1">{template.blurb}</DialogDescription>
           <form

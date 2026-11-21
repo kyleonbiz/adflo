@@ -11,7 +11,7 @@ export function DocumentReadyDialog({
 }: { open: boolean; title: string; contact?: { name: string; href: string } | null; onOpenChange: (open: boolean) => void; onPrint: () => void; onPdf: () => void; onText: () => void }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="p-6 max-w-sm">
         <DialogTitle>Your paperwork is ready</DialogTitle>
         <DialogDescription className="mt-1">{title} has been filled in. Keep a copy now, or get it later from the form&apos;s submissions.</DialogDescription>
         <div className="mt-4 grid gap-2">
