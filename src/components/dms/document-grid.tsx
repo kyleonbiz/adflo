@@ -52,7 +52,7 @@ export function DocumentGrid({
         {items.map((doc) => (
           <li key={doc.id} className="relative flex">
             {selected && onToggleSelect && !inTrash && canEdit && (
-              <span className="absolute left-3 top-3 z-10 rounded bg-card/90 p-1 shadow-sm">
+              <span className="absolute bottom-3 left-3 z-10 rounded bg-card/90 p-1 shadow-sm">
                 <SelectBox checked={selected.has(doc.id)} onChange={() => onToggleSelect(doc.id)} label={`Select ${doc.displayName}`} />
               </span>
             )}

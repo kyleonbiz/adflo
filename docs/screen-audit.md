@@ -135,10 +135,13 @@ module (also on Calendar and Home); fixed `.ics` semicolon escaping.
 
 **Also done in the follow-up:** bulk actions on Forms; Calendar week view and add-a-reminder on a day; Control center "Quiet 30d" and "Invitation pending" client filters.
 
-**Not done (left for a follow-up):** URL-persisted filters outside Vendors;
-Documents (revoke-all share links, bulk move/tag, an "expiring soon" filter, a note on preview limits); "Pick from Documents" on
-licenses; a combined invoices/forms/documents timeline on profiles (profiles list linked projects and a document search link only);
-splitting `projects-page.tsx`; sharing the stepper between the two CSV importers; the Reporting dual-navigation focus check;
-bulk onboarding reminders; Equipment on the Reporting screens and in Addy; an Equipment tier
-feature flag (it is open to every plan); dead-link handling in Activity. Nothing was run against a hosted Supabase project, so the
-`equipment` migration is untested there.
+**Third round (Documents and the rest):** Documents bulk move, tag and trash (checkbox in each card's bottom-left corner);
+"Expiring documents" panel at the top of Documents; Revoke all share links; clearer preview note for Word and Excel; filters kept in
+the address bar on Invoices, Licenses and Forms (Vendors already did this); "Find files for this license in Documents" link on
+licenses; Equipment report in Reporting; Addy can open an equipment draft; Control center "Remind all" on Onboarding.
+
+**Still not done:** a combined timeline on profiles; a document picker that attaches a real file to a license requirement; filters in
+the address bar for Tasks; Equipment on the dashboard workload chart; a bell alert for document expiry (the Documents panel and
+Calendar show it); Activity dead-link handling (entries link to module pages, not single records, so there is little to break);
+splitting `projects-page.tsx`; sharing the stepper between the two CSV importers; the Reporting tabs/dropdown focus check.
+Nothing was run against a hosted Supabase project, so the `equipment` migration is untested there.
