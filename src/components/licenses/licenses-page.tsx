@@ -3,6 +3,7 @@
 import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
 import { licenseSummaryText, licensesToCsv } from "@/lib/licenses/summary";
 import { printText } from "@/lib/forms/print";
+import { readParam, useUrlFilters } from "@/lib/url-filters";
 import { PreviewNote } from "@/components/ui/preview-note";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, BellRing, CalendarClock, CalendarPlus, FileText, Download, FileWarning, Hourglass, Plus, Printer, Search, ShieldCheck, Upload } from "lucide-react";
@@ -51,10 +52,11 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
   const uploadInput = useRef<HTMLInputElement>(null);
   const loading = useRecordsLoading();
   const [edited, setEdited] = useRecordsState<License>("licenses");
-  const [query, setQuery] = useState(initialQuery);
-  const [statusFilter, setStatusFilter] = useState<Filter>("all");
-  const [sort, setSort] = useState<Sort>("expiry");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [query, setQuery] = useState(() => initialQuery || readParam("q", ""));
+  const [statusFilter, setStatusFilter] = useState<Filter>(() => readParam<Filter>("status", "all"));
+  const [sort, setSort] = useState<Sort>(() => readParam<Sort>("sort", "expiry", ["expiry", "name"]));
+  const [categoryFilter, setCategoryFilter] = useState<string>(() => readParam<string>("category", "all"));
+  useUrlFilters({ q: query, status: statusFilter, sort, category: categoryFilter }, { status: "all", sort: "expiry", category: "all" });
   const [formFor, setFormFor] = useState<License | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<License | null>(null);
   const [picking, setPicking] = useState(false);

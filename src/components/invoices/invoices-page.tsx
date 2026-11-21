@@ -1,6 +1,7 @@
 "use client";
 
 import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
+import { readParam, useUrlFilters } from "@/lib/url-filters";
 import { PreviewNote } from "@/components/ui/preview-note";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useMemo, useState } from "react";
@@ -93,8 +94,8 @@ export function InvoicesView({
   title = "Invoices", subtitle = "Track what is owed, repeat recurring invoices and chase overdue payments.",
 }: InvoicesViewProps) {
   const today = useToday();
-  const [query, setQuery] = useState(initialQuery);
-  const [stateFilter, setStateFilter] = useState<StatusFilter>("all");
+  const [query, setQuery] = useState(() => initialQuery || readParam("q", ""));
+  const [stateFilter, setStateFilter] = useState<StatusFilter>(() => readParam<StatusFilter>("status", "all", ["all", "sent", ...FILTERS]));
   const [formFor, setFormFor] = useState<Invoice | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Invoice | null>(null);
   const [viewing, setViewing] = useState<Invoice | null>(null);
@@ -102,8 +103,9 @@ export function InvoicesView({
   const [paying, setPaying] = useState<Invoice | null>(null);
   const [payDate, setPayDate] = useState("");
   const [notice, setNotice] = useState("");
-  const [sort, setSort] = useState<InvoiceSort | "default">("default");
-  const [groupBy, setGroupBy] = useState<InvoiceGroupBy>("status");
+  const [sort, setSort] = useState<InvoiceSort | "default">(() => readParam<InvoiceSort | "default">("sort", "default", ["default", "due", "amount", "client", "number"]));
+  const [groupBy, setGroupBy] = useState<InvoiceGroupBy>(() => readParam<InvoiceGroupBy>("group", "status", ["status", "client", "month"]));
+  useUrlFilters({ q: query, status: stateFilter, sort, group: groupBy }, { status: "all", sort: "default", group: "status" });
   const [bulkDelete, setBulkDelete] = useState(false);
   const [undoer, setUndoer] = useState<{ text: string; run: () => void } | null>(null);
   const sel = useSelection();

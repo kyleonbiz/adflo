@@ -3,6 +3,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
+import { readParam, useUrlFilters } from "@/lib/url-filters";
 import { PreviewNote } from "@/components/ui/preview-note";
 import { useMemo, useState } from "react";
 import { CheckCircle2, FileInput, Inbox, Plus, Search, Send } from "lucide-react";
@@ -59,8 +60,9 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   const audit = useAudit();
   const [editedForms, setEditedForms] = useState<FormTemplate[] | null>(null);
   const [editedSubs, setEditedSubs] = useState<Submission[] | null>(null);
-  const [sort, setSort] = useState<"name" | "responses" | "new">("name");
-  const [query, setQuery] = useState(initialQuery);
+  const [sort, setSort] = useState<"name" | "responses" | "new">(() => readParam<"name" | "responses" | "new">("sort", "name", ["name", "responses", "new"]));
+  const [query, setQuery] = useState(() => initialQuery || readParam("q", ""));
+  useUrlFilters({ q: query, sort }, { sort: "name" });
   const [builderFor, setBuilderFor] = useState<FormTemplate | "new" | null>(null);
   // A link from a contact opens its form straight away, with the contact's details in.
   const fromLink = initialFill ? [...starterForms(), ...PAPERWORK.map((p) => p.form)].find((f) => f.id === initialFill.formId) ?? null : null;

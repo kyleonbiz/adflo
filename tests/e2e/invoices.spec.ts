@@ -9,6 +9,18 @@ async function menu(page: Page, card: Locator, number: string, item: string) {
 }
 
 test.describe("invoices module", () => {
+  test("keeps the search, sort and grouping in the address and restores them on reload", async ({ page }) => {
+    await page.goto("/app/invoices");
+    await page.getByLabel("Search invoices").fill("northwind");
+    await page.getByRole("combobox", { name: "Sort invoices" }).click();
+    await page.getByRole("option", { name: "Client" }).click();
+    await expect(page).toHaveURL(/q=northwind/);
+    await expect(page).toHaveURL(/sort=client/);
+    await page.reload();
+    await expect(page.getByLabel("Search invoices")).toHaveValue("northwind");
+    await expect(page.getByRole("combobox", { name: "Sort invoices" })).toContainText("Client");
+  });
+
   test("late invoices offer a payment reminder, and ones not yet due do not", async ({ page }) => {
     await page.goto("/app/invoices");
     const late = page.getByTestId("invoice-card").filter({ hasText: "INV-0041" });
