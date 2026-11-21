@@ -25,6 +25,15 @@ test.describe("equipment", () => {
     await expect(row(page, "Rooftop unit 2")).not.toContainText("Service overdue");
   });
 
+  test("opens a prepared draft from Addy with the details filled in, and nothing is saved until you press save", async ({ page }) => {
+    await page.goto("/app/equipment?new=1&name=Box%20truck&type=vehicle&identifier=VIN9");
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByLabel("Name")).toHaveValue("Box truck");
+    await expect(dialog.getByLabel("Serial, VIN, plate or key tag")).toHaveValue("VIN9");
+    await dialog.getByRole("button", { name: "Add equipment" }).click();
+    await expect(page.getByTestId("equipment-row").filter({ hasText: "Box truck" })).toBeVisible();
+  });
+
   test("deletes with a confirmation and undo", async ({ page }) => {
     await page.goto("/app/equipment");
     await page.getByRole("button", { name: "Add equipment" }).first().click();

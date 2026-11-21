@@ -36,12 +36,12 @@ const fromEquipment = (e: Equipment): FormState => ({
   nextInspectionOn: e.nextInspectionOn ?? "", serviceVendor: e.serviceVendor, notes: e.notes,
 });
 
-function EquipmentDialog({ open, item, onClose, onSave }: { open: boolean; item: Equipment | null; onClose: () => void; onSave: (v: FormState) => void }) {
+function EquipmentDialog({ open, item, draft, onClose, onSave }: { open: boolean; draft?: Record<string, string>; item: Equipment | null; onClose: () => void; onSave: (v: FormState) => void }) {
   const [form, setForm] = useState<FormState>(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [seen, setSeen] = useState<string | null>(null);
   const key = open ? (item?.id ?? "new") : null;
-  if (key !== seen) { setSeen(key); if (key) { setForm(item ? fromEquipment(item) : EMPTY); setErrors({}); } }
+  if (key !== seen) { setSeen(key); if (key) { setForm(item ? fromEquipment(item) : { ...EMPTY, ...(draft ?? {}) } as FormState); setErrors({}); } }
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }));
   const field = (id: keyof FormState, label: string, props: React.ComponentProps<typeof Input> = {}) => (
     <div className="space-y-1.5">
@@ -100,7 +100,7 @@ function EquipmentDialog({ open, item, onClose, onSave }: { open: boolean; item:
 }
 
 /** Equipment and assets: tools, vehicles, appliances, HVAC units and keys, with service, inspection and warranty dates that feed the calendar and dashboard. */
-export function EquipmentPage({ preview }: { preview?: string }) {
+export function EquipmentPage({ preview, draft, startNew }: { preview?: string; draft?: Record<string, string>; startNew?: boolean }) {
   const today = useToday();
   const loading = useRecordsLoading();
   const audit = useAudit();
@@ -109,7 +109,7 @@ export function EquipmentPage({ preview }: { preview?: string }) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState<"all" | EquipmentType>("all");
   const [status, setStatus] = useState<"all" | EquipmentStatus | "attention">("all");
-  const [editing, setEditing] = useState<Equipment | "new" | null>(null);
+  const [editing, setEditing] = useState<Equipment | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Equipment | null>(null);
   const [bulkDelete, setBulkDelete] = useState(false);
   const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
@@ -250,7 +250,7 @@ export function EquipmentPage({ preview }: { preview?: string }) {
         </>
       )}
 
-      <EquipmentDialog open={editing !== null} item={editing && editing !== "new" ? editing : null} onClose={() => setEditing(null)} onSave={save} />
+      <EquipmentDialog draft={editing === "new" ? draft : undefined} open={editing !== null} item={editing && editing !== "new" ? editing : null} onClose={() => setEditing(null)} onSave={save} />
       <ConfirmDialog
         open={!!deleting} title="Delete equipment?" description={<>{deleting?.name} will be removed. Mark it retired instead to keep the record.</>}
         onCancel={() => setDeleting(null)}
