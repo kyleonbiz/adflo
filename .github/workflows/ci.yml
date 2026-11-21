@@ -41,9 +41,11 @@ jobs:
   # Applies every migration to a throwaway PostgreSQL 16 and runs the access-policy tests (npm run test:db).
   # supabase/tests/run.sh only prints PASS/FAIL lines and exits 0 either way, so this job fails on any FAIL or ERROR line,
   # or if the run printed no PASS lines at all.
+  # Pinned to ubuntu-24.04: it ships PostgreSQL 16 (what supabase/tests/run.sh expects). `ubuntu-latest` moved to a release
+  # that has no postgresql-16 package, so the install step failed before any test ran.
   database:
     name: Database policy tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
