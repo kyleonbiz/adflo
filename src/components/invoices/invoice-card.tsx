@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, BellRing, CheckCircle2, Copy, Download, Eye, Link2, Mail, MoreHorizontal, Pencil, Repeat, Send, Trash2, Undo2 } from "lucide-react";
+import { FolderInput, Ban, BellRing, CheckCircle2, Copy, Download, Eye, Link2, Mail, MoreHorizontal, Pencil, Repeat, Send, Trash2, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SelectBox } from "@/components/ui/bulk-bar";
@@ -25,6 +25,8 @@ export interface InvoiceActions {
   onChase: (invoice: Invoice) => void;
   onReopen: (invoice: Invoice) => void;
   onCopyLink: (invoice: Invoice) => void;
+  /** Signed in only: save a PDF copy to Documents. */
+  onSaveToDocuments?: (invoice: Invoice) => void;
 }
 
 /** One compact row. Clicking the left side opens the invoice; the right side holds the actions. */
@@ -46,6 +48,7 @@ export function InvoiceCard({ invoice, today, actions, selected, onSelect }: { i
           <span className="flex items-center gap-2">
             <span className="font-semibold">{invoice.number}</span>
             <Badge variant={STATE_BADGE[state]}>{STATE_LABEL[state]}</Badge>
+            {invoice.savedToDocumentsOn && <span className="text-xs text-muted-foreground">In Documents</span>}
             {invoice.recurrence !== "none" && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Repeat className="size-3.5" aria-hidden /> {RECURRENCES.find((r) => r.value === invoice.recurrence)?.label}
@@ -88,6 +91,7 @@ export function InvoiceCard({ invoice, today, actions, selected, onSelect }: { i
             <DropdownMenuItem onSelect={() => actions.onView(invoice)}><Eye /> View</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => actions.onEdit(invoice)}><Pencil /> Edit</DropdownMenuItem>
             <DropdownMenuItem onSelect={() => actions.onCopyLink(invoice)}><Link2 /> Copy link</DropdownMenuItem>
+            {actions.onSaveToDocuments && <DropdownMenuItem onSelect={() => actions.onSaveToDocuments?.(invoice)}><FolderInput /> {invoice.savedToDocumentsOn ? "Save another copy to Documents" : "Save to Documents"}</DropdownMenuItem>}
             {invoice.status === "draft" && (
               <DropdownMenuItem onSelect={() => actions.onSend(invoice)}><Send /> Mark sent</DropdownMenuItem>
             )}

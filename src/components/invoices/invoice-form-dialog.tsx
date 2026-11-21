@@ -89,7 +89,7 @@ const Section = ({ title, children }: { title: string; children: React.ReactNode
 
 /** Create or edit an invoice. `invoice` present means edit. */
 export function InvoiceFormDialog({
-  open, invoice, draft, existing, today, onOpenChange, onSubmit, clients, draftClientId, senderKey = SENDER_KEY, senderDefaults,
+  open, invoice, draft, existing, today, onOpenChange, onSubmit, canSaveToDocuments = false, clients, draftClientId, senderKey = SENDER_KEY, senderDefaults,
 }: {
   open: boolean;
   invoice?: Invoice;
@@ -97,7 +97,9 @@ export function InvoiceFormDialog({
   existing: Invoice[];
   today: string;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (values: InvoiceFormValues, clientId?: string) => void;
+  onSubmit: (values: InvoiceFormValues, clientId?: string, options?: { saveCopy: boolean }) => void;
+  /** Signed in: offer to save a PDF copy to Documents when a new invoice is created. */
+  canSaveToDocuments?: boolean;
   /** Control center: lets the invoice be addressed to one of these clients (the name and email fill in). */
   clients?: BillableClient[];
   /** Control center: the client a new invoice starts with (the one the draft was made for). */
@@ -109,6 +111,7 @@ export function InvoiceFormDialog({
 }) {
   // The client picked in this dialog; until one is, the invoice's own or the draft's.
   const [picked, setPicked] = useState<string | null>(null);
+  const [saveCopy, setSaveCopy] = useState(true);
   const clientId = picked ?? invoice?.clientId ?? draftClientId ?? "";
   const { register, control, handleSubmit, reset, setError, setValue, formState } = useForm<InvoiceFormInput, unknown, InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -142,7 +145,7 @@ export function InvoiceFormDialog({
         paymentMethods: values.paymentMethods.join("\n"),
       }));
     } catch { /* storage unavailable: nothing remembered */ }
-    onSubmit(values, clients ? clientId || undefined : undefined);
+    onSubmit(values, clients ? clientId || undefined : undefined, { saveCopy: canSaveToDocuments && !invoice && saveCopy });
     close(false);
   });
   const close = (o: boolean) => { if (!o) setPicked(null); onOpenChange(o); };
@@ -275,7 +278,13 @@ export function InvoiceFormDialog({
               </div>
             </Section>
           </div>
-          <div className="flex justify-end gap-2 border-t px-5 py-3">
+          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 border-t px-5 py-3">
+            {canSaveToDocuments && !invoice && (
+              <label className="mr-auto flex cursor-pointer items-center gap-2 text-sm">
+                <input type="checkbox" checked={saveCopy} onChange={(e) => setSaveCopy(e.target.checked)} className="size-4 rounded border-input accent-primary" />
+                Also save a PDF copy to Documents (Invoices folder)
+              </label>
+            )}
             <Button type="button" variant="outline" onClick={() => close(false)}>Cancel</Button>
             <Button type="submit">{invoice ? "Save changes" : "Create invoice"}</Button>
           </div>
