@@ -3,6 +3,7 @@
 import { Ban, BellRing, CheckCircle2, Copy, Download, Eye, Link2, Mail, MoreHorizontal, Pencil, Repeat, Send, Trash2, Undo2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SelectBox } from "@/components/ui/bulk-bar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { formatDayShort } from "@/lib/dates";
 import { formatMoney, invoiceAlerts, invoiceState } from "@/lib/invoices/logic";
@@ -27,13 +28,14 @@ export interface InvoiceActions {
 }
 
 /** One compact row. Clicking the left side opens the invoice; the right side holds the actions. */
-export function InvoiceCard({ invoice, today, actions }: { invoice: Invoice; today: string; actions: InvoiceActions }) {
+export function InvoiceCard({ invoice, today, actions, selected, onSelect }: { invoice: Invoice; today: string; actions: InvoiceActions; selected?: boolean; onSelect?: () => void }) {
   const state = invoiceState(invoice, today);
   const alert = invoiceAlerts(invoice, today)[0];
   const open = invoice.status === "draft" || invoice.status === "sent";
 
   return (
-    <li className="flex flex-col gap-2 px-4 py-3 hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-4" data-testid="invoice-card">
+    <li className="flex flex-col gap-2 px-4 py-3 hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-4" data-testid="invoice-card" data-selected={selected || undefined}>
+      {onSelect && <SelectBox checked={!!selected} onChange={onSelect} label={`Select ${invoice.number}`} />}
       <button
         type="button"
         onClick={() => actions.onView(invoice)}

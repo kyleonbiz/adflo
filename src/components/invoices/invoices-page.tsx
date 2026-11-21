@@ -1,5 +1,6 @@
 "use client";
 
+import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
 import { PreviewNote } from "@/components/ui/preview-note";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useMemo, useState } from "react";
@@ -17,7 +18,7 @@ import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { e2eSeed } from "@/lib/e2e-seed";
 import {
-  formatMoney, describeItems, groupInvoices, hasNextInvoice, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent,   nextRecurringInvoice, summarize,
+  arrangeInvoices, formatMoney, describeItems, type InvoiceGroupBy, type InvoiceSort, hasNextInvoice, invoiceTotals, paymentDateError, reopen, voidInvoice, invoicesToCsv, invoiceState, markPaid, markSent,   nextRecurringInvoice, summarize,
 } from "@/lib/invoices/logic";
 import { chaseEmail } from "@/lib/invoices/chase";
 import { invoiceMailto, invoicePath } from "@/lib/invoices/share";
@@ -101,6 +102,11 @@ export function InvoicesView({
   const [paying, setPaying] = useState<Invoice | null>(null);
   const [payDate, setPayDate] = useState("");
   const [notice, setNotice] = useState("");
+  const [sort, setSort] = useState<InvoiceSort | "default">("default");
+  const [groupBy, setGroupBy] = useState<InvoiceGroupBy>("status");
+  const [bulkDelete, setBulkDelete] = useState(false);
+  const [undoer, setUndoer] = useState<{ text: string; run: () => void } | null>(null);
+  const sel = useSelection();
 
   if (!today || loading) {
     return (
@@ -183,7 +189,18 @@ export function InvoicesView({
     .filter((i) => matchesFilter(i, stateFilter, today))
     .filter((i) => !q || [i.number, i.client, i.description].some((f) => f.toLowerCase().includes(q)))
 ;
-  const groups = groupInvoices(visible, today);
+  const groups = arrangeInvoices(visible, today, groupBy, sort === "default" ? null : sort);
+  const shownIds = groups.flatMap((g) => g.invoices.map((i) => i.id));
+  const chosen = invoices.filter((i) => sel.has(i.id));
+  const bulkPatch = (fn: (i: Invoice) => Invoice, verb: string, only: (i: Invoice) => boolean) => {
+    const hit = chosen.filter(only);
+    if (hit.length === 0) { setNotice("None of the selected invoices can be changed that way."); return; }
+    const ids = new Set(hit.map((i) => i.id));
+    update((all) => all.map((i) => (ids.has(i.id) ? fn(i) : i)));
+    audit(verb, `${hit.length} invoice${hit.length === 1 ? "" : "s"}`);
+    setNotice(`${hit.length} invoice${hit.length === 1 ? "" : "s"} ${verb}.`);
+    sel.clear();
+  };
 
   return (
     <div className="space-y-5">
@@ -199,7 +216,7 @@ export function InvoicesView({
             onClick={() => downloadCsv(invoicesToCsv(groups.flatMap((g) => g.invoices), today), `invoice-report-${today}.csv`)}
             disabled={visible.length === 0}
           >
-            <Download /> Export CSV
+            <Download /> Export CSV ({visible.length})
           </Button>
           <Button onClick={() => setFormFor("new")}><Plus /> New invoice</Button>
         </div>
@@ -208,7 +225,10 @@ export function InvoicesView({
       {preview && (
         <PreviewNote>{preview}</PreviewNote>
       )}
-      <p role="status" aria-live="polite" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
+      <p role="status" aria-live="polite" className={notice ? "flex items-center gap-2 text-sm text-muted-foreground" : "sr-only"}>
+        {notice}
+        {notice && undoer?.text === notice && <Button size="sm" variant="outline" className="h-7" onClick={undoer.run}>Undo</Button>}
+      </p>
 
       <section aria-label="Summary" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <SummaryTile icon={Receipt} label="Outstanding" value={formatMoney(summary.outstandingCents)} tone="text-primary" />
@@ -229,6 +249,28 @@ export function InvoicesView({
               className="pl-9"
             />
           </div>
+          <div className="sm:w-40">
+            <Select value={sort} onValueChange={(v) => setSort(v as InvoiceSort | "default")}>
+              <SelectTrigger aria-label="Sort invoices"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Sort: urgency</SelectItem>
+                <SelectItem value="due">Due date</SelectItem>
+                <SelectItem value="amount">Amount, high to low</SelectItem>
+                <SelectItem value="client">Client</SelectItem>
+                <SelectItem value="number">Invoice number</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="sm:w-40">
+            <Select value={groupBy} onValueChange={(v) => setGroupBy(v as InvoiceGroupBy)}>
+              <SelectTrigger aria-label="Group invoices"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="status">Group: status</SelectItem>
+                <SelectItem value="client">Group: client</SelectItem>
+                <SelectItem value="month">Group: due month</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="sm:w-52">
             <Select value={stateFilter} onValueChange={(v) => setStateFilter(v as StatusFilter)}>
               <SelectTrigger aria-label="Filter by status"><SelectValue /></SelectTrigger>
@@ -239,6 +281,13 @@ export function InvoicesView({
             </Select>
           </div>
         </div>
+
+        <BulkBar count={sel.size} total={shownIds.length} onSelectAll={() => sel.set(shownIds)} onClear={sel.clear}>
+          <Button size="sm" variant="outline" onClick={() => bulkPatch(markSent, "marked as sent", (i) => i.status === "draft")}>Mark sent</Button>
+          <Button size="sm" variant="outline" onClick={() => bulkPatch((i) => markPaid(i, today), "marked as paid", (i) => i.status === "sent")}>Mark paid today</Button>
+          <Button size="sm" variant="outline" onClick={() => downloadCsv(invoicesToCsv(chosen, today), `invoices-selected-${today}.csv`)}><Download /> Export</Button>
+          <Button size="sm" variant="destructive" onClick={() => setBulkDelete(true)}>Delete</Button>
+        </BulkBar>
 
         {visible.length === 0 ? (
           invoices.length === 0 ? (
@@ -256,7 +305,7 @@ export function InvoicesView({
                   {g.label} <span className="font-normal text-muted-foreground">{g.invoices.length}</span>
                 </h2>
                 <ul className="divide-y overflow-hidden rounded-2xl border bg-card shadow-panel">
-                  {g.invoices.map((i) => <InvoiceCard key={i.id} invoice={i} today={today} actions={actions} />)}
+                  {g.invoices.map((i) => <InvoiceCard key={i.id} invoice={i} today={today} actions={actions} selected={sel.has(i.id)} onSelect={() => sel.toggle(i.id)} />)}
                 </ul>
               </div>
             ))}
@@ -326,13 +375,28 @@ export function InvoicesView({
         </DialogContent>
       </Dialog>
 
+      <ConfirmDialog
+        open={bulkDelete} title={`Delete ${sel.size} invoice${sel.size === 1 ? "" : "s"}?`} confirmLabel="Delete"
+        description="They will be removed. Void an invoice instead to keep its record."
+        onCancel={() => setBulkDelete(false)}
+        onConfirm={() => {
+          const before = invoices;
+          update((all) => all.filter((i) => !sel.has(i.id)));
+          audit("deleted", `${sel.size} invoices`);
+          setNotice(`${sel.size} invoices deleted.`);
+          setUndoer({ text: `${sel.size} invoices deleted.`, run: () => { onChange(before); setNotice("Invoices restored."); } });
+          sel.clear(); setBulkDelete(false);
+        }}
+      />
       <ConfirmDialog open={!!deleting} title="Delete invoice?" description={<>
             {deleting?.number} for {deleting?.client} will be removed. Void it instead to keep the record.
           </>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
+                  const before = invoices;
                   update((all) => all.filter((i) => i.id !== deleting.id));
                   audit("deleted", `invoice ${deleting.number}`);
                   setNotice(`${deleting.number} deleted.`);
+                  setUndoer({ text: `${deleting.number} deleted.`, run: () => { onChange(before); setNotice(`${deleting.number} restored.`); } });
                 }
                 setDeleting(null);
         }} />
