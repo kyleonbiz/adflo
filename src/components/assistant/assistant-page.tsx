@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAudit } from "@/components/audit/use-audit";
 import { parseDirect, runDirect, type DirectAction, type DirectResult } from "@/lib/assistant/direct";
-import { greeting, respond, type Link as ChatLink, type Pending, type Turn } from "@/lib/assistant/engine";
+import { greeting, respond, type Link as ChatLink, type Turn } from "@/lib/assistant/engine";
 import { starterForms } from "@/lib/forms/starter-forms";
 import { useDashboardSources } from "@/lib/records/sources";
 import { emptySources } from "@/lib/reporting/logic";
@@ -19,8 +19,8 @@ import { downloadBlob } from "@/components/reporting/materials";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { newTodoId } from "@/lib/todos/logic";
 import { saveTodos, useTodos } from "@/lib/todos/storage";
-import { saveConfig, useSetupConfig } from "@/lib/setup/storage";
-import { emptyConfig, type SetupConfig } from "@/lib/setup/types";
+import { useSetupConfig } from "@/lib/setup/storage";
+import { emptyConfig } from "@/lib/setup/types";
 import { cn } from "@/lib/utils";
 
 function Chat({ today }: { today: string }) {
@@ -33,7 +33,6 @@ function Chat({ today }: { today: string }) {
   const [undoers, setUndoers] = useState<Record<number, () => void>>({});
   const [undone, setUndone] = useState<Set<number>>(new Set());
   const [turns, setTurns] = useState<Turn[]>(() => [greeting(stored ?? emptyConfig())]);
-  const [pending, setPending] = useState<Pending>(null);
   const [text, setText] = useState("");
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { end.current?.scrollIntoView?.({ block: "end" }); }, [turns]);
@@ -43,10 +42,7 @@ function Chat({ today }: { today: string }) {
   const [llm, setLlm] = useState<boolean | null>(null);
 
   const addRules = (input: string) => {
-    const r = respond(stored ?? emptyConfig(), pending, input, today);
-    if (r.config !== (stored ?? null)) saveConfig(r.config);
-    setTurns((t) => [...t, ...r.turns]);
-    setPending(r.pending);
+    setTurns((t) => [...t, ...respond(stored ?? emptyConfig(), input).turns]);
   };
 
   /** The few things Addy does itself (to-do, reminder, tick off). Handled here so they work whether or not the AI model is on. */
@@ -97,13 +93,12 @@ function Chat({ today }: { today: string }) {
         addRules(message);
         return;
       }
-      const body = (await res.json().catch(() => null)) as { ok: boolean; data?: { text: string; config: SetupConfig; links: ChatLink[] }; error?: { message: string } } | null;
+      const body = (await res.json().catch(() => null)) as { ok: boolean; data?: { text: string; links: ChatLink[] }; error?: { message: string } } | null;
       if (!res.ok || !body?.ok || !body.data) {
         setTurns([...next, { role: "assistant", text: body?.error?.message ?? "Something went wrong. Please try again." }]);
         return;
       }
       setLlm(true);
-      saveConfig(body.data.config);
       setTurns([...next, { role: "assistant", text: body.data.text, links: body.data.links }]);
     } catch {
       setTurns([...next, { role: "assistant", text: "I could not reach the server. Check your connection and try again." }]);
@@ -157,14 +152,14 @@ function Chat({ today }: { today: string }) {
   );
 }
 
-/** Setup assistant. Uses Claude through /api/assistant when an API key is set; otherwise the built-in rules answer. Both save to the same browser setup as Settings. */
+/** Q&A and in-module assistant. Uses Claude through /api/assistant when an API key is set; otherwise the built-in rules answer. Neither changes account setup: that stays manual in Settings. */
 export function AssistantPage() {
   const today = useToday();
   return (
     <div className="space-y-5">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><Sparkles className="size-6 text-primary" aria-hidden /> AI Assistant</h1>
-        <p className="text-sm text-muted-foreground">Addy is your back-office assistant. Tell Addy about your business and it sets up the right services and templates for you.</p>
+        <p className="text-sm text-muted-foreground">Addy answers questions about AdFlo and your records, and prepares drafts in your services for you to review. You set up your account yourself in Settings.</p>
       </div>
       {today ? <Chat today={today} /> : <Skeleton className="h-96 rounded-2xl" aria-busy="true" />}
     </div>

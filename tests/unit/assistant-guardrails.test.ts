@@ -61,6 +61,7 @@ describe("assistant drafts", () => {
   it("gives the model no tool that saves, deletes, approves, pays or sends", () => {
     const names = TOOL_DEFS.map((t) => t.name);
     expect(names).toContain("prepare_draft");
+    expect(names).not.toContain("deploy_services");
     for (const n of names) expect(n).not.toMatch(/delete|approve|pay|send|sign|save_record|update_record/);
   });
 
@@ -71,11 +72,11 @@ describe("assistant drafts", () => {
   });
 
   it("without the AI model, plain requests open the blank form and nothing else", () => {
-    const r = respond(emptyConfig(), null, "create a new invoice", "2026-10-26");
+    const r = respond(emptyConfig(), "create a new invoice");
     const turn = r.turns[r.turns.length - 1];
     expect(turn.links?.[0].href).toBe("/app/invoices?new=1");
     expect(turn.text).toContain("nothing is changed until you");
-    expect(respond(emptyConfig(), null, "add a contact", "2026-10-26").turns.at(-1)?.links?.[0].href).toBe("/app/contacts?add=1");
-    expect(respond(emptyConfig(), null, "delete all invoices", "2026-10-26").turns.at(-1)?.links).toBeUndefined();
+    expect(respond(emptyConfig(), "add a contact").turns.at(-1)?.links?.[0].href).toBe("/app/contacts?add=1");
+    expect(respond(emptyConfig(), "delete all invoices").turns.at(-1)?.links).toBeUndefined();
   });
 });

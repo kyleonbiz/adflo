@@ -5,9 +5,7 @@ import { checkRate } from "@/lib/dms/server/rate-limit";
 import { json, readJson, sameOrigin } from "@/lib/dms/server/respond";
 import { toDmsError } from "@/lib/dms/errors";
 import { sanitizeConfig } from "@/lib/setup/logic";
-import { emptyConfig, setLiveIndustries } from "@/lib/setup/types";
-import { loadLiveIndustries } from "@/lib/setup/live-server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { emptyConfig } from "@/lib/setup/types";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -45,10 +43,8 @@ export async function POST(req: Request) {
     const config = sanitizeConfig(body.config) ?? emptyConfig();
     const today = typeof body.today === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.today) ? body.today : new Date().toISOString().slice(0, 10);
 
-    // Addy offers the industries the Owner has opened, read fresh for this request.
-    setLiveIndustries(await loadLiveIndustries(await createServerSupabase()));
     const result = await runAssistant(messages, config, today);
-    return json({ ok: true, data: { ...result, config: sanitizeConfig(result.config) ?? config } });
+    return json({ ok: true, data: result });
   } catch (e) {
     const err = toDmsError(e);
     // Log the class only: messages can echo what the owner typed.

@@ -42,7 +42,7 @@ const CAPABILITIES = [
 ];
 
 const ADDY_DOES = [
-  { icon: Sparkles, title: "Sets up your business", text: "Answer three questions and Addy picks the right modules, turns them on and installs starter forms, recurring tasks and license records." },
+  { icon: Sparkles, title: "Answers your questions", text: "Ask how something works, what is coming up or what is left to do. Addy answers from your own records. You set up your account yourself, so nothing is turned on by mistake." },
   { icon: Receipt, title: "Creates invoices", text: "“Invoice Acme $1,200 due Friday.” Addy fills it in, you review it and approve." },
   { icon: Layers, title: "Creates documents", text: "Drafts the letters, notices and records you need, filed in the right place." },
   { icon: FileSignature, title: "Prepares forms and paperwork", text: "Picks the right form, fills in what she knows and gets it ready for signing." },
