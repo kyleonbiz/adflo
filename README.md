@@ -831,7 +831,7 @@ Databases go last. Update this section in the same commit as the work.
 - [~] Bridge Vendors -> Contacts (menu merged; records still separate, needs database)
 - [x] Discuss: what the Projects module should include (built with defaults: owner, progress bar, milestones, dated updates log, link to a contact or vendor, project types; recurring tasks moved here from Requests)
 - [x] Discuss: setup for different industries (built with defaults, 17 industries, tick-box bundles in setup, follows industry changes in Settings; every choice is written up in the README working notes for Kyle to adjust)
-- [x] Forms & Paperwork: pick paperwork by business type (28 forms, repeating ones flagged; print, PDF or download after filling in)
+- [x] Forms & Paperwork: pick paperwork by business type (compliance, safety, consent and records paperwork only: no financial, payroll, HR or bookkeeping forms, and nothing a specialist app already does; repeating ones flagged; print, PDF or download after filling in)
 - [x] Reporting: dropdown with Reports, Scheduled reports, Materials (scheduled: due banner, print or PDF, no email yet; materials: summary plus per-service PDF and CSV)
 - [x] Remove anything that looks AI-coded (Title Case labels now sentence case, blue-to-violet gradients and gradient buttons gone, flat navy sign-in)
 - [ ] Approval chain (built, then removed: main dropped approvals from Forms and Vendors, so it was not carried over)
@@ -843,7 +843,7 @@ Databases go last. Update this section in the same commit as the work.
 - [x] CRM renamed to Contacts
 - [x] Notifications made very useful (bell respects the Settings choices, marks what is new, snoozes per item, lists what is waiting on you and for how long)
 - [x] Certifications and compliance tracking for licenses and policies (Certification and Policy types with templates, review cycle = renewal term with reminders, document checklist, compliance score)
-- [x] Onboarding packets (in Forms: new employee, vendor and client packets of forms, documents and signatures; progress bar, stale flag after 7 days, print or PDF checklist)
+- [x] Onboarding packets (in Forms: new client and job closeout packets of forms, documents and signatures; progress bar, stale flag after 7 days, print or PDF checklist)
 - [~] Ghosting fix: automated vendor compliance reminders + comments/notes log for updates and CYA (due-reminder rules, escalating wording, ghosted flag after 3 and a dated notes log done; sending opens your email app until a mail service exists)
 - [ ] Contact / vendor profile with all their documents and notes in one place (needs database)
 - [ ] Databases (last)
@@ -862,6 +862,7 @@ Databases go last. Update this section in the same commit as the work.
 - [x] AI assistant completes a task in any service, within its limits (Addy now adds to your to-do list, sets reminders and ticks off to-dos by itself, each with Undo; everything else is still a draft you save)
 - [x] Addy no longer sets up accounts (setup is manual in Settings, so nothing is turned on or installed by mistake). It answers questions, reads what is left to do and prepares drafts. Default model is now Sonnet with prompt caching on the system prompt and tools
 - [x] Addy answers plain requests by fixed rules first (open a form, what is left, help, to-dos, reminders, reports) at no cost; only open-ended questions go to the AI model
+- [x] Each model call logs token counts (never the conversation) as `[assistant] usage`, to size cost per account
 - [x] OCR for scanned PDFs (a PDF with no text layer now has its first 3 pages drawn and read like photos, wherever the text reader is turned on; the document index still skips OCR)
 - [ ] Sending email for vendor reminders and scheduled reports (needs a mail service)
 

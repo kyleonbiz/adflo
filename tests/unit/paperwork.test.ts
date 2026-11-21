@@ -5,7 +5,7 @@ import { createSubmission, generateDocument } from "@/lib/forms/logic";
 describe("paperwork library", () => {
   it("has unique ids, unique field ids per form, and paperwork for every industry", () => {
     expect(new Set(PAPERWORK.map((p) => p.form.id)).size).toBe(PAPERWORK.length);
-    for (const i of INDUSTRIES) expect(paperworkFor(i.id).length).toBeGreaterThan(0);
+    for (const i of INDUSTRIES) expect(paperworkFor(i.id).length).toBeGreaterThan(1);
     for (const p of PAPERWORK) {
       expect(new Set(p.form.fields.map((x) => x.id)).size).toBe(p.form.fields.length);
       expect(new Set(p.form.fields.map((x) => x.label.toLowerCase())).size).toBe(p.form.fields.length);

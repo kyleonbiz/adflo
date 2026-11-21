@@ -36,7 +36,7 @@ export function PaperworkDialog({ open, onOpenChange, onPick }: { open: boolean;
           Only forms I fill in again and again
         </label>
         <ul className="mt-3 max-h-80 divide-y overflow-y-auto rounded-xl border" aria-label="Paperwork">
-          {list.length === 0 && <li className="px-3 py-4 text-sm text-muted-foreground">Nothing repeats for this kind of business yet.</li>}
+          {list.length === 0 && <li className="px-3 py-4 text-sm text-muted-foreground">{repeatingOnly ? "Nothing repeats for this kind of business yet." : "No paperwork of its own for this kind of business. Everything under Any business still applies."}</li>}
           {list.map((p) => (
             <li key={p.form.id} className="flex items-center justify-between gap-3 px-3 py-2.5">
               <div className="min-w-0">

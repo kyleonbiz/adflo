@@ -9,11 +9,11 @@ const f = (id: string, label: string, type: FormField["type"], required = true, 
 export function starterForms(): FormTemplate[] {
   const forms: FormTemplate[] = [
     {
-      id: "form-leave", name: "Time-off request", description: "Ask for time off.",
+      id: "form-visitor", name: "Visitor sign-in", description: "Record who visited, who they saw and why.",
       sentCount: 0,
       fields: [
-        f("l-name", "Employee name", "text"), f("l-from", "First day off", "date"), f("l-to", "Last day off", "date"),
-        f("l-type", "Type", "select", true, ["Vacation", "Sick", "Personal"]), f("l-reason", "Reason", "longtext", false),
+        f("vs-name", "Visitor name", "text"), f("vs-date", "Visit date", "date"), f("vs-host", "Visiting", "text"),
+        f("vs-purpose", "Purpose", "select", true, ["Meeting", "Delivery", "Inspection", "Other"]), f("vs-notes", "Notes", "longtext", false),
       ],
       documentTemplate: "",
     },

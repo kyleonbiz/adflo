@@ -50,7 +50,7 @@ describe("industry presets", () => {
     expect(licenses.length).toBe(licensesFor("Construction & trades").length);
     expect(new Set(licenses.map((l) => l.id)).size).toBe(licenses.length);
     expect(licenses.every((l) => l.expiresOn > T && l.requiredDocuments.length > 0)).toBe(true);
-    expect(industryForms(c).map((f) => f.name)).toContain("Change order");
+    expect(industryForms(c).map((f) => f.name)).toContain("Jobsite safety inspection");
     expect(industryVendorDocs(c)).toContain("Workers' compensation certificate");
     expect(industryChains(c).requests).toEqual(["Project manager", "Owner"]);
     expect(industryProjects(c).map((p) => p.id)).toContain("job-closeout");

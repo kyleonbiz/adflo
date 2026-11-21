@@ -38,30 +38,30 @@ test.describe("forms module", () => {
     const summary = page.getByRole("region", { name: "Summary" });
     await expect(summary).toContainText("New responses");
     await expect(summary).not.toContainText("pproval");
-    const leaveCard = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
+    const leaveCard = page.getByTestId("form-card").filter({ hasText: "Visitor sign-in" });
     await expect(leaveCard).toContainText("1 new");
     await expect(leaveCard).toContainText("sent 0 times · 2 responses");
     await expect(leaveCard).not.toContainText("pproval");
 
-    await page.getByRole("textbox", { name: "Search forms" }).fill("time-off");
+    await page.getByRole("textbox", { name: "Search forms" }).fill("visitor");
     await expect(page.getByTestId("form-card")).toHaveCount(1);
   });
 
   test("filling a form validates, then adds a new response", async ({ page }) => {
     await page.goto("/app/forms");
-    const leave = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
+    const leave = page.getByTestId("form-card").filter({ hasText: "Visitor sign-in" });
     await leave.getByRole("button", { name: "Fill out" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Submit" }).click();
     await expect(dialog.getByRole("alert").first()).toContainText("required");
-    await expect(dialog.getByRole("alert")).toHaveCount(4); // name, two dates, type
+    await expect(dialog.getByRole("alert")).toHaveCount(4); // name, date, host, purpose
 
     await dialog.getByLabel("Your name").fill("Sam");
-    await dialog.getByLabel(/Employee name/).fill("Sam Rivera");
-    await dialog.getByLabel(/First day off/).fill("2026-12-01");
-    await dialog.getByLabel(/Last day off/).fill("2026-12-03");
-    await dialog.getByRole("combobox", { name: /Type/ }).click();
-    await page.getByRole("option", { name: "Sick" }).click();
+    await dialog.getByLabel(/Visitor name/).fill("Sam Rivera");
+    await dialog.getByLabel(/Visit date/).fill("2026-12-01");
+    await dialog.getByLabel(/Visiting/).fill("Dana Whitfield");
+    await dialog.getByRole("combobox", { name: /Purpose/ }).click();
+    await page.getByRole("option", { name: "Delivery" }).click();
     await dialog.getByRole("button", { name: "Submit" }).click();
     await page.getByRole("button", { name: "Done" }).click();
     await expect(dialog).toBeHidden();
@@ -72,7 +72,7 @@ test.describe("forms module", () => {
 
   test("mark a response done and reopen it, then download the document", async ({ page }) => {
     await page.goto("/app/forms");
-    const leave = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
+    const leave = page.getByTestId("form-card").filter({ hasText: "Visitor sign-in" });
     await leave.getByRole("button", { name: /^Responses/ }).click();
     const row = leave.getByTestId("submission-row").filter({ hasText: "Marta Gill" });
     await expect(row.getByText("New", { exact: true })).toBeVisible();
@@ -85,11 +85,11 @@ test.describe("forms module", () => {
     const download = page.waitForEvent("download");
     await row.getByRole("button", { name: "Document for response by Marta Gill" }).click();
     const file = await download;
-    expect(file.suggestedFilename()).toMatch(/^time-off-request-marta-gill-\d{4}-\d{2}-\d{2}\.txt$/);
+    expect(file.suggestedFilename()).toMatch(/^visitor-sign-in-marta-gill-\d{4}-\d{2}-\d{2}\.txt$/);
     let text = "";
     for await (const chunk of await file.createReadStream()) text += chunk;
-    expect(text).toContain("TIME-OFF REQUEST");
-    expect(text).toContain("Type: Vacation");
+    expect(text).toContain("VISITOR SIGN-IN");
+    expect(text).toContain("Purpose: Meeting");
     expect(text).not.toMatch(/Decision|Approved/);
   });
 
@@ -239,15 +239,15 @@ test.describe("forms module", () => {
 
   test("exports responses as CSV", async ({ page }) => {
     await page.goto("/app/forms");
-    const vendor = page.getByTestId("form-card").filter({ hasText: "Time-off request" });
+    const vendor = page.getByTestId("form-card").filter({ hasText: "Visitor sign-in" });
     await vendor.getByRole("button", { name: /^Responses/ }).click();
     const download = page.waitForEvent("download");
     await vendor.getByRole("button", { name: "Export CSV" }).click();
     const file = await download;
-    expect(file.suggestedFilename()).toMatch(/^time-off-request-submissions-\d{4}-\d{2}-\d{2}\.csv$/);
+    expect(file.suggestedFilename()).toMatch(/^visitor-sign-in-submissions-\d{4}-\d{2}-\d{2}\.csv$/);
     let text = "";
     for await (const chunk of await file.createReadStream()) text += chunk;
-    expect(text.split("\r\n")[0]).toContain("Employee name,First day off,Last day off");
+    expect(text.split("\r\n")[0]).toContain("Visitor name,Visit date,Visiting");
     expect(text).toContain("Marta Gill");
   });
 
@@ -273,7 +273,7 @@ test.describe("forms module", () => {
     await page.getByRole("option", { name: "Restaurant or food service" }).click();
     await expect(picker.getByText("Temperature log")).toBeVisible();
     await picker.getByLabel("Only forms I fill in again and again").check();
-    await expect(picker.getByText("Food waste and spoilage log")).toBeVisible();
+    await expect(picker.getByText("Thermometer calibration log")).toBeVisible();
     await picker.getByRole("button", { name: "Fill out: Temperature log" }).click();
 
     const dialog = page.getByRole("dialog");
@@ -338,7 +338,7 @@ test.describe("forms module", () => {
     await expect(page.getByTestId("signing-request")).toHaveCount(1); // kept in this browser
   });
 
-  test("onboarding packets: start one for a new hire, fill a form from it, tick items off, print the checklist", async ({ page }) => {
+  test("onboarding packets: start one for a new client, fill a form from it, tick items off, print the checklist", async ({ page }) => {
     await page.goto("/app/forms");
     const section = page.getByTestId("packets");
     await expect(section).toContainText("No packets started");
@@ -350,21 +350,21 @@ test.describe("forms module", () => {
     await dialog.getByRole("button", { name: "Start packet" }).click();
 
     const packet = section.getByTestId("packet").filter({ hasText: "Sam Ito" });
-    await expect(packet).toContainText("0 of 6 done");
-    await packet.getByRole("button", { name: "Fill out New employee information for Sam Ito" }).click();
-    await expect(page.getByRole("dialog").getByRole("heading", { name: "New employee information" })).toBeVisible();
+    await expect(packet).toContainText("0 of 4 done");
+    await packet.getByRole("button", { name: "Fill out Client intake for Sam Ito" }).click();
+    await expect(page.getByRole("dialog").getByRole("heading", { name: "Client intake" })).toBeVisible();
     await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
 
-    await packet.getByRole("checkbox", { name: "Government-issued ID for Sam Ito" }).check();
-    await expect(packet).toContainText("1 of 6 done");
-    await expect(packet.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "17");
-    for (const label of ["New employee information", "Confidentiality acknowledgment", "Tax withholding form", "Direct deposit details", "Employee handbook acknowledgment"]) {
+    await packet.getByRole("checkbox", { name: "Confidentiality acknowledgment for Sam Ito" }).check();
+    await expect(packet).toContainText("1 of 4 done");
+    await expect(packet.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "25");
+    for (const label of ["Client intake", "Scope of work confirmation", "Service agreement"]) {
       await packet.getByRole("checkbox", { name: `${label} for Sam Ito` }).check();
     }
     await expect(packet).toContainText("Complete");
     const pdf = page.waitForEvent("download");
     await packet.getByRole("button", { name: "Download PDF for Sam Ito" }).click();
-    expect((await pdf).suggestedFilename()).toBe("new-employee-sam-ito.pdf");
+    expect((await pdf).suggestedFilename()).toBe("new-client-sam-ito.pdf");
 
     await page.reload();
     await expect(page.getByTestId("packet")).toHaveCount(1);
