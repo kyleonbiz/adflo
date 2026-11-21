@@ -55,7 +55,7 @@ export function FileDropzone({
           <CloudUpload className="size-6" aria-hidden />
         </span>
         <span className="mt-3 text-sm font-bold">{over ? "Drop to upload" : "Drag files here or click to browse"}</span>
-        <span className="mt-1.5 text-[11px] text-muted-foreground">{hint}</span>
+        <span className="mt-1.5 text-xs text-muted-foreground">{hint}</span>
       </button>
       <input
         ref={input}

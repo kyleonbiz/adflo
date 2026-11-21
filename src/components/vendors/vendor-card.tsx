@@ -51,7 +51,7 @@ function DocumentRow({ vendor, d, today, actions }: { vendor: Vendor; d: VendorD
       </span>
       <span className="flex flex-col items-start gap-0.5">
         <Badge variant={DOC_BADGE[state]}>{DOC_LABEL[state]}</Badge>
-        {!d.receivedOn && d.expiresOn && <span className="text-[11px] text-muted-foreground">Add a received date</span>}
+        {!d.receivedOn && d.expiresOn && <span className="text-xs text-muted-foreground">Add a received date</span>}
       </span>
       <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <span className="shrink-0">Received</span>

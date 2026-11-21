@@ -94,7 +94,7 @@ export function UploadDialog({
                 <p>
                   Files will be uploaded to <strong className="text-foreground">{folderLabel}</strong>
                 </p>
-                <p className="mt-0.5 text-[11px]">
+                <p className="mt-0.5 text-xs">
                   Storage {formatBytes(usage.usedBytes)} of {formatBytes(usage.quotaBytes)} used ({pct}%)
                 </p>
               </div>

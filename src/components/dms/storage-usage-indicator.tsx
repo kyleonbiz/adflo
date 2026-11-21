@@ -35,7 +35,7 @@ export function StorageUsageIndicator({
         indicatorClassName={cn("from-brand-blue to-brand-indigo", nearFull && "from-orange-500 to-red-500")}
       />
       {!compact && (
-        <p className="mt-1 text-[11px] text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground">
           {usage.documentCount} {usage.documentCount === 1 ? "document" : "documents"}
         </p>
       )}

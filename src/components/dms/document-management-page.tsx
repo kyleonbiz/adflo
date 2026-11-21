@@ -75,7 +75,7 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
       {notice && (
         <div
           role="note"
-          className="flex items-start gap-2 rounded-t-2xl px-5 pt-3 text-[11px] text-muted-foreground sm:px-8"
+          className="flex items-start gap-2 rounded-t-2xl px-5 pt-3 text-xs text-muted-foreground sm:px-8"
         >
           {api.mode === "demo" ? <Info className="mt-px size-3 shrink-0 text-brand-indigo" aria-hidden /> : <FlaskConical className="mt-px size-3 shrink-0 text-amber-500" aria-hidden />}
           <p>{notice}</p>

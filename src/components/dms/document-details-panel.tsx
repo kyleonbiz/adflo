@@ -249,7 +249,7 @@ export function DocumentDetailsPanel({
                       <ActionRow icon={Trash2} danger disabled={!perms.delete || doc.starred} onClick={() => setConfirmDelete(true)}>
                         Delete File
                       </ActionRow>
-                      {doc.starred && <p className="px-1 text-[11px] text-muted-foreground">Starred documents can&apos;t be deleted. Unstar it first.</p>}
+                      {doc.starred && <p className="px-1 text-xs text-muted-foreground">Starred documents can&apos;t be deleted. Unstar it first.</p>}
                     </div>
                   </section>
                 )}

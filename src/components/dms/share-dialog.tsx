@@ -223,7 +223,7 @@ export function ShareDialog({
               ))}
             </ul>
           )}
-          <p className="mt-2 text-[11px] text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             The full link is only shown once, when it is created. Revoking stops it working immediately.
           </p>
         </section>
