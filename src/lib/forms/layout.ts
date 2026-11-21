@@ -15,3 +15,17 @@ export function layoutTemplate(description: string, fields: FormField[]): string
 export function blankDocument(name: string, template: string): string {
   return `${name.toUpperCase()}\n\n${template.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, "______________________________")}\n`;
 }
+
+/**
+ * Keeps hand-written document wording in step when fields are renamed in the builder: every `{{Old label}}`
+ * becomes `{{New label}}` for a field (matched by id) whose label changed.
+ */
+export function renameInTemplate(template: string, before: FormField[], after: FormField[]): string {
+  const renames = new Map<string, string>();
+  for (const b of before) {
+    const a = after.find((x) => x.id === b.id);
+    if (a && a.label.trim() && a.label.trim() !== b.label) renames.set(b.label.toLowerCase(), a.label.trim());
+  }
+  if (renames.size === 0) return template;
+  return template.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (m, label: string) => (renames.has(label.toLowerCase()) ? `{{${renames.get(label.toLowerCase())}}}` : m));
+}

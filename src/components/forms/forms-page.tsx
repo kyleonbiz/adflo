@@ -16,6 +16,7 @@ import { docBusiness } from "@/lib/forms/doc-business";
 import { printDoc } from "@/lib/forms/doc-html";
 import { blankFormDocument, formDocument } from "@/lib/forms/doc-model";
 import { docToPdf } from "@/lib/forms/doc-pdf";
+import { renameInTemplate } from "@/lib/forms/layout";
 import { PAPERWORK, type Paperwork } from "@/lib/forms/paperwork";
 import { industryForms } from "@/lib/setup/industries";
 import { addContactLink, personFromSubmission, prefillFromPerson, type Person } from "@/lib/bridge";
@@ -115,7 +116,8 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
 
   const saveForm = (v: FormBuilderValues) => {
     const fields = v.fields.map((f) => ({ ...f, type: f.type as FormTemplate["fields"][number]["type"] }));
-    const next = { name: v.name, description: v.description, fields, documentTemplate: v.documentTemplate };
+    const old = builderFor && builderFor !== "new" ? builderFor.fields : fields;
+    const next = { name: v.name, description: v.description, fields, documentTemplate: renameInTemplate(v.documentTemplate, old, fields) };
     if (builderFor && builderFor !== "new") {
       const id = builderFor.id;
       setEditedForms(forms.map((f) => (f.id === id ? { ...f, ...next } : f)));

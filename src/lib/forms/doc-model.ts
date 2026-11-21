@@ -174,32 +174,41 @@ function build(form: FormTemplate, values: Record<string, string>, filled: boole
   const blocks: DocBlock[] = [];
   const val = (f: FormField) => shown(f, values[f.id], filled);
 
-  if (isStandardLayout(form)) {
-    // The page follows the form field by field, in the same order and under the same labels, so what a client
-    // fills in is exactly what the template shows: short fields share rows, checkboxes become a list, long answers a box.
-    const lastLong = form.fields.map((f) => f.type).lastIndexOf("longtext");
-    const longCount = form.fields.filter((f) => f.type === "longtext").length;
+  /** Lays fields out one after another: short ones share rows, checkboxes become a list, long answers a box. */
+  const walk = (fields: FormField[], growLast: boolean) => {
+    const lastLong = fields.map((f) => f.type).lastIndexOf("longtext");
+    const longCount = fields.filter((f) => f.type === "longtext").length;
     let i = 0;
-    while (i < form.fields.length) {
-      const f = form.fields[i]!;
+    while (i < fields.length) {
+      const f = fields[i]!;
       if (f.type === "longtext") {
         blocks.push({ t: "heading", text: f.label });
-        blocks.push({ t: "box", text: val(f), min: filled ? (agreement ? 130 : 46) : longCount === 1 ? 150 : longCount === 2 ? 100 : longCount === 3 ? 70 : 52, grow: !filled && i === lastLong });
+        blocks.push({ t: "box", text: val(f), min: filled ? (agreement ? 130 : 46) : longCount === 1 ? 150 : longCount === 2 ? 100 : longCount === 3 ? 70 : 52, grow: growLast && !filled && i === lastLong });
         i++;
       } else {
         const isCheck = f.type === "checkbox";
         const run: FormField[] = [];
-        while (i < form.fields.length && form.fields[i]!.type !== "longtext" && (form.fields[i]!.type === "checkbox") === isCheck) run.push(form.fields[i++]!);
+        while (i < fields.length && fields[i]!.type !== "longtext" && (fields[i]!.type === "checkbox") === isCheck) run.push(fields[i++]!);
         if (isCheck) {
           blocks.push({ t: "heading", text: style.checks ?? "Confirmations" });
           blocks.push({ t: "checks", items: run.map((c) => ({ label: c.label, checked: filled && values[c.id] === "true" })) });
         } else blocks.push(...cellRows(run, val));
       }
     }
+  };
+
+  if (isStandardLayout(form)) {
+    // The page follows the form field by field, in the same order and under the same labels, so what a client
+    // fills in is exactly what the template shows. Edit the form and the page changes with it.
+    walk(form.fields, true);
   } else {
-    // Hand-written wording: keep it as written, with the answers filled in.
+    // Hand-written wording is kept as written, with the answers filled in. A field the wording does not mention
+    // (one added later) is still printed below it, so nothing a client is asked for goes missing.
+    const used = new Set([...form.documentTemplate.matchAll(/\{\{\s*([^{}]+?)\s*\}\}/g)].map((m) => m[1]!.toLowerCase()));
+    const unused = form.fields.filter((f) => !used.has(f.label.toLowerCase()));
     blocks.push({ t: "heading", text: form.description || form.name });
-    blocks.push({ t: "box", text: fillTemplate(form, values, filled), min: filled ? 80 : 180, grow: !filled });
+    blocks.push({ t: "box", text: fillTemplate(form, values, filled), min: filled ? 80 : 180, grow: !filled && unused.length === 0 });
+    walk(unused, true);
   }
 
   const terms = TERMS[key] ?? style.terms;

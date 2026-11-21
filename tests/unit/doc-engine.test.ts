@@ -6,6 +6,7 @@ import { blankFormDocument, formDocument, plainDocument } from "@/lib/forms/doc-
 import { docToPdf } from "@/lib/forms/doc-pdf";
 import { docToHtml } from "@/lib/forms/doc-html";
 import { letterhead } from "@/lib/forms/doc-business";
+import { renameInTemplate } from "@/lib/forms/layout";
 import { textWidth, wrapText } from "@/lib/forms/doc-fonts";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
 
@@ -87,6 +88,36 @@ describe("form documents", () => {
     expect(pages).toBeGreaterThan(1);
     expect(text).toContain("Scope item 140");
     expect(text).toContain(`Page 2 of ${pages}`);
+  });
+});
+
+describe("editing a form changes its document", () => {
+  const fld = (id: string, label: string, type: FormTemplate["fields"][number]["type"] = "text") => ({ id, label, type, required: false, options: [] });
+  const base = (fields: FormTemplate["fields"], documentTemplate = ""): FormTemplate => ({ id: "form-e", name: "Site visit", description: "", sentCount: 0, fields, documentTemplate });
+  const labels = (f: FormTemplate) => docToHtml(blankFormDocument(f));
+
+  it("shows an added field, a renamed field and a reordered field on the page, and drops a removed one", () => {
+    const original = base([fld("a", "Client"), fld("b", "Address")]);
+    const html = (f: FormTemplate) => labels(f);
+    expect(html({ ...original, fields: [...original.fields, fld("c", "Gate code")] })).toContain("Gate code");
+    expect(html({ ...original, fields: [fld("a", "Customer"), original.fields[1]!] })).toContain("Customer");
+    expect(html({ ...original, fields: [fld("a", "Customer"), original.fields[1]!] })).not.toContain(">Client<");
+    expect(html({ ...original, fields: [original.fields[0]!] })).not.toContain("Address");
+    const swapped = html({ ...original, fields: [original.fields[1]!, original.fields[0]!] });
+    expect(swapped.indexOf("Address")).toBeLessThan(swapped.indexOf("Client"));
+  });
+
+  it("fills a renamed field into hand-written wording, and prints a field the wording never mentions", () => {
+    const before = [fld("a", "Client"), fld("b", "Notes", "longtext")];
+    const after = [fld("a", "Customer"), fld("b", "Notes", "longtext"), fld("c", "Gate code")];
+    const template = renameInTemplate("Visit for {{Client}}. See {{ client }} again.", before, after);
+    expect(template).toBe("Visit for {{Customer}}. See {{Customer}} again.");
+    const form = base(after, template);
+    const html = docToHtml(formDocument(form, { values: { a: "Dana", b: "Left a key", c: "4471" } }));
+    expect(html).toContain("Visit for Dana. See Dana again.");
+    expect(html).toContain("Gate code");
+    expect(html).toContain("4471");
+    expect(html).toContain("Left a key");
   });
 });
 
