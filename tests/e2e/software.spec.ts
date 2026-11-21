@@ -9,10 +9,10 @@ test.describe("Landing page and the app", () => {
     await expect(page).toHaveURL(/\/app\/overview$/);
   });
 
-  test("the landing page at / shows the hero, and Log in / Sign up goes to the log in screen", async ({ page }) => {
+  test("the landing page at / shows the hero, and Log in goes to the log in screen", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "The administrative management platform" })).toBeVisible();
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Log in / Sign up" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Log in", exact: true }).click();
     await expect(page).toHaveURL(/\/login$/);
   });
 
