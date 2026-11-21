@@ -196,14 +196,14 @@ function RemindInvitation({ client, onSent }: { client: ClientRecord; onSent: ()
 export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, leftovers = [], today = new Date().toISOString().slice(0, 10) }: { clients: ClientRecord[]; plans: Plan[]; canEdit: boolean; isOwner?: boolean; sample?: boolean; leftovers?: UnlinkedWorkspace[]; today?: string }) {
   const router = useRouter();
   const [q, setQ] = useState("");
-  const [filter, setFilter] = useState<ClientStatus | "all">("all");
+  const [filter, setFilter] = useState<ClientStatus | "all" | "quiet" | "pending">("all");
   const [dialog, setDialog] = useState<ClientRecord | "new" | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [mailNote, setMailNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return clients.filter((c) => (filter === "all" || c.status === filter) && (!needle || [c.name, c.ownerName, c.ownerEmail, c.plan].some((v) => v.toLowerCase().includes(needle))));
+    return clients.filter((c) => (filter === "all" || (filter === "quiet" ? isQuiet(c) : filter === "pending" ? nextReminder(c)?.kind === "signup" : c.status === filter)) && (!needle || [c.name, c.ownerName, c.ownerEmail, c.plan].some((v) => v.toLowerCase().includes(needle))));
   }, [clients, q, filter]);
   const count = (s: ClientStatus) => clients.filter((c) => c.status === s).length;
 
@@ -229,6 +229,12 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
           <button key={s} type="button" aria-pressed={filter === s} onClick={() => setFilter(s)}
             className={cn("h-8 rounded-full border px-3 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring", filter === s ? "border-primary bg-accent text-accent-foreground" : "bg-card text-muted-foreground hover:bg-muted")}>
             {s === "all" ? `All ${clients.length}` : `${STATUS_LABEL[s]} ${count(s)}`}
+          </button>
+        ))}
+        {([["quiet", "Quiet 30d", clients.filter((c) => isQuiet(c)).length], ["pending", "Invitation pending", clients.filter((c) => nextReminder(c)?.kind === "signup").length]] as const).map(([id, label, n]) => (
+          <button key={id} type="button" aria-pressed={filter === id} onClick={() => setFilter(filter === id ? "all" : id)}
+            className={cn("h-8 rounded-full border px-3 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring", filter === id ? "border-primary bg-accent text-accent-foreground" : "bg-card text-muted-foreground hover:bg-muted")}>
+            {label} {n}
           </button>
         ))}
       </div>

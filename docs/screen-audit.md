@@ -133,10 +133,12 @@ linked projects and document search on contact and vendor profiles; Home snooze 
 on the invoice KPI; Contacts wording; Tidy up limits shown before choosing; Billing back up and restore; the new Equipment
 module (also on Calendar and Home); fixed `.ics` semicolon escaping.
 
-**Not done (left for a follow-up):** bulk actions on Forms; week view and add-from-calendar; URL-persisted filters outside Vendors;
+**Also done in the follow-up:** bulk actions on Forms; Calendar week view and add-a-reminder on a day; Control center "Quiet 30d" and "Invitation pending" client filters.
+
+**Not done (left for a follow-up):** URL-persisted filters outside Vendors;
 Documents (revoke-all share links, bulk move/tag, an "expiring soon" filter, a note on preview limits); "Pick from Documents" on
 licenses; a combined invoices/forms/documents timeline on profiles (profiles list linked projects and a document search link only);
 splitting `projects-page.tsx`; sharing the stepper between the two CSV importers; the Reporting dual-navigation focus check;
-Control center saved filters and bulk onboarding reminders; Equipment on the Reporting screens and in Addy; an Equipment tier
+bulk onboarding reminders; Equipment on the Reporting screens and in Addy; an Equipment tier
 feature flag (it is open to every plan); dead-link handling in Activity. Nothing was run against a hosted Supabase project, so the
 `equipment` migration is untested there.
