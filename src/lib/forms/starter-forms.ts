@@ -17,7 +17,7 @@ export function starterForms(): FormTemplate[] {
         f("v-spend", "Expected annual spend", "number", false), f("v-w9", "W-9 on file", "checkbox", false),
         f("v-notes", "Notes", "longtext", false),
       ],
-      documentTemplate: "Vendor: {{Company name}}\nContact: {{Contact email}}\nCategory: {{Service category}}\nExpected annual spend: {{Expected annual spend}}\nW-9 on file: {{W-9 on file}}\n\nNotes:\n{{Notes}}",
+      documentTemplate: "",
     },
     {
       id: "form-leave", name: "Time-off request", description: "Ask for time off.",

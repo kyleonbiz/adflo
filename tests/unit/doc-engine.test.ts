@@ -7,6 +7,7 @@ import { docToPdf } from "@/lib/forms/doc-pdf";
 import { docToHtml } from "@/lib/forms/doc-html";
 import { letterhead } from "@/lib/forms/doc-business";
 import { renameInTemplate } from "@/lib/forms/layout";
+import { installedForms, TEMPLATES } from "@/lib/setup/templates";
 import { textWidth, wrapText } from "@/lib/forms/doc-fonts";
 import type { FormTemplate, Submission } from "@/lib/forms/types";
 
@@ -73,6 +74,16 @@ describe("form documents", () => {
     for (const f of [...starterForms(), ...PAPERWORK.map((p) => p.form)]) {
       const custom = f.documentTemplate.split("\n").some((l) => l.trim() && !/^[^{}]*:\s*(\{\{[^{}]+\}\})?$|^\{\{[^{}]+\}\}$|^-+$|^Signature:/.test(l.trim()) && l.trim() !== f.description);
       if (!custom) expect(labelsOf(f), f.name).toEqual(f.fields.map((x) => x.label));
+    }
+  });
+
+  it("covers every template a client can pick, including the ones installed from setup", () => {
+    const ids = TEMPLATES.filter((t) => t.kind === "form").map((t) => t.id);
+    const all = [...starterForms(), ...PAPERWORK.map((p) => p.form), ...installedForms(ids)];
+    expect(all.length).toBeGreaterThan(50);
+    for (const f of all) {
+      const html = docToHtml(blankFormDocument(f));
+      for (const field of f.fields) expect(html, `${f.name}: ${field.label}`).toContain(field.label.replace(/&/g, "&amp;").replace(/'/g, "'"));
     }
   });
 

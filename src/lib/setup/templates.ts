@@ -23,13 +23,13 @@ export const TEMPLATES: Template[] = [
     id: "form-employee-onboarding", module: "forms", kind: "form", name: "New employee details",
     description: "Collect what you need on a new hire's first day.",
     fields: [f("Full name", "text"), f("Personal email", "email"), f("Phone", "text", false), f("Start date", "date"), f("Role", "text"), f("Emergency contact", "text", false), f("W-4 completed", "checkbox", false)],
-    documentTemplate: "New employee: {{Full name}}\nRole: {{Role}}\nStart date: {{Start date}}\nEmail: {{Personal email}}\nEmergency contact: {{Emergency contact}}\nW-4 completed: {{W-4 completed}}",
+    documentTemplate: "",
   },
   {
     id: "form-expense-claim", module: "forms", kind: "form", name: "Expense reimbursement",
     description: "Staff claim back money they spent on the business.",
     fields: [f("Employee name", "text"), f("Expense date", "date"), f("Amount", "number"), f("Category", "select", true, ["Travel", "Meals", "Supplies", "Software", "Other"]), f("What was it for?", "longtext"), f("Receipt attached", "checkbox")],
-    documentTemplate: "Expense claim from {{Employee name}}\nDate: {{Expense date}}\nAmount: {{Amount}}\nCategory: {{Category}}\nPurpose: {{What was it for?}}\nReceipt attached: {{Receipt attached}}",
+    documentTemplate: "",
   },
   {
     id: "form-client-intake", module: "forms", kind: "form", name: "New client intake",
