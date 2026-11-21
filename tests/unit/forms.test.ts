@@ -58,8 +58,10 @@ describe("responses", () => {
 
 describe("generateDocument", () => {
   const sub = sampleSubmissions(TODAY).find((s) => s.id === "s-2")!;
+  // Hand-written wording with {{placeholders}}, the way a client can write their own document template.
+  const worded = { ...vendor, documentTemplate: "Vendor: {{Company name}}\nContact: {{Contact email}}\nW-9 on file: {{W-9 on file}}\n\nNotes:\n{{Notes}}" };
   it("fills the template", () => {
-    const doc = generateDocument(vendor, sub);
+    const doc = generateDocument(worded, sub);
     expect(doc).toContain("NEW VENDOR INTAKE\nSubmitted by Dana Whitfield on Oct 16, 2026");
     expect(doc).toContain("Vendor: Globex Software");
     expect(doc).toContain("W-9 on file: Yes");
@@ -72,7 +74,7 @@ describe("generateDocument", () => {
   });
   it("expands placeholders once, so submitted text cannot inject more", () => {
     const sneaky = { ...sub, values: { ...sub.values, "v-notes": "{{Contact email}}", "v-name": "{{Notes}}" } };
-    const doc = generateDocument(vendor, sneaky);
+    const doc = generateDocument(worded, sneaky);
     expect(doc).toContain("Vendor: {{Notes}}");
     expect(doc).toContain("Notes:\n{{Contact email}}");
   });

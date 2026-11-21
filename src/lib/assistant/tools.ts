@@ -1,10 +1,10 @@
 import { MODULES } from "@/lib/modules/registry";
-import { AVAILABLE_MODULE_IDS, IMPORTABLE, recommendModules, runSetupChecks, setupScore } from "@/lib/setup/logic";
-import { liveIndustries, TEAM_SIZES, type Industry, type SetupConfig, type TeamSize } from "@/lib/setup/types";
-import { deploy, type Link } from "./engine";
+import { AVAILABLE_MODULE_IDS, IMPORTABLE, runSetupChecks, setupScore } from "@/lib/setup/logic";
+import type { SetupConfig } from "@/lib/setup/types";
+import type { Link } from "./engine";
 import { DRAFT_SERVICES, MAX_DRAFTS_PER_TURN, buildDraft } from "./guardrails";
 
-/** What the model may do: read and change the same saved setup the Settings page edits. Nothing else. */
+/** What the model may do: read the saved setup and prepare drafts. It cannot change the account setup; the owner does that by hand in Settings. */
 export const TOOL_DEFS = [
   {
     name: "list_services",
@@ -13,35 +13,8 @@ export const TOOL_DEFS = [
   },
   {
     name: "get_status",
-    description: "Current setup: business profile, chosen services, setup health score and every open check.",
+    description: "Read-only: the business profile, chosen services, setup health score and every open check in Settings.",
     input_schema: { type: "object", properties: {}, additionalProperties: false },
-  },
-  {
-    name: "set_business_profile",
-    description: "Save the business name, industry and team size. Send only what the user told you.",
-    input_schema: {
-      type: "object",
-      properties: {
-        name: { type: "string", description: "Business name, 2-80 characters." },
-        industry: { type: "string", description: "One of the industries AdFlo is open to right now; the tool says which if it is not." },
-        team_size: { type: "string", enum: [...TEAM_SIZES] },
-      },
-      additionalProperties: false,
-    },
-  },
-  {
-    name: "recommend_services",
-    description: "Services that fit the saved industry and team size, with a reason each. Needs industry and team size saved first.",
-    input_schema: { type: "object", properties: {}, additionalProperties: false },
-  },
-  {
-    name: "deploy_services",
-    description: "Turn services on and install their starter forms, recurring tasks and license records. Only call after the user agreed. With no module_ids it deploys the recommended set.",
-    input_schema: {
-      type: "object",
-      properties: { module_ids: { type: "array", items: { type: "string", enum: AVAILABLE_MODULE_IDS } } },
-      additionalProperties: false,
-    },
   },
   {
     name: "prepare_draft",
@@ -58,7 +31,7 @@ export const TOOL_DEFS = [
   },
 ] as const;
 
-export interface ToolState { config: SetupConfig; today: string; links: Link[]; drafts?: number }
+export interface ToolState { readonly config: SetupConfig; today: string; links: Link[]; drafts?: number }
 
 const nameOf = (id: string) => MODULES.find((m) => m.id === id)?.name ?? id;
 const ok = (v: unknown) => JSON.stringify(v);
@@ -80,39 +53,6 @@ export function runTool(state: ToolState, name: string, input: unknown): string 
         open: checks.filter((c) => c.status !== "pass").map((c) => ({ title: c.title, status: c.status, detail: c.detail })),
         importHints: config.modules.filter((id) => IMPORTABLE[id] && !config.importsDone.includes(id)).map((id) => ({ service: nameOf(id), how: IMPORTABLE[id] })),
       });
-    }
-    case "set_business_profile": {
-      const b = { ...config.business };
-      if (typeof args.name === "string") {
-        const n = args.name.trim();
-        if (n.length < 2 || n.length > 80) return err("Business name must be 2-80 characters.");
-        b.name = n;
-      }
-      if (args.industry !== undefined) {
-        if (!(liveIndustries() as readonly unknown[]).includes(args.industry)) return err(`Unknown industry. Open right now: ${liveIndustries().join(", ")}.`);
-        b.industry = args.industry as Industry;
-      }
-      if (args.team_size !== undefined) {
-        if (!(TEAM_SIZES as readonly unknown[]).includes(args.team_size)) return err("Unknown team size.");
-        b.teamSize = args.team_size as TeamSize;
-      }
-      state.config = { ...config, business: b };
-      return ok({ saved: b });
-    }
-    case "recommend_services": {
-      const { industry, teamSize } = config.business;
-      if (!industry || !teamSize) return err("Save the industry and team size first.");
-      return ok(recommendModules(industry, teamSize).filter((r) => AVAILABLE_MODULE_IDS.includes(r.id)).map((r) => ({ id: r.id, name: nameOf(r.id), reason: r.reason })));
-    }
-    case "deploy_services": {
-      const { industry, teamSize, name: bizName } = config.business;
-      if (bizName.trim().length < 2 || !industry || !teamSize) return err("Save the business name, industry and team size before deploying.");
-      const asked = Array.isArray(args.module_ids) ? args.module_ids.filter((x): x is string => typeof x === "string" && AVAILABLE_MODULE_IDS.includes(x)) : [];
-      const ids = asked.length > 0 ? [...new Set(asked)] : recommendModules(industry, teamSize).map((r) => r.id).filter((id) => AVAILABLE_MODULE_IDS.includes(id));
-      const reply = deploy({ ...config, modules: ids, completedOn: null }, state.today);
-      state.config = reply.config;
-      state.links = reply.turns[0]?.links ?? [];
-      return ok({ deployed: reply.config.completedOn !== null, services: ids.map(nameOf), templatesInstalled: reply.config.templates.length, summary: reply.turns[0]?.text });
     }
     case "prepare_draft": {
       if ((state.drafts ?? 0) >= MAX_DRAFTS_PER_TURN) return err(`I can prepare at most ${MAX_DRAFTS_PER_TURN} drafts at a time. Ask the owner to review these first.`);

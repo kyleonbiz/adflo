@@ -10,6 +10,7 @@ import { dayInZone } from "@/lib/dashboard/logic";
 import { PausedNotice } from "@/components/auth/paused-notice";
 import { acceptPendingInvites, findMembership, getWorkspaceStanding } from "@/lib/dms/server/context";
 import { isPaused } from "@/lib/dms/standing";
+import { DocLetterhead } from "@/components/forms/doc-letterhead";
 import { LiveIndustries } from "@/components/live-industries";
 import { loadLiveIndustries } from "@/lib/setup/live-server";
 import { FALLBACK_LIVE } from "@/lib/setup/types";
@@ -25,7 +26,8 @@ async function loadNotifications() {
 
 function Frame({ topRight, userName, features = null, industries = FALLBACK_LIVE, wrap, children }: { topRight: React.ReactNode; userName?: string; features?: string[] | null; industries?: typeof FALLBACK_LIVE; wrap?: (children: React.ReactNode) => React.ReactNode; children: React.ReactNode }) {
   // A signed-in workspace saves its records to the database (`wrap` adds that); the preview keeps them in this browser.
-  const body = wrap ? wrap(children) : children;
+  const sync = <><DocLetterhead />{children}</>;
+  const body = wrap ? wrap(sync) : sync;
   return <PlanFeaturesProvider features={features}><LiveIndustries industries={industries}><AppFrame base="/app" topRight={topRight}><CurrentUserProvider name={userName}>{body}</CurrentUserProvider></AppFrame></LiveIndustries></PlanFeaturesProvider>;
 }
 

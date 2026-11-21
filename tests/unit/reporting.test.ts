@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { buildReports, emptySources, type ReportSources } from "@/lib/reporting/logic";
 import type { DocumentRecord } from "@/lib/dms/types";
-import { starterForms } from "@/lib/forms/starter-forms";
 import { sampleContacts } from "../support/contacts-sample-data";
-import { sampleSubmissions } from "../support/forms-sample-data";
+import { sampleForms, sampleSubmissions } from "../support/forms-sample-data";
 import { sampleInvoices } from "../support/invoices-sample-data";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import { sampleProjects } from "../support/projects-sample-data";
@@ -19,7 +18,7 @@ const doc = (over: Partial<DocumentRecord>): DocumentRecord => ({
 
 const full = (): ReportSources => ({
   invoices: sampleInvoices(TODAY), licenses: sampleLicenses(TODAY), projects: sampleProjects(TODAY), vendors: sampleVendors(TODAY),
-  contacts: sampleContacts(TODAY), forms: starterForms(),
+  contacts: sampleContacts(TODAY), forms: sampleForms(),
   submissions: sampleSubmissions(TODAY),
   documents: [
     doc({ id: "d1", category: "contract", sizeBytes: 2048, expiresAt: "2026-11-05T00:00:00Z" }),
@@ -91,7 +90,7 @@ describe("buildReports", () => {
   });
 
   it("ignores forms that no longer exist when counting submissions", () => {
-    const src = { ...full(), forms: starterForms().filter((f) => f.id !== "form-vendor") };
+    const src = { ...full(), forms: sampleForms().filter((f) => f.id !== "form-vendor") };
     expect(by(buildReports(src, TODAY), "forms").count).toBe(3);
   });
 });

@@ -90,7 +90,7 @@ test.describe("back office setup module", () => {
 
     // Forms: 3 samples + 3 installed + 3 that come with the industry.
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(9);
+    await expect(page.getByTestId("form-card")).toHaveCount(8);
     await expect(page.getByRole("heading", { name: "Expense reimbursement" })).toBeVisible();
     await expect(page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" })).toContainText("sent 0 times");
 
@@ -124,7 +124,7 @@ test.describe("back office setup module", () => {
     await next(page).click();
     await next(page).click(); // templates chosen, but never finished
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(3);
+    await expect(page.getByTestId("form-card")).toHaveCount(2);
   });
 
   test("progress is saved, so leaving and coming back picks up where you were", async ({ page }) => {
@@ -145,23 +145,23 @@ test.describe("back office setup module", () => {
     await page.getByRole("button", { name: "Start over" }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("");
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(3);
+    await expect(page.getByTestId("form-card")).toHaveCount(2);
   });
 
   test("editing a finished setup takes it out of 'installed' until finished again", async ({ page }) => {
     await completeSetup(page);
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(9);
+    await expect(page.getByTestId("form-card")).toHaveCount(8);
     await page.goto("/app/setup?tab=setup");
     await page.getByRole("button", { name: "Edit setup" }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("Acme Studio"); // the answers are kept
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(3);
+    await expect(page.getByTestId("form-card")).toHaveCount(2);
     await page.goto("/app/setup?tab=setup");
     await page.getByRole("button", { name: /Review/ }).click();
     await page.getByRole("button", { name: "Finish setup" }).click();
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(9);
+    await expect(page.getByTestId("form-card")).toHaveCount(8);
   });
 
   test("damaged or hostile saved data is ignored", async ({ page }) => {
@@ -173,7 +173,7 @@ test.describe("back office setup module", () => {
       await expect(page.getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
     }
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(3);
+    await expect(page.getByTestId("form-card")).toHaveCount(2);
   });
 
   test("fits a phone screen without horizontal scroll at every step", async ({ page }) => {

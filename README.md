@@ -8,7 +8,7 @@ nothing slips. Compliance management and equipment and asset tracking (tools, ve
 part of the platform, not separate products. AdFlo is not a compliance tool, an inventory system, a CRM, an accounting
 platform or a project management tool; it is the administrative side of running a business, centralized.
 
-Its built-in assistant, **Addy**, takes on the repetitive work (setting up the workspace, drafting invoices, documents and
+Its built-in assistant, **Addy**, takes on the repetitive work (answering questions, drafting invoices, documents and
 forms, creating tasks and reminders, running reports). Drafts open for review: nothing is saved, sent, signed, approved or
 deleted without a person's say-so. The approach is **Organize, Automate, Oversee**.
 
@@ -291,7 +291,7 @@ Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app 
 | `SMTP_USER` / `SMTP_PASSWORD` | Server-only. A Workspace mailbox and its Google app password; the landing page "Book a demo" form sends requests through it. Without them the form answers that requests are not switched on. |
 | `DEMO_REQUEST_TO` / `DEMO_REQUEST_FROM` | Optional. Inbox that receives requests (default `sales@adflo.pro`) and the sender name. |
 | `ANTHROPIC_API_KEY` | Optional, server only. Without it the assistant (Addy) answers with its built-in rules. Claude answers only for **Core +** workspaces. |
-| `ASSISTANT_MODEL` | Optional model override (default `claude-opus-5-5`). |
+| `ASSISTANT_MODEL` | Optional model override (default `claude-sonnet-5-5`). The system prompt and tool list are prompt-cached. |
 | `SMTP_USER`, `SMTP_PASSWORD` | Optional. A Google Workspace mailbox and its app password. Sends the landing page demo requests and, from the Control center, the welcome message and agreement link to new clients. |
 | `AGREEMENT_NOTIFY_TO` | Optional. Who is emailed when a client accepts an agreement (default `onboarding@adflo.pro`, which lands in the same mailbox as `SMTP_USER`). |
 | `ONBOARDING_AUTO_REMIND`, `ONBOARDING_REMIND_AFTER_DAYS` | Optional. The daily automatic reminders are on by default after 3 days; set `ONBOARDING_AUTO_REMIND=off` to stop them, or change the number of days (1 to 60). |
@@ -565,7 +565,7 @@ Set the variables in [Environment variables](#environment-variables) on the host
 - [ ] Upload a document, search for text inside it, create and open a share link.
 - [ ] `/control`: sign in as the Owner with an authenticator code; a non-staff account gets a 404.
 - [ ] Send a password reset from the Control Center and follow the link to `/reset-password`.
-- [ ] Ask Addy to set up a business; confirm it asks before deploying and that it refuses card numbers and passwords.
+- [ ] Ask Addy to set up a business; confirm it points you to Settings and installs nothing, and that it refuses card numbers and passwords.
 - [ ] Monitoring page in the Control Center: every health check green.
 
 ### Know before you go live
@@ -860,6 +860,7 @@ Databases go last. Update this section in the same commit as the work.
 - [x] Make the app feel alive: pages ease in again
 - [x] "Remind me" on the flat Tasks list too, not only inside Projects (the alarm-clock button on each open task; the reminder shows in the bell, on Home and on the calendar)
 - [x] AI assistant completes a task in any service, within its limits (Addy now adds to your to-do list, sets reminders and ticks off to-dos by itself, each with Undo; everything else is still a draft you save)
+- [x] Addy no longer sets up accounts (setup is manual in Settings, so nothing is turned on or installed by mistake). It answers questions, reads what is left to do and prepares drafts. Default model is now Sonnet with prompt caching on the system prompt and tools
 - [x] OCR for scanned PDFs (a PDF with no text layer now has its first 3 pages drawn and read like photos, wherever the text reader is turned on; the document index still skips OCR)
 - [ ] Sending email for vendor reminders and scheduled reports (needs a mail service)
 
