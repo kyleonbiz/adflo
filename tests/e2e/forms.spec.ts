@@ -1,6 +1,24 @@
 import { expect, test } from "./fixtures";
 
 test.describe("forms module", () => {
+  test("a deleted form stays deleted after a reload and after leaving the page", async ({ page }) => {
+    await page.goto("/app/forms");
+    const cards = page.getByTestId("form-card");
+    await expect(cards.first()).toBeVisible();
+    const before = await cards.count();
+    const name = (await cards.first().getByRole("heading").textContent())!.trim();
+    await cards.first().getByRole("button", { name: /^Delete / }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
+    await expect(cards).toHaveCount(before - 1);
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Forms & Paperwork" })).toBeVisible();
+    await expect(cards).toHaveCount(before - 1);
+    await expect(page.getByRole("heading", { name, exact: true })).toHaveCount(0);
+    await page.goto("/app/invoices");
+    await page.goto("/app/forms");
+    await expect(cards).toHaveCount(before - 1);
+  });
+
   test("selects forms and deletes them in bulk", async ({ page }) => {
     await page.goto("/app/forms");
     const first = page.getByTestId("form-card").first();

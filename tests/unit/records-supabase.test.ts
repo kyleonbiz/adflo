@@ -33,7 +33,7 @@ const WS = "11111111-1111-4111-8111-111111111111";
 describe("PERSISTED_KINDS", () => {
   it("saves every shared service to the database (tasks live inside projects; the activity trail has its own table)", () => {
     expect([...PERSISTED_KINDS]).toEqual([
-      "licenses", "projects", "invoices", "vendors", "contacts", "equipment",
+      "licenses", "projects", "invoices", "vendors", "contacts", "equipment", "forms", "submissions",
       "todos", "reminders", "signing", "packets", "schedules", "projecttypes",
       "settings", "setup", "chains",
     ]);
