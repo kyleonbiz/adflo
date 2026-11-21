@@ -49,6 +49,19 @@ describe("form documents", () => {
     }
   });
 
+  it("shows exactly the form's fields, in the form's order, and nothing the form does not ask", () => {
+    const labelsOf = (f: FormTemplate) => blankFormDocument(f).blocks.flatMap((b) => {
+      if (b.t === "cells" && !b.sign) return b.cells.map((c) => c.label);
+      if (b.t === "checks") return b.items.map((i) => i.label);
+      if (b.t === "box") return [];
+      return b.t === "heading" && !["Confirmations", "Checklist", "Acknowledgment", "Checks completed"].includes(b.text) ? [b.text] : [];
+    });
+    for (const f of [...starterForms(), ...PAPERWORK.map((p) => p.form)]) {
+      const custom = f.documentTemplate.split("\n").some((l) => l.trim() && !/^[^{}]*:\s*(\{\{[^{}]+\}\})?$|^\{\{[^{}]+\}\}$|^-+$|^Signature:/.test(l.trim()) && l.trim() !== f.description);
+      if (!custom) expect(labelsOf(f), f.name).toEqual(f.fields.map((x) => x.label));
+    }
+  });
+
   it("keeps hand-written wording as written", () => {
     const custom: FormTemplate = { id: "form-x", name: "Site note", description: "", sentCount: 0, fields: [{ id: "a", label: "Name", type: "text", required: true, options: [] }], documentTemplate: "Dear team,\nThis is a note from {{Name}} about the site." };
     const html = docToHtml(formDocument(custom, sub(custom, { a: "Dana" })));

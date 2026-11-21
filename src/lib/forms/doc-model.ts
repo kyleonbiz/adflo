@@ -23,19 +23,19 @@ export interface Doc { title: string; subtitle?: string; business?: DocBusiness;
 
 type Kind = "agreement" | "request" | "report" | "log" | "checklist" | "consent" | "intake";
 
-interface KindStyle { terms?: string; sign: string[]; checks?: string; notes?: string }
+interface KindStyle { terms?: string; sign: string[]; checks?: string }
 
 const KINDS: Record<Kind, KindStyle> = {
   agreement: {
-    sign: ["Authorized signature", "Acceptance signature"], checks: "Confirmations", notes: "Additional terms",
+    sign: ["Authorized signature", "Acceptance signature"], checks: "Confirmations",
     terms: "The prices, specifications and conditions above are accepted and are hereby authorized. Any change that adds cost or time will be agreed in writing before the work is carried out. Both parties keep a signed copy.",
   },
-  request: { sign: ["Requested by", "Approved by"], checks: "Confirmations", notes: "Notes" },
-  report: { sign: ["Reported by", "Reviewed by"], checks: "Confirmations", notes: "Additional details", terms: "Keep this report on file. Complete it as soon as possible after the event, while the details are fresh." },
-  log: { sign: ["Completed by", "Reviewed by"], checks: "Checks completed", notes: "Notes and corrective action" },
-  checklist: { sign: ["Completed by", "Reviewed by"], checks: "Checklist", notes: "Notes and follow-up" },
-  consent: { sign: ["Signature"], checks: "Acknowledgment", notes: "Notes" },
-  intake: { sign: ["Completed by"], checks: "Confirmations", notes: "Notes" },
+  request: { sign: ["Requested by", "Approved by"], checks: "Confirmations" },
+  report: { sign: ["Reported by", "Reviewed by"], checks: "Confirmations", terms: "Keep this report on file. Complete it as soon as possible after the event, while the details are fresh." },
+  log: { sign: ["Completed by", "Reviewed by"], checks: "Checks completed" },
+  checklist: { sign: ["Completed by", "Reviewed by"], checks: "Checklist" },
+  consent: { sign: ["Signature"], checks: "Acknowledgment" },
+  intake: { sign: ["Completed by"], checks: "Confirmations" },
 };
 
 /** Which kind each built-in paperwork is. Anything not listed gets a request-style page when it names an approver, otherwise intake. */
@@ -87,7 +87,7 @@ function kindFor(form: FormTemplate): Kind {
 /* ---------- Building a document from a form ---------- */
 
 const MONEY = /cost|amount|fee|total|price|refund|spend|sum|deposit/i;
-const WIDE = /address|description|name of|what|where|reason|item|project|company|client|property|work|scope|details/i;
+const WIDE = /architect|address|description|name of|what|where|reason|item|project|company|client|property|work|scope|details/i;
 const SIGNATURE_LINE = /^Signature:/;
 
 const money = (raw: string) => {
@@ -139,34 +139,33 @@ function cellRows(fields: FormField[], valueOf: (f: FormField) => string): DocBl
   return rows;
 }
 
-function build(form: FormTemplate, values: Record<string, string>, meta: { by: string; on: string } | null, business?: DocBusiness): Doc {
-  const filled = meta !== null;
+function build(form: FormTemplate, values: Record<string, string>, filled: boolean, business?: DocBusiness): Doc {
   const key = idKey(form);
   const kind = kindFor(form), style = KINDS[kind], agreement = kind === "agreement";
   const blocks: DocBlock[] = [];
   const val = (f: FormField) => shown(f, values[f.id], filled);
 
-  if (meta) {
-    blocks.push({ t: "cells", cells: [{ label: "Submitted by", value: meta.by, weight: 2 }, { label: "Date submitted", value: formatDayLong(meta.on), weight: 1 }] });
-  }
-
   if (isStandardLayout(form)) {
-    const short = form.fields.filter((f) => f.type !== "longtext" && f.type !== "checkbox");
-    const checks = form.fields.filter((f) => f.type === "checkbox");
-    const long = form.fields.filter((f) => f.type === "longtext");
-    if (!meta && !short.some((f) => f.type === "date")) blocks.push({ t: "cells", cells: [{ label: "Date" }] });
-    blocks.push(...cellRows(short, val));
-    if (checks.length) {
-      blocks.push({ t: "heading", text: style.checks ?? "Confirmations" });
-      blocks.push({ t: "checks", items: checks.map((f) => ({ label: f.label, checked: filled && values[f.id] === "true" })) });
-    }
-    long.forEach((f, i) => {
-      blocks.push({ t: "heading", text: f.label });
-      blocks.push({ t: "box", text: val(f), min: filled ? (agreement ? 130 : 46) : long.length === 1 ? 150 : 84, grow: !filled && i === long.length - 1 });
-    });
-    if (!long.length && !filled) {
-      blocks.push({ t: "heading", text: style.notes ?? "Notes" });
-      blocks.push({ t: "box", text: "", min: 90, grow: true });
+    // The page follows the form field by field, in the same order and under the same labels, so what a client
+    // fills in is exactly what the template shows: short fields share rows, checkboxes become a list, long answers a box.
+    const lastLong = form.fields.map((f) => f.type).lastIndexOf("longtext");
+    const longCount = form.fields.filter((f) => f.type === "longtext").length;
+    let i = 0;
+    while (i < form.fields.length) {
+      const f = form.fields[i]!;
+      if (f.type === "longtext") {
+        blocks.push({ t: "heading", text: f.label });
+        blocks.push({ t: "box", text: val(f), min: filled ? (agreement ? 130 : 46) : longCount === 1 ? 150 : 84, grow: !filled && i === lastLong });
+        i++;
+      } else {
+        const isCheck = f.type === "checkbox";
+        const run: FormField[] = [];
+        while (i < form.fields.length && form.fields[i]!.type !== "longtext" && (form.fields[i]!.type === "checkbox") === isCheck) run.push(form.fields[i++]!);
+        if (isCheck) {
+          blocks.push({ t: "heading", text: style.checks ?? "Confirmations" });
+          blocks.push({ t: "checks", items: run.map((c) => ({ label: c.label, checked: filled && values[c.id] === "true" })) });
+        } else blocks.push(...cellRows(run, val));
+      }
     }
   } else {
     // Hand-written wording: keep it as written, with the answers filled in.
@@ -183,13 +182,13 @@ function build(form: FormTemplate, values: Record<string, string>, meta: { by: s
 }
 
 /** A filled-in form as a finished document. */
-export function formDocument(form: FormTemplate, s: Submission, business?: DocBusiness): Doc {
-  return build(form, s.values, { by: s.submittedBy, on: s.submittedOn }, business);
+export function formDocument(form: FormTemplate, s: Pick<Submission, "values">, business?: DocBusiness): Doc {
+  return build(form, s.values, true, business);
 }
 
 /** The same page with every answer left empty, to print and fill in by hand. */
 export function blankFormDocument(form: FormTemplate, business?: DocBusiness): Doc {
-  return build(form, {}, null, business);
+  return build(form, {}, false, business);
 }
 
 /* ---------- Plain text (reports, packets, signed copies) as a document ---------- */
