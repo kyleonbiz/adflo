@@ -54,6 +54,8 @@ export interface Invoice {
   /** Days before the due date at which a payment reminder is sent, e.g. [7, 1]. */
   reminderDays: number[];
   notes: string;
+  /** The day a PDF copy was saved to Documents. Absent when it has not been. */
+  savedToDocumentsOn?: string;
 }
 
 export type AlertSeverity = "info" | "warning" | "critical";

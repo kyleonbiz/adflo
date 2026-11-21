@@ -2,9 +2,12 @@
 
 import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
 import { readParam, useUrlFilters } from "@/lib/url-filters";
+import { createHttpApi } from "@/lib/dms/client/http-api";
+import type { DmsApi } from "@/lib/dms/client/api";
+import { saveInvoiceToDocuments } from "@/lib/invoices/save-to-documents";
 import { PreviewNote } from "@/components/ui/preview-note";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2, Download, Plus, Receipt, Search } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { Button } from "@/components/ui/button";
@@ -54,15 +57,17 @@ function downloadCsv(text: string, name: string) {
  * Invoice administration in the client app. Records come from the workspace's saved invoices (the browser, or the
  * database when one is connected).
  */
-export function InvoicesPage({ preview, startNew, draft, initialQuery = "" }: { preview?: string; startNew?: boolean; draft?: InvoiceDraft; initialQuery?: string }) {
+export function InvoicesPage({ preview, startNew, draft, initialQuery = "", live = false }: { preview?: string; startNew?: boolean; draft?: InvoiceDraft; initialQuery?: string; live?: boolean }) {
   const loading = useRecordsLoading(); // saved invoices are still arriving from the database
   const audit = useAudit();
   const [edited, setEdited] = useRecordsState<Invoice>("invoices");
   const invoices = useMemo(() => edited ?? e2eSeed<Invoice>("invoices") ?? [], [edited]);
+  // Only a signed-in workspace has Documents to save into; the browser-only preview does not share them across pages.
+  const documentsApi = useMemo(() => (live ? createHttpApi("live") : undefined), [live]);
   return (
     <InvoicesView
       invoices={invoices} loading={loading} onChange={setEdited} audit={(verb, what) => audit(verb, what, "Invoices", "/app/invoices")}
-      preview={preview} startNew={startNew} draft={draft} initialQuery={initialQuery}
+      preview={preview} startNew={startNew} draft={draft} initialQuery={initialQuery} documentsApi={documentsApi}
     />
   );
 }
@@ -77,6 +82,8 @@ export interface InvoicesViewProps {
   startNew?: boolean;
   draft?: InvoiceDraft;
   initialQuery?: string;
+  /** Signed in: lets an invoice be saved to Documents as a PDF. Leave out where there are no Documents (preview, Control center billing). */
+  documentsApi?: DmsApi;
   /** Control center: the clients invoices can be addressed to, "From" details and where they are remembered. */
   clients?: BillableClient[];
   draftClientId?: string;
@@ -90,7 +97,7 @@ export interface InvoicesViewProps {
 
 /** The invoice screen itself: create, view, download, send, chase and mark paid. It does not care where the list is kept. */
 export function InvoicesView({
-  invoices, loading = false, onChange, audit, preview, startNew, draft, initialQuery = "", clients, draftClientId, senderKey, senderDefaults, headerActions,
+  invoices, loading = false, onChange, audit, preview, startNew, draft, initialQuery = "", documentsApi, clients, draftClientId, senderKey, senderDefaults, headerActions,
   title = "Invoices", subtitle = "Track what is owed, repeat recurring invoices and chase overdue payments.",
 }: InvoicesViewProps) {
   const today = useToday();
@@ -107,6 +114,11 @@ export function InvoicesView({
   const [groupBy, setGroupBy] = useState<InvoiceGroupBy>(() => readParam<InvoiceGroupBy>("group", "status", ["status", "client", "month"]));
   useUrlFilters({ q: query, status: stateFilter, sort, group: groupBy }, { status: "all", sort: "default", group: "status" });
   const [bulkDelete, setBulkDelete] = useState(false);
+  // The latest list. Changes build on this, not on this render's `invoices`, so work that finishes later (saving a copy to Documents)
+  // or several changes in one moment never overwrite each other.
+  const latest = useRef(invoices);
+  useEffect(() => { latest.current = invoices; }, [invoices]);
+  const emit = (next: Invoice[]) => { latest.current = next; onChange(next); };
   const [undoer, setUndoer] = useState<{ text: string; run: () => void } | null>(null);
   const sel = useSelection();
 
@@ -120,8 +132,22 @@ export function InvoicesView({
     );
   }
 
-  const update = (fn: (all: Invoice[]) => Invoice[]) => onChange(fn(invoices));
+  const update = (fn: (all: Invoice[]) => Invoice[]) => emit(fn(latest.current));
   const patch = (id: string, change: (i: Invoice) => Invoice) => update((all) => all.map((i) => (i.id === id ? change(i) : i)));
+
+  /** Saves a PDF copy of the invoice to Documents and remembers the day on the invoice. */
+  const saveCopy = async (i: Invoice) => {
+    if (!documentsApi) return;
+    setNotice(`Saving ${i.number} to Documents…`);
+    try {
+      const r = await saveInvoiceToDocuments(documentsApi, i);
+      emit(latest.current.map((x) => (x.id === i.id ? { ...x, savedToDocumentsOn: today } : x)));
+      audit("saved to Documents", `invoice ${i.number}`);
+      setNotice(`${i.number} saved to Documents as ${r.fileName} (${r.folder}).`);
+    } catch (e) {
+      setNotice(`${i.number} could not be saved to Documents: ${e instanceof Error ? e.message : "try again"}.`);
+    }
+  };
 
   const actions: InvoiceActions = {
     onView: (i) => setViewing(i),
@@ -151,6 +177,7 @@ export function InvoicesView({
       try { await navigator.clipboard.writeText(link); setNotice(`Link to ${i.number} copied.`); }
       catch { setNotice(`Copy this link to ${i.number}: ${link}`); }
     },
+    ...(documentsApi ? { onSaveToDocuments: (i: Invoice) => void saveCopy(i) } : {}),
     onNext: (i) => {
       if (hasNextInvoice(i, invoices)) { setNotice(`The next invoice after ${i.number} already exists.`); return; }
       const next = nextRecurringInvoice(i, invoices, newId());
@@ -161,7 +188,7 @@ export function InvoicesView({
     },
   };
 
-  const saveForm = (values: InvoiceFormValues, clientId?: string) => {
+  const saveForm = (values: InvoiceFormValues, clientId?: string, options?: { saveCopy: boolean }) => {
     const items = values.items.map((i) => ({ description: i.description, qty: i.qty, rateCents: i.rate }));
     const fields = {
       number: values.number, client: values.client, clientEmail: values.clientEmail, ...(clients ? { clientId } : {}),
@@ -181,6 +208,7 @@ export function InvoicesView({
       setViewing(created);
       audit("created", `invoice ${values.number}`);
       setNotice(`${values.number} created as a draft.`);
+      if (options?.saveCopy) void saveCopy(created);
     }
   };
 
@@ -323,6 +351,7 @@ export function InvoicesView({
         today={today}
         onOpenChange={(o) => !o && setFormFor(null)}
         onSubmit={saveForm}
+        canSaveToDocuments={!!documentsApi}
         clients={clients}
         draftClientId={draftClientId}
         senderKey={senderKey}

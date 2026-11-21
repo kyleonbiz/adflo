@@ -11,6 +11,6 @@ export default async function InvoicesRoute({ searchParams }: PageProps<"/app/in
   const { new: startNew, q } = params;
   const draft = startNew === "1" ? draftFromParams("invoices", (k) => (typeof params[k] === "string" ? (params[k] as string) : undefined)) : undefined;
   return renderAppShell("/app/invoices", (mode) => (
-    <InvoicesPage draft={draft} initialQuery={typeof q === "string" ? q : ""} startNew={startNew === "1"} preview={mode === "preview" ? "Records are saved in this browser only, not shared with other people or devices. No emails are sent." : undefined} />
+    <InvoicesPage live={mode === "live"} draft={draft} initialQuery={typeof q === "string" ? q : ""} startNew={startNew === "1"} preview={mode === "preview" ? "Records are saved in this browser only, not shared with other people or devices. No emails are sent." : undefined} />
   ));
 }
