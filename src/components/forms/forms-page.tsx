@@ -1,11 +1,11 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useMemo, useState } from "react";
 import { CheckCircle2, FileInput, Inbox, Plus, Search, Send } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
-import { Button } from "@/components/ui/button";
 import { SplitButton } from "@/components/ui/split-button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SummaryTile } from "@/components/modules/summary-tile";
@@ -153,7 +153,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <p role="status" aria-live="polite" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
 
@@ -271,15 +271,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
         }}
       />
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Delete form?</DialogTitle>
-          <DialogDescription className="mt-1">{deleting?.name} and all of its responses will be removed.</DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+      <ConfirmDialog open={!!deleting} title="Delete form?" description={<>{deleting?.name} and all of its responses will be removed.</>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
                   setEditedForms(forms.filter((f) => f.id !== deleting.id));
                   setEditedSubs(subs.filter((s) => s.formId !== deleting.id));
@@ -287,13 +279,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
                   setNotice(`${deleting.name} deleted.`);
                 }
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              }} />
     </div>
   );
 }

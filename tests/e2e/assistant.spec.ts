@@ -4,9 +4,9 @@ test("the assistant sits under Dashboard and deploys a business", async ({ page 
   await page.goto("/app/overview");
   const links = page.getByRole("navigation", { name: "Services" }).getByRole("link");
   await expect(links.nth(0)).toHaveText("Dashboard");
-  await expect(links.nth(1)).toHaveText("AI Assistant");
+  await expect(links.nth(1)).toHaveText("Addy");
   await links.nth(1).click();
-  await expect(page.getByRole("heading", { level: 1, name: "AI Assistant" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Addy" })).toBeVisible();
 
   await page.getByRole("button", { name: "Set up my business" }).click();
   await page.getByLabel("Message Addy").fill("Acme Plumbing");

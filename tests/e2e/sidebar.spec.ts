@@ -2,7 +2,7 @@ import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 const NAMES = [
-  "Dashboard", "AI Assistant", "Documents", "Invoices", "Licenses & Renewals", "Contacts", "Tasks", "Forms & Paperwork",
+  "Dashboard", "Addy", "Documents", "Invoices", "Licenses & Renewals", "Contacts", "Tasks", "Forms & Paperwork",
   "Calendar", "Reporting", "Activity", "Settings",
 ];
 const nav = (page: Page) => page.getByRole("navigation", { name: "Services" });

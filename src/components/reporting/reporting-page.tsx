@@ -1,5 +1,6 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useCallback, useMemo, useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -106,7 +107,7 @@ export function ReportingPage({ sources, initialView, initialSection, preview }:
         <h1 className="text-2xl font-semibold tracking-tight">Reporting</h1>
         <p className="text-sm text-muted-foreground">See every service at a glance, open a report for any of them, or report on a spreadsheet of your own.</p>
       </div>
-      {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
+      {preview && <PreviewNote>{preview}</PreviewNote>}
       {today ? (
         <Body sources={sources} today={today} view={view} onView={change} section={section} onSection={setSection} />
       ) : (

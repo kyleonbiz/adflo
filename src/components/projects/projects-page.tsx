@@ -1,11 +1,13 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FolderKanban, ListTodo, Plus, Search, X } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { useCurrentUserName } from "@/components/current-user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -284,7 +286,7 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <div role="status" aria-live="polite" className={notice ? "sticky top-2 z-20 flex items-start justify-between gap-3 rounded-xl border bg-card px-4 py-2.5 text-sm shadow-float" : "sr-only"}>
         <span key={notice?.n}>{notice?.text}</span>
@@ -458,26 +460,12 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
         onSubmit={saveForm}
       />
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Delete project?</DialogTitle>
-          <DialogDescription className="mt-1">
+      <ConfirmDialog open={!!deleting} title="Delete project?" description={<>
             {deleting?.name}{deleting && deleting.tasks.length > 0 ? ` and its ${plural(deleting.tasks.length, "task")} will be removed.` : " will be removed."} You can undo this right after.
-          </DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+          </>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) deleteProject(deleting);
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              }} />
 
       <Dialog open={!!completing} onOpenChange={(o) => !o && setCompleting(null)}>
         <DialogContent variant="alert">

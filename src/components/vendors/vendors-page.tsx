@@ -1,11 +1,13 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, BellRing, CheckCircle2, Copy, Download, FileWarning, Merge, Plus, Search, Store, X } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { useCurrentUserName } from "@/components/current-user";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -253,7 +255,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <div role="status" aria-live="polite" className={notice ? "sticky top-2 z-20 flex items-start justify-between gap-3 rounded-xl border bg-card px-4 py-2.5 text-sm shadow-float" : "sr-only"}>
         <span>{notice}</span>
@@ -447,15 +449,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Delete vendor?</DialogTitle>
-          <DialogDescription className="mt-1">{deleting?.name} and its document records will be removed. Deactivate it instead to keep the history.</DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+      <ConfirmDialog open={!!deleting} title="Delete vendor?" description={<>{deleting?.name} and its document records will be removed. Deactivate it instead to keep the history.</>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
                   const before = vendors;
                   update((all) => all.filter((v) => v.id !== deleting.id));
@@ -463,13 +457,7 @@ export function VendorsPage({ preview, startNew, draft }: { preview?: string; st
                   say(`${deleting.name} deleted.`, before);
                 }
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              }} />
     </div>
   );
 }

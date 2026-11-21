@@ -1,5 +1,6 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import Link from "next/link";
 import { useState } from "react";
 import { History } from "lucide-react";
@@ -29,7 +30,7 @@ export function ActivityPage({ preview }: { preview?: string }) {
         </Select>
       </div>
 
-      {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
+      {preview && <PreviewNote>{preview}</PreviewNote>}
 
       {shown.length === 0 ? (
         <section className="rounded-2xl border bg-card p-8 text-center shadow-panel" data-testid="activity-empty">

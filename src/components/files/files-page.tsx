@@ -1,5 +1,6 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, Copy, Download, FileInput, FolderOpen, FolderTree, Pencil, ShieldCheck, Undo2, Upload } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
@@ -84,7 +85,7 @@ export function FilesPage({ preview }: { preview?: string }) {
         {files && <Button variant="outline" onClick={() => { setFiles(null); setNotes(null); setApproved(false); setNotice(""); }}>Start over</Button>}
       </div>
 
-      {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
+      {preview && <PreviewNote>{preview}</PreviewNote>}
       <p role="status" aria-live="polite" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
 
       {!files || !plan || !notes ? (

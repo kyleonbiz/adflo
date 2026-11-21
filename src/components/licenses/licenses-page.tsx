@@ -1,12 +1,13 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CalendarClock, CalendarPlus, FileText, FileWarning, Hourglass, Plus, Search, ShieldCheck, Upload } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SplitButton } from "@/components/ui/split-button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -195,7 +196,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <div
         role="status"
@@ -344,29 +345,15 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
 
       <RenewDialog license={renewing} today={today} onCancel={() => setRenewing(null)} onConfirm={confirmRenewal} />
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Delete license?</DialogTitle>
-          <DialogDescription className="mt-1">
+      <ConfirmDialog open={!!deleting} title="Delete license?" description={<>
             {deleting?.name} and its reminders will be removed.
-          </DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+          </>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
                   audit("deleted", `${deleting.name}`, "Licenses", "/app/licenses");
                   commit(licenses.filter((l) => l.id !== deleting.id), `${deleting.name} deleted.`);
                 }
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+              }} />
     </div>
   );
 }

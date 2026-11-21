@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BellRing, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -128,8 +129,8 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
 function AccountSwitch({ client, onChanged }: { client: ClientRecord; onChanged: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [confirmOff, setConfirmOff] = useState(false);
   async function change(on: boolean) {
-    if (!on && !window.confirm(`Pause ${client.name}? Their people lose access to their workspace right away. Nothing is deleted, and you can turn it back on at any time.`)) return;
     setBusy(true); setError("");
     try {
       const res = await fetch(`/api/control/clients/${client.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status: statusAfterSwitch(client.status, on) }) });
@@ -140,9 +141,14 @@ function AccountSwitch({ client, onChanged }: { client: ClientRecord; onChanged:
   const on = isAccountOn(client.status);
   return (
     <div className="flex items-center gap-2.5" title={on ? "Turn off to pause this account, for example for missed payments" : "Paused. Turn on to restore access"}>
-      <Switch aria-label={`${client.name} account on`} checked={on} disabled={busy || client.status === "cancelled"} onCheckedChange={change} />
+      <Switch aria-label={`${client.name} account on`} checked={on} disabled={busy || client.status === "cancelled"} onCheckedChange={(v) => (v ? void change(true) : setConfirmOff(true))} />
       <span className={cn("w-14 text-xs font-medium", on ? "text-emerald-700" : "text-amber-800")}>{client.status === "cancelled" ? "Cancelled" : on ? "On" : "Paused"}</span>
       {error && <span role="alert" className="text-xs text-destructive">{error}</span>}
+      <ConfirmDialog
+        open={confirmOff} title={`Pause ${client.name}?`} confirmLabel="Pause"
+        description="Their people lose access to their workspace right away. Nothing is deleted, and you can turn it back on at any time."
+        onCancel={() => setConfirmOff(false)} onConfirm={() => { setConfirmOff(false); void change(false); }}
+      />
     </div>
   );
 }
@@ -155,12 +161,12 @@ function AccountSwitch({ client, onChanged }: { client: ClientRecord; onChanged:
 function RemindInvitation({ client, onSent }: { client: ClientRecord; onSent: () => void }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [asking, setAsking] = useState(false);
   const next = nextReminder(client);
   if (next?.kind !== "signup") return null;
   const wait = cooldownHoursLeft(client.lastReminderAt);
   const ago = reminderAgo(client.lastReminderAt);
   async function send() {
-    if (!window.confirm(`Email ${client.ownerEmail} a reminder about their invitation to ${client.name}? It includes a fresh confirm link, and the earlier link stops working.`)) return;
     setBusy(true); setMsg(null);
     try {
       const res = await fetch(`/api/control/clients/${client.id}/remind`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ kind: "signup" }) });
@@ -172,11 +178,16 @@ function RemindInvitation({ client, onSent }: { client: ClientRecord; onSent: ()
   }
   return (
     <div className="mt-1 flex flex-col items-start gap-1">
-      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" disabled={busy || wait > 0} onClick={send} aria-label={`Remind ${client.name} about their invitation`}
+      <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" disabled={busy || wait > 0} onClick={() => setAsking(true)} aria-label={`Remind ${client.name} about their invitation`}
         title={wait > 0 ? `Reminded ${ago ?? "today"}. Again in about ${wait} ${wait === 1 ? "hour" : "hours"}.` : ago ? `Last reminded ${ago}` : "Invitation not accepted yet"}>
         <BellRing /> {busy ? "Sending…" : "Remind"}
       </Button>
       {msg && <span role={msg.ok ? "status" : "alert"} className={cn("max-w-[11rem] whitespace-normal text-xs", msg.ok ? "text-emerald-700" : "text-destructive")}>{msg.text}</span>}
+      <ConfirmDialog
+        open={asking} title="Send invitation reminder?" confirmLabel="Send" destructive={false}
+        description={`Email ${client.ownerEmail} a reminder about their invitation to ${client.name}? It includes a fresh confirm link, and the earlier link stops working.`}
+        onCancel={() => setAsking(false)} onConfirm={() => { setAsking(false); void send(); }}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -96,7 +97,7 @@ export function CalendarPage({ preview }: { preview?: string }) {
         </div>
       </div>
 
-      {preview && <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>}
+      {preview && <PreviewNote>{preview}</PreviewNote>}
 
       {view === "next" ? (
         <section aria-label="Next month" className="space-y-5">

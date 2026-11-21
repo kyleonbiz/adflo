@@ -1,5 +1,7 @@
 "use client";
 
+import { PreviewNote } from "@/components/ui/preview-note";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarClock, CheckCircle2, Download, Plus, Receipt, Search } from "lucide-react";
 import { useAudit } from "@/components/audit/use-audit";
@@ -204,7 +206,7 @@ export function InvoicesView({
       </div>
 
       {preview && (
-        <p role="note" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">{preview}</p>
+        <PreviewNote>{preview}</PreviewNote>
       )}
       <p role="status" aria-live="polite" className={notice ? "text-sm text-muted-foreground" : "sr-only"}>{notice}</p>
 
@@ -278,30 +280,16 @@ export function InvoicesView({
 
       <InvoicePreview invoice={viewing} today={today} onOpenChange={(o) => !o && setViewing(null)} onEdit={(i) => setFormFor(i)} />
 
-      <Dialog open={!!voiding} onOpenChange={(o) => !o && setVoiding(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Void invoice?</DialogTitle>
-          <DialogDescription className="mt-1">
+      <ConfirmDialog open={!!voiding} title="Void invoice?" description={<>
             {voiding?.number} for {voiding?.client} will stop counting as owed. You can reopen it later.
-          </DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setVoiding(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+          </>} confirmLabel="Void" onCancel={() => setVoiding(null)} onConfirm={() => {
                 if (voiding) {
                   patch(voiding.id, voidInvoice);
                   audit("voided", `invoice ${voiding.number}`);
                   setNotice(`${voiding.number} voided.`);
                 }
                 setVoiding(null);
-              }}
-            >
-              Void
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        }} />
 
       <Dialog open={!!paying} onOpenChange={(o) => !o && setPaying(null)}>
         <DialogContent variant="alert">
@@ -338,30 +326,16 @@ export function InvoicesView({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
-        <DialogContent variant="alert">
-          <DialogTitle>Delete invoice?</DialogTitle>
-          <DialogDescription className="mt-1">
+      <ConfirmDialog open={!!deleting} title="Delete invoice?" description={<>
             {deleting?.number} for {deleting?.client} will be removed. Void it instead to keep the record.
-          </DialogDescription>
-          <div className="mt-5 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setDeleting(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
+          </>} confirmLabel="Delete" onCancel={() => setDeleting(null)} onConfirm={() => {
                 if (deleting) {
                   update((all) => all.filter((i) => i.id !== deleting.id));
                   audit("deleted", `invoice ${deleting.number}`);
                   setNotice(`${deleting.number} deleted.`);
                 }
                 setDeleting(null);
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        }} />
     </div>
   );
 }
