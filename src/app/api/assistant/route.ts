@@ -44,7 +44,9 @@ export async function POST(req: Request) {
     const today = typeof body.today === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.today) ? body.today : new Date().toISOString().slice(0, 10);
 
     const result = await runAssistant(messages, config, today);
-    return json({ ok: true, data: result });
+    // Token counts only, never the conversation: this is for sizing cost per account.
+    console.info("[assistant] usage", JSON.stringify({ user: dms.userId, ...result.usage }));
+    return json({ ok: true, data: { text: result.text, links: result.links } });
   } catch (e) {
     const err = toDmsError(e);
     // Log the class only: messages can echo what the owner typed.

@@ -8,7 +8,8 @@ import { guardrailPrompt } from "./guardrails";
 import { TOOL_DEFS, runTool, type ToolState } from "./tools";
 
 export interface ChatMessage { role: "user" | "assistant"; content: string }
-interface LlmResult { text: string; links: Link[] }
+export interface Usage { model: string; steps: number; input: number; output: number; cacheRead: number; cacheWrite: number }
+interface LlmResult { text: string; links: Link[]; usage: Usage }
 
 export const assistantConfigured = () => !!process.env.ANTHROPIC_API_KEY;
 
@@ -38,6 +39,7 @@ ${guardrailPrompt()}`;
 export async function runAssistant(messages: ChatMessage[], config: SetupConfig, today: string): Promise<LlmResult> {
   const client = new Anthropic();
   const state: ToolState = { config, today, links: [], drafts: 0 };
+  const usage: Usage = { model: MODEL, steps: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
   const convo: Anthropic.Beta.BetaMessageParam[] = messages.map((m) => ({ role: m.role, content: m.content }));
 
   for (let step = 0; step < MAX_STEPS; step++) {
@@ -53,12 +55,18 @@ export async function runAssistant(messages: ChatMessage[], config: SetupConfig,
       messages: convo,
     });
 
+    usage.steps++;
+    usage.input += res.usage.input_tokens ?? 0;
+    usage.output += res.usage.output_tokens ?? 0;
+    usage.cacheRead += res.usage.cache_read_input_tokens ?? 0;
+    usage.cacheWrite += res.usage.cache_creation_input_tokens ?? 0;
+
     if (res.stop_reason === "refusal") {
-      return { text: "I can't help with that one. I can still answer questions about AdFlo or open a draft for you.", links: state.links };
+      return { text: "I can't help with that one. I can still answer questions about AdFlo or open a draft for you.", links: state.links, usage };
     }
     if (res.stop_reason !== "tool_use") {
       const text = res.content.flatMap((b) => (b.type === "text" ? [b.text] : [])).join("\n").trim();
-      return { text: text || "Done.", links: state.links };
+      return { text: text || "Done.", links: state.links, usage };
     }
 
     convo.push({ role: "assistant", content: res.content });
@@ -69,5 +77,5 @@ export async function runAssistant(messages: ChatMessage[], config: SetupConfig,
     }
     convo.push({ role: "user", content: results });
   }
-  return { text: "That took more steps than expected. Please try again.", links: state.links };
+  return { text: "That took more steps than expected. Please try again.", links: state.links, usage };
 }
