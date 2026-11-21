@@ -4,7 +4,7 @@ import { RecordsSyncError, type RecordsBackend } from "./remote";
 
 /** The services saved to the database. (The activity trail is kept apart, in its own append-only table: see `audit/remote.ts`.) */
 export const PERSISTED_KINDS = [
-  "licenses", "projects", "invoices", "vendors", "contacts", "equipment",
+  "licenses", "projects", "invoices", "vendors", "contacts", "equipment", "forms", "submissions",
   "todos", "reminders", "signing", "packets", "schedules", "projecttypes",
   "settings", "setup", "chains",
 ] as const;
