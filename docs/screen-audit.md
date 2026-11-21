@@ -121,3 +121,22 @@ linked documents/vendor, status), with warranty and service dates feeding Calend
 5. Printable compliance summary (Licenses + Vendors), the first step toward the audit export.
 6. Contact/vendor profile timelines.
 7. Equipment & assets module.
+
+## Status after "do them all" (2026-11-21)
+
+**Done:** Addy naming, input length, aria-live, New chat, starter prompts and mode line; shared `ConfirmDialog` and `PreviewNote`
+(Control center `window.confirm` removed); readable small text; bulk actions on Invoices, Licenses, Vendors, Tasks and Equipment;
+Invoices sort, group by, labelled export and undo on delete; Forms sort and response search; Tasks assignee filter;
+chasing reminders for licenses and unsigned signers; Activity search, person, date range, CSV and Show more; Calendar document
+expiries (signed in), equipment, `.ics` download and agenda length; print compliance summaries for Licenses and Vendors;
+linked projects and document search on contact and vendor profiles; Home snooze for a week and finish-setup nudge; receipt icon
+on the invoice KPI; Contacts wording; Tidy up limits shown before choosing; Billing back up and restore; the new Equipment
+module (also on Calendar and Home); fixed `.ics` semicolon escaping.
+
+**Not done (left for a follow-up):** bulk actions on Forms; week view and add-from-calendar; URL-persisted filters outside Vendors;
+Documents (revoke-all share links, bulk move/tag, an "expiring soon" filter, a note on preview limits); "Pick from Documents" on
+licenses; a combined invoices/forms/documents timeline on profiles (profiles list linked projects and a document search link only);
+splitting `projects-page.tsx`; sharing the stepper between the two CSV importers; the Reporting dual-navigation focus check;
+Control center saved filters and bulk onboarding reminders; Equipment on the Reporting screens and in Addy; an Equipment tier
+feature flag (it is open to every plan); dead-link handling in Activity. Nothing was run against a hosted Supabase project, so the
+`equipment` migration is untested there.

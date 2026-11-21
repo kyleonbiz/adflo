@@ -175,7 +175,7 @@ export function TasksView({ projects, today, query, filter, onFilter, showDone, 
             {assignees.length > 0 && (
               <div className="w-40">
                 <Select value={who} onValueChange={setWho}>
-                  <SelectTrigger aria-label="Filter tasks by assignee"><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="Assignee"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Everyone</SelectItem>
                     {assignees.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}

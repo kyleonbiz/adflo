@@ -34,7 +34,7 @@ test.describe("tasks view", () => {
     await expect(page.getByTestId("project-card")).toHaveCount(4);
     await page.getByRole("tab", { name: "Tasks" }).click();
 
-    await page.getByRole("checkbox", { name: "Order printer toner" }).click(); // finished tasks leave the list
+    await page.getByRole("checkbox", { name: "Order printer toner", exact: true }).click(); // finished tasks leave the list
     await expect(page.getByTestId("task-row")).toHaveCount(8);
     await page.getByLabel("Show completed").check();
     await expect(page.getByTestId("task-row").filter({ hasText: "Order printer toner" })).toBeVisible();
