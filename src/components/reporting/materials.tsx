@@ -3,10 +3,8 @@
 import { Download, FileSpreadsheet, FileText, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toCsv } from "@/lib/csv";
-import { currentLetterhead } from "@/lib/documents/letterhead";
-import { documentToPdf } from "@/lib/documents/pdf";
-import { overviewDocument, reportDocument } from "@/lib/documents/reports";
-import { printDocument } from "@/lib/forms/print";
+import { textToPdf } from "@/lib/forms/pdf";
+import { printText } from "@/lib/forms/print";
 import type { ModuleReport } from "@/lib/reporting/logic";
 import { overviewText, reportText } from "@/lib/reporting/schedule";
 
@@ -34,8 +32,8 @@ export function Materials({ reports, today }: { reports: ModuleReport[]; today: 
           </div>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => downloadBlob(documentToPdf(overviewDocument(reports, today, currentLetterhead())), `business-summary-${today}.pdf`, "application/pdf")}><Download /> PDF</Button>
-          <Button size="sm" variant="outline" onClick={() => printDocument(overviewDocument(reports, today, currentLetterhead()))}><Printer /> Print</Button>
+          <Button size="sm" variant="outline" onClick={() => downloadBlob(textToPdf(summary), `business-summary-${today}.pdf`, "application/pdf")}><Download /> PDF</Button>
+          <Button size="sm" variant="outline" onClick={() => printText("Business summary", summary)}><Printer /> Print</Button>
         </div>
       </section>
 
@@ -48,7 +46,7 @@ export function Materials({ reports, today }: { reports: ModuleReport[]; today: 
                 <p className="text-sm font-medium">{r.name}</p>
                 <p className="text-xs text-muted-foreground">{r.count === 0 ? "No records yet" : `${r.count} ${r.noun}`}</p>
               </div>
-              <Button size="sm" variant="outline" aria-label={`${r.name} PDF`} onClick={() => downloadBlob(documentToPdf(reportDocument(r, today, currentLetterhead())), `${slug(r.name)}-report-${today}.pdf`, "application/pdf")}><Download /> PDF</Button>
+              <Button size="sm" variant="outline" aria-label={`${r.name} PDF`} onClick={() => downloadBlob(textToPdf(reportText(r, today)), `${slug(r.name)}-report-${today}.pdf`, "application/pdf")}><Download /> PDF</Button>
               <Button size="sm" variant="outline" aria-label={`${r.name} spreadsheet`} disabled={r.table.rows.length === 0} onClick={() => downloadBlob(toCsv([r.table.headers, ...r.table.rows]), `${slug(r.name)}-${today}.csv`, "text/csv")}><FileSpreadsheet /> CSV</Button>
             </li>
           ))}

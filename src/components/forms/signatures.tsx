@@ -9,9 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDayLong } from "@/lib/dates";
-import { textDocument } from "@/lib/documents/build";
-import { documentToPdf } from "@/lib/documents/pdf";
-import { currentLetterhead } from "@/lib/documents/letterhead";
+import { textToPdf } from "@/lib/forms/pdf";
 import { MAX_SIGNERS, parseSigners, sha256Hex, sign, signedCopyText, status, type SigningRequest } from "@/lib/signing/logic";
 import { saveRequests, useSigningRequests } from "@/lib/signing/storage";
 
@@ -212,7 +210,7 @@ export function Signatures({ submissions, today, by }: { submissions: SignableSu
                     <Badge variant={variant}>{label}</Badge>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" aria-label={`Download signed copy of ${r.title}`} onClick={() => download(documentToPdf(textDocument(`${r.title} (signed copy)`, signedCopyText(r), currentLetterhead())), `${r.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-signed.pdf`)}><Download /> Signed copy</Button>
+                    <Button size="sm" variant="outline" aria-label={`Download signed copy of ${r.title}`} onClick={() => download(textToPdf(signedCopyText(r)), `${r.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-signed.pdf`)}><Download /> Signed copy</Button>
                     <Button size="icon-sm" variant="ghost" aria-label={`Delete signing request ${r.title}`} onClick={() => saveRequests(list.filter((x) => x.id !== r.id))}><Trash2 /></Button>
                   </div>
                 </div>

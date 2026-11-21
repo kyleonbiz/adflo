@@ -22,9 +22,7 @@ import type { ProjectFormValues, TaskFormValues } from "@/lib/projects/validatio
 import { ProjectCard, type ProjectActions, type ReportFormat } from "./project-card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { downloadFile } from "@/lib/download";
-import { currentLetterhead } from "@/lib/documents/letterhead";
-import { documentToPdf } from "@/lib/documents/pdf";
-import { projectsDocument } from "@/lib/documents/reports";
+import { textToPdf } from "@/lib/forms/pdf";
 import { ProjectFormDialog, type ProjectDraft } from "./project-form-dialog";
 import { STATUS_LABEL, TASK_BADGE } from "./status";
 import { TasksView, type TaskFilter } from "./tasks-view";
@@ -35,7 +33,7 @@ const rid = (prefix: string) => `${prefix}-${Math.random().toString(36).slice(2,
 
 /** Saves a status report in the chosen format: PDF, plain text or a CSV spreadsheet. */
 function downloadReport(projects: Project[], today: string, format: ReportFormat, name: string) {
-  if (format === "pdf") downloadFile(`${name}.pdf`, documentToPdf(projectsDocument(projects, today, currentLetterhead())) as BlobPart, "application/pdf");
+  if (format === "pdf") downloadFile(`${name}.pdf`, textToPdf(projectsReport(projects, today)) as BlobPart, "application/pdf");
   else if (format === "csv") downloadFile(`${name}.csv`, projectsReportCsv(projects, today), "text/csv;charset=utf-8");
   else downloadFile(`${name}.txt`, projectsReport(projects, today), "text/plain;charset=utf-8");
 }

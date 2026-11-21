@@ -11,9 +11,7 @@ import { ExportMenu } from "@/components/ui/split-button";
 import { toCsv } from "@/lib/csv";
 import { datasetToXlsx } from "@/lib/datasets/xlsx";
 import type { ModuleReport, ReportTone } from "@/lib/reporting/logic";
-import { currentLetterhead } from "@/lib/documents/letterhead";
-import { documentToPdf } from "@/lib/documents/pdf";
-import { reportDocument } from "@/lib/documents/reports";
+import { textToPdf } from "@/lib/forms/pdf";
 import { downloadFile } from "@/lib/download";
 import { reportText } from "@/lib/reporting/schedule";
 import { ReportBars } from "./report-bars";
@@ -79,7 +77,7 @@ export function ModuleReportView({ report, today }: { report: ModuleReport; toda
           <Button asChild size="sm" variant="outline"><Link href={report.href}>Open {report.name}</Link></Button>
           <Button size="sm" onClick={run}><Play /> Run report</Button>
           <ExportMenu label="Download" actions={[
-            { label: "PDF", icon: <FileText />, onSelect: () => downloadFile(`${file}.pdf`, documentToPdf(reportDocument(report, today, currentLetterhead())) as BlobPart, "application/pdf") },
+            { label: "PDF", icon: <FileText />, onSelect: () => downloadFile(`${file}.pdf`, textToPdf(reportText(report, today)) as BlobPart, "application/pdf") },
             { label: "Excel", icon: <FileSpreadsheet />, onSelect: () => downloadXlsx(report, `${file}.xlsx`) },
             { label: "Google Sheets", icon: <Table2 />, onSelect: () => void toSheets() },
             { label: "CSV", icon: <Download />, onSelect: () => downloadText(toCsv([report.table.headers, ...report.table.rows]), `${file}.csv`) },

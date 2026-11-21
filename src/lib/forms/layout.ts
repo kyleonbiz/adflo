@@ -1,18 +1,17 @@
 import type { FormField } from "./types";
 
-const cell = (s: string) => s.replace(/\|/g, "/").replace(/\s+/g, " ").trim();
+const RULE = "-".repeat(60);
 
 /**
- * A ready-made document layout for a form, in the document writing format: the purpose, a table of short answers, each
- * long answer under its own heading, then signature lines. `{{Field label}}` placeholders are filled in from each response.
+ * A ready-made document layout for a form: purpose, one line per field (long answers get their own
+ * block), then a signature line. `{{Field label}}` placeholders are filled in from each response.
  */
 export function layoutTemplate(description: string, fields: FormField[]): string {
-  const short = fields.filter((f) => f.type !== "longtext");
-  const long = fields.filter((f) => f.type === "longtext");
-  return [
-    ...(description ? [description, ""] : []),
-    ...(short.length ? ["## Details", "", "| Item | Response |", "| --- | --- |", ...short.map((f) => `| ${cell(f.label)} | {{${f.label}}} |`), ""] : []),
-    ...long.flatMap((f) => [`### ${cell(f.label)}`, "", `{{${f.label}}}`, ""]),
-    "[signatures: Signature | Date]",
-  ].join("\n");
+  const body = fields.map((f) => (f.type === "longtext" ? `${f.label}:\n{{${f.label}}}\n` : `${f.label}: {{${f.label}}}`));
+  return [...(description ? [description, ""] : []), RULE, ...body, RULE, "Signature: ______________________________    Date: ______________"].join("\n");
+}
+
+/** The same layout with every answer left blank, to print or save as a PDF and fill in by hand. */
+export function blankDocument(name: string, template: string): string {
+  return `${name.toUpperCase()}\n\n${template.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, "______________________________")}\n`;
 }

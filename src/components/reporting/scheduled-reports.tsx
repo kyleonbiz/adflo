@@ -8,10 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDayLong } from "@/lib/dates";
-import { currentLetterhead } from "@/lib/documents/letterhead";
-import { documentToPdf } from "@/lib/documents/pdf";
-import { overviewDocument, reportDocument } from "@/lib/documents/reports";
-import { printDocument } from "@/lib/forms/print";
+import { textToPdf } from "@/lib/forms/pdf";
+import { printText } from "@/lib/forms/print";
 import type { ModuleReport } from "@/lib/reporting/logic";
 import {
   OVERVIEW_ID, SCHEDULE_EVERY, addSchedule, dueSchedules, markDelivered, overviewText, parseRecipients, removeSchedule, reportText,
@@ -21,9 +19,9 @@ import { saveSchedules, useSchedules } from "@/lib/reporting/schedule-storage";
 import { downloadBlob } from "./materials";
 
 const nameOf = (reports: ModuleReport[], id: string) => (id === OVERVIEW_ID ? "Business summary" : reports.find((r) => r.id === id)?.name ?? id);
-const documentOf = (reports: ModuleReport[], id: string, today: string) => {
+const textOf = (reports: ModuleReport[], id: string, today: string) => {
   const r = reports.find((x) => x.id === id);
-  return id === OVERVIEW_ID || !r ? overviewDocument(reports, today, currentLetterhead()) : reportDocument(r, today, currentLetterhead());
+  return id === OVERVIEW_ID || !r ? overviewText(reports, today) : reportText(r, today);
 };
 
 /**
@@ -50,9 +48,9 @@ export function ScheduledReports({ reports, today }: { reports: ModuleReport[]; 
 
   const take = (s: ScheduledReport, how: "pdf" | "print") => {
     const name = nameOf(reports, s.reportId);
-    const doc = documentOf(reports, s.reportId, today);
-    if (how === "print") printDocument(doc);
-    else downloadBlob(documentToPdf(doc), `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${today}.pdf`, "application/pdf");
+    const text = textOf(reports, s.reportId, today);
+    if (how === "print") printText(name, text);
+    else downloadBlob(textToPdf(text), `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${today}.pdf`, "application/pdf");
     if (s.nextOn <= today) saveSchedules(markDelivered(list, s.id, today));
   };
 
