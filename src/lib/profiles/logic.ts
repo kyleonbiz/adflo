@@ -42,3 +42,9 @@ export function vendorsForContact(c: Pick<Contact, "name" | "email" | "company">
 export function contactsForVendor(v: Pick<Vendor, "name" | "email" | "contactName">, contacts: Contact[]): Contact[] {
   return contacts.filter((c) => sameEmail(c.email, v.email) || sameName(c.company, v.name) || (!!v.contactName && sameName(c.name, v.contactName) && !!c.company && sameName(c.company, v.name)));
 }
+
+/** Projects linked to a contact or vendor by name (the link a project keeps), most recently listed first. */
+export function projectsLinkedTo<P extends { linked?: { kind: "contact" | "vendor"; name: string } | null; name: string }>(kind: "contact" | "vendor", name: string, projects: P[]): P[] {
+  const k = keyOf(name);
+  return projects.filter((p) => p.linked && p.linked.kind === kind && keyOf(p.linked.name) === k);
+}
