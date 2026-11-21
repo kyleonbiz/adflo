@@ -1,5 +1,6 @@
 "use client";
 
+import { readParam, useUrlFilters } from "@/lib/url-filters";
 import { PreviewNote } from "@/components/ui/preview-note";
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Download, FolderKanban, ListTodo, Plus, Search, X } from "lucide-react";
@@ -87,11 +88,12 @@ function ProjectsView({ today, preview, initialQuery, initialView, startNew, dra
     ),
   );
   const [view, setView] = useState<ProjectsViewName>(initialView);
-  const [taskFilter, setTaskFilter] = useState<TaskFilter>("all");
-  const [showDone, setShowDone] = useState(false);
-  const [query, setQuery] = useState(initialQuery);
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>(() => readParam<TaskFilter>("filter", "all", ["all", "overdue", "week", "repeating"]));
+  const [showDone, setShowDone] = useState(() => readParam<string>("done", "") === "1");
+  const [query, setQuery] = useState(() => initialQuery || readParam("q", ""));
   const [statusFilter, setStatusFilter] = useState<"all" | ProjectStatus>("all");
   const [overdueOnly, setOverdueOnly] = useState(false);
+  useUrlFilters({ q: query, filter: taskFilter, done: showDone ? "1" : "" }, { filter: "all" });
   const [sort, setSort] = useState<ProjectSort>("due");
   const [formFor, setFormFor] = useState<Project | "new" | null>(startNew ? "new" : null);
   const [deleting, setDeleting] = useState<Project | null>(null);

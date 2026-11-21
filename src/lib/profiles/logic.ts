@@ -48,3 +48,17 @@ export function projectsLinkedTo<P extends { linked?: { kind: "contact" | "vendo
   const k = keyOf(name);
   return projects.filter((p) => p.linked && p.linked.kind === kind && keyOf(p.linked.name) === k);
 }
+
+export interface TimelineEntry { on: string; text: string; href?: string }
+
+/** One dated list of what happened with a contact: when they were added, each invoice issued and paid, and the last time they were contacted. Newest first. */
+export function contactTimeline(c: { name: string; createdOn: string; lastContacted?: string | null }, invoices: Invoice[]): TimelineEntry[] {
+  const out: TimelineEntry[] = [{ on: c.createdOn, text: `${c.name} added to Contacts` }];
+  if (c.lastContacted) out.push({ on: c.lastContacted, text: "Last contacted" });
+  for (const i of invoices) {
+    if (i.status === "draft") continue;
+    out.push({ on: i.issuedOn, text: `Invoice ${i.number} issued`, href: `/app/invoices?q=${encodeURIComponent(i.number)}` });
+    if (i.status === "paid" && i.paidOn) out.push({ on: i.paidOn, text: `Invoice ${i.number} paid`, href: `/app/invoices?q=${encodeURIComponent(i.number)}` });
+  }
+  return out.filter((e) => /^\d{4}-\d{2}-\d{2}/.test(e.on)).sort((a, b) => b.on.localeCompare(a.on));
+}

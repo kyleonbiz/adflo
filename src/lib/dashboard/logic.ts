@@ -147,6 +147,7 @@ export function buildDashboard(src: DashboardSources, today: string, base = "/ap
     { label: "Licenses", open: src.licenses.length, attention: count("Licenses") },
     { label: "Vendors", open: src.vendors.filter((v) => v.status !== "inactive").length, attention: count("Vendors") },
     { label: "Tasks", open: proj.openTasks, attention: count("Tasks") },
+    ...((src.equipment ?? []).length > 0 ? [{ label: "Equipment", open: (src.equipment ?? []).filter((e) => e.status === "in_service" || e.status === "in_repair").length, attention: count("Equipment") }] : []),
   ];
 
   const plural = (n: number, w: string) => `${n} ${w}`;

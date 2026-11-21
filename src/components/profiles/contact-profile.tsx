@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import type { ContactCategory } from "@/lib/contacts/types";
 import { daysBetween, formatDayLong } from "@/lib/dates";
 import { formatMoney, invoiceState } from "@/lib/invoices/logic";
-import { invoicesForContact, projectsLinkedTo, summarizeInvoices, vendorsForContact } from "@/lib/profiles/logic";
+import { contactTimeline, invoicesForContact, projectsLinkedTo, summarizeInvoices, vendorsForContact } from "@/lib/profiles/logic";
 import { useDashboardSources } from "@/lib/records/sources";
 import { useRecordsLoading } from "@/lib/records/storage";
 import { BackLink, Facts, None, NotFoundProfile, ProfileSkeleton, Section, profileLink } from "./parts";
@@ -29,6 +29,7 @@ export function ContactProfile({ id }: { id: string }) {
   const mine = useMemo(() => (contact ? invoicesForContact(contact, invoices) : []), [contact, invoices]);
   const totals = useMemo(() => (today ? summarizeInvoices(mine, today) : null), [mine, today]);
   const linkedProjects = useMemo(() => (contact ? projectsLinkedTo("contact", contact.name, projects) : []), [contact, projects]);
+  const timeline = useMemo(() => (contact ? contactTimeline(contact, mine) : []), [contact, mine]);
   const vendorMatches = useMemo(() => (contact ? vendorsForContact(contact, vendors) : []), [contact, vendors]);
 
   if (!today || loading) return <ProfileSkeleton />;
@@ -91,6 +92,17 @@ export function ContactProfile({ id }: { id: string }) {
             </ul>
           </>
         )}
+      </Section>
+
+      <Section title="Timeline" count={timeline.length} testId="contact-timeline">
+        <ol className="space-y-1.5 text-sm">
+          {timeline.map((e, i) => (
+            <li key={i} className="flex flex-wrap items-baseline justify-between gap-2">
+              {e.href ? <Link href={e.href} className={`${profileLink} text-primary`}>{e.text}</Link> : <span>{e.text}</span>}
+              <time dateTime={e.on} className="text-xs text-muted-foreground">{formatDayLong(e.on.slice(0, 10))}</time>
+            </li>
+          ))}
+        </ol>
       </Section>
 
       <Section title="Projects" count={linkedProjects.length} testId="contact-projects">
