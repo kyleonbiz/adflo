@@ -54,12 +54,6 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("general", "time-off", "Time-off request", "Ask for leave and route it for approval", [
     f("Employee name"), f("First day off", "date"), f("Last day off", "date"), f("Type", "select", true, ["Vacation", "Sick", "Personal"]), f("Reason", "longtext", false),
   ], { approver: "Manager" }),
-  paper("general", "expense", "Expense reimbursement", "Get paid back for something you bought for the business", [
-    f("Employee name"), f("Date of purchase", "date"), f("Amount", "number"), f("What was it for", "longtext"), f("Receipt attached", "checkbox", false),
-  ], { approver: "Manager", repeats: true }),
-  paper("general", "purchase-request", "Purchase request", "Get approval before spending", [
-    f("Requested by"), f("Item or service"), f("Vendor", "text", false), f("Estimated cost", "number"), f("Why it is needed", "longtext"),
-  ], { approver: "Owner" }),
   paper("general", "incident", "Incident report", "Write down what happened, while it is fresh", [
     f("Reported by"), f("Date of incident", "date"), f("Where it happened"), f("What happened", "longtext"), f("Anyone hurt", "checkbox", false), f("Action taken", "longtext", false),
   ]),
@@ -67,40 +61,17 @@ export const PAPERWORK: readonly Paperwork[] = [
     f("Full name"), f("Company"), f("Date", "date"), f("I agree to keep this information confidential", "checkbox"),
   ]),
 
-  paper("construction", "estimate", "Estimate", "A priced estimate to give a customer before they decide", [
-    f("Customer"), f("Job name"), f("Date", "date"), f("Job site address"), f("Phone"), f("Email", "email", false),
-    f("Scope of work", "longtext"), f("Materials included", "longtext", false), f("Exclusions", "longtext", false),
-    f("Labor cost", "number", false), f("Materials cost", "number", false), f("Total estimate", "number"), f("This estimate is valid for (days)", "number", false),
-  ]),
   paper("construction", "proposal-contract", "Proposal and contract", "Specifications, price and terms for a job, ready to sign", [
     f("Recipient of proposal"), f("Job name"), f("Date", "date"), f("Address, city, state and zip"), f("Phone"), f("Architect", "text", false),
     f("Date of plans", "date", false), f("Estimated start date", "date"), f("Estimated completion date", "date"),
     f("We hereby provide specifications and estimates for", "longtext"),
     f("Sum of", "number"), f("Payment terms", "text", false), f("This proposal is valid for (days)", "number", false),
   ], { approver: "Owner" }),
-  paper("construction", "work-order", "Work order", "Authorize a piece of work before the crew starts", [
-    f("Customer"), f("Job site address"), f("Date", "date"), f("Phone"), f("Scheduled date", "date", false), f("Assigned to", "text", false),
-    f("Work to be performed", "longtext"), f("Materials needed", "longtext", false), f("Estimated cost", "number", false), f("Customer authorizes this work", "checkbox"),
-  ], { approver: "Project manager", repeats: true }),
   paper("construction", "change-order", "Change order", "Record a change to the agreed scope and price", [
     f("Project"), f("Owner or client"), f("Job site address"), f("Change order number", "text", false), f("Date", "date"),
     f("Description of change", "longtext"),
     f("Original contract sum", "number"), f("Previous change orders total", "number", false), f("Amount of this change", "number"), f("Days added or removed", "number", false), f("New completion date", "date", false),
   ], { approver: "Project manager", repeats: true }),
-  paper("construction", "rfi", "Request for information", "Ask the architect or owner a question that holds up the work", [
-    f("Project"), f("RFI number", "text", false), f("Date", "date"), f("To"), f("From"), f("Response needed by", "date", false),
-    f("Question", "longtext"), f("Drawing or spec reference", "text", false), f("Response", "longtext", false),
-  ], { repeats: true }),
-  paper("construction", "material-order", "Material order", "Order materials for a job and say where and when to deliver", [
-    f("Supplier"), f("Job name"), f("Order date", "date"), f("Delivery address"), f("Needed by", "date"), f("Contact on site", "text", false),
-    f("Items and quantities", "longtext"), f("Estimated total", "number", false),
-  ], { approver: "Project manager", repeats: true }),
-  paper("construction", "daily-log", "Daily job log", "What happened on site today", [
-    f("Project"), f("Job site address", "text", false), f("Date", "date"), f("Weather"), f("Crew on site", "number"), f("Hours worked", "number", false),
-    f("Subcontractors on site", "text", false), f("Equipment on site", "text", false),
-    f("Work completed", "longtext"), f("Materials delivered", "longtext", false), f("Delays or issues", "longtext", false),
-    f("Inspections or visitors", "longtext", false), f("A safety incident happened today", "checkbox", false),
-  ], { repeats: true }),
   paper("construction", "toolbox-talk", "Toolbox talk record", "Prove the crew was briefed on a safety topic", [
     f("Project"), f("Date", "date"), f("Topic"), f("Led by"), f("Attendees", "longtext"), f("Points covered", "longtext", false), f("Questions or concerns raised", "longtext", false),
   ], { repeats: true }),
@@ -109,9 +80,6 @@ export const PAPERWORK: readonly Paperwork[] = [
     f("Hazards", "longtext"), f("Controls in place", "longtext"), f("Protective equipment required", "longtext", false),
     f("Nearest hospital or emergency contact", "text", false), f("Crew briefed", "checkbox"),
   ], { repeats: true }),
-  paper("construction", "timesheet-crew", "Crew timesheet", "Hours for one worker on one job, for payroll", [
-    f("Employee name"), f("Week starting", "date"), f("Project or job"), f("Regular hours", "number"), f("Overtime hours", "number", false), f("Notes", "longtext", false),
-  ], { repeats: true, approver: "Project manager" }),
   paper("construction", "lien-waiver", "Lien waiver", "Confirm payment received for work done", [
     f("Project"), f("Property address"), f("Owner"), f("Claimant"), f("Type", "select", true, ["Conditional progress", "Unconditional progress", "Conditional final", "Unconditional final"]),
     f("Through date", "date"), f("Amount received", "number"), f("Check number", "text", false),

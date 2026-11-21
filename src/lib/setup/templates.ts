@@ -26,12 +26,6 @@ export const TEMPLATES: Template[] = [
     documentTemplate: "",
   },
   {
-    id: "form-expense-claim", module: "forms", kind: "form", name: "Expense reimbursement",
-    description: "Staff claim back money they spent on the business.",
-    fields: [f("Employee name", "text"), f("Expense date", "date"), f("Amount", "number"), f("Category", "select", true, ["Travel", "Meals", "Supplies", "Software", "Other"]), f("What was it for?", "longtext"), f("Receipt attached", "checkbox")],
-    documentTemplate: "",
-  },
-  {
     id: "form-client-intake", module: "forms", kind: "form", name: "New client intake",
     description: "The basics for every new client, before work starts.",
     fields: [f("Client name", "text"), f("Contact email", "email"), f("Phone", "text", false), f("Service needed", "select", true, ["Bookkeeping", "Admin support", "Document prep", "Project work", "Other"]), f("Anything we should know?", "longtext", false)],

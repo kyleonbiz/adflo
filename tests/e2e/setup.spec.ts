@@ -88,11 +88,11 @@ test.describe("back office setup module", () => {
     await expect(done.getByRole("link", { name: "Vendors" })).toBeVisible();
     await expect(done.getByRole("link", { name: "Tasks" })).toHaveCount(0);
 
-    // Forms: 3 samples + 3 installed + 3 that come with the industry.
+    // Forms: 2 samples + 2 installed + 3 that come with the industry.
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(8);
-    await expect(page.getByRole("heading", { name: "Expense reimbursement" })).toBeVisible();
-    await expect(page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" })).toContainText("sent 0 times");
+    await expect(page.getByTestId("form-card")).toHaveCount(7);
+    await expect(page.getByRole("heading", { name: "New employee details" })).toBeVisible();
+    await expect(page.getByTestId("form-card").filter({ hasText: "New employee details" })).toContainText("sent 0 times");
 
     // Licenses: 5 samples + 4 starter records + 5 that come with the industry.
     await page.goto("/app/licenses");
@@ -103,17 +103,14 @@ test.describe("back office setup module", () => {
   test("an installed form can be filled in", async ({ page }) => {
     await completeSetup(page);
     await page.goto("/app/forms");
-    const card = page.getByTestId("form-card").filter({ hasText: "Expense reimbursement" });
+    const card = page.getByTestId("form-card").filter({ hasText: "New employee details" });
     await card.getByRole("button", { name: "Fill out" }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Your name").fill("Sam");
-    await dialog.getByLabel(/Employee name/).fill("Sam Rivera");
-    await dialog.getByLabel(/Expense date/).fill("2026-11-02");
-    await dialog.getByLabel(/Amount/).fill("42.50");
-    await dialog.getByRole("combobox", { name: /Category/ }).click();
-    await page.getByRole("option", { name: "Travel" }).click();
-    await dialog.getByLabel(/What was it for/).fill("Train ticket");
-    await dialog.getByLabel(/Receipt attached/).check();
+    await dialog.getByLabel(/Full name/).fill("Sam Rivera");
+    await dialog.getByLabel(/Personal email/).fill("sam@example.com");
+    await dialog.getByLabel(/Start date/).fill("2026-11-02");
+    await dialog.getByLabel(/Role/).fill("Apprentice");
     await dialog.getByRole("button", { name: "Submit" }).click();
     await expect(page.getByRole("status")).toContainText("Response added");
   });
@@ -151,7 +148,7 @@ test.describe("back office setup module", () => {
   test("editing a finished setup takes it out of 'installed' until finished again", async ({ page }) => {
     await completeSetup(page);
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(8);
+    await expect(page.getByTestId("form-card")).toHaveCount(7);
     await page.goto("/app/setup?tab=setup");
     await page.getByRole("button", { name: "Edit setup" }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("Acme Studio"); // the answers are kept
@@ -161,7 +158,7 @@ test.describe("back office setup module", () => {
     await page.getByRole("button", { name: /Review/ }).click();
     await page.getByRole("button", { name: "Finish setup" }).click();
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(8);
+    await expect(page.getByTestId("form-card")).toHaveCount(7);
   });
 
   test("damaged or hostile saved data is ignored", async ({ page }) => {

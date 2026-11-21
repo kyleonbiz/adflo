@@ -41,11 +41,8 @@ const KINDS: Record<Kind, KindStyle> = {
 /** Which kind each built-in paperwork is. Anything not listed gets a request-style page when it names an approver, otherwise intake. */
 const KIND_OF: Record<string, Kind> = {
   "proposal-contract": "agreement", "change-order": "agreement", "lien-waiver": "agreement", "engagement": "agreement", "tax-engagement": "agreement", "vendor-order": "agreement",
-  "work-order": "agreement", "estimate": "agreement", "completion": "agreement", "warranty": "agreement", "sub-agreement": "agreement",
-  "rfi": "report", "material-order": "request", "toolbox-talk": "log", "timesheet-crew": "request",
-  "time-off": "request", "expense": "request", "purchase-request": "request", "extension": "request", "trust-deposit": "request", "timesheet": "request",
+  "time-off": "request", "extension": "request", "trust-deposit": "request", "timesheet": "request",
   "incident": "report", "accident": "report", "injury-report": "report", "ncr": "report", "jsa": "report", "maintenance-request": "report", "conflict-check": "report",
-  "daily-log": "log", "temp-log": "log", "waste-log": "log", "maintenance": "log", "equipment-log": "log", "equipment-maint": "log", "sanitation-log": "log", "attendance": "log",
   "inventory-count": "log", "patch-test": "log", "return": "log", "showing-feedback": "log",
   "inspection": "checklist", "opening-checklist": "checklist", "safety-walk": "checklist", "move-in": "checklist", "doc-checklist": "checklist",
   "nda": "consent", "hipaa-ack": "consent", "client-consent": "consent", "pickup-auth": "consent",
@@ -54,17 +51,11 @@ const KIND_OF: Record<string, Kind> = {
 /** Wording for particular forms where a generic line would be wrong. */
 const TERMS: Record<string, string> = {
   "proposal-contract": "All materials are guaranteed to be as specified and the work will be completed in a professional manner, to industry-standard practice. Any change from the specification that adds cost will be carried out only on written authorization and will be charged beyond the estimate. This agreement is subject to delays beyond our control, such as strikes, accidents, weather or material shortages. The owner is responsible for keeping appropriate insurance on the property.",
-  "timesheet-crew": "The hours above are a true record of the time worked. The supervisor approves them before they go to payroll.",
-  "estimate": "This is an estimate, not a contract. The final price depends on conditions found when the work starts, and any change will be agreed in writing before it is done. Prices are held for the period shown.",
-  "rfi": "Work that depends on this answer should not proceed until a written response is returned. Keep a copy with the project records.",
-  "material-order": "Deliver to the address above on or before the date needed. Report any shortage, damage or substitution to the contact on site before the material is signed for.",
   "toolbox-talk": "Everyone listed was present for the briefing and had the chance to ask questions. Keep this record with the project's safety file.",
   "jsa": "Work does not start until the crew has read the hazards and controls above and the supervisor has signed. Stop and re-assess if conditions change.",
-  "daily-log": "Kept as a record of what happened on site. Report any injury, near miss or damage the same day.",
   "completion": "The owner confirms the work described is complete except for any items listed, which the contractor will finish. The warranty period begins on the date shown.",
   "warranty": "The contractor will repair defects in the work covered that appear during the warranty period and are reported in writing. Normal wear, misuse, and damage caused by others are not covered.",
   "sub-agreement": "The subcontractor confirms the details above are correct and will keep the insurance shown in force while on the job. Send a new certificate before any policy expires.",
-  "work-order": "The work above is authorized. Anything found during the work that needs more time or materials will be quoted and approved before it is done.",
   "change-order": "This change order adjusts the original agreement. The contract sum and completion date are changed as shown, and all other terms stay as agreed.",
   "lien-waiver": "Use your state's statutory waiver form where one is required. This record shows the payment that was received and the period it covers.",
   "engagement": "By signing, the client confirms the scope and fee above and agrees that work begins once this page is returned.",
@@ -82,19 +73,13 @@ const TERMS: Record<string, string> = {
 /** Who signs, where the generic pair would be wrong for a contractor's paperwork. */
 const SIGNERS: Record<string, string[]> = {
   "proposal-contract": ["Contractor signature", "Owner acceptance"],
-  "estimate": ["Prepared by", "Customer acceptance"],
-  "work-order": ["Contractor", "Customer authorization"],
   "change-order": ["Contractor", "Owner approval"],
   "lien-waiver": ["Claimant signature"],
   "sub-agreement": ["Subcontractor", "Contractor"],
   "completion": ["Contractor", "Owner acceptance"],
   "warranty": ["Contractor"],
-  "rfi": ["Submitted by", "Answered by"],
-  "material-order": ["Ordered by", "Approved by"],
   "toolbox-talk": ["Led by", "Reviewed by"],
   "jsa": ["Supervisor", "Safety lead"],
-  "daily-log": ["Superintendent", "Reviewed by"],
-  "timesheet-crew": ["Employee", "Supervisor approval"],
 };
 
 const NO_SIGN_LINES = new Set(["temp-log", "waste-log", "attendance"]);

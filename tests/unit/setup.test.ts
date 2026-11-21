@@ -133,7 +133,7 @@ describe("runSetupChecks", () => {
   it("warns about modules with no template installed, and passes once one is", () => {
     expect(byId(config({ modules: ["forms"] }))["templates-forms"].status).toBe("warn");
     const c = byId(config({ modules: ["forms"], templates: ["form-client-intake"] }));
-    expect(c["templates-forms"]).toMatchObject({ status: "pass", detail: "1 of 3 installed." });
+    expect(c["templates-forms"]).toMatchObject({ status: "pass", detail: "1 of 2 installed." });
     expect(byId(config({ modules: ["crm"] }))["templates-crm"]).toBeUndefined(); // CRM has no templates to install
   });
   it("suggests the modules that go together", () => {

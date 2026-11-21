@@ -46,7 +46,7 @@ describe("form documents", () => {
 
   it("gives every contractor document its own signers and terms", () => {
     const construction = PAPERWORK.filter((p) => p.industry === "construction");
-    expect(construction.length).toBeGreaterThanOrEqual(14);
+    expect(construction.length).toBeGreaterThanOrEqual(8);
     for (const p of construction) {
       const doc = blankFormDocument(p.form);
       expect(doc.blocks.some((b) => b.t === "terms"), p.form.name).toBe(true);
