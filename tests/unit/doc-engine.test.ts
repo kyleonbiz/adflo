@@ -23,7 +23,7 @@ describe("form documents", () => {
     const values = { [idOf("Recipient of proposal")]: "Alder Street Partners", [idOf("Job name")]: "Roof replacement", [idOf("Sum of")]: "18450", [idOf("We hereby provide specifications and estimates for")]: "Tear off and replace the roof.\nHaul away debris." };
     const { text, pages } = await read(docToPdf(formDocument(proposal, sub(proposal, values), biz)));
     expect(pages).toBe(1);
-    for (const want of ["PROPOSAL AND CONTRACT", "RIDGELINE BUILDERS", "LIC. #TX-448812", "RECIPIENT OF PROPOSAL", "Alder Street Partners", "$18,450.00", "Haul away debris.", "AUTHORIZED SIGNATURE", "ACCEPTANCE SIGNATURE"]) expect(text).toContain(want);
+    for (const want of ["PROPOSAL AND CONTRACT", "RIDGELINE BUILDERS", "LIC. #TX-448812", "RECIPIENT OF PROPOSAL", "Alder Street Partners", "$18,450.00", "Haul away debris.", "CONTRACTOR SIGNATURE", "OWNER ACCEPTANCE"]) expect(text).toContain(want);
     expect(text).not.toContain("?");
   });
 
@@ -40,6 +40,19 @@ describe("form documents", () => {
     expect(lines("pw-incident")).toContain("Reviewed by");
     expect(lines("pw-nda")).toEqual(["Signature", "Date"]);
     expect(lines("pw-temp-log")).toEqual([]);
+  });
+
+  it("gives every contractor document its own signers and terms", () => {
+    const construction = PAPERWORK.filter((p) => p.industry === "construction");
+    expect(construction.length).toBeGreaterThanOrEqual(14);
+    for (const p of construction) {
+      const doc = blankFormDocument(p.form);
+      expect(doc.blocks.some((b) => b.t === "terms"), p.form.name).toBe(true);
+      expect(doc.blocks.some((b) => b.t === "cells" && b.sign), p.form.name).toBe(true);
+    }
+    const signers = (id: string) => blankFormDocument(PAPERWORK.find((p) => p.form.id === id)!.form).blocks.flatMap((b) => (b.t === "cells" && b.sign ? b.cells.map((c) => c.label).filter((l) => l !== "Date") : []));
+    expect(signers("pw-change-order")).toEqual(["Contractor", "Owner approval"]);
+    expect(signers("pw-lien-waiver")).toEqual(["Claimant signature"]);
   });
 
   it("builds a page for every built-in form, with every field on it", () => {

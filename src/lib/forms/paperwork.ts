@@ -67,6 +67,11 @@ export const PAPERWORK: readonly Paperwork[] = [
     f("Full name"), f("Company"), f("Date", "date"), f("I agree to keep this information confidential", "checkbox"),
   ]),
 
+  paper("construction", "estimate", "Estimate", "A priced estimate to give a customer before they decide", [
+    f("Customer"), f("Job name"), f("Date", "date"), f("Job site address"), f("Phone"), f("Email", "email", false),
+    f("Scope of work", "longtext"), f("Materials included", "longtext", false), f("Exclusions", "longtext", false),
+    f("Labor cost", "number", false), f("Materials cost", "number", false), f("Total estimate", "number"), f("This estimate is valid for (days)", "number", false),
+  ]),
   paper("construction", "proposal-contract", "Proposal and contract", "Specifications, price and terms for a job, ready to sign", [
     f("Recipient of proposal"), f("Job name"), f("Date", "date"), f("Address, city, state and zip"), f("Phone"), f("Architect", "text", false),
     f("Date of plans", "date", false), f("Estimated start date", "date"), f("Estimated completion date", "date"),
@@ -74,24 +79,56 @@ export const PAPERWORK: readonly Paperwork[] = [
     f("Sum of", "number"), f("Payment terms", "text", false), f("This proposal is valid for (days)", "number", false),
   ], { approver: "Owner" }),
   paper("construction", "work-order", "Work order", "Authorize a piece of work before the crew starts", [
-    f("Customer"), f("Job site address"), f("Date", "date"), f("Scheduled date", "date", false), f("Estimated cost", "number", false),
-    f("Work to be performed", "longtext"), f("Materials needed", "longtext", false), f("Customer authorizes this work", "checkbox"),
-  ], { approver: "Project manager" }),
+    f("Customer"), f("Job site address"), f("Date", "date"), f("Phone"), f("Scheduled date", "date", false), f("Assigned to", "text", false),
+    f("Work to be performed", "longtext"), f("Materials needed", "longtext", false), f("Estimated cost", "number", false), f("Customer authorizes this work", "checkbox"),
+  ], { approver: "Project manager", repeats: true }),
   paper("construction", "change-order", "Change order", "Record a change to the agreed scope and price", [
-    f("Project"), f("Client"), f("Description of change", "longtext"), f("Added cost", "number"), f("Added days", "number", false), f("Date", "date"),
-  ], { approver: "Project manager" }),
+    f("Project"), f("Owner or client"), f("Job site address"), f("Change order number", "text", false), f("Date", "date"),
+    f("Description of change", "longtext"),
+    f("Original contract sum", "number"), f("Previous change orders total", "number", false), f("Amount of this change", "number"), f("Days added or removed", "number", false), f("New completion date", "date", false),
+  ], { approver: "Project manager", repeats: true }),
+  paper("construction", "rfi", "Request for information", "Ask the architect or owner a question that holds up the work", [
+    f("Project"), f("RFI number", "text", false), f("Date", "date"), f("To"), f("From"), f("Response needed by", "date", false),
+    f("Question", "longtext"), f("Drawing or spec reference", "text", false), f("Response", "longtext", false),
+  ], { repeats: true }),
+  paper("construction", "material-order", "Material order", "Order materials for a job and say where and when to deliver", [
+    f("Supplier"), f("Job name"), f("Order date", "date"), f("Delivery address"), f("Needed by", "date"), f("Contact on site", "text", false),
+    f("Items and quantities", "longtext"), f("Estimated total", "number", false),
+  ], { approver: "Project manager", repeats: true }),
   paper("construction", "daily-log", "Daily job log", "What happened on site today", [
-    f("Project"), f("Date", "date"), f("Crew on site", "number"), f("Work completed", "longtext"), f("Weather"), f("Delays or issues", "longtext", false),
+    f("Project"), f("Job site address", "text", false), f("Date", "date"), f("Weather"), f("Crew on site", "number"), f("Hours worked", "number", false),
+    f("Subcontractors on site", "text", false), f("Equipment on site", "text", false),
+    f("Work completed", "longtext"), f("Materials delivered", "longtext", false), f("Delays or issues", "longtext", false),
+    f("Inspections or visitors", "longtext", false), f("A safety incident happened today", "checkbox", false),
+  ], { repeats: true }),
+  paper("construction", "toolbox-talk", "Toolbox talk record", "Prove the crew was briefed on a safety topic", [
+    f("Project"), f("Date", "date"), f("Topic"), f("Led by"), f("Attendees", "longtext"), f("Points covered", "longtext", false), f("Questions or concerns raised", "longtext", false),
   ], { repeats: true }),
   paper("construction", "jsa", "Job safety analysis", "Check the hazards before the work starts", [
-    f("Project"), f("Task"), f("Date", "date"), f("Hazards", "longtext"), f("Controls in place", "longtext"), f("Crew briefed", "checkbox"),
+    f("Project"), f("Task"), f("Date", "date"), f("Location on site"), f("Supervisor"), f("Crew members", "longtext"),
+    f("Hazards", "longtext"), f("Controls in place", "longtext"), f("Protective equipment required", "longtext", false),
+    f("Nearest hospital or emergency contact", "text", false), f("Crew briefed", "checkbox"),
   ], { repeats: true }),
+  paper("construction", "timesheet-crew", "Crew timesheet", "Hours for one worker on one job, for payroll", [
+    f("Employee name"), f("Week starting", "date"), f("Project or job"), f("Regular hours", "number"), f("Overtime hours", "number", false), f("Notes", "longtext", false),
+  ], { repeats: true, approver: "Project manager" }),
   paper("construction", "lien-waiver", "Lien waiver", "Confirm payment received for work done", [
-    f("Project"), f("Claimant"), f("Amount received", "number"), f("Through date", "date"), f("Type", "select", true, ["Conditional", "Unconditional"]),
+    f("Project"), f("Property address"), f("Owner"), f("Claimant"), f("Type", "select", true, ["Conditional progress", "Unconditional progress", "Conditional final", "Unconditional final"]),
+    f("Through date", "date"), f("Amount received", "number"), f("Check number", "text", false),
   ]),
   paper("construction", "sub-agreement", "Subcontractor information", "Collect what you need before a sub starts", [
-    f("Company name"), f("Contact"), f("Trade"), f("License number"), f("Insurance expires", "date"), f("Certificate of insurance on file", "checkbox", false),
+    f("Company name"), f("Contact"), f("Phone"), f("Email", "email", false), f("Trade"), f("License number"),
+    f("Insurance carrier", "text", false), f("Insurance expires", "date"), f("Workers' comp expires", "date", false),
+    f("Certificate of insurance on file", "checkbox", false), f("W-9 on file", "checkbox", false),
   ], { approver: "Project manager" }),
+  paper("construction", "completion", "Certificate of completion", "Owner confirms the work is finished and accepted", [
+    f("Project"), f("Owner"), f("Job site address"), f("Date of completion", "date"), f("Warranty start date", "date", false),
+    f("Remaining punch-list items", "longtext", false),
+  ], { approver: "Owner" }),
+  paper("construction", "warranty", "Warranty certificate", "Tell the owner what is covered, and for how long", [
+    f("Project"), f("Owner"), f("Job site address"), f("Completion date", "date"), f("Warranty period"),
+    f("Work covered", "longtext"), f("Not covered", "longtext", false),
+  ]),
 
   paper("food", "temp-log", "Temperature log", "Cooler, freezer and hot-holding checks", [
     f("Date", "date"), f("Checked by"), f("Walk-in cooler (F)", "number"), f("Freezer (F)", "number"), f("Hot holding (F)", "number", false), f("Corrective action", "longtext", false),
