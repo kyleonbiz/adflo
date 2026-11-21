@@ -67,7 +67,7 @@ export function DocumentPreview({
         </span>
         <div>
           <p className="text-sm font-bold break-words">{doc.displayName}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Preview not available for this file type</p>
+          <p className="mt-1 text-xs text-muted-foreground">Preview not available for this file type. PDFs, images, CSV and text files can be previewed; Word and Excel files open after you download them.</p>
         </div>
         <Button variant="outline" onClick={onDownload}>
           <Download /> Download to View
