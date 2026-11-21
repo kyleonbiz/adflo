@@ -18,7 +18,7 @@ export const formBuilderSchema = z
     name: z.string().trim().min(2, "Enter a form name").max(120, "Keep it under 120 characters"),
     description: z.string().trim().max(300, "Keep it under 300 characters"),
     fields: z.array(fieldSchema).min(1, "Add at least one field").max(30, "At most 30 fields"),
-    documentTemplate: z.string().max(4000, "Keep the template under 4000 characters"),
+    documentTemplate: z.string().max(20000, "Keep the template under 20,000 characters"),
   })
   .superRefine((v, ctx) => {
     const seen = new Set<string>();

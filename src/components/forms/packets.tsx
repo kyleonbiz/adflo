@@ -9,7 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDayShort } from "@/lib/dates";
-import { textToPdf } from "@/lib/forms/pdf";
+import { textDocument } from "@/lib/documents/build";
+import { documentToPdf } from "@/lib/documents/pdf";
+import { currentLetterhead } from "@/lib/documents/letterhead";
 import { printText } from "@/lib/forms/print";
 import { PACKETS, STALE_PACKET_DAYS, isComplete, isStale, packetText, progress, startPacket, startProblem, toggleItem, type ItemKind } from "@/lib/packets/logic";
 import { saveAssignments, useAssignments } from "@/lib/packets/storage";
@@ -57,7 +59,7 @@ export function Packets({ today, onFillForm }: { today: string; onFillForm: (for
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" aria-label={`Print checklist for ${a.recipient}`} onClick={() => printText(`${a.templateName} packet`, packetText(a))}><Printer /> Print</Button>
                     <Button size="sm" variant="outline" aria-label={`Download PDF for ${a.recipient}`} onClick={() => {
-                      const url = URL.createObjectURL(new Blob([textToPdf(packetText(a)) as BlobPart], { type: "application/pdf" }));
+                      const url = URL.createObjectURL(new Blob([documentToPdf(textDocument(`${a.templateName} packet`, packetText(a), currentLetterhead())) as BlobPart], { type: "application/pdf" }));
                       const link = document.createElement("a");
                       link.href = url;
                       link.download = `${a.templateName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${a.recipient.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.pdf`;

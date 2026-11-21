@@ -170,7 +170,21 @@ test.describe("forms module", () => {
     await dialog.getByLabel("Options of field 2").fill("Laptop, Monitor");
 
     await expect(dialog).not.toContainText("pproval");
-    await dialog.getByLabel("Document template (optional)").fill("Request from {{Name}}: {{Item}}");
+    // The document editor: a formatting toolbar, an Insert field menu, and a live preview of the finished page.
+    const doc = dialog.getByLabel("Document (optional)");
+    await doc.fill("Request from {{Name}}: {{Item}}");
+    const preview = dialog.getByTestId("document-preview");
+    await expect(preview).toContainText("Request from «Name»: «Item»");
+    await doc.press("Control+a");
+    await dialog.getByRole("button", { name: "Heading", exact: true }).click();
+    await expect(doc).toHaveValue("# Request from {{Name}}: {{Item}}");
+    await expect(preview.getByRole("heading", { name: "Request from «Name»: «Item»" })).toBeVisible();
+    await doc.press("Control+End");
+    await dialog.getByRole("button", { name: "Signature lines" }).click();
+    await expect(preview).toContainText("Signature");
+    await dialog.getByLabel("Insert field").selectOption("Item");
+    await expect(doc).toHaveValue(/\{\{Item\}\}$/);
+    await doc.fill("Request from {{Name}}: {{Item}}"); // back to plain text for the download check below
     await create.click();
 
     // A new form is made to be sent, so the Send dialog opens straight away.

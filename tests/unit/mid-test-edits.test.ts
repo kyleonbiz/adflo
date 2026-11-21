@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { blankDocument, layoutTemplate } from "@/lib/forms/layout";
+import { layoutTemplate } from "@/lib/forms/layout";
+import { formDocument } from "@/lib/documents/build";
 import { PAPERWORK } from "@/lib/forms/paperwork";
 import { starterForms } from "@/lib/forms/starter-forms";
 import { FIELD_TYPES } from "@/lib/forms/types";
@@ -41,12 +42,14 @@ describe("form layouts", () => {
       for (const field of f.fields) expect(f.documentTemplate, `${f.name}: ${field.label}`).toContain(`{{${field.label}}}`);
     }
   });
-  it("leaves answers blank for a printable copy", () => {
-    const t = layoutTemplate("Purpose", [{ id: "a", label: "Name", type: "text", required: true, options: [] }]);
-    const blank = blankDocument("My form", t);
-    expect(blank).toContain("MY FORM");
-    expect(blank).not.toContain("{{");
-    expect(blank).toContain("Signature:");
+  it("leaves answers blank for a printable copy, with signature lines", () => {
+    const form = { id: "f", name: "My form", description: "Purpose", sentCount: 0, documentTemplate: "", fields: [{ id: "a", label: "Name", type: "text" as const, required: true, options: [] }] };
+    const doc = formDocument(form, null, { name: "Acme", lines: [] });
+    expect(doc.title).toBe("My form");
+    const text = JSON.stringify(doc.blocks);
+    expect(text).toContain("______");
+    expect(text).not.toContain("{{");
+    expect(doc.blocks.some((b) => b.kind === "signatures")).toBe(true);
   });
 });
 

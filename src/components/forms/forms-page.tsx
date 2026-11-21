@@ -12,9 +12,9 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { createSubmission, generateDocument, markDone, submissionsToCsv, summarize } from "@/lib/forms/logic";
-import { textToPdf } from "@/lib/forms/pdf";
-import { printText } from "@/lib/forms/print";
-import { blankDocument } from "@/lib/forms/layout";
+import { formDocument } from "@/lib/documents/build";
+import { documentToPdf } from "@/lib/documents/pdf";
+import { printDocument } from "@/lib/forms/print";
 import { PAPERWORK, type Paperwork } from "@/lib/forms/paperwork";
 import { industryForms } from "@/lib/setup/industries";
 import { addContactLink, personFromSubmission, prefillFromPerson, type Person } from "@/lib/bridge";
@@ -27,6 +27,7 @@ import type { FormBuilderValues } from "@/lib/forms/validation";
 import { AddResponsesDialog } from "./add-responses-dialog";
 import { FillFormDialog } from "./fill-form-dialog";
 import { FormBuilderDialog } from "./form-builder-dialog";
+import { useLetterhead } from "./use-letterhead";
 import { FormCard, type FormActions } from "./form-card";
 import { SendFormDialog } from "./send-form-dialog";
 import { Packets } from "./packets";
@@ -54,6 +55,7 @@ function download(text: string | Uint8Array, name: string, type: string) {
 export function FormsPage({ preview, initialQuery = "", initialFill }: { preview?: string; initialQuery?: string; initialFill?: { formId: string; person: Partial<Person> } }) {
   const today = useToday();
   const audit = useAudit();
+  const letterhead = useLetterhead();
   const [editedForms, setEditedForms] = useState<FormTemplate[] | null>(null);
   const [editedSubs, setEditedSubs] = useState<Submission[] | null>(null);
   const [query, setQuery] = useState(initialQuery);
@@ -92,7 +94,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   const actions: FormActions = {
     onSend: (f) => setSending(f),
     onFill: (f) => setFilling(f),
-    onBlank: (f) => download(textToPdf(blankDocument(f.name, f.documentTemplate)), `${slug(f.name)}-blank.pdf`, "application/pdf"),
+    onBlank: (f) => download(documentToPdf(formDocument(f, null, letterhead)), `${slug(f.name)}-blank.pdf`, "application/pdf"),
     onAddResponses: (f) => setAdding(f),
     onEdit: (f) => setBuilderFor(f),
     onDelete: (f) => setDeleting(f),
@@ -102,8 +104,8 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
       setNotice(`Response by ${s.submittedBy} ${done ? "marked done" : "reopened"}.`);
     },
     onDocument: (f, s) => download(generateDocument(f, s), fileName(f, s, "txt"), "text/plain"),
-    onPdf: (f, s) => download(textToPdf(generateDocument(f, s)), fileName(f, s, "pdf"), "application/pdf"),
-    onPrint: (f, s) => printText(f.name, generateDocument(f, s)),
+    onPdf: (f, s) => download(documentToPdf(formDocument(f, s, letterhead)), fileName(f, s, "pdf"), "application/pdf"),
+    onPrint: (f, s) => printDocument(formDocument(f, s, letterhead)),
     onExport: (f, list) => download(submissionsToCsv(f, list), `${slug(f.name)}-submissions-${today}.csv`, "text/csv"),
     onDeleteSubmission: (_f, s) => {
       audit("deleted a response to", _f.name, "Forms", "/app/forms");
@@ -215,8 +217,8 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
         title={ready?.form.name ?? ""}
         contact={ready ? (() => { const p = personFromSubmission(ready.form, ready.sub.values, ready.sub.submittedBy); return p ? { name: p.name, href: addContactLink(p) } : null; })() : null}
         onOpenChange={(o) => !o && setReady(null)}
-        onPrint={() => ready && printText(ready.form.name, generateDocument(ready.form, ready.sub))}
-        onPdf={() => ready && download(textToPdf(generateDocument(ready.form, ready.sub)), fileName(ready.form, ready.sub, "pdf"), "application/pdf")}
+        onPrint={() => ready && printDocument(formDocument(ready.form, ready.sub, letterhead))}
+        onPdf={() => ready && download(documentToPdf(formDocument(ready.form, ready.sub, letterhead)), fileName(ready.form, ready.sub, "pdf"), "application/pdf")}
         onText={() => ready && download(generateDocument(ready.form, ready.sub), fileName(ready.form, ready.sub, "txt"), "text/plain")}
       />
 

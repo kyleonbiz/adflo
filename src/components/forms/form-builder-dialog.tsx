@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FIELD_TYPES, type FieldType, type FormField, type FormTemplate } from "@/lib/forms/types";
+import { DocumentEditor } from "./document-editor";
+import { useLetterhead } from "./use-letterhead";
 import { formBuilderSchema, type FormBuilderValues } from "@/lib/forms/validation";
 
 const rid = () => `f-${Math.random().toString(36).slice(2, 8)}`;
-const textareaClass =
-  "flex w-full rounded-lg border border-input bg-card px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30";
 
 interface Draft {
   name: string;
@@ -35,6 +35,7 @@ function toDraft(form?: FormTemplate): Draft {
 function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: () => void; onSave: (values: FormBuilderValues) => void }) {
   const [draft, setDraft] = useState<Draft>(() => toDraft(form));
   const [problems, setProblems] = useState<string[]>([]);
+  const letterhead = useLetterhead();
 
   const setField = (id: string, change: Partial<Draft["fields"][number]>) =>
     setDraft((d) => ({ ...d, fields: d.fields.map((f) => (f.id === id ? { ...f, ...change } : f)) }));
@@ -113,11 +114,10 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
           </Button>
         </fieldset>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="fb-template">Document template (optional)</Label>
-          <textarea id="fb-template" rows={5} value={draft.documentTemplate} onChange={(e) => setDraft({ ...draft, documentTemplate: e.target.value })} className={textareaClass}
-            placeholder={"Write the document and drop in fields like {{Field label}}.\nLeave empty for a simple list of answers."} />
-        </div>
+        <DocumentEditor
+          id="fb-template" value={draft.documentTemplate} onChange={(v) => setDraft({ ...draft, documentTemplate: v })}
+          title={draft.name} description={draft.description} fields={draft.fields} letterhead={letterhead}
+        />
 
         {problems.length > 0 && (
           <ul role="alert" className="space-y-1 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -143,7 +143,7 @@ export function FormBuilderDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-5xl">
         {open && <BuilderBody form={form} onClose={() => onOpenChange(false)} onSave={onSave} />}
       </DialogContent>
     </Dialog>

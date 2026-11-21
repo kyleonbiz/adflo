@@ -10,7 +10,7 @@ describe("textToPdf", () => {
     const pdf = await getDocumentProxy(bytes);
     expect(pdf.numPages).toBeGreaterThan(1);
     const { text: read } = await extractText(pdf, { mergePages: true });
-    expect(read).toContain("TIME-OFF REQUEST");
+    expect(read).toContain("Time-off Request"); // the first line becomes the title, in title case
     expect(read).toContain("Line 120");
   });
 

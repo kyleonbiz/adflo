@@ -166,7 +166,7 @@ export function summarize(projects: Project[], today: string): PortfolioSummary 
   return s;
 }
 
-const HEALTH_TEXT: Record<ProjectHealth, string> = {
+export const HEALTH_TEXT: Record<ProjectHealth, string> = {
   completed: "Completed", on_hold: "On hold", planning: "Planning", late: "Late", at_risk: "At risk", on_track: "On track",
 };
 

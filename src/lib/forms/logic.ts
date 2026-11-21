@@ -1,5 +1,6 @@
 import { formatDayLong, isDay } from "@/lib/dates";
 import { toCsv } from "@/lib/csv";
+import { blocksToText, parseDocument, resolveBlocks } from "@/lib/documents/parse";
 import type { FormField, FormTemplate, Submission } from "./types";
 
 const MAX_SHORT = 200;
@@ -73,14 +74,8 @@ export function displayValue(f: FormField, raw: string | undefined): string {
  */
 export function generateDocument(form: FormTemplate, s: Submission): string {
   const byLabel = new Map(form.fields.map((f) => [f.label.toLowerCase(), f]));
-  const filled = (template: string) =>
-    template.replace(/\{\{\s*([^{}]+?)\s*\}\}/g, (_m, label: string) => {
-      const f = byLabel.get(label.toLowerCase());
-      return f ? displayValue(f, s.values[f.id]) : "";
-    });
-
   const body = form.documentTemplate.trim()
-    ? filled(form.documentTemplate)
+    ? blocksToText(resolveBlocks(parseDocument(form.documentTemplate), (label) => { const f = byLabel.get(label.toLowerCase()); return f ? displayValue(f, s.values[f.id]) : ""; }))
     : form.fields.map((f) => `${f.label}: ${displayValue(f, s.values[f.id])}`).join("\n");
 
   const lines = [form.name.toUpperCase(), `Submitted by ${s.submittedBy} on ${formatDayLong(s.submittedOn)}`, "", body];
