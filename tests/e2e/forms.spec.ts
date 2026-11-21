@@ -3,8 +3,9 @@ import { expect, test } from "./fixtures";
 test.describe("forms module", () => {
   test("selects forms and deletes them in bulk", async ({ page }) => {
     await page.goto("/app/forms");
-    const before = await page.getByTestId("form-card").count();
     const first = page.getByTestId("form-card").first();
+    await expect(first).toBeVisible();
+    const before = await page.getByTestId("form-card").count();
     await first.getByRole("checkbox", { name: /^Select / }).check();
     await expect(page.getByTestId("bulk-bar")).toContainText("1 selected");
     await page.getByTestId("bulk-bar").getByRole("button", { name: "Delete" }).click();
