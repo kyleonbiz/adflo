@@ -44,7 +44,7 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
   const filtered = area === "all" ? live : live.filter((i) => i.area === area);
   const shown = all ? filtered : filtered.slice(0, SHOWN);
 
-  const doSnooze = (id: string) => saveSnoozed(snooze(pruneSnoozed(snoozed, today), id, today));
+  const doSnooze = (id: string, days = 1) => saveSnoozed(snooze(pruneSnoozed(snoozed, today), id, today, days));
   const addToToday = (i: AttentionItem) => saveTodos(pruneTodos(addTodo(todos, i.text, today, newTodoId(), { href: i.href, area: i.area }), today));
 
   return (
@@ -85,6 +85,7 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
               </Link>
               <Button type="button" size="icon-sm" variant="ghost" aria-label={`Add to today: ${it.text}`} title="Add to today" disabled={hasOpenTodo(todos, it.text, today)} onClick={() => addToToday(it)}><ListPlus /></Button>
               <Button type="button" size="icon-sm" variant="ghost" aria-label={it.id.startsWith("rem-") ? `Clear reminder: ${it.text}` : `Snooze until tomorrow: ${it.text}`} title={it.id.startsWith("rem-") ? "Clear reminder" : "Snooze until tomorrow"} onClick={() => (it.id.startsWith("rem-") ? saveReminders(clearReminder(reminders, it.id)) : doSnooze(it.id))}><BellOff /></Button>
+              {!it.id.startsWith("rem-") && <Button type="button" size="icon-sm" variant="ghost" aria-label={`Snooze for a week: ${it.text}`} title="Snooze for a week" onClick={() => doSnooze(it.id, 7)}><Clock /></Button>}
             </li>
           ))}
         </ul>
@@ -98,7 +99,7 @@ function Attention({ items, today }: { items: AttentionItem[]; today: string }) 
         )}
         {hidden > 0 && (
           <span className="text-muted-foreground">
-            {hidden} snoozed until tomorrow ·{" "}
+            {hidden} snoozed ·{" "}
             <button type="button" onClick={() => saveSnoozed({})} className="py-2 -my-2 font-medium text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">Restore</button>
           </span>
         )}

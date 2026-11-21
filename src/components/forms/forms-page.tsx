@@ -1,5 +1,6 @@
 "use client";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PreviewNote } from "@/components/ui/preview-note";
 import { useMemo, useState } from "react";
 import { CheckCircle2, FileInput, Inbox, Plus, Search, Send } from "lucide-react";
@@ -56,6 +57,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   const audit = useAudit();
   const [editedForms, setEditedForms] = useState<FormTemplate[] | null>(null);
   const [editedSubs, setEditedSubs] = useState<Submission[] | null>(null);
+  const [sort, setSort] = useState<"name" | "responses" | "new">("name");
   const [query, setQuery] = useState(initialQuery);
   const [builderFor, setBuilderFor] = useState<FormTemplate | "new" | null>(null);
   // A link from a contact opens its form straight away, with the contact's details in.
@@ -132,7 +134,13 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
 
   const summary = summarize(forms, subs);
   const q = query.trim().toLowerCase();
-  const visible = forms.filter((f) => !q || [f.name, f.description].some((x) => x.toLowerCase().includes(q)));
+  const responseText = (id: string) => subs.filter((x) => x.formId === id).map((x) => `${x.submittedBy} ${Object.values(x.values).join(" ")}`).join(" ").toLowerCase();
+  const countFor = (id: string, status?: string) => subs.filter((x) => x.formId === id && (!status || x.status === status)).length;
+  const visible = forms
+    .filter((f) => !q || [f.name, f.description].some((x) => x.toLowerCase().includes(q)) || responseText(f.id).includes(q))
+    .sort((a, b) => sort === "responses" ? countFor(b.id) - countFor(a.id) || a.name.localeCompare(b.name)
+      : sort === "new" ? countFor(b.id, "new") - countFor(a.id, "new") || a.name.localeCompare(b.name)
+      : a.name.localeCompare(b.name));
 
   return (
     <div className="space-y-5">
@@ -165,9 +173,21 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
       </section>
 
       <section aria-label="Forms" className="space-y-3">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search forms" aria-label="Search forms" className="pl-9" />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search forms and the responses people sent" aria-label="Search forms" className="pl-9" />
+          </div>
+          <div className="sm:w-48">
+            <Select value={sort} onValueChange={(v) => setSort(v as "name" | "responses" | "new")}>
+              <SelectTrigger aria-label="Sort forms"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Sort: name</SelectItem>
+                <SelectItem value="responses">Most responses</SelectItem>
+                <SelectItem value="new">Most new responses</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         {visible.length === 0 ? (
           <div className="rounded-2xl border border-dashed bg-card/60 p-10 text-center text-sm text-muted-foreground">
