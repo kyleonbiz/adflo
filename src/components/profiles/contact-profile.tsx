@@ -94,7 +94,7 @@ export function ContactProfile({ id }: { id: string }) {
       </Section>
 
       <Section title="Projects" count={linkedProjects.length} testId="contact-projects">
-        {linkedProjects.length === 0 ? <None>No projects linked to this contact. Link one from the project's form.</None> : (
+        {linkedProjects.length === 0 ? <None>No projects linked to this contact. Link one from the project form.</None> : (
           <ul className="divide-y text-sm">
             {linkedProjects.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
