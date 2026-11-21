@@ -19,7 +19,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
           <a href="#demo" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Book a demo</a>
           <Button asChild size="sm" className="rounded-full border-0 bg-gradient-to-r from-brand-sky via-brand-blue to-brand-violet px-5 text-white shadow-lg shadow-brand-purple/40 hover:brightness-110">
-            <Link href="/login">Open workspace</Link>
+            <Link href="/login">Log in / Sign up</Link>
           </Button>
           </div>
         </nav>

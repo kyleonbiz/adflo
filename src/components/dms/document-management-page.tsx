@@ -18,7 +18,7 @@ import { UploadDialog } from "./upload-dialog";
 import { useDocumentManager } from "./use-document-manager";
 
 const MODE_NOTICE: Record<DmsApi["mode"], string | null> = {
-  demo: "Preview workspace. Changes stay in this browser tab and are not saved or uploaded anywhere.",
+  demo: "Preview only. Changes stay in this browser tab and are not saved or uploaded anywhere.",
   dev: "Development mode: data is held in server memory and is not persisted. Configure Supabase to use a real database.",
   live: null,
 };
