@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BellRing, CheckCircle2, ClipboardCheck, ChevronDown, Pencil, Plus, RefreshCw, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SelectBox } from "@/components/ui/bulk-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,7 +27,7 @@ export interface LicenseActions {
  * `focusToken` changes when the page wants this card revealed (from the renewal task list): it
  * opens the documents panel and scrolls the card into view.
  */
-export function LicenseCard({ license, today, actions, focusToken = 0 }: { license: License; today: string; actions: LicenseActions; focusToken?: number }) {
+export function LicenseCard({ license, today, actions, focusToken = 0, selected, onSelect }: { license: License; today: string; actions: LicenseActions; focusToken?: number; selected?: boolean; onSelect?: () => void }) {
   // Documents start open when some are still missing and the renewal is close, so the alert is never a dead end.
   const [open, setOpen] = useState(() => missingDocuments(license) > 0 && licenseStatus(license, today) !== "active" && license.stage !== "submitted");
   const [newDoc, setNewDoc] = useState("");
@@ -55,6 +56,7 @@ export function LicenseCard({ license, today, actions, focusToken = 0 }: { licen
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
+            {onSelect && <SelectBox checked={!!selected} onChange={onSelect} label={`Select ${license.name}`} />}
             <h3 className="truncate text-base font-semibold">{license.name}</h3>
             <Badge variant={STATUS_BADGE[status]}>{STATUS_LABEL[status]}</Badge>
             <Badge variant="muted">{category}</Badge>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BellRing, CheckCircle2, ChevronDown, Paperclip, Pencil, Plus, Power, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { SelectBox } from "@/components/ui/bulk-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDayLong } from "@/lib/dates";
@@ -81,7 +82,7 @@ function DocumentRow({ vendor, d, today, actions }: { vendor: Vendor; d: VendorD
 }
 
 /** `focusKey` changes whenever the page wants this card shown: it opens the documents and scrolls to the card. */
-export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendor; today: string; actions: VendorActions; focusKey?: number }) {
+export function VendorCard({ vendor, today, actions, focusKey, selected, onSelect }: { vendor: Vendor; today: string; actions: VendorActions; focusKey?: number; selected?: boolean; onSelect?: () => void }) {
   // Onboarding is mostly collecting documents, so start with them in view.
   const [open, setOpen] = useState(() => vendor.status === "onboarding" && activationBlockers(vendor, today).length > 0);
   const ref = useRef<HTMLLIElement>(null);
@@ -109,6 +110,7 @@ export function VendorCard({ vendor, today, actions, focusKey }: { vendor: Vendo
       <div className="flex flex-col gap-3 p-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
+            {onSelect && <SelectBox checked={!!selected} onChange={onSelect} label={`Select ${vendor.name}`} />}
             <h3 className="truncate text-base font-semibold"><Link href={`/app/vendors/${vendor.id}`} className="rounded underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{vendor.name}</Link></h3>
             <Badge variant={STATUS_BADGE[vendor.status]}>{STATUS_LABEL[vendor.status]}</Badge>
             <Badge variant="muted">{vendor.category}</Badge>
