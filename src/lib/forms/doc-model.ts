@@ -40,10 +40,10 @@ const KINDS: Record<Kind, KindStyle> = {
 
 /** Which kind each built-in paperwork is. Anything not listed gets a request-style page when it names an approver, otherwise intake. */
 const KIND_OF: Record<string, Kind> = {
-  "proposal-contract": "agreement", "change-order": "agreement", "lien-waiver": "agreement", "engagement": "agreement", "tax-engagement": "agreement", "vendor-order": "agreement",
-  "time-off": "request", "extension": "request", "trust-deposit": "request", "timesheet": "request",
-  "incident": "report", "accident": "report", "injury-report": "report", "ncr": "report", "jsa": "report", "maintenance-request": "report", "conflict-check": "report",
-  "inventory-count": "log", "patch-test": "log", "return": "log", "showing-feedback": "log",
+  "proposal-contract": "agreement", "change-order": "agreement", "lien-waiver": "agreement", "engagement": "agreement", "tax-engagement": "agreement", 
+  "time-off": "request",
+  "incident": "report", "accident": "report", "injury-report": "report", "ncr": "report", "jsa": "report", "conflict-check": "report",
+  "temp-log": "log", "equipment-log": "log", "sanitation-log": "log", "patch-test": "log",
   "inspection": "checklist", "opening-checklist": "checklist", "safety-walk": "checklist", "move-in": "checklist", "doc-checklist": "checklist",
   "nda": "consent", "hipaa-ack": "consent", "client-consent": "consent", "pickup-auth": "consent",
 };
@@ -82,7 +82,7 @@ const SIGNERS: Record<string, string[]> = {
   "jsa": ["Supervisor", "Safety lead"],
 };
 
-const NO_SIGN_LINES = new Set(["temp-log", "waste-log", "attendance"]);
+const NO_SIGN_LINES = new Set(["temp-log"]);
 
 const idKey = (form: FormTemplate) => form.id.replace(/^(pw|tpl)-/, "").replace(/^form-/, "");
 

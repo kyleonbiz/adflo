@@ -3,9 +3,10 @@ import { INDUSTRIES, PAPERWORK, paperworkFor, repeatingFor } from "@/lib/forms/p
 import { createSubmission, generateDocument } from "@/lib/forms/logic";
 
 describe("paperwork library", () => {
-  it("has unique ids, unique field ids per form, and paperwork for every industry", () => {
+  it("has unique ids, unique field ids per form, and paperwork for every industry that needs it", () => {
     expect(new Set(PAPERWORK.map((p) => p.form.id)).size).toBe(PAPERWORK.length);
-    for (const i of INDUSTRIES) expect(paperworkFor(i.id).length).toBeGreaterThan(0);
+    // Retail has none of its own: returns, stock counts and purchasing are what point-of-sale and inventory software do.
+    for (const i of INDUSTRIES) expect(paperworkFor(i.id).length).toBeGreaterThanOrEqual(i.id === "retail" ? 0 : 1);
     for (const p of PAPERWORK) {
       expect(new Set(p.form.fields.map((x) => x.id)).size).toBe(p.form.fields.length);
       expect(new Set(p.form.fields.map((x) => x.label.toLowerCase())).size).toBe(p.form.fields.length);

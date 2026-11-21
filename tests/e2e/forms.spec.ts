@@ -255,7 +255,7 @@ test.describe("forms module", () => {
     await page.getByRole("option", { name: "Restaurant or food service" }).click();
     await expect(picker.getByText("Temperature log")).toBeVisible();
     await picker.getByLabel("Only forms I fill in again and again").check();
-    await expect(picker.getByText("Food waste and spoilage log")).toBeVisible();
+    await expect(picker.getByText("Opening checklist")).toBeVisible();
     await picker.getByRole("button", { name: "Fill out: Temperature log" }).click();
 
     const dialog = page.getByRole("dialog");

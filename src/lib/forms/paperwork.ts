@@ -104,9 +104,6 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("food", "opening-checklist", "Opening checklist", "Run through before the doors open", [
     f("Date", "date"), f("Manager on duty"), f("Handwash stations stocked", "checkbox", false), f("Sanitizer tested", "checkbox", false), f("Equipment on and working", "checkbox", false), f("Notes", "longtext", false),
   ], { repeats: true }),
-  paper("food", "waste-log", "Food waste and spoilage log", "Track what was thrown out and why", [
-    f("Date", "date"), f("Item"), f("Quantity"), f("Reason", "select", true, ["Expired", "Dropped", "Cooked wrong", "Temperature", "Other"]),
-  ], { repeats: true }),
 
   paper("vehicle", "inspection", "Vehicle inspection checklist", "Pre-trip check before a vehicle goes out", [
     f("Vehicle / plate"), f("Driver"), f("Date", "date"), f("Odometer", "number"), f("Lights, tires and brakes OK", "checkbox", false), f("Defects found", "longtext", false),
@@ -114,9 +111,6 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("vehicle", "accident", "Vehicle accident report", "Details to keep for insurance", [
     f("Vehicle / plate"), f("Driver"), f("Date", "date"), f("Location"), f("Other party's name and insurance", "longtext", false), f("What happened", "longtext"), f("Police report number", "text", false),
   ]),
-  paper("vehicle", "maintenance", "Maintenance record", "Log service so nothing gets missed", [
-    f("Vehicle / plate"), f("Date", "date"), f("Odometer", "number"), f("Work done", "longtext"), f("Cost", "number"), f("Next service due", "date", false),
-  ], { repeats: true }),
 
   paper("professional", "client-intake", "Client intake", "First details from a new client", [
     f("Client name"), f("Email", "email"), f("Phone"), f("What you need help with", "longtext"), f("How did you hear about us", "text", false),
@@ -124,16 +118,7 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("professional", "engagement", "Engagement acknowledgment", "Client confirms scope and fees", [
     f("Client name"), f("Scope of work", "longtext"), f("Fee", "number"), f("Date", "date"), f("I agree to the scope and fee", "checkbox"),
   ], { approver: "Partner" }),
-  paper("professional", "timesheet", "Weekly timesheet", "Hours worked per client", [
-    f("Name"), f("Week starting", "date"), f("Client or project"), f("Hours", "number"), f("Notes", "longtext", false),
-  ], { repeats: true, approver: "Manager" }),
 
-  paper("realestate", "showing-feedback", "Showing feedback", "Capture what a buyer thought", [
-    f("Property address"), f("Date", "date"), f("Buyer name"), f("Interest level", "select", true, ["High", "Medium", "Low"]), f("Comments", "longtext", false),
-  ], { repeats: true }),
-  paper("realestate", "maintenance-request", "Tenant maintenance request", "Repairs that tenants report", [
-    f("Unit"), f("Tenant name"), f("Phone"), f("What needs fixing", "longtext"), f("Permission to enter", "checkbox", false),
-  ], { repeats: true }),
   paper("realestate", "move-in", "Move-in condition checklist", "Document the unit's condition on day one", [
     f("Unit"), f("Tenant name"), f("Date", "date"), f("Condition notes", "longtext"), f("Keys handed over", "number"),
   ]),
@@ -147,16 +132,6 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("health", "equipment-log", "Equipment cleaning log", "Sterilization and cleaning record", [
     f("Date", "date"), f("Equipment"), f("Cleaned by"), f("Method"), f("Notes", "longtext", false),
   ], { repeats: true }),
-
-  paper("retail", "return", "Return or exchange", "Record why an item came back", [
-    f("Customer name"), f("Item"), f("Date", "date"), f("Reason", "select", true, ["Defective", "Wrong item", "Changed mind", "Other"]), f("Refund amount", "number", false),
-  ], { repeats: true }),
-  paper("retail", "inventory-count", "Inventory count sheet", "Count what is on the shelf", [
-    f("Date", "date"), f("Counted by"), f("Section"), f("Discrepancies", "longtext", false),
-  ], { repeats: true }),
-  paper("retail", "vendor-order", "Vendor order form", "What you are ordering and when you need it", [
-    f("Vendor"), f("Items", "longtext"), f("Needed by", "date"), f("Total", "number", false),
-  ], { approver: "Owner" }),
 
   paper("beauty", "client-consent", "Client consent and allergy form", "Before a first service", [
     f("Client name"), f("Date", "date"), f("Service"), f("Allergies or sensitivities", "longtext", false), f("I understand the service and agree to proceed", "checkbox"),
@@ -177,16 +152,10 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("childcare", "injury-report", "Injury or incident report", "Write it down the same day", [
     f("Child's name"), f("Date", "date"), f("What happened", "longtext"), f("First aid given", "longtext", false), f("Parent told", "checkbox"),
   ]),
-  paper("childcare", "attendance", "Daily attendance sheet", "Who was here today", [
-    f("Date", "date"), f("Room"), f("Children present", "number"), f("Staff on duty", "number"), f("Notes", "longtext", false),
-  ], { repeats: true }),
 
   paper("manufacturing", "ncr", "Nonconformance report", "A part or batch that missed spec", [
     f("Part or batch"), f("Date found", "date"), f("What is wrong", "longtext"), f("Quantity affected", "number"), f("Action", "select", true, ["Rework", "Scrap", "Use as is", "Return to supplier"]),
   ], { repeats: true, approver: "Quality lead" }),
-  paper("manufacturing", "equipment-maint", "Equipment maintenance log", "Service done on a machine", [
-    f("Machine"), f("Date", "date"), f("Work done", "longtext"), f("Hours since last service", "number", false), f("Done by"),
-  ], { repeats: true }),
   paper("manufacturing", "safety-walk", "Safety walk-through", "Weekly floor check", [
     f("Area"), f("Date", "date"), f("Guards and signage in place", "checkbox", false), f("Aisles clear", "checkbox", false), f("Issues found", "longtext", false),
   ], { repeats: true }),
@@ -197,9 +166,6 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("legal", "conflict-check", "Conflict check", "Before taking a matter", [
     f("Client name"), f("Opposing party"), f("Related parties", "longtext", false), f("Checked by"), f("Conflict found", "checkbox", false),
   ], { approver: "Managing partner" }),
-  paper("legal", "trust-deposit", "Trust deposit request", "Money held for a client", [
-    f("Client name"), f("Matter"), f("Amount", "number"), f("Received from"), f("Date", "date"),
-  ], { approver: "Managing partner" }),
 
   paper("accounting", "tax-engagement", "Tax engagement acknowledgment", "Client agrees to scope and fee", [
     f("Client name"), f("Tax year"), f("Services included", "longtext"), f("Fee", "number"), f("I agree to the engagement terms", "checkbox"),
@@ -207,9 +173,6 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("accounting", "doc-checklist", "Client document checklist", "What the client still owes you", [
     f("Client name"), f("Tax year"), f("W-2s and 1099s received", "checkbox", false), f("Expense records received", "checkbox", false), f("Still missing", "longtext", false),
   ], { repeats: true }),
-  paper("accounting", "extension", "Extension request", "Ask to file late", [
-    f("Client name"), f("Tax year"), f("Reason", "longtext"), f("New due date", "date"),
-  ], { approver: "Partner" }),
 ];
 
 export const paperworkFor = (industry: IndustryId): Paperwork[] => PAPERWORK.filter((p) => p.industry === industry);

@@ -80,7 +80,7 @@ describe("form documents", () => {
   it("covers every template a client can pick, including the ones installed from setup", () => {
     const ids = TEMPLATES.filter((t) => t.kind === "form").map((t) => t.id);
     const all = [...starterForms(), ...PAPERWORK.map((p) => p.form), ...installedForms(ids)];
-    expect(all.length).toBeGreaterThan(50);
+    expect(all.length).toBeGreaterThan(30);
     for (const f of all) {
       const html = docToHtml(blankFormDocument(f));
       for (const field of f.fields) expect(html, `${f.name}: ${field.label}`).toContain(field.label.replace(/&/g, "&amp;").replace(/'/g, "'"));

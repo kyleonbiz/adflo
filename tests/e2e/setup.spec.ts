@@ -88,9 +88,9 @@ test.describe("back office setup module", () => {
     await expect(done.getByRole("link", { name: "Vendors" })).toBeVisible();
     await expect(done.getByRole("link", { name: "Tasks" })).toHaveCount(0);
 
-    // Forms: 2 samples + 2 installed + 3 that come with the industry.
+    // Forms: 2 samples + 2 installed + 2 that come with the industry.
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(7);
+    await expect(page.getByTestId("form-card")).toHaveCount(6);
     await expect(page.getByRole("heading", { name: "New employee details" })).toBeVisible();
     await expect(page.getByTestId("form-card").filter({ hasText: "New employee details" })).toContainText("sent 0 times");
 
@@ -148,7 +148,7 @@ test.describe("back office setup module", () => {
   test("editing a finished setup takes it out of 'installed' until finished again", async ({ page }) => {
     await completeSetup(page);
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(7);
+    await expect(page.getByTestId("form-card")).toHaveCount(6);
     await page.goto("/app/setup?tab=setup");
     await page.getByRole("button", { name: "Edit setup" }).click();
     await expect(page.getByLabel("Business name")).toHaveValue("Acme Studio"); // the answers are kept
@@ -158,7 +158,7 @@ test.describe("back office setup module", () => {
     await page.getByRole("button", { name: /Review/ }).click();
     await page.getByRole("button", { name: "Finish setup" }).click();
     await page.goto("/app/forms");
-    await expect(page.getByTestId("form-card")).toHaveCount(7);
+    await expect(page.getByTestId("form-card")).toHaveCount(6);
   });
 
   test("damaged or hostile saved data is ignored", async ({ page }) => {
