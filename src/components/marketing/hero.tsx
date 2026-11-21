@@ -9,7 +9,7 @@ export function Hero() {
         </h1>
         <p className="mt-3 text-lg font-medium text-white sm:text-xl">Built for contractors and property managers. Ready for your industry.</p>
         <p className="mx-auto mt-4 max-w-2xl text-base text-white/90 sm:text-lg">
-          Keep your records and paperwork in one place, track licenses, insurance and deadlines, and stay on top of invoices, vendors and projects, with reminders so nothing slips. Start with your documents below.
+          It sits alongside your accounting, payroll and construction management software and handles the paperwork those systems don&apos;t specialize in: records, licenses, insurance, vendors, invoices and projects, with reminders so nothing slips. Start with your documents below.
         </p>
         <ul className="mt-7 flex flex-wrap items-center justify-center gap-3" aria-label="What AdFlo covers">
           {FEATURES.map((label) => (

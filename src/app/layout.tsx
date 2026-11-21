@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s · AdFlo",
   },
   description:
-    "AdFlo is the administrative management platform for contractors and property managers, ready for other industries: records, licenses, insurance, vendors, invoices, paperwork and projects in one place, with reminders so nothing slips.",
+    "AdFlo is the administrative management platform for contractors and property managers, ready for other industries. It sits alongside your accounting, payroll and construction management software and handles the paperwork they don't specialize in: records, licenses, insurance, vendors, invoices and projects, with reminders so nothing slips.",
   robots: { index: true, follow: true },
 };
 
