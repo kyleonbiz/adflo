@@ -106,7 +106,7 @@ describe("support input", () => {
     expect(parseTicketPatch({}).ok).toBe(false);
   });
   it("checks notes and reset emails", () => {
-    expect(parseNote({ body: "  hi " })).toEqual({ ok: true, value: { body: "hi" } });
+    expect(parseNote({ body: "  hi " })).toEqual({ ok: true, value: { body: "hi", toClient: false } });
     expect(parseNote({ body: "   " }).ok).toBe(false);
     expect(parseResetEmail({ email: "Pat@X.com" })).toEqual({ ok: true, value: { email: "pat@x.com" } });
     expect(parseResetEmail({ email: "x" }).ok).toBe(false);

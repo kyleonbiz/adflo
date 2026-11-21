@@ -9,7 +9,7 @@ const client = (o: Partial<ClientRecord> = {}): ClientRecord => ({
   id: "c1", name: "Acme Roofing", status: "trial", plan: "standard", seatsLimit: 3, ownerName: "Pat", ownerEmail: "pat@acme.test", notes: "", workspaceId: "w1",
   startedOn: ago(1).slice(0, 10), createdAt: ago(1), priceOverrideCents: null, priceNote: "", seatsUsed: 0, lastActive: null, checklist: [], ...o,
 });
-const ticket = (o: Partial<Ticket> = {}): Ticket => ({ id: "t1", clientId: "c1", clientName: "Acme Roofing", subject: "Cannot upload", body: "", status: "open", priority: "normal", assignee: null, createdAt: ago(1), updatedAt: ago(1), ...o });
+const ticket = (o: Partial<Ticket> = {}): Ticket => ({ id: "t1", clientId: "c1", clientName: "Acme Roofing", subject: "Cannot upload", body: "", status: "open", priority: "normal", assignee: null, createdAt: ago(1), updatedAt: ago(1), source: "staff", requesterEmail: "", ...o });
 const error = (o: Partial<AppError> = {}): AppError => ({ id: 1, at: ago(0.5), source: "POST /api/dms/uploads", kind: "TypeError", status: 500, clientId: null, clientName: "", resolvedAt: null, ...o });
 const sent = (o: Partial<SentAgreement> = {}): SentAgreement => ({ id: "a1", clientId: "c1", clientName: "Acme Roofing", title: "Terms of Service", version: 1, sentAt: ago(1), expiresAt: ago(-29), acceptedAt: null, acceptedName: null, ...o });
 const build = (o: Partial<Parameters<typeof buildControlAlerts>[0]> = {}) => buildControlAlerts({ clients: [], tickets: [], errors: [], sent: [], now: NOW, ...o });

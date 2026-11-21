@@ -193,11 +193,12 @@ export function parseTicketPatch(raw: unknown): Parsed<{ status?: TicketStatus; 
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: out };
 }
 
-export function parseNote(raw: unknown): Parsed<{ body: string }> {
+export function parseNote(raw: unknown): Parsed<{ body: string; toClient: boolean }> {
   const body = body_((raw as { body?: unknown } | null)?.body);
+  const toClient = (raw as { toClient?: unknown } | null)?.toClient === true;
   if (!body) return { ok: false, errors: { body: "Write a note first." } };
   if (body.length > 5000) return { ok: false, errors: { body: "Keep notes under 5,000 characters." } };
-  return { ok: true, value: { body } };
+  return { ok: true, value: { body, toClient } };
 }
 
 export function parseResetEmail(raw: unknown): Parsed<{ email: string }> {
@@ -250,4 +251,24 @@ export function parseAcceptInput(raw: unknown): Parsed<{ token: string; name: st
   if (!EMAIL.test(email) || email.length > 254) errors.email = "Enter a valid email address.";
   if (r.agree !== true) errors.agree = "Tick the box to confirm you agree.";
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { token: r.token as string, name, email } };
+}
+
+/** A request a client opens from inside AdFlo. */
+export function parseClientRequest(raw: unknown): Parsed<{ subject: string; body: string; urgent: boolean }> {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const errors: Record<string, string> = {};
+  const subject = clean(r.subject);
+  if (subject.length < 1 || subject.length > 200) errors.subject = "Enter a short subject (up to 200 characters).";
+  const body = body_(r.body);
+  if (body.length < 1) errors.body = "Tell us what you need.";
+  else if (body.length > 5000) errors.body = "Keep the details under 5,000 characters.";
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { subject, body, urgent: r.urgent === true } };
+}
+
+/** A follow-up message from the client on one of their own requests. */
+export function parseClientReply(raw: unknown): Parsed<{ body: string }> {
+  const body = body_((raw as { body?: unknown } | null)?.body);
+  if (!body) return { ok: false, errors: { body: "Write a message first." } };
+  if (body.length > 5000) return { ok: false, errors: { body: "Keep messages under 5,000 characters." } };
+  return { ok: true, value: { body } };
 }

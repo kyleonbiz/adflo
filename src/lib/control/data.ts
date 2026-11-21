@@ -101,11 +101,11 @@ export const SAMPLE_PLANS: Plan[] = [
   { id: "plan-0", name: "standard", priceCents: 9900, seatsIncluded: 3, active: true, features: null },
 ];
 
-interface TicketRow { id: string; client_id: string | null; subject: string; body: string; status: Ticket["status"]; priority: Ticket["priority"]; assignee: string | null; created_at: string; updated_at: string; clients: { name: string } | { name: string }[] | null }
-const TICKET_COLUMNS = "id, client_id, subject, body, status, priority, assignee, created_at, updated_at, clients(name)";
+interface TicketRow { id: string; client_id: string | null; subject: string; body: string; status: Ticket["status"]; priority: Ticket["priority"]; assignee: string | null; created_at: string; updated_at: string; source: "staff" | "client"; requester_email: string; clients: { name: string } | { name: string }[] | null }
+const TICKET_COLUMNS = "id, client_id, subject, body, status, priority, assignee, created_at, updated_at, source, requester_email, clients(name)";
 const toTicket = (r: TicketRow): Ticket => ({
   id: r.id, clientId: r.client_id, clientName: (Array.isArray(r.clients) ? r.clients[0]?.name : r.clients?.name) ?? "", subject: r.subject, body: r.body,
-  status: r.status, priority: r.priority, assignee: r.assignee, createdAt: r.created_at, updatedAt: r.updated_at,
+  status: r.status, priority: r.priority, assignee: r.assignee, createdAt: r.created_at, updatedAt: r.updated_at, source: r.source, requesterEmail: r.requester_email,
 });
 
 /** Newest first, open ones before closed. Pass `clientId` for one client's tickets. */
@@ -122,8 +122,8 @@ export async function loadTicket(supabase: SupabaseClient, id: string): Promise<
   const { data, error } = await supabase.from("support_tickets").select(TICKET_COLUMNS).eq("id", id).maybeSingle();
   if (error) throw new Error("Could not load the ticket.");
   if (!data) return null;
-  const { data: notes } = await supabase.from("ticket_notes").select("id, author_email, body, created_at").eq("ticket_id", id).order("created_at");
-  return { ticket: toTicket(data as unknown as TicketRow), notes: (notes ?? []).map((n) => ({ id: n.id as string, authorEmail: n.author_email as string, body: n.body as string, createdAt: n.created_at as string })) };
+  const { data: notes } = await supabase.from("ticket_notes").select("id, author_email, body, created_at, to_client, from_client").eq("ticket_id", id).order("created_at");
+  return { ticket: toTicket(data as unknown as TicketRow), notes: (notes ?? []).map((n) => ({ id: n.id as string, authorEmail: n.author_email as string, body: n.body as string, createdAt: n.created_at as string, toClient: !!n.to_client, fromClient: !!n.from_client })) };
 }
 
 export async function loadDirectory(supabase: SupabaseClient): Promise<DirectoryEntry[]> {
@@ -137,8 +137,8 @@ export async function loadTimeline(supabase: SupabaseClient, clientId: string): 
 }
 
 export const SAMPLE_TICKETS: Ticket[] = [
-  { id: "sample-t1", clientId: "sample-1", clientName: "Sample: Acme Roofing", subject: "Cannot upload a PDF", body: "", status: "open", priority: "high", assignee: null, createdAt: "2026-11-03T14:00:00Z", updatedAt: "2026-11-03T14:00:00Z" },
-  { id: "sample-t2", clientId: "sample-2", clientName: "Sample: Birch & Co", subject: "Add a seat for a new hire", body: "", status: "pending", priority: "normal", assignee: null, createdAt: "2026-11-02T10:00:00Z", updatedAt: "2026-11-02T10:00:00Z" },
+  { id: "sample-t1", clientId: "sample-1", clientName: "Sample: Acme Roofing", subject: "Cannot upload a PDF", body: "", status: "open", priority: "high", assignee: null, createdAt: "2026-11-03T14:00:00Z", updatedAt: "2026-11-03T14:00:00Z", source: "client", requesterEmail: "owner@acme.example" },
+  { id: "sample-t2", clientId: "sample-2", clientName: "Sample: Birch & Co", subject: "Add a seat for a new hire", body: "", status: "pending", priority: "normal", assignee: null, createdAt: "2026-11-02T10:00:00Z", updatedAt: "2026-11-02T10:00:00Z", source: "staff", requesterEmail: "" },
 ];
 
 export const SAMPLE_TEMPLATES: AgreementTemplate[] = [{ id: "sample-a1", title: "Terms of Service", version: 2, body: "# Terms of Service\nSample text. The real agreement appears here once the Owner publishes it.\n\n## What you agree to\n- Pay invoices when they are due\n- Keep your account details up to date\n\n## Next steps\n1. Read the terms\n2. Tick both boxes and accept", effectiveDate: "2026-10-01", createdAt: "2026-10-01T00:00:00Z", accepted: true },

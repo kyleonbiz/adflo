@@ -17,8 +17,8 @@ const PRIORITY_VARIANT = { low: "muted", normal: "outline", high: "danger" } as 
 const STATUS_VARIANT = { open: "default", pending: "warning", closed: "muted" } as const;
 export const when = (iso: string) => new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" });
 
-export function TicketBadges({ t }: { t: Pick<Ticket, "status" | "priority"> }) {
-  return <span className="flex flex-wrap items-center gap-1.5"><Badge variant={STATUS_VARIANT[t.status]}>{TICKET_STATUS_LABEL[t.status]}</Badge>{t.priority !== "normal" && <Badge variant={PRIORITY_VARIANT[t.priority]}>{t.priority === "high" ? "High priority" : "Low priority"}</Badge>}</span>;
+export function TicketBadges({ t }: { t: Pick<Ticket, "status" | "priority"> & { source?: Ticket["source"] } }) {
+  return <span className="flex flex-wrap items-center gap-1.5">{t.source === "client" && <Badge variant="outline">From client</Badge>}<Badge variant={STATUS_VARIANT[t.status]}>{TICKET_STATUS_LABEL[t.status]}</Badge>{t.priority !== "normal" && <Badge variant={PRIORITY_VARIANT[t.priority]}>{t.priority === "high" ? "High priority" : "Low priority"}</Badge>}</span>;
 }
 
 function NewTicketDialog({ clients, defaultClientId, onClose }: { clients: Pick<ClientRecord, "id" | "name">[]; defaultClientId?: string; onClose: () => void }) {

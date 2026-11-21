@@ -87,8 +87,11 @@ export const TICKET_STATUS_LABEL: Record<TicketStatus, string> = { open: "Open",
 export interface Ticket {
   id: string; clientId: string | null; clientName: string; subject: string; body: string;
   status: TicketStatus; priority: TicketPriority; assignee: string | null; createdAt: string; updatedAt: string;
+  /** `client` when the client asked from inside AdFlo; `staff` when someone on the team logged it. */
+  source: "staff" | "client"; requesterEmail: string;
 }
-export interface TicketNote { id: string; authorEmail: string; body: string; createdAt: string }
+/** `toClient`: staff wrote it for the client to read. `fromClient`: the client wrote it. Neither: an internal note. */
+export interface TicketNote { id: string; authorEmail: string; body: string; createdAt: string; toClient: boolean; fromClient: boolean }
 export interface DirectoryEntry { userId: string; displayName: string; role: StaffRole }
 export interface TimelineEvent { at: string; staffEmail: string; staffName: string; action: string; detail: Record<string, unknown> }
 

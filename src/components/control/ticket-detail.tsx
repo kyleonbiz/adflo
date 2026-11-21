@@ -15,6 +15,7 @@ const stamp = (iso: string) => new Date(iso).toLocaleString("en-US", { dateStyle
 export function TicketDetail({ ticket, notes, directory, canEdit }: { ticket: Ticket; notes: TicketNote[]; directory: DirectoryEntry[]; canEdit: boolean }) {
   const router = useRouter();
   const [note, setNote] = useState("");
+  const [toClient, setToClient] = useState(ticket.source === "client");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -33,7 +34,7 @@ export function TicketDetail({ ticket, notes, directory, canEdit }: { ticket: Ti
       <Link href="/control/support" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden /> Support</Link>
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">{ticket.subject}</h1>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"><TicketBadges t={ticket} /><span>{ticket.clientId ? <Link href={`/control/clients/${ticket.clientId}`} className="hover:underline">{ticket.clientName}</Link> : "No client"} · opened {stamp(ticket.createdAt)}</span></div>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"><TicketBadges t={ticket} /><span>{ticket.requesterEmail && <>{ticket.requesterEmail} · </>}{ticket.clientId ? <Link href={`/control/clients/${ticket.clientId}`} className="hover:underline">{ticket.clientName}</Link> : "No client"} · opened {stamp(ticket.createdAt)}</span></div>
       </div>
       {ticket.body && <section className="whitespace-pre-wrap rounded-2xl border bg-card p-5 text-sm shadow-panel" aria-label="Details">{ticket.body}</section>}
 
@@ -46,15 +47,21 @@ export function TicketDetail({ ticket, notes, directory, canEdit }: { ticket: Ti
       )}
 
       <section className="space-y-3" aria-label="Notes">
-        <h2 className="font-semibold">Notes</h2>
-        {notes.length === 0 ? <p className="text-sm text-muted-foreground">No notes yet. Notes are internal and cannot be edited later.</p> : (
-          <ul className="space-y-2">{notes.map((n) => (<li key={n.id} className="rounded-xl border bg-card p-4 text-sm shadow-panel"><p className="whitespace-pre-wrap">{n.body}</p><p className="mt-2 text-xs text-muted-foreground">{n.authorEmail || "Staff"} · {stamp(n.createdAt)}</p></li>))}</ul>
+        <h2 className="font-semibold">Conversation and notes</h2>
+        {notes.length === 0 ? <p className="text-sm text-muted-foreground">Nothing yet. Notes are internal and cannot be edited later.{ticket.source === "client" && " A reply to the client is emailed to them and shown in their Help & Training page."}</p> : (
+          <ul className="space-y-2">{notes.map((n) => (<li key={n.id} className={`rounded-xl border p-4 text-sm shadow-panel ${n.fromClient ? "border-primary/30 bg-accent" : n.toClient ? "bg-card" : "border-dashed bg-muted/40"}`}><p className="whitespace-pre-wrap">{n.body}</p><p className="mt-2 text-xs text-muted-foreground">{n.fromClient ? "Client" : n.toClient ? "Reply to client" : "Internal note"} · {n.authorEmail || "Staff"} · {stamp(n.createdAt)}</p></li>))}</ul>
         )}
         {canEdit && (
-          <form onSubmit={async (e) => { e.preventDefault(); if (await send(`/api/control/tickets/${ticket.id}/notes`, "POST", { body: note })) setNote(""); }} className="space-y-2">
-            <label htmlFor="note" className="sr-only">Add a note</label>
-            <textarea id="note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Add a note" className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />
-            <Button type="submit" disabled={busy || !note.trim()}>Add note</Button>
+          <form onSubmit={async (e) => { e.preventDefault(); if (await send(`/api/control/tickets/${ticket.id}/notes`, "POST", { body: note, toClient: toClient && ticket.source === "client" })) setNote(""); }} className="space-y-2">
+            <label htmlFor="note" className="sr-only">{toClient ? "Reply to the client" : "Add a note"}</label>
+            <textarea id="note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={toClient ? "Write a reply the client will read" : "Add an internal note"} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />
+            {ticket.source === "client" && (
+              <div className="flex gap-4 text-sm" role="radiogroup" aria-label="Who sees this">
+                <label className="flex items-center gap-1.5"><input type="radio" name="audience" checked={toClient} onChange={() => setToClient(true)} /> Reply to client</label>
+                <label className="flex items-center gap-1.5"><input type="radio" name="audience" checked={!toClient} onChange={() => setToClient(false)} /> Internal note</label>
+              </div>
+            )}
+            <Button type="submit" disabled={busy || !note.trim()}>{toClient ? "Send reply" : "Add note"}</Button>
           </form>
         )}
         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
