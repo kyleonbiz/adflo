@@ -12,6 +12,10 @@ Its built-in assistant, **Addy**, takes on the repetitive work (setting up the w
 forms, creating tasks and reminders, running reports). Drafts open for review: nothing is saved, sent, signed, approved or
 deleted without a person's say-so. The approach is **Organize, Automate, Oversee**.
 
+**Where it fits.** AdFlo is the administrative home of the business. It works alongside accounting, payroll and
+construction management software and handles the paperwork, records, compliance deadlines and equipment those systems
+don't specialize in. That is why it holds no money, banking or accounting-sync features: those stay in the tools built for them.
+
 **Audience.** Contractors are the current focus and the go-to-market audience. Property managers are the secondary
 expansion market. Other industries are long-term. Managed services will be offered later.
 
