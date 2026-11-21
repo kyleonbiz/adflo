@@ -17,8 +17,9 @@ describe("textToPdf", () => {
   it("handles empty text and characters outside Latin-1", async () => {
     const empty = await getDocumentProxy(textToPdf(""));
     expect(empty.numPages).toBe(1);
-    const { text } = await extractText(await getDocumentProxy(textToPdf("Price €5 ✓")), { mergePages: true });
+    const { text } = await extractText(await getDocumentProxy(textToPdf("Receipt\n\nPrice €5 ✓")), { mergePages: true });
     expect(text).toContain("Price");
+    expect(text).toContain("RECEIPT");
   });
 
   it("wraps long lines at spaces and splits very long words", () => {

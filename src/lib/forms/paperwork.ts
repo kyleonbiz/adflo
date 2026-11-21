@@ -67,6 +67,16 @@ export const PAPERWORK: readonly Paperwork[] = [
     f("Full name"), f("Company"), f("Date", "date"), f("I agree to keep this information confidential", "checkbox"),
   ]),
 
+  paper("construction", "proposal-contract", "Proposal and contract", "Specifications, price and terms for a job, ready to sign", [
+    f("Recipient of proposal"), f("Job name"), f("Date", "date"), f("Address, city, state and zip"), f("Phone"), f("Architect", "text", false),
+    f("Date of plans", "date", false), f("Estimated start date", "date"), f("Estimated completion date", "date"),
+    f("We hereby provide specifications and estimates for", "longtext"),
+    f("Sum of", "number"), f("Payment terms", "text", false), f("This proposal is valid for (days)", "number", false),
+  ], { approver: "Owner" }),
+  paper("construction", "work-order", "Work order", "Authorize a piece of work before the crew starts", [
+    f("Customer"), f("Job site address"), f("Date", "date"), f("Scheduled date", "date", false), f("Estimated cost", "number", false),
+    f("Work to be performed", "longtext"), f("Materials needed", "longtext", false), f("Customer authorizes this work", "checkbox"),
+  ], { approver: "Project manager" }),
   paper("construction", "change-order", "Change order", "Record a change to the agreed scope and price", [
     f("Project"), f("Client"), f("Description of change", "longtext"), f("Added cost", "number"), f("Added days", "number", false), f("Date", "date"),
   ], { approver: "Project manager" }),

@@ -12,9 +12,10 @@ import { SummaryTile } from "@/components/modules/summary-tile";
 import { useToday } from "@/components/modules/use-today";
 import { formatDayLong } from "@/lib/dates";
 import { createSubmission, generateDocument, markDone, submissionsToCsv, summarize } from "@/lib/forms/logic";
-import { textToPdf } from "@/lib/forms/pdf";
-import { printText } from "@/lib/forms/print";
-import { blankDocument } from "@/lib/forms/layout";
+import { docBusiness } from "@/lib/forms/doc-business";
+import { printDoc } from "@/lib/forms/doc-html";
+import { blankFormDocument, formDocument } from "@/lib/forms/doc-model";
+import { docToPdf } from "@/lib/forms/doc-pdf";
 import { PAPERWORK, type Paperwork } from "@/lib/forms/paperwork";
 import { industryForms } from "@/lib/setup/industries";
 import { addContactLink, personFromSubmission, prefillFromPerson, type Person } from "@/lib/bridge";
@@ -92,7 +93,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   const actions: FormActions = {
     onSend: (f) => setSending(f),
     onFill: (f) => setFilling(f),
-    onBlank: (f) => download(textToPdf(blankDocument(f.name, f.documentTemplate)), `${slug(f.name)}-blank.pdf`, "application/pdf"),
+    onBlank: (f) => download(docToPdf(blankFormDocument(f, docBusiness())), `${slug(f.name)}-blank.pdf`, "application/pdf"),
     onAddResponses: (f) => setAdding(f),
     onEdit: (f) => setBuilderFor(f),
     onDelete: (f) => setDeleting(f),
@@ -102,8 +103,8 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
       setNotice(`Response by ${s.submittedBy} ${done ? "marked done" : "reopened"}.`);
     },
     onDocument: (f, s) => download(generateDocument(f, s), fileName(f, s, "txt"), "text/plain"),
-    onPdf: (f, s) => download(textToPdf(generateDocument(f, s)), fileName(f, s, "pdf"), "application/pdf"),
-    onPrint: (f, s) => printText(f.name, generateDocument(f, s)),
+    onPdf: (f, s) => download(docToPdf(formDocument(f, s, docBusiness())), fileName(f, s, "pdf"), "application/pdf"),
+    onPrint: (f, s) => printDoc(formDocument(f, s, docBusiness())),
     onExport: (f, list) => download(submissionsToCsv(f, list), `${slug(f.name)}-submissions-${today}.csv`, "text/csv"),
     onDeleteSubmission: (_f, s) => {
       audit("deleted a response to", _f.name, "Forms", "/app/forms");
@@ -215,8 +216,8 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
         title={ready?.form.name ?? ""}
         contact={ready ? (() => { const p = personFromSubmission(ready.form, ready.sub.values, ready.sub.submittedBy); return p ? { name: p.name, href: addContactLink(p) } : null; })() : null}
         onOpenChange={(o) => !o && setReady(null)}
-        onPrint={() => ready && printText(ready.form.name, generateDocument(ready.form, ready.sub))}
-        onPdf={() => ready && download(textToPdf(generateDocument(ready.form, ready.sub)), fileName(ready.form, ready.sub, "pdf"), "application/pdf")}
+        onPrint={() => ready && printDoc(formDocument(ready.form, ready.sub, docBusiness()))}
+        onPdf={() => ready && download(docToPdf(formDocument(ready.form, ready.sub, docBusiness())), fileName(ready.form, ready.sub, "pdf"), "application/pdf")}
         onText={() => ready && download(generateDocument(ready.form, ready.sub), fileName(ready.form, ready.sub, "txt"), "text/plain")}
       />
 
