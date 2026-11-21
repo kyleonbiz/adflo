@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { BulkBar, useSelection } from "@/components/ui/bulk-bar";
 import { readParam, useUrlFilters } from "@/lib/url-filters";
+import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 import { PreviewNote } from "@/components/ui/preview-note";
 import { useMemo, useState } from "react";
 import { CheckCircle2, FileInput, Inbox, Plus, Search, Send } from "lucide-react";
@@ -60,8 +61,10 @@ function download(text: string | Uint8Array, name: string, type: string) {
 export function FormsPage({ preview, initialQuery = "", initialFill }: { preview?: string; initialQuery?: string; initialFill?: { formId: string; person: Partial<Person> } }) {
   const today = useToday();
   const audit = useAudit();
-  const [editedForms, setEditedForms] = useState<FormTemplate[] | null>(null);
-  const [editedSubs, setEditedSubs] = useState<Submission[] | null>(null);
+  // Saved like the other services (in this browser, or the workspace database once signed in), so a deleted form stays deleted.
+  const loading = useRecordsLoading();
+  const [editedForms, setEditedForms] = useRecordsState<FormTemplate>("forms");
+  const [editedSubs, setEditedSubs] = useRecordsState<Submission>("submissions");
   const [sort, setSort] = useState<"name" | "responses" | "new">(() => readParam<"name" | "responses" | "new">("sort", "name", ["name", "responses", "new"]));
   const [query, setQuery] = useState(() => initialQuery || readParam("q", ""));
   useUrlFilters({ q: query, sort }, { sort: "name" });
@@ -89,7 +92,7 @@ export function FormsPage({ preview, initialQuery = "", initialFill }: { preview
   }, [editedForms, setup, fromLink]);
   const subs = useMemo(() => editedSubs ?? e2eSeed<Submission>("submissions") ?? [], [editedSubs]);
 
-  if (!today) {
+  if (!today || loading) {
     return (
       <div className="space-y-4" aria-busy="true">
         <Skeleton className="h-10 w-64" />
