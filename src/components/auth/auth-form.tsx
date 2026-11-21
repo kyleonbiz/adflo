@@ -188,7 +188,7 @@ function TroubleHelp() {
           </li>
           <li>If you just signed up, confirm your email first using the link we sent you.</li>
           <li>
-            Still stuck? Ask your workspace owner to invite you, or email support@adflo.pro.
+            Still stuck? Ask your company&apos;s AdFlo administrator to invite you, or email support@adflo.pro.
           </li>
         </ul>
       )}

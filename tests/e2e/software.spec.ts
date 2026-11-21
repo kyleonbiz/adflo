@@ -9,10 +9,10 @@ test.describe("Landing page and the app", () => {
     await expect(page).toHaveURL(/\/app\/overview$/);
   });
 
-  test("the landing page at / shows the hero, and Open workspace goes to the log in screen", async ({ page }) => {
+  test("the landing page at / shows the hero, and Log in / Sign up goes to the log in screen", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "The administrative management platform" })).toBeVisible();
-    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Open workspace" }).click();
+    await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Log in / Sign up" }).click();
     await expect(page).toHaveURL(/\/login$/);
   });
 
@@ -105,6 +105,6 @@ test.describe("Landing page and the app", () => {
   test("the sign-in page is still there for when a database is connected", async ({ page }) => {
     await page.goto("/login");
     await expect(page.getByRole("heading", { name: "Log in to your account" })).toBeVisible();
-    await expect(page.getByText("Access your AdFlo workspace.")).toBeVisible();
+    await expect(page.getByText("Welcome back. Log in to continue.")).toBeVisible();
   });
 });

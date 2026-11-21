@@ -162,7 +162,7 @@ describe("TeamDialog", () => {
 describe("page wiring", () => {
   it("does not offer the Team button in the public demo", async () => {
     render(<DocumentManagementPage api={createLocalApi()} />);
-    await waitFor(() => expect(screen.getByText(/Preview workspace/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/Preview only/)).toBeTruthy());
     expect(screen.queryByRole("button", { name: "Team" })).toBeNull();
   });
 });
