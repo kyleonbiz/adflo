@@ -1,22 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { TIERS, FEATURE_KEYS, cleanFeatures, hasFeature } from "@/lib/control/tiers";
+import { TIERS, CORE, FEATURE_KEYS, cleanFeatures, hasFeature, limitsFor, ADD_ONS, FOUNDING_CAP } from "@/lib/control/tiers";
 import { parsePlanInput } from "@/lib/control/validation";
 
 describe("tiers", () => {
   const by = Object.fromEntries(TIERS.map((t) => [t.name, t.features]));
-  it("offers two tiers, Core + being Core plus more", () => {
-    expect(TIERS.map((t) => t.name)).toEqual(["core", "core +"]);
-    expect(by["core +"]).toEqual(expect.arrayContaining([...by.core]));
+  it("offers two plans, Core + and Enterprise (Core is retired)", () => {
+    expect(TIERS.map((t) => t.name)).toEqual(["core +", "enterprise"]);
   });
-  it("keeps every module and the automations in Core", () => {
-    for (const k of ["invoices", "vendors", "forms", "licenses", "reporting_scheduled", "activity", "assistant_rules"] as const) expect(hasFeature(by.core, k)).toBe(true);
+  it("keeps every module and the automations in Core + and Enterprise", () => {
+    for (const t of TIERS) for (const k of ["invoices", "vendors", "forms", "licenses", "reporting_scheduled", "activity", "assistant_rules", "assistant_ai", "ocr", "priority_support"] as const) expect(hasFeature(t.features, k)).toBe(true);
   });
-  it("puts only the Claude assistant, OCR and priority support in Core +", () => {
-    for (const k of ["assistant_ai", "ocr", "priority_support"] as const) {
-      expect(hasFeature(by.core, k)).toBe(false);
-      expect(hasFeature(by["core +"], k)).toBe(true);
-    }
-    expect(by["core +"].length - by.core.length).toBe(3);
+  it("leaves the Claude assistant, OCR and priority support out of the retired Core list", () => {
+    for (const k of ["assistant_ai", "ocr", "priority_support"] as const) expect(hasFeature(CORE, k)).toBe(false);
+    expect(by["core +"].length - CORE.length).toBe(3);
+  });
+  it("sets the decided prices and limits", () => {
+    expect(limitsFor("Core +")).toMatchObject({ priceCents: 7900, annualCents: 79000, foundingCents: 5900, foundingAnnualCents: 59000, seats: 5, storageGb: 20, maxFileMb: 50, aiActions: 250, ocrPerMonth: 200, tokenBackstop: 3_000_000 });
+    expect(limitsFor("enterprise")).toMatchObject({ priceCents: 19900, seats: 25, storageGb: 100, maxFileMb: 100, aiActions: 750, ocrPerMonth: 1000 });
+    expect(limitsFor("core")).toBeNull();
+    expect(TIERS.map((t) => t.seatsIncluded)).toEqual([5, 25]);
+    expect(FOUNDING_CAP).toBe(50);
+    expect(ADD_ONS.map((a) => a.priceCents)).toEqual([1000, 1000, 1500]);
   });
   it("treats a plan with no list as including everything", () => {
     expect(hasFeature(null, "ocr")).toBe(true);
@@ -35,7 +39,7 @@ import { itemAllowed, pathAllowed } from "@/lib/control/gating";
 
 describe("gating", () => {
   const core = TIERS[0].features as string[];
-  it("lets Core use every page", () => {
+  it("lets Core + use every page", () => {
     for (const p of ["/app", "/app/invoices", "/app/vendors/x", "/app/activity", "/app/assistant", "/app/reporting"]) expect(pathAllowed(core, p)).toBe(true);
   });
   it("hides a page a custom plan leaves out", () => {

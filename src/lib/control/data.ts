@@ -97,7 +97,7 @@ export const SAMPLE_CLIENTS: ClientRecord[] = [
 ];
 
 export const SAMPLE_PLANS: Plan[] = [
-  ...TIERS.map((t, i) => ({ id: `plan-${i + 1}`, name: t.name, priceCents: 0, seatsIncluded: t.seatsIncluded, active: true, features: [...t.features] as string[] })),
+  ...TIERS.map((t, i) => ({ id: `plan-${i + 1}`, name: t.name, priceCents: t.limits.priceCents, seatsIncluded: t.seatsIncluded, active: true, features: [...t.features] as string[] })),
   { id: "plan-0", name: "standard", priceCents: 9900, seatsIncluded: 3, active: true, features: null },
 ];
 

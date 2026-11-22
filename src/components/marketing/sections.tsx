@@ -4,6 +4,8 @@ import {
   AlertTriangle, Clock, PiggyBank, Workflow,
 } from "lucide-react";
 import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
+import { TIERS, FOUNDING_CAP } from "@/lib/control/tiers";
+import { limitRows } from "@/components/plan-limits";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
@@ -214,6 +216,36 @@ export function LandingSections() {
             ))}
           </ul>
         </div>
+      </section>
+
+      <section id="pricing" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="pricing-title">
+        <p className={eyebrow}>Pricing</p>
+        <h2 id="pricing-title" className={h2}>Simple plans. Priced for growing teams.</h2>
+        <p className="mt-3 max-w-3xl text-foreground/80">
+          AdFlo is the administrative layer that sits alongside your accounting, payroll and project software. It handles the paperwork and administration they don’t specialize in.
+        </p>
+        <div className="mt-8 grid gap-5 lg:grid-cols-2">
+          {TIERS.map((t) => (
+            <div key={t.name} className={`${card} flex flex-col`}>
+              <h3 className="text-xl font-semibold">{t.label}</h3>
+              <p className="mt-1 text-sm text-foreground/70">{t.audience}</p>
+              <p className="mt-4 text-3xl font-semibold tracking-tight">
+                {t.name === "enterprise" ? "From $" : "$"}{t.limits.priceCents / 100}<span className="text-base font-normal text-foreground/70"> / month</span>
+              </p>
+              {t.name === "core +"
+                ? <p className="mt-1 text-sm font-medium text-brand-indigo">Founding offer: ${(t.limits.foundingCents ?? 0) / 100}/month for the first {FOUNDING_CAP} customers, locked in while you stay subscribed.</p>
+                : <p className="mt-1 text-sm text-foreground/70">Quoted per customer.</p>}
+              <p className="mt-3 text-sm text-foreground/80">{t.blurb}</p>
+              <ul className="mt-4 space-y-2 text-sm">
+                {limitRows(t).slice(1).map((r) => (
+                  <li key={r.label} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" /><span><span className="font-medium">{r.label}:</span> {r.value}</span></li>
+                ))}
+              </ul>
+              <a href="#demo-form" className={`mt-auto rounded-lg px-5 py-3 text-center font-medium ${gradientBtn}`}>{t.name === "enterprise" ? "Talk to us" : "Book a demo"}</a>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-sm text-foreground/70">Annual billing is available on Core + (two months free). Claude actions count when Claude proposes a change for you to approve; quick actions are unlimited.</p>
       </section>
 
       <section id="demo" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="cta-title">

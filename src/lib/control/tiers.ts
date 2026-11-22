@@ -26,17 +26,59 @@ export const FEATURES = [
 export type FeatureKey = (typeof FEATURES)[number]["key"];
 export const FEATURE_KEYS: readonly string[] = FEATURES.map((f) => f.key);
 
-const CORE: FeatureKey[] = [
+export const CORE: FeatureKey[] = [
   "documents", "contacts", "tasks", "setup", "licenses_basic", "vendors", "licenses", "forms", "invoices", "projects", "reporting",
   "versioning", "assistant_rules", "reporting_scheduled", "certifications", "activity",
 ];
 const AI: FeatureKey[] = [...CORE, "assistant_ai", "ocr", "priority_support"];
 
-/** The tiers offered, in order. Core is the whole platform run by hand with its automations; AI adds the Claude assistant and OCR. */
-export const TIERS: readonly { name: string; blurb: string; seatsIncluded: number; features: readonly FeatureKey[] }[] = [
-  { name: "core", blurb: "The whole platform with its automations: you enter and review, it reminds and schedules.", seatsIncluded: 10, features: CORE },
-  { name: "core +", blurb: "Everything in Core, plus the Claude-backed assistant, OCR of photos and priority support.", seatsIncluded: 25, features: AI },
+/** What a plan includes, in numbers. `null` means "set per contract". Single source for the landing page, app and Control center. */
+export interface PlanLimits {
+  /** Monthly price in cents; Enterprise is "from" this amount, quoted per customer. */
+  priceCents: number;
+  /** Annual price in cents (two months free), or null when quoted. */
+  annualCents: number | null;
+  /** The locked-in price for the first founding customers (Core + only). */
+  foundingCents: number | null;
+  foundingAnnualCents: number | null;
+  seats: number;
+  storageGb: number;
+  maxFileMb: number;
+  /** Claude (approval-based) actions per month; Enterprise is "or more". */
+  aiActions: number;
+  ocrPerMonth: number;
+  /** Rough input+output token backstop per month. */
+  tokenBackstop: number | null;
+}
+
+export const FOUNDING_CAP = 50;
+/** Add-ons for Core +; Enterprise add-ons are included in the quote. Prices in cents. */
+export const ADD_ONS = [
+  { label: "Extra seat", priceCents: 1000, per: "seat" },
+  { label: "Extra 10 GB of storage", priceCents: 1000, per: "10 GB" },
+  { label: "Extra 250 Claude actions", priceCents: 1500, per: "250 actions" },
+] as const;
+
+/** The plans offered, in order. Core + is the whole platform with its automations plus Claude and OCR; Enterprise is the same with larger limits, quoted. */
+export const TIERS: readonly { name: string; label: string; audience: string; blurb: string; seatsIncluded: number; features: readonly FeatureKey[]; limits: PlanLimits; support: string }[] = [
+  {
+    name: "core +", label: "Core +", seatsIncluded: 5, features: AI,
+    audience: "Contractors and small to mid-size crews",
+    blurb: "The whole administrative platform with its automations, the Claude-backed assistant, OCR of photos and priority support.",
+    support: "Priority support",
+    limits: { priceCents: 7900, annualCents: 79000, foundingCents: 5900, foundingAnnualCents: 59000, seats: 5, storageGb: 20, maxFileMb: 50, aiActions: 250, ocrPerMonth: 200, tokenBackstop: 3_000_000 },
+  },
+  {
+    name: "enterprise", label: "Enterprise", seatsIncluded: 25, features: AI,
+    audience: "Larger contractors, property managers, and multi-crew or multi-location teams",
+    blurb: "Everything in Core +, with higher limits and add-ons quoted for your business. Managed services will be offered later.",
+    support: "Priority support, onboarding help and a dedicated contact",
+    limits: { priceCents: 19900, annualCents: null, foundingCents: null, foundingAnnualCents: null, seats: 25, storageGb: 100, maxFileMb: 100, aiActions: 750, ocrPerMonth: 1000, tokenBackstop: null },
+  },
 ];
+
+/** The limits for a plan name (case-insensitive), or null for a retired or legacy plan. */
+export const limitsFor = (plan: string): PlanLimits | null => TIERS.find((t) => t.name === plan.trim().toLowerCase())?.limits ?? null;
 
 /** True when a plan with these features includes `key`. `null` (a legacy plan with no list) includes everything. */
 export const hasFeature = (features: readonly string[] | null | undefined, key: FeatureKey) =>

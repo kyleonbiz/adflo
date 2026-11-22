@@ -17,6 +17,7 @@ export default function HomePage() {
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6" aria-label="Main">
           <Brand wordmark light className="w-28 sm:w-32" />
           <div className="flex items-center gap-2">
+          <a href="#pricing" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Pricing</a>
           <a href="#demo" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Book a demo</a>
           <Button asChild size="sm" className="rounded-full border-0 bg-gradient-to-r from-brand-sky via-brand-blue to-brand-violet px-5 text-white shadow-lg shadow-brand-purple/40 hover:brightness-110">
             <Link href="/login">Log in</Link>
