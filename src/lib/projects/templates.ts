@@ -43,23 +43,6 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     ],
   },
   {
-    id: "employee-onboarding",
-    name: "Employee Onboarding",
-    summary: "Paperwork, access and first-week setup for a new hire.",
-    description: "Complete hiring paperwork, set up accounts and equipment, and plan the first 30 days.",
-    durationDays: 30,
-    tasks: [
-      { title: "Send offer letter and collect signed copy", offsetDays: 0 },
-      { title: "Collect tax and payroll forms", offsetDays: 2 },
-      { title: "Verify work eligibility documents", offsetDays: 3 },
-      { title: "Order equipment and create accounts", offsetDays: 3 },
-      { title: "Add to payroll and benefits", offsetDays: 7 },
-      { title: "Share handbook and policies for acknowledgement", offsetDays: 7 },
-      { title: "First-week orientation and introductions", offsetDays: 7 },
-      { title: "30-day check-in", offsetDays: 30 },
-    ],
-  },
-  {
     id: "vendor-onboarding",
     name: "Vendor Onboarding",
     summary: "Onboard a new vendor with the right paperwork on file.",
@@ -130,7 +113,7 @@ const tasks = (items: [string, number][]): TemplateTask[] => items.map(([title, 
 /** Starting points for particular kinds of business. They sit in the same list as the general ones. */
 PROJECT_TEMPLATES.push(
   { id: "job-closeout", name: "Job Closeout", summary: "Finish a job cleanly: punch list, final invoice, paperwork.", description: "Walk the site, fix what is left, collect final paperwork and invoice.", durationDays: 14, bestFor: ["Construction & trades", "Home services"],
-    tasks: tasks([["Final walk-through with the customer", 1], ["Complete the punch list", 5], ["Collect lien waivers and warranties", 7], ["Send the final invoice", 8], ["Request a review or reference", 12], ["File job records", 14]]) },
+    tasks: tasks([["Final walk-through with the customer", 1], ["Complete the punch list", 5], ["Hand over the warranty certificate and certificate of completion", 7], ["Send the final invoice", 8], ["Request a review or reference", 12], ["File job records", 14]]) },
   { id: "inspection-prep", name: "Inspection Preparation", summary: "Get ready for a health, fire or licensing inspection.", description: "Check the things inspectors check, fix gaps, and have the paperwork ready.", durationDays: 21, bestFor: ["Restaurant & hospitality", "Healthcare practice", "Education & childcare", "Beauty & wellness", "Manufacturing"],
     tasks: tasks([["Pull last inspection report and fix open items", 3], ["Walk the premises with the inspector's checklist", 7], ["Check that permits and certificates are posted and current", 10], ["Update logs and training records", 14], ["Do a final walk-through", 19], ["File the inspection result", 21]]) },
   { id: "fleet-audit", name: "Fleet Compliance Audit", summary: "Check every vehicle and driver is legal to run.", description: "Confirm registrations, inspections, insurance and driver paperwork vehicle by vehicle.", durationDays: 30, bestFor: ["Auto & fleet", "Trucking & logistics"],

@@ -34,7 +34,7 @@ const two = (a: string, b: string) => chain([a, b]);
 export const PRESETS: Record<Industry, IndustryPreset> = {
   "Professional services": { licenses: "professional", paperwork: "professional", vendorDocs: ["Signed contract"], chains: chain(["Office manager"]), leadDays: 30 },
   "Retail & e-commerce": { licenses: "retail", paperwork: "retail", vendorDocs: ["Resale certificate"], chains: chain(["Store manager"]), leadDays: 30 },
-  "Construction & trades": { licenses: "construction", paperwork: "construction", vendorDocs: ["Workers' compensation certificate", "Lien waiver"], chains: two("Project manager", "Owner"), leadDays: 30 },
+  "Construction & trades": { licenses: "construction", paperwork: "construction", vendorDocs: ["Workers' compensation certificate", "Certificate of liability insurance"], chains: two("Project manager", "Owner"), leadDays: 30 },
   "Healthcare practice": { licenses: "health", paperwork: "health", vendorDocs: ["Business associate agreement"], chains: two("Practice manager", "Owner"), leadDays: 60 },
   "Restaurant & hospitality": { licenses: "food", paperwork: "food", vendorDocs: ["Food safety certificate"], chains: chain(["General manager"]), leadDays: 60 },
   Nonprofit: { licenses: "general", paperwork: "nonprofit", vendorDocs: [], chains: two("Program director", "Treasurer"), leadDays: 30 },

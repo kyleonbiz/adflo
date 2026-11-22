@@ -112,7 +112,7 @@ test.describe("back office setup module", () => {
     await dialog.getByRole("combobox", { name: /Service needed/ }).click();
     await page.getByRole("option", { name: "Bookkeeping" }).click();
     await dialog.getByRole("button", { name: "Submit" }).click();
-    await expect(page.getByRole("status")).toContainText("Response added");
+    await expect(page.getByRole("status").filter({ hasText: "Response added" })).toBeVisible();
   });
 
   test("a setup that is not finished installs nothing", async ({ page }) => {
