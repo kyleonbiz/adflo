@@ -31,7 +31,7 @@ export function NavLink({ item, active, onNavigate, collapsed, badge }: { item: 
       className={cn(
         collapsed && "justify-center px-0",
         "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-brand-sky",
-        active ? "bg-brand-blue/25 bg-[image:linear-gradient(90deg,rgb(255_255_255/0.15),transparent)] text-white ring-1 ring-white/15 shadow-[inset_3px_0_0_0_var(--brand-sky),0_0_28px_-8px_var(--brand-sky)]" : "text-slate-300 hover:bg-white/8 hover:text-white",
+        active ? "bg-white/10 text-white shadow-[inset_2px_0_0_0_var(--brand-sky)]" : "text-slate-300 hover:bg-white/8 hover:text-white",
       )}
     >
       <span className="relative inline-flex shrink-0">

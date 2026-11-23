@@ -115,15 +115,15 @@ const NOTE = {
   bad: { Icon: ArrowDown, tone: "text-red-600" },
 } as const;
 const KPI_ICON: Record<string, { Icon: LucideIcon; box: string }> = {
-  money: { Icon: Receipt, box: "bg-emerald-500" },
-  tasks: { Icon: FolderKanban, box: "bg-amber-400" },
+  money: { Icon: Receipt, box: "bg-emerald-50 text-emerald-600" },
+  tasks: { Icon: FolderKanban, box: "bg-amber-50 text-amber-600" },
 };
 
 function KpiCard({ kpi, bars }: { kpi: Kpi; bars: number[] }) {
   const { Icon: NoteIcon, tone } = NOTE[kpi.note.tone];
   const icon = KPI_ICON[kpi.id];
   return (
-    <Link href={kpi.href} className="flex min-h-36 flex-col justify-between rounded-2xl border bg-card p-4 shadow-panel outline-none transition-shadow hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring">
+    <Link href={kpi.href} className="flex min-h-36 flex-col justify-between rounded-xl border bg-card p-4 shadow-panel outline-none transition-colors hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring">
       <div>
         <p className="text-3xl font-semibold tabular-nums">{kpi.value}</p>
         <p className="text-sm text-muted-foreground">{kpi.label}</p>
@@ -131,7 +131,7 @@ function KpiCard({ kpi, bars }: { kpi: Kpi; bars: number[] }) {
       <div className="mt-3 flex items-end justify-between gap-2">
         <p className={cn("flex items-center gap-1.5 text-sm font-medium", tone)}><NoteIcon className="size-4" aria-hidden /> {kpi.note.text}</p>
         {icon ? (
-          <span className={cn("grid size-12 shrink-0 place-items-center rounded-xl text-white shadow-sm", icon.box)}><icon.Icon className="size-6" aria-hidden /></span>
+          <span className={cn("grid size-10 shrink-0 place-items-center rounded-lg", icon.box)}><icon.Icon className="size-5" aria-hidden /></span>
         ) : (
           <MiniBars values={bars} label="Needs attention by area" />
         )}
@@ -196,7 +196,7 @@ function LicensesTab({ panel }: { panel: LicensesPanel }) {
     <section aria-label="Licenses & Renewals" className="space-y-5" data-testid="licenses-tab">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s) => (
-          <Link key={s.label} href="/app/licenses" className="rounded-2xl border bg-card p-4 shadow-panel outline-none transition-shadow hover:shadow-float focus-visible:ring-2 focus-visible:ring-ring">
+          <Link key={s.label} href="/app/licenses" className="rounded-xl border bg-card p-4 shadow-panel outline-none transition-colors hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-ring">
             <p className="text-sm text-muted-foreground">{s.label}</p>
             <p className={cn("mt-1 text-3xl font-semibold tabular-nums", s.tone)}>{s.value}</p>
           </Link>
