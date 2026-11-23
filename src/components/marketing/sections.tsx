@@ -13,6 +13,11 @@ const eyebrow = "text-sm font-semibold text-brand-indigo"
 const gradientBtn = "bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-lg shadow-brand-purple/30 transition hover:brightness-110";
 const h2 = "mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl";
 
+const USE_CASES = [
+  { title: "Contractors", tag: "Our focus", items: ["Contractor license and renewal tracking", "Insurance certificates and expiry alerts", "Subcontractor and vendor files", "Tools, vehicles and equipment records", "Forms and signed agreements", "Invoices and project tasks"] },
+  { title: "Property managers", tag: "Also built for", items: ["Vendor contracts and renewals", "Appliance, HVAC and key tracking", "Leases, notices and forms", "Inspection and maintenance reminders", "Invoices and due dates", "Team tasks and reporting"] },
+];
+
 const PROBLEMS = [
   "Important information scattered across different systems",
   "Repetitive administrative tasks consuming valuable time",
@@ -93,6 +98,27 @@ const VALUE = [
 export function LandingSections() {
   return (
     <div className="text-foreground">
+      <section className={`${container} pt-12 sm:pt-16`} aria-labelledby="usecase-title">
+        <p className={eyebrow}>Ready for your business</p>
+        <h2 id="usecase-title" className={h2}>Set up for the paperwork your business actually has</h2>
+        <p className="mt-2 max-w-2xl text-muted-foreground">Start from what is already built for your line of work, then make it yours.</p>
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          {USE_CASES.map((u) => (
+            <div key={u.title} className={card}>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">{u.title}</h3>
+                <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-medium text-brand-indigo">{u.tag}</span>
+              </div>
+              <ul className="mt-3 grid gap-2 text-sm text-foreground/85 sm:grid-cols-2">
+                {u.items.map((i) => <li key={i} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{i}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-sm text-foreground/70">AdFlo is the administrative layer alongside your accounting, payroll and project software. It does not replace them.</p>
+        <Link href="/signup" className={`mt-5 inline-block rounded-lg px-5 py-3 font-medium ${gradientBtn}`}>Start your free trial</Link>
+      </section>
+
       <section id="platform" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="problem-title">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <div>
@@ -183,7 +209,7 @@ export function LandingSections() {
         </div>
       </section>
 
-      <section className={`${container} py-14 sm:py-20`} aria-labelledby="how-title">
+      <section id="how-it-works" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="how-title">
         <p className={eyebrow}>How it works</p>
         <h2 id="how-title" className={h2}>Three simple steps</h2>
         <ol className="mt-8 grid gap-8 md:grid-cols-3">
@@ -240,7 +266,7 @@ export function LandingSections() {
               <p className="mt-1 text-sm text-foreground/80">Or ${TIERS[0].limits.annualCents / 100} a year, plus ${TIERS[0].limits.seatAnnualCents / 100} a year per extra seat: two months free.</p>
               <p className="mt-1 text-sm text-foreground/80">A team of 5 pays ${(PRICE_CENTS + 4 * SEAT_CENTS) / 100} a month.</p>
               <p className="mt-3 text-sm text-foreground/80">One-time onboarding: ${ONBOARDING_MIN_CENTS / 100} to ${ONBOARDING_MAX_CENTS / 100}, depending on how much we load for you.</p>
-              <a href="#demo-form" className={`mt-5 block rounded-lg px-5 py-3 text-center font-medium ${gradientBtn}`}>Book a demo to start your {TRIAL_DAYS}-day trial</a>
+              <Link href="/signup" className={`mt-5 block rounded-lg px-5 py-3 text-center font-medium ${gradientBtn}`}>Start your free {TRIAL_DAYS}-day trial</Link>
             </div>
             <ul className="grid gap-3" aria-label="What the plan includes">
               {PLAN_INCLUDES.map((v) => (
@@ -271,7 +297,8 @@ export function LandingSections() {
               Discover how AdFlo can help your organization simplify administrative work, streamline workflows and operate more efficiently.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href="#demo-form" className={`rounded-lg px-5 py-3 font-medium ${gradientBtn}`}>Schedule your AdFlo demo</a>
+              <Link href="/signup" className={`rounded-lg px-5 py-3 font-medium ${gradientBtn}`}>Start your free trial</Link>
+              <a href="#demo-form" className="rounded-lg border border-brand-blue/30 bg-white/70 px-5 py-3 font-medium text-foreground transition hover:bg-white">Schedule a demo</a>
               <Link href="/login" className="rounded-lg border border-brand-blue/30 bg-white/70 px-5 py-3 font-medium text-foreground transition hover:bg-white">Log in</Link>
             </div>
           </div>
