@@ -1,22 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { TIERS, FEATURE_KEYS, cleanFeatures, hasFeature } from "@/lib/control/tiers";
+import { TIERS, PRICE_CENTS, ANNUAL_PRICE_CENTS, FEATURE_KEYS, cleanFeatures, hasFeature } from "@/lib/control/tiers";
 import { parsePlanInput } from "@/lib/control/validation";
 
 describe("tiers", () => {
-  const by = Object.fromEntries(TIERS.map((t) => [t.name, t.features]));
-  it("offers two tiers, Core + being Core plus more", () => {
-    expect(TIERS.map((t) => t.name)).toEqual(["core", "core +"]);
-    expect(by["core +"]).toEqual(expect.arrayContaining([...by.core]));
+  const all = TIERS[0].features;
+  it("offers one plan, adflo, at $149 a month", () => {
+    expect(TIERS.map((t) => t.name)).toEqual(["adflo"]);
+    expect(TIERS[0].priceCents).toBe(14900);
+    expect(PRICE_CENTS).toBe(14900);
   });
-  it("keeps every module and the automations in Core", () => {
-    for (const k of ["invoices", "vendors", "forms", "licenses", "reporting_scheduled", "activity", "assistant_rules"] as const) expect(hasFeature(by.core, k)).toBe(true);
+  it("bills a year as ten months (two free)", () => {
+    expect(ANNUAL_PRICE_CENTS).toBe(PRICE_CENTS * 10);
   });
-  it("puts only the Claude assistant, OCR and priority support in Core +", () => {
-    for (const k of ["assistant_ai", "ocr", "priority_support"] as const) {
-      expect(hasFeature(by.core, k)).toBe(false);
-      expect(hasFeature(by["core +"], k)).toBe(true);
-    }
-    expect(by["core +"].length - by.core.length).toBe(3);
+  it("includes every feature, the assistant, OCR and priority support too", () => {
+    for (const k of FEATURE_KEYS) expect(all).toContain(k);
+    for (const k of ["assistant_ai", "ocr", "priority_support", "invoices", "vendors", "forms", "licenses"] as const) expect(hasFeature(all, k)).toBe(true);
   });
   it("treats a plan with no list as including everything", () => {
     expect(hasFeature(null, "ocr")).toBe(true);

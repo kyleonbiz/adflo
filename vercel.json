@@ -18,6 +18,10 @@
     {
       "path": "/api/maintenance/stray-accounts",
       "schedule": "27 4 * * *"
+    },
+    {
+      "path": "/api/maintenance/renewal-reminders",
+      "schedule": "7 13 * * *"
     }
   ]
 }

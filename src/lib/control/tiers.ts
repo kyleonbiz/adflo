@@ -1,5 +1,5 @@
 /**
- * What each plan includes. A plan's `features` is the list of keys below; an empty/absent list on a legacy plan
+ * What the plan includes. A plan's `features` is the list of keys below; an empty/absent list on a legacy plan
  * (such as "standard") means "everything", so existing clients lose nothing until they are moved onto a tier.
  */
 export const FEATURES = [
@@ -26,16 +26,15 @@ export const FEATURES = [
 export type FeatureKey = (typeof FEATURES)[number]["key"];
 export const FEATURE_KEYS: readonly string[] = FEATURES.map((f) => f.key);
 
-const CORE: FeatureKey[] = [
-  "documents", "contacts", "tasks", "setup", "licenses_basic", "vendors", "licenses", "forms", "invoices", "projects", "reporting",
-  "versioning", "assistant_rules", "reporting_scheduled", "certifications", "activity",
-];
-const AI: FeatureKey[] = [...CORE, "assistant_ai", "ocr", "priority_support"];
+/** Every feature: AdFlo is sold as one plan, so everything is included. */
+const ALL: FeatureKey[] = FEATURES.map((f) => f.key);
 
-/** The tiers offered, in order. Core is the whole platform run by hand with its automations; AI adds the Claude assistant and OCR. */
-export const TIERS: readonly { name: string; blurb: string; seatsIncluded: number; features: readonly FeatureKey[] }[] = [
-  { name: "core", blurb: "The whole platform with its automations: you enter and review, it reminds and schedules.", seatsIncluded: 10, features: CORE },
-  { name: "core +", blurb: "Everything in Core, plus the Claude-backed assistant, OCR of photos and priority support.", seatsIncluded: 25, features: AI },
+/** The one plan offered: $149 a month, everything included (Addy, OCR and priority support too), a 14-day trial and annual billing at two months free. */
+export const PRICE_CENTS = 14900;
+export const ANNUAL_PRICE_CENTS = 149000;
+export const TRIAL_DAYS = 14;
+export const TIERS: readonly { name: string; blurb: string; seatsIncluded: number; priceCents: number; features: readonly FeatureKey[] }[] = [
+  { name: "adflo", blurb: "The whole platform for one price: every module, the Addy assistant, OCR and priority support, for your whole team.", seatsIncluded: 50, priceCents: PRICE_CENTS, features: ALL },
 ];
 
 /** True when a plan with these features includes `key`. `null` (a legacy plan with no list) includes everything. */

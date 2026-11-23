@@ -7,7 +7,7 @@ export function Hero() {
         <h1 id="hero-title" className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
           The administrative management platform
         </h1>
-        <p className="mt-3 text-lg font-medium text-white sm:text-xl">Built for contractors and property managers. Ready for your industry.</p>
+        <p className="mt-3 text-lg font-medium text-white sm:text-xl">Never let a license, insurance policy or inspection lapse. Built for contractors and property managers.</p>
         <p className="mx-auto mt-4 max-w-2xl text-base text-white/90 sm:text-lg">
           It sits alongside your accounting, payroll and construction management software and handles the paperwork those systems don&apos;t specialize in: records, licenses, insurance, vendors, invoices and projects, with reminders so nothing slips. Start with your documents below.
         </p>

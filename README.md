@@ -88,7 +88,8 @@ staff data. Turn on TOTP under Supabase Authentication, Multi-Factor.
 * **Deleting a client**: the Owner can delete a client record (a test, or one made by mistake) from its page, by typing its name to confirm. It removes the record with its onboarding steps, sent agreements and reminder log; support tickets are kept, unlinked. The client's AdFlo workspace and its data are never touched, so a connected workspace must be disconnected first, and a client who accepted an agreement cannot be deleted (cancel them instead). The deletion is audit-logged.
 * **Clients**: status, plan, seats in use (counted by a database function that exposes only counts and last sign-in),
   price, and a detail page with the onboarding checklist.
-* **Plans & pricing**: the Owner sets plan prices and seats; only the Owner can give a client their own price.
+* **Plans & pricing**: AdFlo is sold as **one plan, $149 a month** ($1,490 a year, two months free; 14-day trial), with every feature included, the Claude assistant, OCR and priority support too (`src/lib/control/tiers.ts`, migration `20261123090000_single_plan.sql`, which retires the old `core` and `core +` plans and moves their clients onto it). The Owner can still edit plans and give a client their own price. Stripe checkout is not built yet.
+* **Renewal and deadline emails**: a daily job (`/api/maintenance/renewal-reminders`, 13:07 UTC) emails each workspace's owners and admins when a license reaches one of its reminder days and in a Monday roundup of anything overdue or due soon across licenses, vendor documents and equipment (`src/lib/reminders/digest.ts`). It respects Settings > Notifications (renewals), skips suspended clients, and needs `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` (or the SMTP mailbox). `?dry=1` counts without sending.
 * **Industries** (`/control/industries`): the Owner switches each industry open or closed to new sign-ups (saved in `live_industries`; at least one stays open). It drives the setup wizard, Settings profile, Addy and the paperwork picker; accounts already on an industry keep it. Without a database the page is a sample and the default (contractors) applies.
 * **Team**: the Owner adds people (who must already have an AdFlo account), changes roles, and turns access off. There is
   always at least one active Owner.
@@ -290,6 +291,7 @@ Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app 
 | `CRON_SECRET` | 16+ random characters, e.g. `openssl rand -hex 24`. Protects the cleanup and reindex routes. |
 | `SMTP_USER` / `SMTP_PASSWORD` | Server-only. A Workspace mailbox and its Google app password; the landing page "Book a demo" form sends requests through it. Without them the form answers that requests are not switched on. |
 | `DEMO_REQUEST_TO` / `DEMO_REQUEST_FROM` | Optional. Inbox that receives requests (default `sales@adflo.pro`) and the sender name. |
+| `RESEND_API_KEY`, `REMINDERS_FROM` | Optional. Sends the daily renewal and deadline emails through Resend (better deliverability than the Gmail mailbox). Without a key they fall back to `SMTP_USER` / `SMTP_PASSWORD`. `REMINDERS_FROM` defaults to `AdFlo <reminders@adflo.pro>`. |
 | `ANTHROPIC_API_KEY` | Optional, server only. Without it the assistant (Addy) answers with its built-in rules. Claude answers only for **Core +** workspaces. |
 | `ASSISTANT_MODEL` | Optional model override (default `claude-sonnet-5-5`). The system prompt and tool list are prompt-cached. |
 | `SMTP_USER`, `SMTP_PASSWORD` | Optional. A Google Workspace mailbox and its app password. Sends the landing page demo requests and, from the Control center, the welcome message and agreement link to new clients. |
@@ -864,7 +866,7 @@ Databases go last. Update this section in the same commit as the work.
 - [x] Addy answers plain requests by fixed rules first (open a form, what is left, help, to-dos, reminders, reports) at no cost; only open-ended questions go to the AI model
 - [x] Each model call logs token counts (never the conversation) as `[assistant] usage`, to size cost per account
 - [x] OCR for scanned PDFs (a PDF with no text layer now has its first 3 pages drawn and read like photos, wherever the text reader is turned on; the document index still skips OCR)
-- [ ] Sending email for vendor reminders and scheduled reports (needs a mail service)
+- [~] Sending email for vendor reminders and scheduled reports (renewal, vendor-document and equipment deadline emails now go out daily and on Mondays; scheduled report emails and vendor chasing emails are still to do)
 
 ### Audit Edit Revisions (from the 5 Nov demo audit)
 - [x] Invoices, licenses, vendors, contacts and projects are saved in this browser and survive leaving the page or a reload

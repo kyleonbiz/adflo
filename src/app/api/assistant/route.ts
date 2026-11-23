@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   // Without a key the page keeps using its built-in rules, so say so plainly instead of failing.
   if (!assistantConfigured()) return json({ ok: false, error: { code: "not_configured", message: "The AI model is not connected." } }, 501);
   // Core uses the built-in rules (the page treats 501 as "no AI model"); only Core + is answered by Claude.
-  if (!(await planIncludes("assistant_ai"))) return json({ ok: false, error: { code: "not_in_plan", message: "The Claude assistant is part of Core +." } }, 501);
+  if (!(await planIncludes("assistant_ai"))) return json({ ok: false, error: { code: "not_in_plan", message: "The Claude assistant is not included in this plan." } }, 501);
   try {
     const dms = await getDms();
     const rate = checkRate(dms.userId, { name: "assistant", max: 20, windowMs: 60_000 });

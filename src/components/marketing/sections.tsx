@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
+import { ANNUAL_PRICE_CENTS, PRICE_CENTS, TRIAL_DAYS } from "@/lib/control/tiers";
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
 const card = "rounded-2xl border border-white/80 bg-white/70 p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/40 hover:bg-white/85";
@@ -50,6 +51,14 @@ const ADDY_DOES = [
   { icon: CalendarDays, title: "Manages your calendar", text: "Sets reminders, adds due dates and renewals, and keeps events up to date. “Remind me to renew the permit in 3 days.”" },
   { icon: BarChart3, title: "Runs your reports", text: "“How are we doing?” Addy runs the report, explains the numbers and exports them to CSV or Excel." },
   { icon: Store, title: "Keeps records up to date", text: "Updates contacts, vendors and licenses as things change, and tells you what is left to do." },
+];
+
+const PLAN_INCLUDES = [
+  "Every module: documents, licenses and insurance, vendors, forms and signing, invoices, projects, equipment, calendar and reporting",
+  "Addy, the built-in assistant, and OCR for photos and scans of licenses and certificates",
+  "Renewal and deadline emails, so an expiring license reaches your inbox instead of waiting in the app",
+  "Your whole team, up to 50 people",
+  "Priority support and a set-up call to load your first records",
 ];
 
 const ADDY_NEVER = ["Delete anything", "Approve or pay", "Send or sign for you", "Finalize anything without your say-so"];
@@ -213,6 +222,34 @@ export function LandingSections() {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      <section id="pricing" className="scroll-mt-4 border-y border-brand-blue/10 bg-white/40" aria-labelledby="pricing-title">
+        <div className={`${container} py-14 sm:py-20`}>
+          <p className={eyebrow}>Pricing</p>
+          <h2 id="pricing-title" className={h2}>One plan. Everything included.</h2>
+          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr] lg:items-start">
+            <div className={card}>
+              <p className="text-sm font-medium text-muted-foreground">AdFlo</p>
+              <p className="mt-1 flex items-baseline gap-1.5">
+                <span className="text-5xl font-semibold tracking-tight text-foreground">${PRICE_CENTS / 100}</span>
+                <span className="text-muted-foreground">per month</span>
+              </p>
+              <p className="mt-2 text-sm text-foreground/80">Or ${(ANNUAL_PRICE_CENTS / 100).toLocaleString("en-US")} a year: two months free.</p>
+              <a href="#demo-form" className={`mt-5 block rounded-lg px-5 py-3 text-center font-medium ${gradientBtn}`}>Book a demo to start your {TRIAL_DAYS}-day trial</a>
+            </div>
+            <ul className="grid gap-3" aria-label="What the plan includes">
+              {PLAN_INCLUDES.map((v) => (
+                <li key={v} className="flex gap-3 rounded-xl border border-white/80 bg-white/70 p-4 text-foreground/85 shadow-sm">
+                  <Check className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{v}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
+            AdFlo is the administrative layer that sits alongside your accounting, payroll and construction or property management software. It does not replace them, so it does not price like them.
+          </p>
         </div>
       </section>
 

@@ -28,6 +28,16 @@ test.describe("Landing page and the app", () => {
     }
   });
 
+  test("the landing page shows the one plan and its price", async ({ page }) => {
+    await page.goto("/");
+    const pricing = page.locator("#pricing");
+    await expect(pricing.getByRole("heading", { name: "One plan. Everything included." })).toBeVisible();
+    await expect(pricing).toContainText("$149");
+    await expect(pricing).toContainText("$1,490 a year");
+    await pricing.getByRole("link", { name: /Book a demo to start your 14-day trial/ }).click();
+    await expect(page.getByRole("form", { name: "Request a demo" })).toBeVisible();
+  });
+
   test("the demo request form sends to the server and confirms on the page", async ({ page }) => {
     let posted: Record<string, string> | null = null;
     await page.route("**/api/demo-request", async (route) => {

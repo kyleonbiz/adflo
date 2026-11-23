@@ -16,14 +16,17 @@ import { TIERS } from "@/lib/control/tiers";
 beforeEach(() => { m.env = true; m.user = { id: "u1" }; m.member = { workspaceId: "w1" }; m.features = null; m.throws = false; });
 
 describe("planIncludes", () => {
-  it("refuses OCR and the Claude assistant on Core, allows them on Core +", async () => {
+  it("allows OCR and the Claude assistant on the AdFlo plan", async () => {
     m.features = [...TIERS[0].features];
+    expect(await planIncludes("ocr")).toBe(true);
+    expect(await planIncludes("assistant_ai")).toBe(true);
+    expect(await planIncludes("invoices")).toBe(true);
+  });
+  it("still refuses a feature a custom plan leaves out", async () => {
+    m.features = ["documents", "invoices"];
     expect(await planIncludes("ocr")).toBe(false);
     expect(await planIncludes("assistant_ai")).toBe(false);
     expect(await planIncludes("invoices")).toBe(true);
-    m.features = [...TIERS[1].features];
-    expect(await planIncludes("ocr")).toBe(true);
-    expect(await planIncludes("assistant_ai")).toBe(true);
   });
   it("allows everything whenever it cannot tell", async () => {
     m.features = null; expect(await planIncludes("ocr")).toBe(true);      // legacy plan
