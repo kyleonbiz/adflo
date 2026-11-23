@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatMoney, type Plan } from "@/lib/control/types";
 import { FEATURES, TIERS } from "@/lib/control/tiers";
+import { PlanLimitsTable } from "@/components/plan-limits";
 
 /** Plans and what they cost. Only the Owner can change them; everyone else sees the list. */
 export function PlansPage({ plans, canEdit, sample }: { plans: Plan[]; canEdit: boolean; sample?: boolean }) {
@@ -50,6 +51,13 @@ export function PlansPage({ plans, canEdit, sample }: { plans: Plan[]; canEdit: 
         </table>
       </div>
       {message && <p role="alert" className="text-sm text-destructive">{message}</p>}
+      <div className="space-y-3">
+        <div>
+          <h2 className="font-semibold">Plan limits</h2>
+          <p className="text-sm text-muted-foreground">What the one plan offers, as shown to customers. Core, Core + and Enterprise are retired.</p>
+        </div>
+        <PlanLimitsTable />
+      </div>
       <div className="space-y-3">
         <div>
           <h2 className="font-semibold">What each plan includes</h2>

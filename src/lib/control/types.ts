@@ -31,6 +31,8 @@ export interface ClientRecord {
   /** Filled from the usage function; null in the preview or when the client has no workspace yet. */
   seatsUsed: number | null;
   lastActive: string | null;
+  /** This month's usage, from the usage function; null in the preview or when the client has no workspace. */
+  usage?: import("./usage").Usage | null;
   /** Onboarding steps that are done. */
   checklist: string[];
   /** Agreements sent to this client that nobody has accepted yet. */

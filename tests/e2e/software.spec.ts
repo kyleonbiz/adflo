@@ -32,8 +32,9 @@ test.describe("Landing page and the app", () => {
     await page.goto("/");
     const pricing = page.locator("#pricing");
     await expect(pricing.getByRole("heading", { name: "One plan. Everything included." })).toBeVisible();
-    await expect(pricing).toContainText("$149");
-    await expect(pricing).toContainText("$1,490 a year");
+    await expect(pricing).toContainText("$65");
+    await expect(pricing).toContainText("$10 a month each");
+    await expect(pricing).toContainText("$650 a year");
     await pricing.getByRole("link", { name: /Book a demo to start your 14-day trial/ }).click();
     await expect(page.getByRole("form", { name: "Request a demo" })).toBeVisible();
   });

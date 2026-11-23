@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
-import { ANNUAL_PRICE_CENTS, PRICE_CENTS, TRIAL_DAYS } from "@/lib/control/tiers";
+import { PRICE_CENTS, SEAT_CENTS, TIERS, TRIAL_DAYS } from "@/lib/control/tiers";
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
 const card = "rounded-2xl border border-white/80 bg-white/70 p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/40 hover:bg-white/85";
@@ -57,7 +57,7 @@ const PLAN_INCLUDES = [
   "Every module: documents, licenses and insurance, vendors, forms and signing, invoices, projects, equipment, calendar and reporting",
   "Addy, the built-in assistant, and OCR for photos and scans of licenses and certificates",
   "Renewal and deadline emails, so an expiring license reaches your inbox instead of waiting in the app",
-  "Your whole team, up to 50 people",
+  "Your whole team: every extra seat is the same $10 a month, with no tiers to climb",
   "Priority support and a set-up call to load your first records",
 ];
 
@@ -236,7 +236,8 @@ export function LandingSections() {
                 <span className="text-5xl font-semibold tracking-tight text-foreground">${PRICE_CENTS / 100}</span>
                 <span className="text-muted-foreground">per month</span>
               </p>
-              <p className="mt-2 text-sm text-foreground/80">Or ${(ANNUAL_PRICE_CENTS / 100).toLocaleString("en-US")} a year: two months free.</p>
+              <p className="mt-2 text-sm font-medium text-foreground">Includes your seat. Add teammates for ${SEAT_CENTS / 100} a month each.</p>
+              <p className="mt-1 text-sm text-foreground/80">Or ${TIERS[0].limits.annualCents / 100} a year, plus ${TIERS[0].limits.seatAnnualCents / 100} a year per extra seat: two months free.</p>
               <a href="#demo-form" className={`mt-5 block rounded-lg px-5 py-3 text-center font-medium ${gradientBtn}`}>Book a demo to start your {TRIAL_DAYS}-day trial</a>
             </div>
             <ul className="grid gap-3" aria-label="What the plan includes">

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import type { ClientRecord, Plan, UnlinkedWorkspace } from "@/lib/control/types";
 import { ClientTiles } from "./client-billing";
+import { ClientUsage } from "./client-usage";
 import { WorkspaceCard } from "./workspace-card";
 import { OnboardingGuide } from "./onboarding-guide";
 import { ClientDialog } from "./clients-page";
@@ -36,6 +37,8 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
       <nav aria-label="On this page" className="flex flex-wrap gap-2">
         {SECTIONS.map(([id, label]) => <a key={id} href={`#${id}`} className="h-8 rounded-full border bg-card px-3 text-xs font-medium leading-8 text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">{label}</a>)}
       </nav>
+
+      <ClientUsage client={client} />
 
       <div id="account" className="scroll-mt-4"><WorkspaceCard client={client} plans={plans} unlinked={unlinked} canEdit={canEdit} isOwner={isOwner} onEdit={() => setEditing(true)} /></div>
 

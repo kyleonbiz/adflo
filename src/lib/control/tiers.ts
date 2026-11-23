@@ -1,5 +1,5 @@
 /**
- * What the plan includes. A plan's `features` is the list of keys below; an empty/absent list on a legacy plan
+ * What each plan includes. A plan's `features` is the list of keys below; an empty/absent list on a legacy plan
  * (such as "standard") means "everything", so existing clients lose nothing until they are moved onto a tier.
  */
 export const FEATURES = [
@@ -26,16 +26,59 @@ export const FEATURES = [
 export type FeatureKey = (typeof FEATURES)[number]["key"];
 export const FEATURE_KEYS: readonly string[] = FEATURES.map((f) => f.key);
 
-/** Every feature: AdFlo is sold as one plan, so everything is included. */
-const ALL: FeatureKey[] = FEATURES.map((f) => f.key);
-
-/** The one plan offered: $149 a month, everything included (Addy, OCR and priority support too), a 14-day trial and annual billing at two months free. */
-export const PRICE_CENTS = 14900;
-export const ANNUAL_PRICE_CENTS = 149000;
-export const TRIAL_DAYS = 14;
-export const TIERS: readonly { name: string; blurb: string; seatsIncluded: number; priceCents: number; features: readonly FeatureKey[] }[] = [
-  { name: "adflo", blurb: "The whole platform for one price: every module, the Addy assistant, OCR and priority support, for your whole team.", seatsIncluded: 50, priceCents: PRICE_CENTS, features: ALL },
+export const CORE: FeatureKey[] = [
+  "documents", "contacts", "tasks", "setup", "licenses_basic", "vendors", "licenses", "forms", "invoices", "projects", "reporting",
+  "versioning", "assistant_rules", "reporting_scheduled", "certifications", "activity",
 ];
+const AI: FeatureKey[] = [...CORE, "assistant_ai", "ocr", "priority_support"];
+
+/** What the plan includes, in numbers. Single source for the landing page, app and Control center. */
+export interface PlanLimits {
+  /** Monthly platform price in cents (includes the owner's seat). */
+  priceCents: number;
+  /** Each additional seat, per month, in cents. */
+  seatCents: number;
+  /** Annual platform price in cents (two months free). */
+  annualCents: number;
+  /** Each additional seat, per year, in cents (two months free). */
+  seatAnnualCents: number;
+  /** Seats included in the platform price. */
+  seats: number;
+  storageGb: number;
+  maxFileMb: number;
+  /** Claude (approval-based) actions per month. */
+  aiActions: number;
+  ocrPerMonth: number;
+  /** Rough input+output token backstop per month. */
+  tokenBackstop: number | null;
+}
+
+export const TRIAL_DAYS = 14;
+/** Add-ons. An extra seat is the same $10 the plan charges per seat. Prices in cents. */
+export const ADD_ONS = [
+  { label: "Extra seat", priceCents: 1000, per: "seat" },
+  { label: "Extra 10 GB of storage", priceCents: 1000, per: "10 GB" },
+  { label: "Extra 250 Claude actions", priceCents: 1500, per: "250 actions" },
+] as const;
+
+/** The one plan: $65 a month with the owner's seat, plus $10 a month for each additional seat. Everything is included. */
+export const PRICE_CENTS = 6500;
+export const SEAT_CENTS = 1000;
+export const TIERS: readonly { name: string; label: string; audience: string; blurb: string; seatsIncluded: number; features: readonly FeatureKey[]; limits: PlanLimits; support: string }[] = [
+  {
+    name: "adflo", label: "AdFlo", seatsIncluded: 1, features: AI,
+    audience: "Contractors and property managers, from a one-person shop to a multi-crew team",
+    blurb: "The whole administrative platform for one price: every module, the Claude-backed assistant, OCR and priority support.",
+    support: "Priority support",
+    limits: { priceCents: PRICE_CENTS, seatCents: SEAT_CENTS, annualCents: PRICE_CENTS * 10, seatAnnualCents: SEAT_CENTS * 10, seats: 1, storageGb: 20, maxFileMb: 50, aiActions: 250, ocrPerMonth: 200, tokenBackstop: 3_000_000 },
+  },
+];
+
+/** What a team of this size pays each month: the platform price plus each seat after the first. */
+export const monthlyCents = (seats: number): number => PRICE_CENTS + Math.max(0, Math.floor(seats) - 1) * SEAT_CENTS;
+
+/** The limits for a plan name (case-insensitive), or null for a retired or legacy plan. */
+export const limitsFor = (plan: string): PlanLimits | null => TIERS.find((t) => t.name === plan.trim().toLowerCase())?.limits ?? null;
 
 /** True when a plan with these features includes `key`. `null` (a legacy plan with no list) includes everything. */
 export const hasFeature = (features: readonly string[] | null | undefined, key: FeatureKey) =>

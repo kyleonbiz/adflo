@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowUsage, recordUsage } from "@/lib/control/usage-server";
 import { planIncludes } from "@/lib/control/plan-server";
 import { isOcrFile } from "@/lib/dms/extract/ocr";
 import { canExtract, extractText } from "@/lib/dms/extract";
@@ -34,12 +35,18 @@ export function POST(req: Request) {
       if (!canExtract(upload.name, true)) {
         throw new DmsError("validation", "That file type can't be read. Upload a photo or scan (PNG, JPG), a PDF, Word, text or CSV file, or enter the details by hand.");
       }
-      // Reading photos and scans (OCR) is part of Core +; other files are read on every plan.
+      // Reading photos and scans (OCR) needs a plan that includes it; other files are read on every plan.
       const ocr = await planIncludes("ocr");
       if (!ocr && isOcrFile(upload.name)) {
-        throw new DmsError("forbidden", "Reading photos and scans is part of Core +. Upload a PDF, Word, text or CSV file, or enter the details by hand.");
+        throw new DmsError("forbidden", "Reading photos and scans is not included in this plan. Upload a PDF, Word, text or CSV file, or enter the details by hand.");
+      }
+      const reading = ocr && isOcrFile(upload.name);
+      if (reading) {
+        const allowed = await allowUsage("ocr");
+        if (!allowed.ok) throw new DmsError("forbidden", allowed.message);
       }
       const result = await extractText({ bytes: new Uint8Array(await upload.arrayBuffer()), fileName: upload.name, mimeType: upload.type, ocr });
+      if (reading) await recordUsage({ ocrReads: 1 });
       if (result.status !== "indexed") {
         throw new DmsError("validation", (result.reason && REASON_LABELS[result.reason]) || "That file could not be read.");
       }

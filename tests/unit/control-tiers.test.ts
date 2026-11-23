@@ -1,20 +1,40 @@
 import { describe, expect, it } from "vitest";
-import { TIERS, PRICE_CENTS, ANNUAL_PRICE_CENTS, FEATURE_KEYS, cleanFeatures, hasFeature } from "@/lib/control/tiers";
+import { TIERS, CORE, FEATURE_KEYS, cleanFeatures, hasFeature, limitsFor, ADD_ONS, PRICE_CENTS, SEAT_CENTS, monthlyCents } from "@/lib/control/tiers";
 import { parsePlanInput } from "@/lib/control/validation";
 
 describe("tiers", () => {
   const all = TIERS[0].features;
-  it("offers one plan, adflo, at $149 a month", () => {
+  it("offers one plan, adflo", () => {
     expect(TIERS.map((t) => t.name)).toEqual(["adflo"]);
-    expect(TIERS[0].priceCents).toBe(14900);
-    expect(PRICE_CENTS).toBe(14900);
+    expect(limitsFor("AdFlo")).not.toBeNull();
+    expect(limitsFor("core +")).toBeNull();
+    expect(limitsFor("enterprise")).toBeNull();
   });
-  it("bills a year as ten months (two free)", () => {
-    expect(ANNUAL_PRICE_CENTS).toBe(PRICE_CENTS * 10);
+  it("prices it at $65 a month with the owner's seat, plus $10 a month per extra seat", () => {
+    expect(PRICE_CENTS).toBe(6500);
+    expect(SEAT_CENTS).toBe(1000);
+    expect(TIERS[0].seatsIncluded).toBe(1);
+    expect(limitsFor("adflo")).toMatchObject({ priceCents: 6500, seatCents: 1000, seats: 1, storageGb: 20, maxFileMb: 50, aiActions: 250, ocrPerMonth: 200, tokenBackstop: 3_000_000 });
+  });
+  it("charges the platform price for one seat and $10 for each seat after", () => {
+    expect(monthlyCents(1)).toBe(6500);
+    expect(monthlyCents(5)).toBe(10500);
+    expect(monthlyCents(0)).toBe(6500);
+    expect(monthlyCents(2.9)).toBe(7500);
+  });
+  it("bills a year as ten months (two free), seats included", () => {
+    expect(limitsFor("adflo")).toMatchObject({ annualCents: 65000, seatAnnualCents: 10000 });
+  });
+  it("keeps the extra-seat add-on at the plan's seat price", () => {
+    expect(ADD_ONS[0].priceCents).toBe(SEAT_CENTS);
+    expect(ADD_ONS.map((a) => a.priceCents)).toEqual([1000, 1000, 1500]);
   });
   it("includes every feature, the assistant, OCR and priority support too", () => {
     for (const k of FEATURE_KEYS) expect(all).toContain(k);
     for (const k of ["assistant_ai", "ocr", "priority_support", "invoices", "vendors", "forms", "licenses"] as const) expect(hasFeature(all, k)).toBe(true);
+  });
+  it("leaves the Claude assistant, OCR and priority support out of the retired Core list", () => {
+    for (const k of ["assistant_ai", "ocr", "priority_support"] as const) expect(hasFeature(CORE, k)).toBe(false);
   });
   it("treats a plan with no list as including everything", () => {
     expect(hasFeature(null, "ocr")).toBe(true);
@@ -33,7 +53,7 @@ import { itemAllowed, pathAllowed } from "@/lib/control/gating";
 
 describe("gating", () => {
   const core = TIERS[0].features as string[];
-  it("lets Core use every page", () => {
+  it("lets the AdFlo plan use every page", () => {
     for (const p of ["/app", "/app/invoices", "/app/vendors/x", "/app/activity", "/app/assistant", "/app/reporting"]) expect(pathAllowed(core, p)).toBe(true);
   });
   it("hides a page a custom plan leaves out", () => {
