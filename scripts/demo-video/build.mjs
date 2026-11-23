@@ -3,7 +3,7 @@
 //   out/final/adflo-tour.mp4  every module in one video
 // Needs ffmpeg and the Inter font. Run record.mjs first.   node scripts/demo-video/build.mjs [ids...]
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
@@ -13,6 +13,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const OUT = join(HERE, "out");
 const FINAL = join(OUT, "final");
 const WORK = join(OUT, "work");
+const CACHE = join(OUT, "cache"); // encoded footage, reused until the recording or this script changes
 const LOGO = join(HERE, "../../public/logo-wordmark-light.png");
 GlobalFonts.registerFromPath("/usr/share/fonts/opentype/inter/Inter-Bold.otf", "InterB");
 GlobalFonts.registerFromPath("/usr/share/fonts/opentype/inter/Inter-Medium.otf", "InterM");
@@ -24,6 +25,7 @@ const wanted = process.argv.slice(2);
 rmSync(WORK, { recursive: true, force: true });
 mkdirSync(FINAL, { recursive: true });
 mkdirSync(WORK, { recursive: true });
+mkdirSync(CACHE, { recursive: true });
 
 const ff = (args) => {
   const r = spawnSync("ffmpeg", ["-v", "error", "-y", ...args], { encoding: "utf8" });
@@ -65,8 +67,9 @@ function captionPng(file, n, total, title, body) {
 
 /** Footage with a caption panel for each step, fading in and out. Cached so the clip and the tour share it. */
 function footage(id) {
-  const out = join(WORK, `${id}-main.mp4`);
-  if (existsSync(out)) return out;
+  const out = join(CACHE, `${id}-main.mp4`);
+  const fresh = (f) => existsSync(f) && statSync(f).mtimeMs > Math.max(statSync(join(OUT, `${id}.webm`)).mtimeMs, statSync(join(OUT, `${id}.json`)).mtimeMs, statSync(fileURLToPath(import.meta.url)).mtimeMs);
+  if (fresh(out)) return out;
   const meta = JSON.parse(readFileSync(join(OUT, `${id}.json`), "utf8"));
   const src = join(OUT, `${id}.webm`);
   const total = dur(src);

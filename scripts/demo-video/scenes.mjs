@@ -162,9 +162,9 @@ export const MODULES = [
       await page.getByRole("tab", { name: "Licenses & Renewals" }).first().click({ timeout: 4000 }).catch(() => {});
       await wait(2500);
       await step("Licenses by status and type", "See what is active or expiring, how licenses split by type, and every record with its expiry date.");
-      await page.getByRole("tab", { name: "Invoices" }).first().click({ timeout: 4000 }).catch(() => {});
-      await wait(1500);
       await step("Invoices by status and client", "Outstanding, overdue and paid amounts, broken down by status and by client.");
+      await page.getByRole("tab", { name: "Invoices" }).first().click({ timeout: 4000 }).catch(() => {});
+      await wait(800);
       await wait(500);
     },
   },
