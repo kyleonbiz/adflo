@@ -99,7 +99,7 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
   return (
     <div className="space-y-5">
       {notice && (
-        <p role="status" className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm shadow-panel">
+        <p role="status" aria-live="polite" className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm shadow-panel">
           <span className="min-w-0 flex-1 truncate">{notice.text}</span>
           {notice.undo && <Button type="button" size="sm" variant="outline" onClick={notice.undo}>Undo</Button>}
           <Button type="button" size="icon-sm" variant="ghost" aria-label="Dismiss" onClick={() => setNotice(null)}><X /></Button>
