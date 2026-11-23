@@ -30,7 +30,7 @@ export function DemoRequestForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-2xl border border-white/80 bg-white/70 p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] backdrop-blur-md sm:p-6" aria-label="Request a demo">
+    <form onSubmit={onSubmit} className="rounded-xl border bg-white p-5 shadow-sm sm:p-6" aria-label="Request a demo">
       <h3 className="text-lg font-semibold text-foreground">Book a demo</h3>
       <input name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -53,7 +53,7 @@ export function DemoRequestForm() {
           <textarea name="message" rows={3} className={field} />
         </label>
       </div>
-      <button type="submit" disabled={status === "sending"} className="mt-5 w-full rounded-lg bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-3 font-medium text-white shadow-lg shadow-brand-purple/30 transition hover:brightness-110 disabled:opacity-60">
+      <button type="submit" disabled={status === "sending"} className="mt-5 w-full rounded-lg bg-primary px-5 py-3 font-medium text-white shadow-sm transition-colors hover:bg-[#1757c2] disabled:opacity-60">
         {status === "sending" ? "Sending…" : "Schedule your AdFlo demo"}
       </button>
       <p role="status" className={status === "error" ? "mt-3 text-xs text-red-600" : "mt-3 text-xs text-muted-foreground"}>

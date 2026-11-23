@@ -7,11 +7,11 @@ export function AuthCard({ title, subtitle, children }: { title: string; subtitl
       <AuthBackdrop />
       <div className="auth-enter flex flex-col items-center">
         <Brand wordmark light className="w-52 sm:w-60" />
-        <p className="mb-8 mt-3 text-center text-[0.65rem] font-medium uppercase tracking-[0.35em] text-white/60 sm:text-xs sm:tracking-[0.4em]">
+        <p className="mb-8 mt-3 text-center text-sm text-white/60">
           Work smarter. Get more done.
         </p>
       </div>
-      <main className="auth-panel auth-enter-card w-full max-w-lg p-6 sm:p-10">
+      <main className="auth-panel auth-enter-card w-full max-w-md p-6 sm:p-8">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
         <p className="mb-6 mt-1 text-sm text-muted-foreground">{subtitle}</p>
         {children}

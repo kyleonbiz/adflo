@@ -9,9 +9,9 @@ import { ONBOARDING_MAX_CENTS, ONBOARDING_MIN_CENTS, PRICE_CENTS, SEAT_CENTS, TI
 import { TRIAL_DAYS } from "@/lib/billing/trial";
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
-const card = "rounded-2xl border border-white/80 bg-white/70 p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/40 hover:bg-white/85";
-const eyebrow = "text-sm font-semibold text-brand-indigo"
-const gradientBtn = "bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-lg shadow-brand-purple/30 transition hover:brightness-110";
+const card = "rounded-xl border bg-white p-5 shadow-sm transition-colors duration-150 hover:border-brand-blue/40";
+const eyebrow = "text-sm font-semibold text-primary"
+const primaryBtn = "bg-primary text-white shadow-sm transition-colors hover:bg-[#1757c2]";
 const h2 = "mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl";
 
 const USE_CASES = [
@@ -108,16 +108,16 @@ export function LandingSections() {
             <div key={u.title} className={card}>
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold">{u.title}</h3>
-                <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-medium text-brand-indigo">{u.tag}</span>
+                <span className="rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground">{u.tag}</span>
               </div>
               <ul className="mt-3 grid gap-2 text-sm text-foreground/85 sm:grid-cols-2">
-                {u.items.map((i) => <li key={i} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{i}</li>)}
+                {u.items.map((i) => <li key={i} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />{i}</li>)}
               </ul>
             </div>
           ))}
         </div>
         <p className="mt-4 text-sm text-foreground/70">AdFlo is the administrative layer alongside your accounting, payroll and project software. It does not replace them.</p>
-        <Link href="/signup" className={`mt-5 inline-block rounded-lg px-5 py-3 font-medium ${gradientBtn}`}>Start your free trial</Link>
+        <Link href="/signup" className={`mt-5 inline-block rounded-lg px-5 py-3 font-medium ${primaryBtn}`}>Start your free trial</Link>
       </section>
 
       <section id="platform" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="problem-title">
@@ -127,11 +127,11 @@ export function LandingSections() {
             <h2 id="problem-title" className={h2}>Running a business shouldn’t mean managing endless administrative work.</h2>
             <ul className="mt-6 space-y-3 text-foreground/80">
               {PROBLEMS.map((p) => (
-                <li key={p} className="flex gap-3"><AlertTriangle className="mt-1 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{p}</li>
+                <li key={p} className="flex gap-3"><AlertTriangle className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />{p}</li>
               ))}
             </ul>
           </div>
-          <div className={`${card} bg-gradient-to-br from-brand-sky/15 to-brand-purple/15 p-7`}>
+          <div className={`${card} bg-muted p-7`}>
             <p className={eyebrow}>The answer</p>
             <h3 className="mt-2 text-2xl font-semibold tracking-tight">One platform. Better-controlled operations.</h3>
             <p className="mt-3 text-foreground/80">
@@ -151,13 +151,13 @@ export function LandingSections() {
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {CAPABILITIES.map(({ icon: Icon, name, best, time, money, flow }) => (
             <li key={name} className={card}>
-              <span className="flex size-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue"><Icon className="size-5" aria-hidden="true" /></span>
+              <span className="flex size-10 items-center justify-center text-primary"><Icon className="size-5" aria-hidden="true" /></span>
               <h3 className="mt-3 font-semibold">{name}</h3>
-              <p className="mt-1 text-sm text-foreground/85"><span className="font-medium text-brand-indigo">Best for:</span> {best}</p>
+              <p className="mt-1 text-sm text-foreground/85"><span className="font-medium text-primary">Best for:</span> {best}</p>
               <dl className="mt-3 space-y-2 border-t border-brand-blue/10 pt-3 text-sm text-muted-foreground">
                 {[{ Ic: Clock, label: "Saves time", v: time }, { Ic: PiggyBank, label: "Saves money", v: money }, { Ic: Workflow, label: "Smoother workflow", v: flow }].map(({ Ic, label, v }) => (
                   <div key={label} className="flex gap-2.5">
-                    <Ic className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />
+                    <Ic className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                     <div><dt className="font-medium text-foreground">{label}</dt><dd>{v}</dd></div>
                   </div>
                 ))}
@@ -174,17 +174,17 @@ export function LandingSections() {
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {ADDY_DOES.map(({ icon: Icon, title, text }) => (
             <li key={title} className={card}>
-              <span className="flex size-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue"><Icon className="size-5" aria-hidden="true" /></span>
+              <span className="flex size-10 items-center justify-center text-primary"><Icon className="size-5" aria-hidden="true" /></span>
               <h3 className="mt-3 font-semibold">{title}</h3>
               <p className="mt-1 text-sm text-muted-foreground">{text}</p>
             </li>
           ))}
-          <li className={`${card} bg-gradient-to-br from-brand-sky/15 to-brand-purple/15`}>
-            <span className="flex size-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue"><Eye className="size-5" aria-hidden="true" /></span>
+          <li className={`${card} bg-muted`}>
+            <span className="flex size-10 items-center justify-center text-primary"><Eye className="size-5" aria-hidden="true" /></span>
             <h3 className="mt-3 font-semibold">You stay in control</h3>
             <p className="mt-1 text-sm text-muted-foreground">Addy will never:</p>
             <ul className="mt-2 space-y-1 text-sm text-foreground/80">
-              {ADDY_NEVER.map((n) => <li key={n} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{n}</li>)}
+              {ADDY_NEVER.map((n) => <li key={n} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />{n}</li>)}
             </ul>
           </li>
         </ul>
@@ -199,8 +199,8 @@ export function LandingSections() {
             {APPROACH.map(({ icon: Icon, step, text }, i) => (
               <li key={step} className={card}>
                 <div className="flex items-center gap-3">
-                  <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-blue to-brand-violet text-sm font-semibold text-white">{i + 1}</span>
-                  <Icon className="size-5 text-brand-purple" aria-hidden="true" />
+                  <span className="flex size-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-white">{i + 1}</span>
+                  <Icon className="size-5 text-primary" aria-hidden="true" />
                 </div>
                 <h3 className="mt-3 text-sm font-semibold uppercase tracking-wider">{step}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{text}</p>
@@ -216,7 +216,7 @@ export function LandingSections() {
         <ol className="mt-8 grid gap-8 md:grid-cols-3">
           {HOW.map((s) => (
             <li key={s.n} className="flex gap-4">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-brand-violet/60 bg-brand-purple/20 text-sm font-semibold text-brand-indigo">{s.n}</span>
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/40 text-sm font-semibold text-primary">{s.n}</span>
               <div><h3 className="font-semibold">{s.title}</h3><p className="mt-1 text-sm text-muted-foreground">{s.text}</p></div>
             </li>
           ))}
@@ -232,7 +232,7 @@ export function LandingSections() {
           </div>
           <ul className="flex flex-wrap content-start gap-2.5" aria-label="Who AdFlo is for">
             {AUDIENCE.map((a) => (
-              <li key={a} className="rounded-full border border-white/80 bg-white/70 px-4 py-2 text-sm text-foreground shadow-sm">{a}</li>
+              <li key={a} className="rounded-md border bg-white px-3 py-1.5 text-sm text-foreground">{a}</li>
             ))}
           </ul>
         </div>
@@ -245,7 +245,7 @@ export function LandingSections() {
           <ul className="mt-8 grid gap-3 sm:grid-cols-2">
             {VALUE.map((v) => (
               <li key={v} className="flex gap-3 rounded-xl border border-white/80 bg-white/70 p-4 text-foreground/85 shadow-sm">
-                <Check className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{v}
+                <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />{v}
               </li>
             ))}
           </ul>
@@ -267,12 +267,12 @@ export function LandingSections() {
               <p className="mt-1 text-sm text-foreground/80">Or ${TIERS[0].limits.annualCents / 100} a year, plus ${TIERS[0].limits.seatAnnualCents / 100} a year per extra seat: two months free.</p>
               <p className="mt-1 text-sm text-foreground/80">A team of 5 pays ${(PRICE_CENTS + 4 * SEAT_CENTS) / 100} a month.</p>
               <p className="mt-3 text-sm text-foreground/80">One-time onboarding: ${ONBOARDING_MIN_CENTS / 100} to ${ONBOARDING_MAX_CENTS / 100}, depending on how much we load for you.</p>
-              <Link href="/signup" className={`mt-5 block rounded-lg px-5 py-3 text-center font-medium ${gradientBtn}`}>Start your free {TRIAL_DAYS}-day trial</Link>
+              <Link href="/signup" className={`mt-5 block rounded-lg px-5 py-3 text-center font-medium ${primaryBtn}`}>Start your free {TRIAL_DAYS}-day trial</Link>
             </div>
             <ul className="grid gap-3" aria-label="What the plan includes">
               {PLAN_INCLUDES.map((v) => (
                 <li key={v} className="flex gap-3 rounded-xl border border-white/80 bg-white/70 p-4 text-foreground/85 shadow-sm">
-                  <Check className="mt-0.5 size-4 shrink-0 text-brand-purple" aria-hidden="true" />{v}
+                  <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />{v}
                 </li>
               ))}
             </ul>
@@ -298,7 +298,7 @@ export function LandingSections() {
               Discover how AdFlo can help your organization simplify administrative work, streamline workflows and operate more efficiently.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/signup" className={`rounded-lg px-5 py-3 font-medium ${gradientBtn}`}>Start your free trial</Link>
+              <Link href="/signup" className={`rounded-lg px-5 py-3 font-medium ${primaryBtn}`}>Start your free trial</Link>
               <a href="#demo-form" className="rounded-lg border border-brand-blue/30 bg-white/70 px-5 py-3 font-medium text-foreground transition hover:bg-white">Schedule a demo</a>
               <Link href="/login" className="rounded-lg border border-brand-blue/30 bg-white/70 px-5 py-3 font-medium text-foreground transition hover:bg-white">Log in</Link>
             </div>

@@ -8,7 +8,7 @@ import {
 type Who = "me" | "team";
 
 const field = "mt-1.5 w-full rounded-lg border border-input bg-white/80 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring";
-const gradientBtn = "bg-gradient-to-r from-brand-blue to-brand-purple text-white shadow-lg shadow-brand-purple/30 transition hover:brightness-110";
+const primaryBtn = "bg-primary text-white shadow-sm transition-colors hover:bg-[#1757c2]";
 
 const COPY: Record<Who, { hours: string; hoursHint: string; rate: string; rateHint: string }> = {
   me: {
@@ -46,14 +46,14 @@ export function AdminCostCalculator() {
   return (
     <section id="admin-cost" className="scroll-mt-4 border-y border-brand-blue/10 bg-white/40" aria-labelledby="admin-cost-title">
       <div className="mx-auto w-full max-w-6xl px-5 py-14 sm:px-8 sm:py-20">
-        <p className="text-sm font-medium text-brand-indigo">Admin cost calculator</p>
+        <p className="text-sm font-medium text-primary">Admin cost calculator</p>
         <h2 id="admin-cost-title" className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">How much time are you losing to admin work?</h2>
         <p className="mt-3 max-w-2xl text-muted-foreground">
           Every hour spent on paperwork is an hour not spent winning work, serving customers or growing the business. Put in your own numbers to see what that adds up to.
         </p>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          <form className="rounded-2xl border border-white/80 bg-white/70 p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] backdrop-blur-md sm:p-6" aria-label="Admin cost inputs" onSubmit={(e) => e.preventDefault()}>
+          <form className="rounded-xl border bg-white p-5 shadow-sm sm:p-6" aria-label="Admin cost inputs" onSubmit={(e) => e.preventDefault()}>
             <fieldset>
               <legend className="text-sm font-medium text-foreground">Whose time is it?</legend>
               <div className="mt-2 grid grid-cols-2 gap-2">
@@ -105,12 +105,12 @@ export function AdminCostCalculator() {
             </div>
           </form>
 
-          <div className="flex flex-col rounded-2xl border border-white/80 bg-gradient-to-br from-brand-sky/20 to-brand-purple/20 p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] sm:p-7" aria-live="polite" data-testid="admin-cost-result">
+          <div className="flex flex-col rounded-2xl border border-white/80 bg-muted p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] sm:p-7" aria-live="polite" data-testid="admin-cost-result">
             {empty ? (
               <p className="my-auto text-foreground/80">Enter the hours a week and what an hour is worth, and your numbers will appear here.</p>
             ) : (
               <>
-                <p className="text-sm font-medium text-brand-indigo">Admin work is costing you about</p>
+                <p className="text-sm font-medium text-primary">Admin work is costing you about</p>
                 <p className="mt-1 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl" data-testid="admin-cost-annual">{formatUsd(estimate.annualCost)}<span className="text-lg font-medium text-muted-foreground"> a year</span></p>
                 <p className="mt-2 text-foreground/80">
                   That is {Math.round(estimate.hoursPerYear).toLocaleString("en-US")} hours a year, or {formatWeeks(estimate.workingWeeks)} of full-time work.
@@ -129,7 +129,7 @@ export function AdminCostCalculator() {
                 </p>
               </>
             )}
-            <a href="#demo-form" className={`mt-6 inline-block rounded-lg px-5 py-3 text-center font-medium ${gradientBtn}`}>See how AdFlo gets that time back</a>
+            <a href="#demo-form" className={`mt-6 inline-block rounded-lg px-5 py-3 text-center font-medium ${primaryBtn}`}>See how AdFlo gets that time back</a>
           </div>
         </div>
       </div>
