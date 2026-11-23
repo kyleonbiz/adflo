@@ -8,14 +8,16 @@ interface ClientRow {
   id: string; name: string; status: ClientStatus; plan: string; seats_limit: number; owner_name: string;
   owner_email: string; notes: string; workspace_id: string | null; started_on: string | null; created_at: string;
   price_override_cents: number | null; price_note: string;
+  billing_status?: string | null; billing_interval?: "month" | "year" | null; current_period_end?: string | null; cancel_at_period_end?: boolean;
 }
 
-export const CLIENT_COLUMNS = "id, name, status, plan, seats_limit, owner_name, owner_email, notes, workspace_id, started_on, created_at, price_override_cents, price_note";
+export const CLIENT_COLUMNS = "id, name, status, plan, seats_limit, owner_name, owner_email, notes, workspace_id, started_on, created_at, price_override_cents, price_note, billing_status, billing_interval, current_period_end, cancel_at_period_end";
 
 export const toClient = (r: ClientRow): ClientRecord => ({
   id: r.id, name: r.name, status: r.status, plan: r.plan, seatsLimit: r.seats_limit, ownerName: r.owner_name,
   ownerEmail: r.owner_email, notes: r.notes, workspaceId: r.workspace_id, startedOn: r.started_on, createdAt: r.created_at,
   priceOverrideCents: r.price_override_cents, priceNote: r.price_note, seatsUsed: null, lastActive: null, checklist: [],
+  billingStatus: r.billing_status ?? null, billingInterval: r.billing_interval ?? null, periodEnd: r.current_period_end ?? null, cancelAtPeriodEnd: !!r.cancel_at_period_end,
 });
 
 export async function loadClients(supabase: SupabaseClient): Promise<ClientRecord[]> {

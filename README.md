@@ -291,6 +291,10 @@ Requires Node 20.19+ (developed on Node 22). Without Supabase variables the app 
 | `SMTP_USER` / `SMTP_PASSWORD` | Server-only. A Workspace mailbox and its Google app password; the landing page "Book a demo" form sends requests through it. Without them the form answers that requests are not switched on. |
 | `DEMO_REQUEST_TO` / `DEMO_REQUEST_FROM` | Optional. Inbox that receives requests (default `sales@adflo.pro`) and the sender name. |
 | `ANTHROPIC_API_KEY` | Optional, server only. Without it the assistant (Addy) answers with its built-in rules. Claude answers only for **Core +** workspaces. |
+| `STRIPE_SECRET_KEY` | Server only. Stripe secret key (`sk_live_…`, or `sk_test_…` while testing). With `SUPABASE_SERVICE_ROLE_KEY` it turns on online billing (Subscribe and Manage billing on the Help page). |
+| `STRIPE_WEBHOOK_SECRET` | Server only. The signing secret (`whsec_…`) of a Stripe webhook endpoint pointing at `https://<your domain>/api/stripe/webhook`, listening for `checkout.session.completed` and `customer.subscription.created`, `.updated` and `.deleted`. |
+| `STRIPE_PRICE_CORE_PLUS_MONTHLY` / `STRIPE_PRICE_CORE_PLUS_ANNUAL` | Stripe Price ids (`price_…`) for Core + ($59/month, $590/year). A subscription on either puts the client on Core + with 3 seats. |
+| `STRIPE_PRICE_EXTRA_SEAT` | Optional. Price id of the per-seat add-on ($10/month); its quantity is added to the client's seat limit. |
 | `ASSISTANT_MODEL` | Optional model override (default `claude-sonnet-5-5`). The system prompt and tool list are prompt-cached. |
 | `SMTP_USER`, `SMTP_PASSWORD` | Optional. A Google Workspace mailbox and its app password. Sends the landing page demo requests and, from the Control center, the welcome message and agreement link to new clients. |
 | `AGREEMENT_NOTIFY_TO` | Optional. Who is emailed when a client accepts an agreement (default `onboarding@adflo.pro`, which lands in the same mailbox as `SMTP_USER`). |

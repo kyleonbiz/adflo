@@ -34,6 +34,11 @@ export interface ClientRecord {
   lastActive: string | null;
   /** This month's usage, from the usage function; null in the preview or when the client has no workspace. */
   usage?: import("./usage").Usage | null;
+  /** Stripe subscription state, written by the webhook; null when the client does not pay online. */
+  billingStatus?: string | null;
+  billingInterval?: "month" | "year" | null;
+  periodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean;
   /** Onboarding steps that are done. */
   checklist: string[];
   /** Agreements sent to this client that nobody has accepted yet. */
