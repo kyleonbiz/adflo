@@ -20,8 +20,15 @@ export default function HelpRoute() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Help &amp; Training</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Quick guides for each part of AdFlo. For anything else, email support@adflo.pro.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Quick guides for each part of AdFlo. Need a hand? Send us a request below.</p>
       </div>
+      <section aria-label="Contact support" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-6 shadow-panel">
+        <div>
+          <h2 className="text-base font-semibold">Contact support</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Ask a question, report a problem or make a request, then follow our replies in one place.</p>
+        </div>
+        <Link href="/app/support" className="inline-flex h-9 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring">Open support</Link>
+      </section>
       <section aria-label="Tips" className="rounded-2xl border bg-card p-6 shadow-panel">
         <h2 className="text-base font-semibold">Good to know</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted-foreground">{TIPS.map((t) => <li key={t}>{t}</li>)}</ul>

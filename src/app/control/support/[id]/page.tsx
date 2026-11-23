@@ -15,6 +15,6 @@ export default async function TicketRoute({ params }: PageProps<"/control/suppor
     if (ctx.mode !== "live" || !isUuid(id)) notFound();
     const found = await loadTicket(ctx.supabase, id);
     if (!found) notFound();
-    return <TicketDetail ticket={found.ticket} notes={found.notes} directory={await loadDirectory(ctx.supabase)} canEdit={canEditClients(ctx.staff.role)} />;
+    return <TicketDetail ticket={found.ticket} notes={found.notes} messages={found.messages} directory={await loadDirectory(ctx.supabase)} canEdit={canEditClients(ctx.staff.role)} />;
   });
 }

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TICKET_PRIORITIES, TICKET_STATUSES, TICKET_STATUS_LABEL, type ClientRecord, type DirectoryEntry, type Ticket, type TicketStatus } from "@/lib/control/types";
+import { TICKET_CATEGORY_LABEL, TICKET_PRIORITIES, TICKET_STATUSES, TICKET_STATUS_LABEL, ticketKey, type ClientRecord, type DirectoryEntry, type Ticket, type TicketStatus } from "@/lib/control/types";
 import { cn } from "@/lib/utils";
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
@@ -85,7 +85,7 @@ export function SupportPage({ tickets, clients, directory, canEdit, sample }: { 
             <li key={t.id}>
               {(() => {
                 const inner = (<>
-                  <span className="min-w-0"><span className="block truncate text-sm font-medium">{t.subject}</span><span className="block truncate text-xs text-muted-foreground">{t.clientName || "No client"} · opened {when(t.createdAt)}{t.assignee ? ` · ${who.get(t.assignee) ?? "Teammate"}` : " · Unassigned"}</span></span>
+                  <span className="min-w-0"><span className="block truncate text-sm font-medium"><span className="mr-1.5 font-mono text-xs font-normal text-muted-foreground">{ticketKey(t.ticketNo)}</span>{t.subject}</span><span className="block truncate text-xs text-muted-foreground">{t.clientName || "No client"} · {TICKET_CATEGORY_LABEL[t.category]}{t.source === "client" ? " · from the app" : ""} · opened {when(t.createdAt)}{t.assignee ? ` · ${who.get(t.assignee) ?? "Teammate"}` : " · Unassigned"}</span></span>
                   <TicketBadges t={t} />
                 </>);
                 const cls = "flex flex-wrap items-center justify-between gap-2 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";

@@ -5,16 +5,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { TICKET_PRIORITIES, TICKET_STATUSES, TICKET_STATUS_LABEL, type DirectoryEntry, type Ticket, type TicketNote } from "@/lib/control/types";
+import { TICKET_CATEGORY_LABEL, TICKET_PRIORITIES, TICKET_STATUSES, TICKET_STATUS_LABEL, ticketKey, type DirectoryEntry, type Ticket, type TicketMessage, type TicketNote } from "@/lib/control/types";
+import { cn } from "@/lib/utils";
 import { TicketBadges } from "./support-page";
 
 const SELECT = "h-9 rounded-lg border border-input bg-card px-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
 const stamp = (iso: string) => new Date(iso).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC";
 
 /** One ticket: its details, who has it, and the running notes. */
-export function TicketDetail({ ticket, notes, directory, canEdit }: { ticket: Ticket; notes: TicketNote[]; directory: DirectoryEntry[]; canEdit: boolean }) {
+export function TicketDetail({ ticket, notes, messages, directory, canEdit }: { ticket: Ticket; notes: TicketNote[]; messages: TicketMessage[]; directory: DirectoryEntry[]; canEdit: boolean }) {
   const router = useRouter();
   const [note, setNote] = useState("");
+  const [reply, setReply] = useState("");
+  // Replies reach the client through their workspace; a ticket staff logged for themselves has no one on the other end.
+  const conversational = ticket.source === "client" && !!ticket.workspaceId;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -32,8 +36,8 @@ export function TicketDetail({ ticket, notes, directory, canEdit }: { ticket: Ti
     <div className="space-y-5">
       <Link href="/control/support" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="size-4" aria-hidden /> Support</Link>
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">{ticket.subject}</h1>
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"><TicketBadges t={ticket} /><span>{ticket.clientId ? <Link href={`/control/clients/${ticket.clientId}`} className="hover:underline">{ticket.clientName}</Link> : "No client"} · opened {stamp(ticket.createdAt)}</span></div>
+        <h1 className="text-2xl font-semibold tracking-tight"><span className="mr-2 font-mono text-base font-normal text-muted-foreground">{ticketKey(ticket.ticketNo)}</span>{ticket.subject}</h1>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground"><TicketBadges t={ticket} /><span>{TICKET_CATEGORY_LABEL[ticket.category]} · {ticket.clientId ? <Link href={`/control/clients/${ticket.clientId}`} className="hover:underline">{ticket.clientName}</Link> : "No client"}{ticket.requesterName || ticket.requesterEmail ? ` · from ${ticket.requesterName || ticket.requesterEmail}` : ""} · opened {stamp(ticket.createdAt)}</span></div>
       </div>
       {ticket.body && <section className="whitespace-pre-wrap rounded-2xl border bg-card p-5 text-sm shadow-panel" aria-label="Details">{ticket.body}</section>}
 
@@ -45,9 +49,28 @@ export function TicketDetail({ ticket, notes, directory, canEdit }: { ticket: Ti
         </section>
       )}
 
+      {conversational ? (
+        <section className="space-y-3" aria-label="Conversation">
+          <h2 className="font-semibold">Conversation</h2>
+          <p className="text-sm text-muted-foreground">Visible to the client in their app{ticket.requesterEmail ? ` and emailed to ${ticket.requesterEmail}` : ""}. Replying to an open ticket marks it waiting on the client; their reply reopens it.</p>
+          {messages.length === 0 ? <p className="text-sm text-muted-foreground">No replies yet.</p> : (
+            <ul className="space-y-2">{messages.map((m) => (<li key={m.id} className={cn("rounded-xl border p-4 text-sm shadow-panel", m.authorKind === "staff" ? "border-primary/30 bg-accent/40" : "bg-card")}><p className="whitespace-pre-wrap">{m.body}</p><p className="mt-2 text-xs text-muted-foreground">{m.authorKind === "staff" ? `${m.authorName} (staff)` : `${m.authorName || "Client"} (client)`} · {stamp(m.createdAt)}</p></li>))}</ul>
+          )}
+          {canEdit && (
+            <form onSubmit={async (e) => { e.preventDefault(); if (await send(`/api/control/tickets/${ticket.id}/messages`, "POST", { body: reply })) setReply(""); }} className="space-y-2">
+              <label htmlFor="reply" className="sr-only">Reply to the client</label>
+              <textarea id="reply" rows={4} value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Reply to the client" className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />
+              <Button type="submit" disabled={busy || !reply.trim()}>Send reply</Button>
+            </form>
+          )}
+        </section>
+      ) : (
+        <p className="rounded-xl border border-dashed bg-card px-4 py-3 text-sm text-muted-foreground">Logged by staff, so it is internal: the client does not see it. Use notes below.</p>
+      )}
+
       <section className="space-y-3" aria-label="Notes">
-        <h2 className="font-semibold">Notes</h2>
-        {notes.length === 0 ? <p className="text-sm text-muted-foreground">No notes yet. Notes are internal and cannot be edited later.</p> : (
+        <h2 className="font-semibold">Internal notes</h2>
+        {notes.length === 0 ? <p className="text-sm text-muted-foreground">No notes yet. Notes are internal (clients never see them) and cannot be edited later.</p> : (
           <ul className="space-y-2">{notes.map((n) => (<li key={n.id} className="rounded-xl border bg-card p-4 text-sm shadow-panel"><p className="whitespace-pre-wrap">{n.body}</p><p className="mt-2 text-xs text-muted-foreground">{n.authorEmail || "Staff"} · {stamp(n.createdAt)}</p></li>))}</ul>
         )}
         {canEdit && (

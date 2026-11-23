@@ -110,12 +110,23 @@ export type TicketStatus = (typeof TICKET_STATUSES)[number];
 export const TICKET_PRIORITIES = ["low", "normal", "high"] as const;
 export type TicketPriority = (typeof TICKET_PRIORITIES)[number];
 export const TICKET_STATUS_LABEL: Record<TicketStatus, string> = { open: "Open", pending: "Waiting on client", closed: "Closed" };
+export const TICKET_CATEGORIES = ["question", "problem", "request"] as const;
+export type TicketCategory = (typeof TICKET_CATEGORIES)[number];
+export const TICKET_CATEGORY_LABEL: Record<TicketCategory, string> = { question: "Question", problem: "Problem", request: "Request" };
+/** The number people quote when they talk about a ticket, like AF-12. */
+export const ticketKey = (n: number) => `AF-${n}`;
 
 export interface Ticket {
-  id: string; clientId: string | null; clientName: string; subject: string; body: string;
+  id: string; ticketNo: number; clientId: string | null; clientName: string; subject: string; body: string;
   status: TicketStatus; priority: TicketPriority; assignee: string | null; createdAt: string; updatedAt: string;
+  category: TicketCategory;
+  /** "client" when a workspace member asked from the app (and can see replies); "staff" when staff logged it for their own use. */
+  source: "client" | "staff";
+  workspaceId: string | null; requesterName: string; requesterEmail: string;
 }
 export interface TicketNote { id: string; authorEmail: string; body: string; createdAt: string }
+/** A reply in the conversation the client can see (notes are the internal side). */
+export interface TicketMessage { id: string; authorKind: "client" | "staff"; authorName: string; body: string; createdAt: string }
 export interface DirectoryEntry { userId: string; displayName: string; role: StaffRole }
 export interface TimelineEvent { at: string; staffEmail: string; staffName: string; action: string; detail: Record<string, unknown> }
 

@@ -5,6 +5,7 @@
 - **First-response target:** one business day.
 - **Urgent issues** (cannot sign in, data looks wrong or missing): note it in the subject line and the ticket priority is set to High in the Control Center. Same target, handled first.
 - **Tickets:** log every request in the Control Center support queue. Use Waiting on client while you wait for a reply, and Closed when resolved.
+- **In-app requests:** clients open requests from Help & Training > Open support (Question, Problem or Request). Each gets a number like AF-12 and lands in the queue as Open. Reply from the ticket's Conversation section: the client sees it in the app and by email, and an open ticket moves to Waiting on client. Their reply moves it back to Open. Notes are internal and are never shown to clients. Tickets staff log themselves stay internal. New requests and client replies also email SUPPORT_NOTIFY_EMAIL (default support@adflo.pro) and show on the Control center bell.
 
 ## Status page
 - **Public page:** `/status` on the app domain. Shows the app and the sign-in/database service. No sign-in needed, nothing private shown.
