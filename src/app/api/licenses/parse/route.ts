@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowUsage, recordUsage } from "@/lib/control/usage-server";
 import { planIncludes } from "@/lib/control/plan-server";
 import { isOcrFile } from "@/lib/dms/extract/ocr";
 import { canExtract, extractText } from "@/lib/dms/extract";
@@ -39,7 +40,13 @@ export function POST(req: Request) {
       if (!ocr && isOcrFile(upload.name)) {
         throw new DmsError("forbidden", "Reading photos and scans is part of Core +. Upload a PDF, Word, text or CSV file, or enter the details by hand.");
       }
+      const reading = ocr && isOcrFile(upload.name);
+      if (reading) {
+        const allowed = await allowUsage("ocr");
+        if (!allowed.ok) throw new DmsError("forbidden", allowed.message);
+      }
       const result = await extractText({ bytes: new Uint8Array(await upload.arrayBuffer()), fileName: upload.name, mimeType: upload.type, ocr });
+      if (reading) await recordUsage({ ocrReads: 1 });
       if (result.status !== "indexed") {
         throw new DmsError("validation", (result.reason && REASON_LABELS[result.reason]) || "That file could not be read.");
       }

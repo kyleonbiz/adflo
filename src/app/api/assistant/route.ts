@@ -1,5 +1,6 @@
 import { assistantConfigured, runAssistant, type ChatMessage } from "@/lib/assistant/llm";
 import { planIncludes } from "@/lib/control/plan-server";
+import { allowUsage, recordUsage } from "@/lib/control/usage-server";
 import { getDms } from "@/lib/dms/server/context";
 import { checkRate } from "@/lib/dms/server/rate-limit";
 import { json, readJson, sameOrigin } from "@/lib/dms/server/respond";
@@ -43,7 +44,12 @@ export async function POST(req: Request) {
     const config = sanitizeConfig(body.config) ?? emptyConfig();
     const today = typeof body.today === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.today) ? body.today : new Date().toISOString().slice(0, 10);
 
+    // A Claude action counts each time Claude answers. Over the monthly limit, the page keeps using its built-in quick actions.
+    const allowed = await allowUsage("ai");
+    if (!allowed.ok) return json({ ok: false, error: { code: allowed.code, message: allowed.message } }, 429);
+
     const result = await runAssistant(messages, config, today);
+    await recordUsage({ aiActions: 1, tokens: result.usage.input + result.usage.output + result.usage.cacheRead + result.usage.cacheWrite });
     // Token counts only, never the conversation: this is for sizing cost per account.
     console.info("[assistant] usage", JSON.stringify({ user: dms.userId, ...result.usage }));
     return json({ ok: true, data: { text: result.text, links: result.links } });

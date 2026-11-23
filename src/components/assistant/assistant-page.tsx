@@ -75,10 +75,10 @@ function Chat({ today }: { today: string }) {
     if (!message || busy) return;
     setText("");
     const direct = parseDirect(message);
-    if (direct) { runLocally(message, direct); return; }
+    if (direct) { countQuickAction(); runLocally(message, direct); return; }
     // Rules first: plain requests (open a form, what is left, help) are answered here at no cost. Only the rest goes to the model.
     const rule = respond(stored ?? emptyConfig(), message);
-    if (rule.matched || llm === false) { setTurns((t) => [...t, ...rule.turns]); return; }
+    if (rule.matched || llm === false) { if (rule.matched) countQuickAction(); setTurns((t) => [...t, ...rule.turns]); return; }
 
     const next: Turn[] = [...turns, { role: "user", text: message }];
     setTurns(next);
@@ -168,6 +168,9 @@ function Chat({ today }: { today: string }) {
 }
 
 /** Q&A and in-module assistant. Uses Claude through /api/assistant when an API key is set; otherwise the built-in rules answer. Neither changes account setup: that stays manual in Settings. */
+/** Tells the server a quick (rules-based) action ran, for the usage counter. Fire and forget: it never affects the answer. */
+const countQuickAction = () => { void fetch("/api/usage", { method: "POST" }).catch(() => {}); };
+
 export function AssistantPage() {
   const today = useToday();
   return (
