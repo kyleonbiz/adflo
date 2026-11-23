@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TIERS, CORE, FEATURE_KEYS, cleanFeatures, hasFeature, limitsFor, ADD_ONS, FOUNDING_CAP } from "@/lib/control/tiers";
+import { TIERS, CORE, FEATURE_KEYS, cleanFeatures, hasFeature, limitsFor, ADD_ONS } from "@/lib/control/tiers";
 import { parsePlanInput } from "@/lib/control/validation";
 
 describe("tiers", () => {
@@ -15,11 +15,10 @@ describe("tiers", () => {
     expect(by["core +"].length - CORE.length).toBe(3);
   });
   it("sets the decided prices and limits", () => {
-    expect(limitsFor("Core +")).toMatchObject({ priceCents: 7900, annualCents: 79000, foundingCents: 5900, foundingAnnualCents: 59000, seats: 5, storageGb: 20, maxFileMb: 50, aiActions: 250, ocrPerMonth: 200, tokenBackstop: 3_000_000 });
+    expect(limitsFor("Core +")).toMatchObject({ priceCents: 5900, annualCents: 59000, seats: 3, storageGb: 20, maxFileMb: 50, aiActions: 250, ocrPerMonth: 200, tokenBackstop: 3_000_000 });
     expect(limitsFor("enterprise")).toMatchObject({ priceCents: 19900, seats: 25, storageGb: 100, maxFileMb: 100, aiActions: 750, ocrPerMonth: 1000 });
     expect(limitsFor("core")).toBeNull();
-    expect(TIERS.map((t) => t.seatsIncluded)).toEqual([5, 25]);
-    expect(FOUNDING_CAP).toBe(50);
+    expect(TIERS.map((t) => t.seatsIncluded)).toEqual([3, 25]);
     expect(ADD_ONS.map((a) => a.priceCents)).toEqual([1000, 1000, 1500]);
   });
   it("treats a plan with no list as including everything", () => {

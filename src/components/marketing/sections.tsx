@@ -4,7 +4,7 @@ import {
   AlertTriangle, Clock, PiggyBank, Workflow,
 } from "lucide-react";
 import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
-import { TIERS, FOUNDING_CAP } from "@/lib/control/tiers";
+import { TIERS, ADD_ONS } from "@/lib/control/tiers";
 import { limitRows } from "@/components/plan-limits";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
 
@@ -233,7 +233,7 @@ export function LandingSections() {
                 {t.name === "enterprise" ? "From $" : "$"}{t.limits.priceCents / 100}<span className="text-base font-normal text-foreground/70"> / month</span>
               </p>
               {t.name === "core +"
-                ? <p className="mt-1 text-sm font-medium text-brand-indigo">Founding offer: ${(t.limits.foundingCents ?? 0) / 100}/month for the first {FOUNDING_CAP} customers, locked in while you stay subscribed.</p>
+                ? <p className="mt-1 text-sm font-medium text-brand-indigo">{t.limits.seats} seats included, then ${ADD_ONS[0].priceCents / 100} per extra seat.</p>
                 : <p className="mt-1 text-sm text-foreground/70">Quoted per customer.</p>}
               <p className="mt-3 text-sm text-foreground/80">{t.blurb}</p>
               <ul className="mt-4 space-y-2 text-sm">

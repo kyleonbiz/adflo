@@ -1,4 +1,4 @@
-import { ADD_ONS, FOUNDING_CAP, TIERS, type PlanLimits } from "@/lib/control/tiers";
+import { ADD_ONS, TIERS, type PlanLimits } from "@/lib/control/tiers";
 
 const money = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 const num = (n: number) => n.toLocaleString("en-US");
@@ -22,7 +22,7 @@ export function limitRows(t: (typeof TIERS)[number]): { label: string; value: st
   ];
 }
 
-/** The plans side by side, with the founding offer and add-ons. Used in the app's Help page and the Control center. */
+/** The plans side by side, with add-ons. Used in the app's Help page and the Control center. */
 export function PlanLimitsTable() {
   const core = TIERS[0].limits;
   const rows = TIERS.map(limitRows);
@@ -42,7 +42,7 @@ export function PlanLimitsTable() {
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Founding offer: the first {FOUNDING_CAP} Core + customers lock in {money(core.foundingCents ?? 0)}/month ({money(core.foundingAnnualCents ?? 0)}/year) for as long as they stay subscribed. The public price stays {money(core.priceCents)}.
+        Core + is {money(core.priceCents)}/month with {core.seats} seats included, plus {money(ADD_ONS[0].priceCents)} for each extra seat.
         Claude actions count when Claude proposes a change, approved or not. Quick actions are not limited.
       </p>
     </div>

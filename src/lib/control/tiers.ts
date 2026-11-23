@@ -38,9 +38,6 @@ export interface PlanLimits {
   priceCents: number;
   /** Annual price in cents (two months free), or null when quoted. */
   annualCents: number | null;
-  /** The locked-in price for the first founding customers (Core + only). */
-  foundingCents: number | null;
-  foundingAnnualCents: number | null;
   seats: number;
   storageGb: number;
   maxFileMb: number;
@@ -51,7 +48,6 @@ export interface PlanLimits {
   tokenBackstop: number | null;
 }
 
-export const FOUNDING_CAP = 50;
 /** Add-ons for Core +; Enterprise add-ons are included in the quote. Prices in cents. */
 export const ADD_ONS = [
   { label: "Extra seat", priceCents: 1000, per: "seat" },
@@ -62,18 +58,18 @@ export const ADD_ONS = [
 /** The plans offered, in order. Core + is the whole platform with its automations plus Claude and OCR; Enterprise is the same with larger limits, quoted. */
 export const TIERS: readonly { name: string; label: string; audience: string; blurb: string; seatsIncluded: number; features: readonly FeatureKey[]; limits: PlanLimits; support: string }[] = [
   {
-    name: "core +", label: "Core +", seatsIncluded: 5, features: AI,
+    name: "core +", label: "Core +", seatsIncluded: 3, features: AI,
     audience: "Contractors and small to mid-size crews",
     blurb: "The whole administrative platform with its automations, the Claude-backed assistant, OCR of photos and priority support.",
     support: "Priority support",
-    limits: { priceCents: 7900, annualCents: 79000, foundingCents: 5900, foundingAnnualCents: 59000, seats: 5, storageGb: 20, maxFileMb: 50, aiActions: 250, ocrPerMonth: 200, tokenBackstop: 3_000_000 },
+    limits: { priceCents: 5900, annualCents: 59000, seats: 3, storageGb: 20, maxFileMb: 50, aiActions: 250, ocrPerMonth: 200, tokenBackstop: 3_000_000 },
   },
   {
     name: "enterprise", label: "Enterprise", seatsIncluded: 25, features: AI,
     audience: "Larger contractors, property managers, and multi-crew or multi-location teams",
     blurb: "Everything in Core +, with higher limits and add-ons quoted for your business. Managed services will be offered later.",
     support: "Priority support, onboarding help and a dedicated contact",
-    limits: { priceCents: 19900, annualCents: null, foundingCents: null, foundingAnnualCents: null, seats: 25, storageGb: 100, maxFileMb: 100, aiActions: 750, ocrPerMonth: 1000, tokenBackstop: null },
+    limits: { priceCents: 19900, annualCents: null, seats: 25, storageGb: 100, maxFileMb: 100, aiActions: 750, ocrPerMonth: 1000, tokenBackstop: null },
   },
 ];
 
