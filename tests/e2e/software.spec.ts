@@ -3,7 +3,7 @@ import { expect, test } from "./fixtures";
 test.describe("Landing page and the app", () => {
   test("the site address shows the landing page, and /login Log in enters the demo app", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "The administrative management platform" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Stop chasing paperwork. Run your business from one place." })).toBeVisible();
     await page.goto("/login");
     await page.getByRole("button", { name: "Log in" }).click();
     await expect(page).toHaveURL(/\/app\/overview$/);
@@ -11,14 +11,14 @@ test.describe("Landing page and the app", () => {
 
   test("the landing page at / shows the hero, and Log in goes to the log in screen", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "The administrative management platform" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Stop chasing paperwork. Run your business from one place." })).toBeVisible();
     await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Log in", exact: true }).click();
     await expect(page).toHaveURL(/\/login$/);
   });
 
   test("the landing page keeps its hero and demo, and adds the story and demo request form below", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { level: 1, name: "The administrative management platform" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Stop chasing paperwork. Run your business from one place." })).toBeVisible();
     await expect(page.getByRole("heading", { name: "AI does the repetitive work. Your people stay in control." })).toBeVisible();
     await page.getByRole("link", { name: "Book a demo" }).first().click();
     const form = page.getByRole("form", { name: "Request a demo" });
