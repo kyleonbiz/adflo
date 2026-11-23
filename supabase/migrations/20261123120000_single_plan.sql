@@ -1,8 +1,8 @@
--- One plan: AdFlo, $65 a month with the owner's seat, plus $10 a month for each additional seat. Everything is included
+-- One plan: AdFlo, $99 a month with the owner's seat, plus $10 a month for each additional seat. Everything is included
 -- (the Claude assistant, OCR and priority support too). Core, Core + and Enterprise are retired, not deleted: they keep every
 -- feature so nobody loses anything, and their clients move to the new plan (a client's own price override is untouched).
 insert into public.plans (name, price_cents, seats_included, features)
-values ('adflo', 6500, 1, array[
+values ('adflo', 9900, 1, array[
   'documents','contacts','tasks','setup','licenses_basic','vendors','licenses','forms','invoices','projects','reporting',
   'versioning','assistant_rules','reporting_scheduled','certifications','activity','assistant_ai','ocr','priority_support'])
 on conflict (lower(name)) do update set price_cents = excluded.price_cents, seats_included = excluded.seats_included,

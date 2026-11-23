@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
-import { PRICE_CENTS, SEAT_CENTS, TIERS, TRIAL_DAYS } from "@/lib/control/tiers";
+import { ONBOARDING_MAX_CENTS, ONBOARDING_MIN_CENTS, PRICE_CENTS, SEAT_CENTS, TIERS, TRIAL_DAYS } from "@/lib/control/tiers";
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
 const card = "rounded-2xl border border-white/80 bg-white/70 p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/40 hover:bg-white/85";
@@ -58,7 +58,7 @@ const PLAN_INCLUDES = [
   "Addy, the built-in assistant, and OCR for photos and scans of licenses and certificates",
   "Renewal and deadline emails, so an expiring license reaches your inbox instead of waiting in the app",
   "Your whole team: every extra seat is the same $10 a month, with no tiers to climb",
-  "Priority support and a set-up call to load your first records",
+  "Priority support, and guided onboarding where we load your first records (a one-time fee, below)",
 ];
 
 const ADDY_NEVER = ["Delete anything", "Approve or pay", "Send or sign for you", "Finalize anything without your say-so"];
@@ -238,6 +238,8 @@ export function LandingSections() {
               </p>
               <p className="mt-2 text-sm font-medium text-foreground">Includes your seat. Add teammates for ${SEAT_CENTS / 100} a month each.</p>
               <p className="mt-1 text-sm text-foreground/80">Or ${TIERS[0].limits.annualCents / 100} a year, plus ${TIERS[0].limits.seatAnnualCents / 100} a year per extra seat: two months free.</p>
+              <p className="mt-1 text-sm text-foreground/80">A team of 5 pays ${(PRICE_CENTS + 4 * SEAT_CENTS) / 100} a month.</p>
+              <p className="mt-3 text-sm text-foreground/80">One-time onboarding: ${ONBOARDING_MIN_CENTS / 100} to ${ONBOARDING_MAX_CENTS / 100}, depending on how much we load for you.</p>
               <a href="#demo-form" className={`mt-5 block rounded-lg px-5 py-3 text-center font-medium ${gradientBtn}`}>Book a demo to start your {TRIAL_DAYS}-day trial</a>
             </div>
             <ul className="grid gap-3" aria-label="What the plan includes">
@@ -247,6 +249,13 @@ export function LandingSections() {
                 </li>
               ))}
             </ul>
+          </div>
+          <div id="custom-package" className={`${card} mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}>
+            <div>
+              <h3 className="text-lg font-semibold">Custom package</h3>
+              <p className="mt-1 max-w-2xl text-sm text-foreground/80">Larger teams, several locations, property portfolios or special requirements. Tell us what you need and we will quote a package for your business.</p>
+            </div>
+            <a href="#demo-form" className="shrink-0 rounded-lg border border-brand-blue/30 bg-white/80 px-5 py-3 text-center font-medium text-foreground transition hover:bg-white">Request a custom quote</a>
           </div>
           <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
             AdFlo is the administrative layer that sits alongside your accounting, payroll and construction or property management software. It does not replace them, so it does not price like them.

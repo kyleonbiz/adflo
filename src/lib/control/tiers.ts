@@ -61,9 +61,12 @@ export const ADD_ONS = [
   { label: "Extra 250 Claude actions", priceCents: 1500, per: "250 actions" },
 ] as const;
 
-/** The one plan: $65 a month with the owner's seat, plus $10 a month for each additional seat. Everything is included. */
-export const PRICE_CENTS = 6500;
+/** The one plan: $99 a month with the owner's seat, plus $10 a month for each additional seat. Everything is included. */
+export const PRICE_CENTS = 9900;
 export const SEAT_CENTS = 1000;
+/** One-time onboarding fee (we load your first records), quoted between these amounts by how much there is to load. Cents. */
+export const ONBOARDING_MIN_CENTS = 30000;
+export const ONBOARDING_MAX_CENTS = 50000;
 export const TIERS: readonly { name: string; label: string; audience: string; blurb: string; seatsIncluded: number; features: readonly FeatureKey[]; limits: PlanLimits; support: string }[] = [
   {
     name: "adflo", label: "AdFlo", seatsIncluded: 1, features: AI,

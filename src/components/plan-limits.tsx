@@ -1,4 +1,4 @@
-import { ADD_ONS, TIERS, TRIAL_DAYS, type PlanLimits } from "@/lib/control/tiers";
+import { ADD_ONS, ONBOARDING_MAX_CENTS, ONBOARDING_MIN_CENTS, TIERS, TRIAL_DAYS, type PlanLimits } from "@/lib/control/tiers";
 
 const money = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 const num = (n: number) => n.toLocaleString("en-US");
@@ -10,6 +10,7 @@ export function limitRows(t: (typeof TIERS)[number]): { label: string; value: st
   return [
     { label: "Price", value: `${money(l.priceCents)}/month with your seat, plus ${money(l.seatCents)}/month per extra seat` },
     { label: "Annual", value: `${money(l.annualCents)}/year plus ${money(l.seatAnnualCents)}/year per extra seat (two months free)` },
+    { label: "Onboarding (one time)", value: `${money(ONBOARDING_MIN_CENTS)} to ${money(ONBOARDING_MAX_CENTS)}, depending on how much we load for you` },
     { label: "Seats", value: `${l.seats} included, more at ${money(l.seatCents)}/month each` },
     { label: "Storage", value: `${l.storageGb} GB` },
     { label: "Max file size", value: `${l.maxFileMb} MB` },
@@ -41,7 +42,7 @@ export function PlanLimitsTable() {
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        One plan, {TRIAL_DAYS}-day trial. Claude actions count when Claude proposes a change, approved or not. Quick actions are not limited.
+        One plan, {TRIAL_DAYS}-day trial. Larger or unusual needs get a custom package, quoted per customer. Claude actions count when Claude proposes a change, approved or not. Quick actions are not limited.
       </p>
     </div>
   );
