@@ -1,11 +1,12 @@
 // Turns the recordings in out/ into finished videos:
-//   out/final/<id>.mp4        one clip per module: title card, captions, end card
+//   out/final/<id>.mp4        one clip per module: intro card listing what you will learn, captions, end card
 //   out/final/adflo-tour.mp4  every module in one video
 // Needs ffmpeg and the Inter font. Run record.mjs first.   node scripts/demo-video/build.mjs [ids...]
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import { MODULES } from "./scenes.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -13,9 +14,9 @@ const OUT = join(HERE, "out");
 const FINAL = join(OUT, "final");
 const WORK = join(OUT, "work");
 const LOGO = join(HERE, "../../public/logo-wordmark-light.png");
-const BOLD = "/usr/share/fonts/opentype/inter/Inter-Bold.otf";
-const MED = "/usr/share/fonts/opentype/inter/Inter-Medium.otf";
-const BG = "0x0b1a3c";
+GlobalFonts.registerFromPath("/usr/share/fonts/opentype/inter/Inter-Bold.otf", "InterB");
+GlobalFonts.registerFromPath("/usr/share/fonts/opentype/inter/Inter-Medium.otf", "InterM");
+const NAVY = "#0b1a3c";
 const FPS = 30;
 const CTA = process.env.DEMO_CTA ?? "Start free at adflo.com";
 const wanted = process.argv.slice(2);
@@ -28,65 +29,134 @@ const ff = (args) => {
   const r = spawnSync("ffmpeg", ["-v", "error", "-y", ...args], { encoding: "utf8" });
   if (r.status !== 0) { console.error(r.stderr); process.exit(1); }
 };
-const textFile = (name, text) => { const p = join(WORK, name); writeFileSync(p, text); return p; };
 const dur = (f) => Number(spawnSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f], { encoding: "utf8" }).stdout);
 
-/** Footage with captions fading in and out. */
-function footage(id, withFades) {
+/** Breaks text into lines no wider than maxWidth. */
+function wrap(ctx, text, maxWidth) {
+  const lines = [];
+  let line = "";
+  for (const word of text.split(/\s+/)) {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width > maxWidth && line) { lines.push(line); line = word; } else line = next;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+const roundRect = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
+
+/** The caption panel for one step, as a PNG: step label, headline and an explanation. */
+function captionPng(file, n, total, title, body) {
+  const W = 1560, PAD = 36, BODY_W = W - PAD * 2;
+  const probe = createCanvas(10, 10).getContext("2d");
+  probe.font = "30px InterM";
+  const lines = body ? wrap(probe, body, BODY_W) : [];
+  const H = PAD + 26 + 14 + 52 + (lines.length ? 12 + lines.length * 42 : 0) + PAD - 4;
+  const c = createCanvas(W, H), ctx = c.getContext("2d");
+  roundRect(ctx, 0, 0, W, H, 24); ctx.fillStyle = "rgba(11,26,60,0.95)"; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = "rgba(124,196,255,0.4)"; roundRect(ctx, 1, 1, W - 2, H - 2, 24); ctx.stroke();
+  ctx.textBaseline = "top";
+  ctx.font = "22px InterB"; ctx.fillStyle = "#7cc4ff"; ctx.fillText(`STEP ${n} OF ${total}`, PAD, PAD);
+  ctx.font = "44px InterB"; ctx.fillStyle = "#ffffff"; ctx.fillText(title, PAD, PAD + 40);
+  ctx.font = "30px InterM"; ctx.fillStyle = "#d6e3ff";
+  lines.forEach((l, i) => ctx.fillText(l, PAD, PAD + 40 + 52 + 12 + i * 42));
+  writeFileSync(file, c.toBuffer("image/png"));
+  return { w: W, h: H };
+}
+
+/** Footage with a caption panel for each step, fading in and out. Cached so the clip and the tour share it. */
+function footage(id) {
+  const out = join(WORK, `${id}-main.mp4`);
+  if (existsSync(out)) return out;
   const meta = JSON.parse(readFileSync(join(OUT, `${id}.json`), "utf8"));
   const src = join(OUT, `${id}.webm`);
   const total = dur(src);
-  const filters = [`fps=${FPS}`, "scale=1920:1080", "format=yuv420p"];
+  const inputs = ["-i", src];
+  const chain = [`[0:v]fps=${FPS},scale=1920:1080,format=yuv420p[b0]`];
   meta.caps.forEach((c, i) => {
-    const start = c.at + 0.2;
-    const end = Math.min((meta.caps[i + 1]?.at ?? total) + 0.2, total - 0.2) - 0.1;
-    const f = textFile(`${id}-${i}.txt`, c.text);
-    filters.push(
-      `drawtext=fontfile=${BOLD}:textfile=${f}:fontsize=46:fontcolor=white:box=1:boxcolor=${BG}d9:boxborderw=26:x=(w-text_w)/2:y=h-130:` +
-      `enable='between(t,${start.toFixed(2)},${end.toFixed(2)})':alpha='if(lt(t,${(start + 0.35).toFixed(2)}),(t-${start.toFixed(2)})/0.35,if(gt(t,${(end - 0.35).toFixed(2)}),(${end.toFixed(2)}-t)/0.35,1))'`,
+    const png = join(WORK, `${id}-cap${i}.png`);
+    const { h } = captionPng(png, i + 1, meta.caps.length, c.title, c.body);
+    const start = c.at + 0.15;
+    const end = Math.min((meta.caps[i + 1]?.at ?? total) + 0.15, total - 0.1) - 0.05;
+    const len = end - start;
+    inputs.push("-loop", "1", "-framerate", String(FPS), "-t", (len + 0.5).toFixed(2), "-i", png);
+    chain.push(
+      `[${i + 1}:v]format=rgba,fade=t=in:st=0:d=0.4:alpha=1,fade=t=out:st=${(len - 0.4).toFixed(2)}:d=0.4:alpha=1,setpts=PTS+${start.toFixed(2)}/TB[o${i}]`,
+      `[b${i}][o${i}]overlay=x=(W-w)/2:y=${c.ty > 560 ? 70 : `H-h-40`}:eof_action=pass[b${i + 1}]`,
     );
   });
-  if (withFades) filters.push(`fade=t=in:st=0:d=0.4:color=${BG}`, `fade=t=out:st=${(total - 0.4).toFixed(2)}:d=0.4:color=${BG}`);
-  const out = join(WORK, `${id}-main${withFades ? "-f" : ""}.mp4`);
-  ff(["-i", src, "-vf", filters.join(","), "-c:v", "libx264", "-crf", "18", "-an", out]);
+  chain.push(`[b${meta.caps.length}]fade=t=in:st=0:d=0.4:color=${NAVY},fade=t=out:st=${(total - 0.4).toFixed(2)}:d=0.4:color=${NAVY}[v]`);
+  ff([...inputs, "-filter_complex", chain.join(";"), "-map", "[v]", "-t", total.toFixed(2), "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p", "-an", out]);
   return out;
 }
 
-/** Title or closing card on the dark brand background. */
-function card(name, seconds, lines) {
-  const [l1, l2, l3] = lines.map((t, i) => (t ? textFile(`${name}-l${i}.txt`, t) : null));
-  const dt = (file, font, size, color, y, at, extra = "") =>
-    file ? `drawtext=fontfile=${font}:textfile=${file}:fontsize=${size}:fontcolor=${color}:x=(w-text_w)/2:y=${y}:alpha='min(1,max(0,(t-${at})/0.6))'${extra}` : null;
-  const chain = [
-    `[0:v][l]overlay=(W-w)/2:300:shortest=1`,
-    dt(l1, BOLD, 64, "white", 520, 0.6),
-    dt(l2, MED, 38, "0xb8c7ee", 620, 1.0),
-    dt(l3, BOLD, 44, "0x0b1a3c", 780, 1.4, `:box=1:boxcolor=0x7cc4ff:boxborderw=24`),
-    `fade=t=out:st=${(seconds - 0.4).toFixed(2)}:d=0.4`,
-    "format=yuv420p",
-  ].filter(Boolean).join(",");
+/** A still card (intro or end) turned into a short video with fades. */
+async function card(name, seconds, draw) {
+  const c = createCanvas(1920, 1080), ctx = c.getContext("2d");
+  const g = ctx.createLinearGradient(0, 0, 1920, 1080);
+  g.addColorStop(0, "#0b1a3c"); g.addColorStop(1, "#13306b");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 1920, 1080);
+  ctx.textBaseline = "top"; ctx.textAlign = "center";
+  const logo = await loadImage(LOGO);
+  await draw(ctx, logo);
+  const png = join(WORK, `${name}.png`);
+  writeFileSync(png, c.toBuffer("image/png"));
   const out = join(WORK, `${name}.mp4`);
-  ff(["-f", "lavfi", "-i", `color=c=${BG}:s=1920x1080:r=${FPS}:d=${seconds}`, "-loop", "1", "-i", LOGO,
-    "-filter_complex", `[1:v]scale=560:-1,format=rgba,fade=t=in:st=0.2:d=0.6:alpha=1[l];${chain}`, "-c:v", "libx264", "-crf", "18", "-t", String(seconds), out]);
+  ff(["-loop", "1", "-framerate", String(FPS), "-t", String(seconds), "-i", png,
+    "-vf", `fade=t=in:st=0:d=0.5,fade=t=out:st=${(seconds - 0.5).toFixed(2)}:d=0.5,format=yuv420p`, "-c:v", "libx264", "-crf", "18", out]);
   return out;
 }
 
-const join2 = (parts, out) => {
-  const list = textFile("list.txt", parts.map((p) => `file '${p}'`).join("\n"));
+const drawLogo = (ctx, logo, y, w = 520) => ctx.drawImage(logo, (1920 - w) / 2, y, w, (logo.height / logo.width) * w);
+
+function introCard(m) {
+  const meta = JSON.parse(readFileSync(join(OUT, `${m.id}.json`), "utf8"));
+  const steps = meta.caps.map((c) => c.title);
+  const seconds = 3.5 + steps.length * 0.8;
+  return card(`intro-${m.id}`, seconds, (ctx, logo) => {
+    drawLogo(ctx, logo, 110, 380);
+    ctx.fillStyle = "#fff"; ctx.font = "72px InterB"; ctx.fillText(m.title, 960, 270);
+    ctx.fillStyle = "#b8c7ee"; ctx.font = "36px InterM"; ctx.fillText(m.pain, 960, 370);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#7cc4ff"; ctx.font = "24px InterB"; ctx.fillText("WHAT YOU WILL LEARN", 480, 500);
+    ctx.fillStyle = "#fff"; ctx.font = "34px InterM";
+    steps.forEach((s, i) => {
+      const y = 552 + i * 56;
+      ctx.fillStyle = "#3b82f6"; ctx.beginPath(); ctx.arc(494, y + 20, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.fillText(s, 520, y);
+    });
+  });
+}
+
+function endCard(next) {
+  return card("end", 4.5, (ctx, logo) => {
+    drawLogo(ctx, logo, 280, 520);
+    ctx.fillStyle = "#fff"; ctx.font = "64px InterB"; ctx.fillText("Less paperwork. More control.", 960, 520);
+    ctx.fillStyle = "#b8c7ee"; ctx.font = "38px InterM"; ctx.fillText("Works alongside your accounting and project software", 960, 620);
+    const w = 640, h = 96, x = (1920 - w) / 2, y = 760;
+    roundRect(ctx, x, y, w, h, 20); ctx.fillStyle = "#7cc4ff"; ctx.fill();
+    ctx.fillStyle = NAVY; ctx.font = "44px InterB"; ctx.fillText(CTA, 960, y + 24);
+  });
+}
+
+const concat = (parts, out) => {
+  const list = join(WORK, "list.txt");
+  writeFileSync(list, parts.map((p) => `file '${p}'`).join("\n"));
   ff(["-f", "concat", "-safe", "0", "-i", list, "-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart", out]);
 };
 
 const mods = MODULES.filter((m) => existsSync(join(OUT, `${m.id}.webm`)));
-const end = card("end", 4, ["Less paperwork. More control.", "Works alongside your accounting and project software", CTA]);
-
+const end = await endCard();
 for (const m of mods.filter((m) => wanted.length === 0 || wanted.includes(m.id))) {
-  const intro = card(`intro-${m.id}`, 3.5, [m.title, m.pain, null]);
-  join2([intro, footage(m.id, true), end], join(FINAL, `${m.id}.mp4`));
+  concat([await introCard(m), footage(m.id), end], join(FINAL, `${m.id}.mp4`));
   console.log("built", m.id);
 }
 if (wanted.length === 0) {
-  const intro = card("intro-tour", 3.5, ["The administrative layer for contractors", "Compliance, records and equipment, organized", null]);
-  join2([intro, ...mods.map((m) => footage(m.id, true)), end], join(FINAL, "adflo-tour.mp4"));
+  const intro = await card("intro-tour", 5, (ctx, logo) => {
+    drawLogo(ctx, logo, 260, 560);
+    ctx.fillStyle = "#fff"; ctx.font = "68px InterB"; ctx.fillText("The administrative layer for contractors", 960, 500);
+    ctx.fillStyle = "#b8c7ee"; ctx.font = "38px InterM"; ctx.fillText("A full walkthrough: compliance, records, equipment and more", 960, 610);
+  });
+  concat([intro, ...mods.map((m) => footage(m.id)), end], join(FINAL, "adflo-tour.mp4"));
   console.log("built adflo-tour");
 }
 rmSync(WORK, { recursive: true, force: true });
