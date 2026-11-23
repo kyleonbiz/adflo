@@ -9,7 +9,7 @@ export function limitRows(t: (typeof TIERS)[number]): { label: string; value: st
   const l: PlanLimits = t.limits;
   const more = t.name === "enterprise";
   return [
-    { label: "Price", value: more ? `From ${money(l.priceCents)}/month, quoted per customer` : `${money(l.priceCents)}/month · ${money(l.annualCents ?? 0)}/year` },
+    { label: "Price", value: l.priceCents == null ? "Quoted per customer" : `${money(l.priceCents)}/month · ${money(l.annualCents ?? 0)}/year` },
     { label: "Seats", value: more ? `${l.seats} included, more by quote` : `${l.seats} included` },
     { label: "Storage", value: more ? `${l.storageGb} GB+` : `${l.storageGb} GB` },
     { label: "Max file size", value: `${l.maxFileMb} MB` },
@@ -42,7 +42,7 @@ export function PlanLimitsTable() {
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Core + is {money(core.priceCents)}/month with {core.seats} seats included, plus {money(ADD_ONS[0].priceCents)} for each extra seat.
+        Core + is {money(core.priceCents ?? 0)}/month with {core.seats} seats included, plus {money(ADD_ONS[0].priceCents)} for each extra seat.
         Claude actions count when Claude proposes a change, approved or not. Quick actions are not limited.
       </p>
     </div>

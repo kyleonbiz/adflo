@@ -230,7 +230,7 @@ export function LandingSections() {
               <h3 className="text-xl font-semibold">{t.label}</h3>
               <p className="mt-1 text-sm text-foreground/70">{t.audience}</p>
               <p className="mt-4 text-3xl font-semibold tracking-tight">
-                {t.name === "enterprise" ? "From $" : "$"}{t.limits.priceCents / 100}<span className="text-base font-normal text-foreground/70"> / month</span>
+                {t.limits.priceCents == null ? "Contact us" : <>${t.limits.priceCents / 100}<span className="text-base font-normal text-foreground/70"> / month</span></>}
               </p>
               {t.name === "core +"
                 ? <p className="mt-1 text-sm font-medium text-brand-indigo">{t.limits.seats} seats included, then ${ADD_ONS[0].priceCents / 100} per extra seat.</p>

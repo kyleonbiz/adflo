@@ -16,7 +16,7 @@ describe("tiers", () => {
   });
   it("sets the decided prices and limits", () => {
     expect(limitsFor("Core +")).toMatchObject({ priceCents: 5900, annualCents: 59000, seats: 3, storageGb: 20, maxFileMb: 50, aiActions: 250, ocrPerMonth: 200, tokenBackstop: 3_000_000 });
-    expect(limitsFor("enterprise")).toMatchObject({ priceCents: 19900, seats: 25, storageGb: 100, maxFileMb: 100, aiActions: 750, ocrPerMonth: 1000 });
+    expect(limitsFor("enterprise")).toMatchObject({ priceCents: null, seats: 25, storageGb: 100, maxFileMb: 100, aiActions: 750, ocrPerMonth: 1000 });
     expect(limitsFor("core")).toBeNull();
     expect(TIERS.map((t) => t.seatsIncluded)).toEqual([3, 25]);
     expect(ADD_ONS.map((a) => a.priceCents)).toEqual([1000, 1000, 1500]);

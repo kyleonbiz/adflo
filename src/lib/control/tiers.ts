@@ -34,8 +34,8 @@ const AI: FeatureKey[] = [...CORE, "assistant_ai", "ocr", "priority_support"];
 
 /** What a plan includes, in numbers. `null` means "set per contract". Single source for the landing page, app and Control center. */
 export interface PlanLimits {
-  /** Monthly price in cents; Enterprise is "from" this amount, quoted per customer. */
-  priceCents: number;
+  /** Monthly price in cents, or null when there is no set price (Enterprise is quoted per customer). */
+  priceCents: number | null;
   /** Annual price in cents (two months free), or null when quoted. */
   annualCents: number | null;
   seats: number;
@@ -69,7 +69,7 @@ export const TIERS: readonly { name: string; label: string; audience: string; bl
     audience: "Larger contractors, property managers, and multi-crew or multi-location teams",
     blurb: "Everything in Core +, with higher limits and add-ons quoted for your business. Managed services will be offered later.",
     support: "Priority support, onboarding help and a dedicated contact",
-    limits: { priceCents: 19900, annualCents: null, seats: 25, storageGb: 100, maxFileMb: 100, aiActions: 750, ocrPerMonth: 1000, tokenBackstop: null },
+    limits: { priceCents: null, annualCents: null, seats: 25, storageGb: 100, maxFileMb: 100, aiActions: 750, ocrPerMonth: 1000, tokenBackstop: null },
   },
 ];
 
