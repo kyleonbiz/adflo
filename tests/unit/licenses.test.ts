@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDays, addMonths, daysBetween, isDay } from "@/lib/dates";
 import {
-  expiryText, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder, renewLicense, renewalTasks, suggestedExpiry, summarize,
+  expiryText, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder, renewLicense, renewalTasks, suggestedExpiry, summarize, warrantyDaysLeft,
 } from "@/lib/licenses/logic";
 import { sampleLicenses } from "../support/licenses-sample-data";
 import type { License } from "@/lib/licenses/types";
@@ -264,5 +264,36 @@ describe("renewal spend", () => {
     expect(licenseFormSchema.parse({ ...base, renewalCost: "250" }).renewalCost).toBe(250);
     expect(licenseFormSchema.parse(base).renewalCost).toBeNull();
     expect(licenseFormSchema.safeParse({ ...base, renewalCost: "12.50" }).success).toBe(false);
+  });
+});
+
+describe("warranty expiration", () => {
+  const base = { name: "Permit", category: "permit", issuer: "", number: "", holder: "", issuedOn: "2026-01-01", expiresOn: "2027-01-01", renewalTermMonths: "12", reminderDays: "30", notes: "", documents: "", reviewed: true };
+
+  it("counts days to the warranty end and is null without one", () => {
+    expect(warrantyDaysLeft(lic({ warrantyEndsOn: addDays(TODAY, 20) }), TODAY)).toBe(20);
+    expect(warrantyDaysLeft(lic({ warrantyEndsOn: addDays(TODAY, -2) }), TODAY)).toBe(-2);
+    expect(warrantyDaysLeft(lic(), TODAY)).toBeNull();
+    expect(warrantyDaysLeft(lic({ warrantyEndsOn: null }), TODAY)).toBeNull();
+  });
+  it("alerts when the warranty ends within 60 days, and not before or after", () => {
+    const far = lic({ expiresOn: addDays(TODAY, 300) });
+    expect(licenseAlerts({ ...far, warrantyEndsOn: addDays(TODAY, 61) }, TODAY)).toEqual([]);
+    expect(licenseAlerts({ ...far, warrantyEndsOn: addDays(TODAY, 60) }, TODAY)).toEqual([{ severity: "info", message: "Warranty ends in 60 days." }]);
+    expect(licenseAlerts({ ...far, warrantyEndsOn: addDays(TODAY, 1) }, TODAY)[0].message).toBe("Warranty ends in 1 day.");
+    expect(licenseAlerts({ ...far, warrantyEndsOn: TODAY }, TODAY)[0].message).toBe("Warranty ends today.");
+    expect(licenseAlerts({ ...far, warrantyEndsOn: addDays(TODAY, -1) }, TODAY)).toEqual([]);
+  });
+  it("puts the warranty end on the calendar while it is still ahead", () => {
+    const l = lic({ name: "Roof install", warrantyEndsOn: addDays(TODAY, 90) });
+    expect(licenseCalendarEvents([l], TODAY).map((e) => e.summary)).toContain("Roof install warranty ends");
+    expect(licenseCalendarEvents([{ ...l, warrantyEndsOn: addDays(TODAY, -5) }], TODAY).map((e) => e.summary)).not.toContain("Roof install warranty ends");
+  });
+  it("reads the form date, allows it empty, and rejects bad or too-early dates", () => {
+    expect(licenseFormSchema.parse({ ...base, warrantyEndsOn: "2028-03-01" }).warrantyEndsOn).toBe("2028-03-01");
+    expect(licenseFormSchema.parse(base).warrantyEndsOn).toBeNull();
+    expect(licenseFormSchema.parse({ ...base, warrantyEndsOn: "" }).warrantyEndsOn).toBeNull();
+    expect(licenseFormSchema.safeParse({ ...base, warrantyEndsOn: "not a date" }).success).toBe(false);
+    expect(licenseFormSchema.safeParse({ ...base, warrantyEndsOn: "2025-12-31" }).success).toBe(false);
   });
 });

@@ -27,6 +27,10 @@ export const licenseFormSchema = z
     renewalCost: z.string().trim().default("")
       .refine((v) => v === "" || /^\d{1,7}$/.test(v), "Whole dollars only, like 250")
       .transform((v) => (v === "" ? null : Number(v))),
+    /** When a warranty tied to this item ends. Optional. */
+    warrantyEndsOn: z.string().trim().default("")
+      .refine((v) => v === "" || isDay(v), "Enter a valid date")
+      .transform((v) => (v === "" ? null : v)),
     /** Every license is checked against the real document before it is saved. */
     reviewed: z.boolean().refine((v) => v, "Confirm you have checked these details against the license"),
     /** One required document per line. Only used when adding; existing licenses manage theirs on the card. */
@@ -35,7 +39,8 @@ export const licenseFormSchema = z
       .transform((s) => s.split("\n").map((l) => l.trim()).filter(Boolean))
       .pipe(z.array(z.string().max(120, "Keep each document under 120 characters")).max(20, "List at most 20 documents")),
   })
-  .refine((v) => v.expiresOn > v.issuedOn, { path: ["expiresOn"], message: "Expiry must be after the issue date" });
+  .refine((v) => v.expiresOn > v.issuedOn, { path: ["expiresOn"], message: "Expiry must be after the issue date" })
+  .refine((v) => !v.warrantyEndsOn || v.warrantyEndsOn >= v.issuedOn, { path: ["warrantyEndsOn"], message: "The warranty cannot end before the issue date" });
 
 export type LicenseFormInput = z.input<typeof licenseFormSchema>;
 export type LicenseFormValues = z.output<typeof licenseFormSchema>;

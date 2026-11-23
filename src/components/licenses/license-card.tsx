@@ -8,7 +8,7 @@ import { SelectBox } from "@/components/ui/bulk-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { daysLeft, expiryText, plural, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder } from "@/lib/licenses/logic";
+import { daysLeft, expiryText, plural, licenseAlerts, licenseStatus, missingDocuments, needsReview, nextReminder, warrantyDaysLeft } from "@/lib/licenses/logic";
 import { formatDayLong } from "@/lib/dates";
 import { LICENSE_CATEGORIES, RENEWAL_STAGES, type License, type RenewalStage } from "@/lib/licenses/types";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,7 @@ export function LicenseCard({ license, today, actions, focusToken = 0, selected,
   const left = daysLeft(license, today);
   const alerts = licenseAlerts(license, today);
   const reminder = nextReminder(license, today);
+  const warranty = warrantyDaysLeft(license, today);
   const missing = missingDocuments(license);
   const received = license.requiredDocuments.length - missing;
   const category = LICENSE_CATEGORIES.find((c) => c.value === license.category)?.label ?? license.category;
@@ -70,6 +71,12 @@ export function LicenseCard({ license, today, actions, focusToken = 0, selected,
             <span className="font-medium">Expires {formatDayLong(license.expiresOn)}</span>
             <span className={cn("ml-2", left < 0 ? "text-destructive" : "text-muted-foreground")}>{expiryText(left)}</span>
           </p>
+          {warranty !== null && license.warrantyEndsOn && (
+            <p className="text-sm" data-testid="license-warranty">
+              <span className="font-medium">Warranty ends {formatDayLong(license.warrantyEndsOn)}</span>
+              <span className="ml-2 text-muted-foreground">{warranty < 0 ? "Ended" : warranty === 0 ? "Ends today" : `${plural(warranty, "day")} left`}</span>
+            </p>
+          )}
           {alerts.length > 0 && (
             <ul className="flex flex-wrap gap-1.5 pt-0.5" aria-label="Alerts">
               {alerts.map((a) => <li key={a.message}><Badge variant={SEVERITY_BADGE[a.severity]}>{a.message}</Badge></li>)}

@@ -73,6 +73,20 @@ test.describe("platform modules", () => {
     await expect(card.getByRole("checkbox", { name: "Renewal fee receipt" })).toBeVisible();
   });
 
+  test("licenses: a warranty end date is saved, shown on the card and flagged when close", async ({ page }) => {
+    await page.goto("/app/licenses");
+    await page.getByRole("button", { name: "Add license" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("License name").fill("Roof warranty permit");
+    const soon = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
+    await dialog.getByLabel("Warranty ends on (optional)").fill(soon);
+    await dialog.getByLabel("I have checked these details against the license document.").check();
+    await dialog.getByRole("button", { name: "Add license" }).click();
+    const card = page.getByTestId("license-card").filter({ hasText: "Roof warranty permit" });
+    await expect(card.getByTestId("license-warranty")).toContainText("Warranty ends");
+    await expect(card.getByRole("list", { name: "Alerts" })).toContainText(/Warranty ends in \d+ days/);
+  });
+
   test("licenses: start from a business template (vehicle registration) and see compliance", async ({ page }) => {
     await page.goto("/app/licenses");
     await expect(page.getByTestId("compliance")).toContainText("Compliance");

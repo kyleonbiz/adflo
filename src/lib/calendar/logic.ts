@@ -45,6 +45,7 @@ export function buildEvents(src: CalendarSources, today: string): CalendarEvent[
   }
   for (const l of src.licenses) {
     add({ id: `lic-${l.id}`, day: l.expiresOn, title: `${l.name} expires`, detail: l.issuer || "License", kind: "Licenses", href: "/app/licenses" });
+    if (l.warrantyEndsOn) add({ id: `lic-${l.id}-warranty`, day: l.warrantyEndsOn, title: `${l.name} warranty ends`, detail: l.issuer || "License", kind: "Licenses", href: "/app/licenses" });
     for (const days of l.reminderDays ?? []) {
       const day = addDays(l.expiresOn, -days);
       if (day >= today) add({ id: `lic-${l.id}-r${days}`, day, title: `Renew ${l.name}`, detail: `${days} days left`, kind: "Licenses", href: "/app/licenses" });

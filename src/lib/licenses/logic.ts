@@ -2,6 +2,8 @@ import type { CalendarEvent } from "@/lib/ics";
 import { addDays, addMonths, daysBetween, isDay } from "@/lib/dates";
 import type { License, LicenseAlert, LicenseStatus, RenewalTask } from "./types";
 
+/** Within this many days, a warranty counts as ending soon (the same lead time equipment uses). */
+export const WARRANTY_SOON_DAYS = 60;
 /** Within this many days of expiry a license counts as "expiring". */
 export const EXPIRING_DAYS = 30;
 /** Within this many days (or expired) the missing-document alert becomes critical. */
@@ -9,6 +11,11 @@ const CRITICAL_DAYS = 14;
 
 export function daysLeft(license: License, today: string): number {
   return daysBetween(today, license.expiresOn);
+}
+
+/** Days until the warranty ends (negative once it has), or null when the license has no warranty date. */
+export function warrantyDaysLeft(license: License, today: string): number | null {
+  return license.warrantyEndsOn && isDay(license.warrantyEndsOn) ? daysBetween(today, license.warrantyEndsOn) : null;
 }
 
 /** The largest reminder lead time; the renewal window opens this many days before expiry. */
@@ -78,6 +85,10 @@ export function licenseAlerts(license: License, today: string): LicenseAlert[] {
       severity: left <= CRITICAL_DAYS ? "critical" : "warning",
       message: `${plural(missing, "required document")} still missing.`,
     });
+  }
+  const warranty = warrantyDaysLeft(license, today);
+  if (warranty !== null && warranty >= 0 && warranty <= WARRANTY_SOON_DAYS) {
+    alerts.push({ severity: "info", message: warranty === 0 ? "Warranty ends today." : `Warranty ends in ${plural(warranty, "day")}.` });
   }
   if (needsReview(license)) {
     alerts.push({ severity: "warning", kind: "review", message: "Needs review. Check these details against the license." });
@@ -179,6 +190,9 @@ export function licenseCalendarEvents(licenses: License[], today: string): Calen
     if (!isDay(l.expiresOn)) continue;
     const detail = [l.issuer && `Issuer: ${l.issuer}`, l.number && `Number: ${l.number}`].filter(Boolean).join("\n");
     events.push({ uid: `license-${l.id}-expires`, day: l.expiresOn, summary: `${l.name} expires`, description: detail || undefined });
+    if (l.warrantyEndsOn && isDay(l.warrantyEndsOn) && l.warrantyEndsOn >= today) {
+      events.push({ uid: `license-${l.id}-warranty`, day: l.warrantyEndsOn, summary: `${l.name} warranty ends`, description: detail || undefined });
+    }
     for (const days of l.reminderDays) {
       const day = addDays(l.expiresOn, -days);
       if (day >= today) events.push({ uid: `license-${l.id}-remind-${days}`, day, summary: `Renew ${l.name} (${days} days left)`, description: detail || undefined });

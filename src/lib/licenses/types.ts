@@ -51,6 +51,8 @@ export interface License {
   verifiedOn?: string;
   /** What renewing costs, in whole dollars. Absent when not known. */
   renewalCost?: number | null;
+  /** The day the warranty on this item ends (an installed system, a bonded or insured piece of work). Absent when there is none. */
+  warrantyEndsOn?: string | null;
   renewals?: RenewalRecord[];
   /** Days on which a renewal reminder email was prepared, oldest first. Cleared when the license is renewed. */
   remindedOn?: string[];

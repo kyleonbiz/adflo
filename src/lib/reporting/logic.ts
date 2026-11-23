@@ -117,10 +117,10 @@ function licenses(src: ReportSources, today: string): Omit<ModuleReport, "id" | 
       { title: "Licenses by type", rows: tally(src.licenses, (l) => label(LICENSE_CATEGORIES, l.category)) },
     ],
     table: {
-      headers: ["Name", "Type", "Issuer", "Expires", "Days left", "Status", "Renewal", "Missing documents"],
+      headers: ["Name", "Type", "Issuer", "Expires", "Days left", "Status", "Renewal", "Missing documents", "Warranty ends"],
       rows: [...src.licenses].sort((a, b) => a.expiresOn.localeCompare(b.expiresOn)).map((l) => [
         l.name, label(LICENSE_CATEGORIES, l.category), l.issuer, l.expiresOn, daysLeft(l, today), LICENSE_STATUS[licenseStatus(l, today)],
-        label(RENEWAL_STAGES, l.stage), missingDocuments(l),
+        label(RENEWAL_STAGES, l.stage), missingDocuments(l), l.warrantyEndsOn ?? "",
       ]),
     },
   };

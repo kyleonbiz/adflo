@@ -26,20 +26,20 @@ function defaults(license: License | undefined, today: string, template?: Licens
     return {
       name: license.name, category: license.category, issuer: license.issuer, number: license.number,
       holder: license.holder, issuedOn: license.issuedOn, expiresOn: license.expiresOn,
-      renewalTermMonths: String(license.renewalTermMonths), renewalCost: license.renewalCost == null ? "" : String(license.renewalCost), reminderDays: license.reminderDays.join(", "),
+      renewalTermMonths: String(license.renewalTermMonths), renewalCost: license.renewalCost == null ? "" : String(license.renewalCost), warrantyEndsOn: license.warrantyEndsOn ?? "", reminderDays: license.reminderDays.join(", "),
       notes: license.notes, documents: "", reviewed: false,
     };
   }
   if (template) {
     return {
       name: template.name, category: template.category, issuer: template.issuer, number: "", holder: "", issuedOn: today,
-      expiresOn: addMonths(today, template.termMonths), renewalTermMonths: String(template.termMonths), renewalCost: "",
+      expiresOn: addMonths(today, template.termMonths), renewalTermMonths: String(template.termMonths), renewalCost: "", warrantyEndsOn: "",
       reminderDays: template.reminderDays.join(", "), notes: template.notes, documents: template.documents.join("\n"), reviewed: false,
     };
   }
   return {
     name: "", category: "business", issuer: "", number: "", holder: "", issuedOn: today,
-    expiresOn: addMonths(today, 12), renewalTermMonths: "12", renewalCost: "", reminderDays: "60, 30, 7", notes: "",
+    expiresOn: addMonths(today, 12), renewalTermMonths: "12", renewalCost: "", warrantyEndsOn: "", reminderDays: "60, 30, 7", notes: "",
     documents: DEFAULT_DOCUMENTS.business.join("\n"), reviewed: false,
   };
 }
@@ -212,6 +212,9 @@ export function LicenseFormDialog({
             </Field>
             <Field id="lic-expiresOn" label="Expires on" error={errors.expiresOn?.message}>
               <Input id="lic-expiresOn" type="date" {...invalid("expiresOn")} {...register("expiresOn")} />
+            </Field>
+            <Field id="lic-warrantyEndsOn" label="Warranty ends on (optional)" error={errors.warrantyEndsOn?.message}>
+              <Input id="lic-warrantyEndsOn" type="date" {...invalid("warrantyEndsOn")} {...register("warrantyEndsOn")} />
             </Field>
             <Field id="lic-renewalCost" label="Renewal fee in dollars (optional)" error={errors.renewalCost?.message}>
               <Input id="lic-renewalCost" inputMode="numeric" placeholder="250" {...invalid("renewalCost")} {...register("renewalCost")} />
