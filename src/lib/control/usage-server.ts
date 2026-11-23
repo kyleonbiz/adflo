@@ -49,3 +49,34 @@ export async function recordUsage(add: Partial<Usage>): Promise<void> {
     console.error("[usage] could not record");
   }
 }
+
+export interface MyUsage {
+  plan: string | null;
+  usage: Usage;
+  seats: { used: number; limit: number | null } | null;
+  storage: { usedBytes: number; quotaBytes: number } | null;
+}
+
+/** This month's usage, seats and storage for the signed-in workspace, for the usage panel. Null when it cannot be read (preview, signed out, no workspace). */
+export async function myUsage(): Promise<MyUsage | null> {
+  try {
+    const ctx = await context();
+    if (!ctx) return null;
+    const w = { p_workspace: ctx.workspaceId };
+    const [plan, usage, seats, storage] = await Promise.all([
+      ctx.supabase.rpc("workspace_plan", w), ctx.supabase.rpc("workspace_usage_now", w),
+      ctx.supabase.rpc("workspace_seats", w), ctx.supabase.rpc("dms_usage", w),
+    ]);
+    const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : Number(v) || 0);
+    const sd = seats.data as { used?: unknown; limit?: unknown } | null;
+    const st = storage.data as { usedBytes?: unknown; quotaBytes?: unknown } | null;
+    return {
+      plan: typeof plan.data === "string" ? plan.data : null,
+      usage: toUsage(usage.data),
+      seats: sd ? { used: num(sd.used), limit: sd.limit == null ? null : num(sd.limit) } : null,
+      storage: st ? { usedBytes: num(st.usedBytes), quotaBytes: num(st.quotaBytes) } : null,
+    };
+  } catch {
+    return null;
+  }
+}

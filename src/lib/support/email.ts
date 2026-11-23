@@ -4,6 +4,9 @@ import { reminderMailReady, sendReminderEmail } from "@/lib/mail/send";
 import { siteOrigin } from "@/lib/site-url";
 import { ticketKey } from "@/lib/control/types";
 
+/** The address support emails come from, and where a client's reply to one lands. Override with SUPPORT_FROM (an alias of the SMTP account). */
+export const SUPPORT_FROM = () => process.env.SUPPORT_FROM || "AdFlo Support <support@adflo.pro>";
+
 /** Where new requests and client replies are announced. Override with SUPPORT_NOTIFY_EMAIL. */
 export const SUPPORT_INBOX = () => process.env.SUPPORT_NOTIFY_EMAIL || "support@adflo.pro";
 
@@ -48,7 +51,7 @@ export const supportOrigin = (req: Request) => siteOrigin(req.url);
 export async function notifyQuietly(to: string, m: { subject: string; text: string; html: string }): Promise<void> {
   try {
     if (!to || !reminderMailReady()) return;
-    await sendReminderEmail({ to, ...m });
+    await sendReminderEmail({ to, from: SUPPORT_FROM(), ...m });
   } catch {
     // The conversation is saved either way; the bell and the queue still show it.
   }
