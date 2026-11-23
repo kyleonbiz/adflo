@@ -23,15 +23,20 @@ export async function loadClients(supabase: SupabaseClient): Promise<ClientRecor
   if (error) throw new Error("Could not load clients.");
   const clients = (data as ClientRow[]).map(toClient);
   // Seats in use and last sign-in come from a function that exposes only those figures; the checklist is a plain table.
-  const [usage, steps, waiting, reminders] = await Promise.all([
+  const [usage, month, steps, waiting, reminders] = await Promise.all([
     supabase.rpc("control_client_usage"),
+    supabase.rpc("control_usage_month"),
     supabase.from("client_checklist").select("client_id, step"),
     supabase.from("agreements_sent").select("client_id").is("accepted_at", null),
     supabase.from("client_reminders").select("client_id, sent_at").order("sent_at", { ascending: false }).limit(1000),
   ]);
   type Usage = { client_id: string; seats_used: number; last_active: string | null };
   const u = new Map<string, Usage>(((usage.data ?? []) as Usage[]).map((x) => [x.client_id, x]));
+  type Month = { client_id: string; ai_actions: number; tokens: number; ocr_reads: number; quick_actions: number };
+  const m = new Map<string, Month>(((month.data ?? []) as Month[]).map((x) => [x.client_id, x]));
   for (const c of clients) {
+    const mo = m.get(c.id);
+    c.usage = mo && c.workspaceId ? { aiActions: Number(mo.ai_actions), tokens: Number(mo.tokens), ocrReads: Number(mo.ocr_reads), quickActions: Number(mo.quick_actions) } : null;
     const row = u.get(c.id);
     if (row && c.workspaceId) { c.seatsUsed = Number(row.seats_used); c.lastActive = row.last_active; }
     c.agreementsWaiting = ((waiting.data ?? []) as { client_id: string }[]).filter((w) => w.client_id === c.id).length;
