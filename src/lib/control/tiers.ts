@@ -64,6 +64,8 @@ export const ADD_ONS = [
 /** The one plan: $99 a month with the owner's seat, plus $10 a month for each additional seat. Everything is included. */
 export const PRICE_CENTS = 9900;
 export const SEAT_CENTS = 1000;
+/** What each seat beyond the plan's included seats costs per month, in cents (the name the billing code uses). */
+export const SEAT_PRICE_CENTS: number = SEAT_CENTS;
 /** One-time onboarding fee (we load your first records), quoted between these amounts by how much there is to load. Cents. */
 export const ONBOARDING_MIN_CENTS = 30000;
 export const ONBOARDING_MAX_CENTS = 50000;

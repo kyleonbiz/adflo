@@ -1,20 +1,22 @@
-import { MODULES } from "@/lib/modules/registry";
-import { AVAILABLE_MODULE_IDS, IMPORTABLE, runSetupChecks, setupScore } from "@/lib/setup/logic";
 import type { SetupConfig } from "@/lib/setup/types";
 import type { Link } from "./engine";
 import { DRAFT_SERVICES, MAX_DRAFTS_PER_TURN, buildDraft } from "./guardrails";
+import { PROPOSABLE, buildProposal, type Proposal } from "./proposal";
 
-/** What the model may do: read the saved setup and prepare drafts. It cannot change the account setup; the owner does that by hand in Settings. */
+/** What the model may do: propose changes for the owner to approve, and prepare drafts. It cannot save anything or change the account setup. Status and how-to answers come from the rules engine, not from here. */
 export const TOOL_DEFS = [
   {
-    name: "list_services",
-    description: "List every AdFlo service the business can turn on, with what each does.",
-    input_schema: { type: "object", properties: {}, additionalProperties: false },
-  },
-  {
-    name: "get_status",
-    description: "Read-only: the business profile, chosen services, setup health score and every open check in Settings.",
-    input_schema: { type: "object", properties: {}, additionalProperties: false },
+    name: "propose_action",
+    description: "Propose adding a contact, a vendor or a draft invoice. Nothing is saved: the owner sees a card in plain words and presses Approve, Reject or Edit, and only Approve saves it. Use only details the owner gave you; ask for anything required that is missing (contact: name; vendor: name and email; invoice: client and amount). Fields outside the service's list are dropped.",
+    input_schema: {
+      type: "object",
+      properties: {
+        service: { type: "string", enum: PROPOSABLE },
+        fields: { type: "object", additionalProperties: { type: "string" }, description: "Field names and values, for example client, clientEmail, description, amount, dueOn for an invoice." },
+      },
+      required: ["service", "fields"],
+      additionalProperties: false,
+    },
   },
   {
     name: "prepare_draft",
@@ -31,28 +33,20 @@ export const TOOL_DEFS = [
   },
 ] as const;
 
-export interface ToolState { readonly config: SetupConfig; today: string; links: Link[]; drafts?: number }
+export interface ToolState { readonly config: SetupConfig; today: string; links: Link[]; drafts?: number; proposals?: Proposal[]; now?: number }
 
-const nameOf = (id: string) => MODULES.find((m) => m.id === id)?.name ?? id;
 const ok = (v: unknown) => JSON.stringify(v);
 const err = (message: string) => JSON.stringify({ error: message });
 
 export function runTool(state: ToolState, name: string, input: unknown): string {
   const args = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
-  const { config } = state;
   switch (name) {
-    case "list_services":
-      return ok(AVAILABLE_MODULE_IDS.map((id) => ({ id, name: nameOf(id), does: MODULES.find((m) => m.id === id)?.summary })));
-    case "get_status": {
-      const checks = runSetupChecks(config);
-      return ok({
-        business: config.business,
-        services: config.modules.map(nameOf),
-        deployed: config.completedOn !== null,
-        score: setupScore(checks),
-        open: checks.filter((c) => c.status !== "pass").map((c) => ({ title: c.title, status: c.status, detail: c.detail })),
-        importHints: config.modules.filter((id) => IMPORTABLE[id] && !config.importsDone.includes(id)).map((id) => ({ service: nameOf(id), how: IMPORTABLE[id] })),
-      });
+    case "propose_action": {
+      if ((state.proposals?.length ?? 0) >= MAX_DRAFTS_PER_TURN) return err(`I can propose at most ${MAX_DRAFTS_PER_TURN} things at a time. Ask the owner to review these first.`);
+      const result = buildProposal(String(args.service ?? ""), args.fields, state.now ?? Date.now(), `p-${Math.random().toString(36).slice(2, 10)}`);
+      if (!result.ok) return err(result.error);
+      state.proposals = [...(state.proposals ?? []), result.proposal];
+      return ok({ proposed: result.proposal.title, note: "Nothing is saved. Tell the owner to check the card and press Approve, Reject or Edit." });
     }
     case "prepare_draft": {
       if ((state.drafts ?? 0) >= MAX_DRAFTS_PER_TURN) return err(`I can prepare at most ${MAX_DRAFTS_PER_TURN} drafts at a time. Ask the owner to review these first.`);

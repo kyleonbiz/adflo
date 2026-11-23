@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     await recordUsage({ aiActions: 1, tokens: result.usage.input + result.usage.output + result.usage.cacheRead + result.usage.cacheWrite });
     // Token counts only, never the conversation: this is for sizing cost per account.
     console.info("[assistant] usage", JSON.stringify({ user: dms.userId, ...result.usage }));
-    return json({ ok: true, data: { text: result.text, links: result.links } });
+    return json({ ok: true, data: { text: result.text, links: result.links, proposals: result.proposals } });
   } catch (e) {
     const err = toDmsError(e);
     // Log the class only: messages can echo what the owner typed.

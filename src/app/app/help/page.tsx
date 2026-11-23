@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { renderAppShell } from "@/lib/app-shell";
+import { BillingPanel } from "@/components/billing-panel";
 import { PlanLimitsTable } from "@/components/plan-limits";
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 
@@ -25,6 +26,7 @@ export default function HelpRoute() {
         <h2 className="text-base font-semibold">Good to know</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted-foreground">{TIPS.map((t) => <li key={t}>{t}</li>)}</ul>
       </section>
+      <BillingPanel />
       <section aria-label="Plans and limits" className="rounded-2xl border bg-card p-6 shadow-panel">
         <h2 className="text-base font-semibold">Plans &amp; limits</h2>
         <p className="mb-3 mt-1 text-sm text-muted-foreground">What each AdFlo plan includes. To add seats, storage or Claude actions, email support@adflo.pro.</p>

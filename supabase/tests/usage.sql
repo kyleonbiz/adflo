@@ -19,7 +19,7 @@ select t.ok('a non-member reads nothing', (select public.workspace_usage_now(:'w
 select t.ok('the table is closed to direct reads', not has_table_privilege('authenticated', 'public.workspace_usage', 'select'));
 reset role;
 -- Staff read this month's counters per client (control.sql, which runs earlier, defines t.as_staff and the staff rows).
-insert into public.clients (id, name, plan, workspace_id) values ('7a000000-0000-4000-8000-0000000000e1', 'Usage Client', 'core +', :'wsu');
+insert into public.clients (id, name, plan, workspace_id) values ('7a000000-0000-4000-8000-0000000000e1', 'Usage Client', 'adflo', :'wsu');
 select t.as_staff('00000000-0000-4000-8000-0000000000a3'::uuid);
 select t.ok('billing staff read the counters per client',
   (select ai_actions = 2 and tokens = 2000 and ocr_reads = 1 and quick_actions = 2 from public.control_usage_month() where client_id = '7a000000-0000-4000-8000-0000000000e1'));

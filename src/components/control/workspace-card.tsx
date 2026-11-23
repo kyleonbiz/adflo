@@ -1,5 +1,6 @@
 "use client";
 
+import { BILLING_LABEL } from "@/lib/billing/sync";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BellRing, Link2, Link2Off, Mail, Pencil, Rocket, Send, Trash2 } from "lucide-react";
@@ -11,7 +12,8 @@ import { deleteConfirmationMatches } from "@/lib/control/client-delete";
 import { cooldownHoursLeft, reminderAgo } from "@/lib/control/reminders";
 import { invitationMessage, welcomeMessage } from "@/lib/control/workspace";
 import { publicOrigin } from "@/lib/public-origin";
-import { STATUS_LABEL, effectivePriceCents, formatMoney, type ClientRecord, type Plan, type UnlinkedWorkspace } from "@/lib/control/types";
+import { SEAT_PRICE_CENTS } from "@/lib/control/tiers";
+import { STATUS_LABEL, effectivePriceCents, extraSeats, formatMoney, type ClientRecord, type Plan, type UnlinkedWorkspace } from "@/lib/control/types";
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
 const dayOrNever = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "Never");
@@ -148,8 +150,11 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
   const price = effectivePriceCents(client, plans);
   const facts: [string, React.ReactNode][] = [
     ["Plan", <span key="p" className="capitalize">{client.plan}</span>],
-    ["Price per month", price == null ? "Not set" : <>{formatMoney(price)}{client.priceOverrideCents != null && <span className="ml-1 text-xs text-muted-foreground">own price{client.priceNote ? `: ${client.priceNote}` : ""}</span>}</>],
+    ["Price per month", price == null ? "Not set" : <>{formatMoney(price)}{client.priceOverrideCents != null && <span className="ml-1 text-xs text-muted-foreground">own price{client.priceNote ? `: ${client.priceNote}` : ""}</span>}{extraSeats(client, plans).count > 0 && <span className="ml-1 text-xs text-muted-foreground">includes {extraSeats(client, plans).count} extra seat{extraSeats(client, plans).count === 1 ? "" : "s"} at {formatMoney(SEAT_PRICE_CENTS)}</span>}</>],
     ["Seats", `${client.seatsUsed ?? "—"} used of ${client.seatsLimit}`],
+    ["Online billing", client.billingStatus
+      ? `${BILLING_LABEL[client.billingStatus] ?? client.billingStatus}${client.billingInterval ? ` · ${client.billingInterval === "year" ? "yearly" : "monthly"}` : ""}${client.periodEnd ? ` · ${client.cancelAtPeriodEnd ? "ends" : "renews"} ${dayOrNever(client.periodEnd)}` : ""}`
+      : "Not subscribed online"],
     ["Last sign-in", dayOrNever(client.lastActive)],
     ["Owner", client.ownerName ? `${client.ownerName}${client.ownerEmail ? ` · ${client.ownerEmail}` : ""}` : client.ownerEmail || "—"],
     ["Client since", dayOrNever(client.startedOn)],

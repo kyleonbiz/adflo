@@ -1,3 +1,4 @@
+import { SEAT_PRICE_CENTS, limitsFor } from "./tiers";
 export const CLIENT_STATUSES = ["trial", "active", "suspended", "cancelled"] as const;
 export type ClientStatus = (typeof CLIENT_STATUSES)[number];
 
@@ -33,6 +34,11 @@ export interface ClientRecord {
   lastActive: string | null;
   /** This month's usage, from the usage function; null in the preview or when the client has no workspace. */
   usage?: import("./usage").Usage | null;
+  /** Stripe subscription state, written by the webhook; null when the client does not pay online. */
+  billingStatus?: string | null;
+  billingInterval?: "month" | "year" | null;
+  periodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean;
   /** Onboarding steps that are done. */
   checklist: string[];
   /** Agreements sent to this client that nobody has accepted yet. */
@@ -62,10 +68,29 @@ export interface StaffMember { userId: string; role: StaffRole; displayName: str
 
 export const formatMoney = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
 
-/** What a client pays per month: their own price when set, otherwise the plan's. */
-export function effectivePriceCents(c: Pick<ClientRecord, "plan" | "priceOverrideCents">, plans: Plan[]): number | null {
+type Priced = Pick<ClientRecord, "plan" | "priceOverrideCents"> & { seatsLimit?: number };
+
+/** The monthly price before extra seats: the client's own price when set, otherwise the plan's. */
+export function basePriceCents(c: Priced, plans: Plan[]): number | null {
   if (c.priceOverrideCents != null) return c.priceOverrideCents;
   return plans.find((p) => p.name.toLowerCase() === c.plan.toLowerCase())?.priceCents ?? null;
+}
+
+/**
+ * Seats billed on top of the plan: the seats the client is allowed minus the seats the plan includes. Only the current
+ * plans with a set price are seat-billed (AdFlo). None for a client with their own price (it is all-in), on Enterprise
+ * (quoted per customer), or on a legacy plan, whose clients keep the price they signed up at.
+ */
+export function extraSeats(c: Priced, plans: Plan[]): { count: number; included: number } {
+  const plan = plans.find((p) => p.name.toLowerCase() === c.plan.toLowerCase());
+  if (c.priceOverrideCents != null || !plan || plan.priceCents <= 0 || c.seatsLimit == null || limitsFor(plan.name)?.priceCents == null) return { count: 0, included: plan?.seatsIncluded ?? 0 };
+  return { count: Math.max(0, c.seatsLimit - plan.seatsIncluded), included: plan.seatsIncluded };
+}
+
+/** What a client pays per month: base price plus any extra seats. Null when there is no price to bill. */
+export function effectivePriceCents(c: Priced, plans: Plan[]): number | null {
+  const base = basePriceCents(c, plans);
+  return base == null ? null : base + extraSeats(c, plans).count * SEAT_PRICE_CENTS;
 }
 
 export interface AuditEntry {

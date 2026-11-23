@@ -237,3 +237,23 @@ test("control center preview: the industries page lists every industry with swit
   await expect(page.getByRole("switch", { name: "Construction & trades open to new sign-ups" })).toBeDisabled();
   await expect(page.getByText("Sample view")).toBeVisible();
 });
+
+test("control center preview: the sales and revenue counter shows revenue against the goal and lets you change the goal", async ({ page }) => {
+  test.setTimeout(180_000);
+  await page.goto("/control");
+  await expect(async () => {
+    await page.getByRole("navigation", { name: "Control center" }).getByRole("link", { name: "Sales & revenue" }).click();
+    await expect(page).toHaveURL(/\/control\/sales$/, { timeout: 4_000 });
+  }).toPass({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Sales & revenue", level: 1 })).toBeVisible();
+  const goal = page.getByRole("region", { name: "Revenue goal" });
+  await expect(goal.getByText("of $10,000 a month")).toBeVisible();
+  await expect(goal.getByRole("progressbar", { name: "Progress to the monthly revenue goal" })).toBeVisible();
+
+  await goal.getByLabel("Monthly goal (dollars)").fill("abc");
+  await goal.getByRole("button", { name: "Set goal" }).click();
+  await expect(goal.getByRole("alert")).toContainText("Enter a goal in dollars");
+  await goal.getByLabel("Monthly goal (dollars)").fill("5,000");
+  await goal.getByRole("button", { name: "Set goal" }).click();
+  await expect(goal.getByText("of $5,000 a month")).toBeVisible();
+});
