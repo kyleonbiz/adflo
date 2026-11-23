@@ -32,6 +32,17 @@ test.describe("documents", () => {
     await expect(cards).toHaveCount(0);
   });
 
+  test("setting and clearing a document's expiry date confirms each change", async ({ page }) => {
+    await page.goto("/app");
+    await addDocuments(page, ["Invoice_INV-2041_Northwind.pdf"]);
+    await page.getByTestId("document-card").getByRole("button", { name: /^Open / }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Expiration Date (Optional)").fill("2099-03-01");
+    await expect(page.getByText("Expiry date saved.")).toBeVisible();
+    await dialog.getByLabel("Expiration Date (Optional)").fill("");
+    await expect(page.getByText("Expiry date cleared.")).toBeVisible();
+  });
+
   test("a document has a custom reminder and a Send action", async ({ page }) => {
     await page.goto("/app");
     await addDocuments(page, ["Invoice_INV-2041_Northwind.pdf"]);

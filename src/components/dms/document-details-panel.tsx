@@ -214,7 +214,7 @@ export function DocumentDetailsPanel({
                     tags={doc.tags}
                     suggestions={boot?.tags ?? []}
                     readOnly={!canEdit}
-                    onChange={(tags) => manager.update(doc.id, { tags })}
+                    onChange={(tags) => manager.update(doc.id, { tags }, "Tags updated.")}
                   />
                 </section>
 
@@ -260,7 +260,7 @@ export function DocumentDetailsPanel({
                   doc={doc}
                   canEdit={canEdit}
                   onCategory={(category) => void manager.update(doc.id, { category }, "Category updated.")}
-                  onExpiry={(expiresAt) => void manager.update(doc.id, { expiresAt })}
+                  onExpiry={(expiresAt) => void manager.update(doc.id, { expiresAt }, expiresAt ? "Expiry date saved." : "Expiry date cleared.")}
                   onDownloadVersion={(v) => manager.download(doc, v.versionNumber)}
                 />
               </aside>
