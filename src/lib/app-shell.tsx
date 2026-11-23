@@ -84,20 +84,27 @@ export async function renderAppShell(
         );
       }
       const { data: open } = await supabase.rpc("signup_is_open");
-      if (open === true && !(await findStaff(supabase))) redirect("/start");
+      if (open === true && !(await findStaff(supabase, data.user))) redirect("/start");
       return <NoWorkspaceNotice email={email} />;
     }
     // A client switched off in the Control Center sees a plain notice instead of the app. Nothing is deleted.
-    const standing = await getWorkspaceStanding(supabase, membership.workspaceId);
+    // Everything below only needs the workspace id, so it is fetched together instead of one after another.
+    const [standing, { data: ws }, { data: planFeatures }, industries, staff, supportItems, notifications] = await Promise.all([
+      getWorkspaceStanding(supabase, membership.workspaceId),
+      supabase.from("workspaces").select("name, deletion_requested_at").eq("id", membership.workspaceId).maybeSingle(),
+      // Plan features: a failed lookup leaves everything available rather than locking a client out.
+      supabase.rpc("workspace_features", { p_workspace: membership.workspaceId }),
+      loadLiveIndustries(supabase),
+      findStaff(supabase, data.user),
+      loadSupportItems(supabase),
+      loadNotifications(),
+    ]);
     if (isPaused(standing)) return <PausedNotice standing={standing} email={email} />;
-    const { data: ws } = await supabase.from("workspaces").select("name, deletion_requested_at").eq("id", membership.workspaceId).maybeSingle();
-    // Plan features: a failed lookup leaves everything available rather than locking a client out.
-    const { data: planFeatures } = await supabase.rpc("workspace_features", { p_workspace: membership.workspaceId });
     const features = Array.isArray(planFeatures) ? (planFeatures as string[]) : null;
     // Loaded only here, so the preview never downloads the database client it does not use.
     const { RecordsProvider } = await import("@/components/records-provider");
     return (
-      <Frame userName={fullName} features={features} industries={await loadLiveIndustries(supabase)} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} isStaff={!!(await findStaff(supabase))} supportItems={await loadSupportItems(supabase)} />}>
+      <Frame userName={fullName} features={features} industries={industries} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={notifications} isStaff={!!staff} supportItems={supportItems} />}>
         {ws?.deletion_requested_at && <DeletionBanner requestedAt={ws.deletion_requested_at as string} />}
         {pathAllowed(features, nextPath) ? content("live", { name: fullName }) : <NotInPlan />}
       </Frame>

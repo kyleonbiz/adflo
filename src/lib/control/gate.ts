@@ -9,13 +9,14 @@ import { STAFF_ROLES, type StaffRole } from "./types";
 export interface Staff { userId: string; name: string; email: string; role: StaffRole }
 
 /** The signed-in user's active staff row, or null. Clients are never staff, and RLS hides this table from them anyway. */
-export async function findStaff(supabase: SupabaseClient): Promise<Staff | null> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) return null;
-  const { data } = await supabase.from("staff_members").select("role, display_name, email, active").eq("user_id", auth.user.id).maybeSingle();
+export async function findStaff(supabase: SupabaseClient, known?: { id: string; email?: string | null }): Promise<Staff | null> {
+  // A caller that has just validated the user passes it in, which saves a round trip to the auth server.
+  const user = known ?? (await supabase.auth.getUser()).data.user;
+  if (!user) return null;
+  const { data } = await supabase.from("staff_members").select("role, display_name, email, active").eq("user_id", user.id).maybeSingle();
   if (!data || !data.active || !STAFF_ROLES.includes(data.role as StaffRole)) return null;
-  const email = (data.email as string) || auth.user.email || "";
-  return { userId: auth.user.id, name: (data.display_name as string) || email.split("@")[0], email, role: data.role as StaffRole };
+  const email = (data.email as string) || user.email || "";
+  return { userId: user.id, name: (data.display_name as string) || email.split("@")[0], email, role: data.role as StaffRole };
 }
 
 /**
