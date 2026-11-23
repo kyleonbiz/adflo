@@ -5,16 +5,18 @@
 -- their own workspace's requests only through the narrow functions below, which return just the fields a client
 -- should see (no priority, assignee or internal notes).
 
+-- "if not exists" because an earlier, unmerged take on this feature (branch stoic-ritchie) already added workspace_id,
+-- source and requester_email to the shared database; this migration works on both that database and a fresh one.
 alter table public.support_tickets
-  add column ticket_no bigint generated always as identity,
-  add column workspace_id uuid references public.workspaces (id) on delete set null,
-  add column category text not null default 'question' check (category in ('question', 'problem', 'request')),
-  add column source text not null default 'staff' check (source in ('client', 'staff')),
-  add column requester uuid references auth.users (id) on delete set null,
-  add column requester_name text not null default '' check (char_length(requester_name) <= 120),
-  add column requester_email text not null default '' check (char_length(requester_email) <= 320);
-create unique index support_tickets_no_idx on public.support_tickets (ticket_no);
-create index support_tickets_workspace_idx on public.support_tickets (workspace_id, created_at desc);
+  add column if not exists ticket_no bigint generated always as identity,
+  add column if not exists workspace_id uuid references public.workspaces (id) on delete set null,
+  add column if not exists category text not null default 'question' check (category in ('question', 'problem', 'request')),
+  add column if not exists source text not null default 'staff' check (source in ('client', 'staff')),
+  add column if not exists requester uuid references auth.users (id) on delete set null,
+  add column if not exists requester_name text not null default '' check (char_length(requester_name) <= 120),
+  add column if not exists requester_email text not null default '' check (char_length(requester_email) <= 320);
+create unique index if not exists support_tickets_no_idx on public.support_tickets (ticket_no);
+create index if not exists support_tickets_workspace_ticket_idx on public.support_tickets (workspace_id, created_at desc);
 
 -- The conversation: replies from the client and from staff. Internal notes stay in ticket_notes, which clients never see.
 create table public.ticket_messages (
