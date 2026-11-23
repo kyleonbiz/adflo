@@ -104,7 +104,7 @@ const BY_INDUSTRY: Record<Industry, Recommendation[]> = {
   ],
   "Tech & agency": [
     { id: "projects", reason: "Client work runs on projects and milestones." },
-    { id: "crm", reason: "Clients and leads." },
+    { id: "crm", reason: "Clients and other contacts." },
     { id: "forms", reason: "Intake and sign-off." },
     { id: "vendors", reason: "Contractors and software vendors." },
   ],

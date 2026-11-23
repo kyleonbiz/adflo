@@ -53,7 +53,7 @@ code-level findings: visual and runtime issues may be missing. Priority: **H** h
 ## Contacts (`contacts/`)
 - Strong: import, duplicate cleanup, bulk, export.
 - Profile page (`contacts/[id]`): add related **invoices, projects, forms and documents** in one timeline; this is the "records in one place" promise and closes the road-map item.
-- Positioning check: the module summary says "Customers, leads and vendors"; "leads" pushes toward CRM. Consider "Customers, vendors and other contacts".
+- Positioning check (done): the module summary and the Tech & agency setup suggestion no longer say "leads", which pushed toward CRM. They read "Customers, vendors and other contacts" and "Clients and other contacts".
 
 ## Tasks & projects (`projects/`)
 - Largest page (497 lines) with tasks view, projects, milestones, updates log. Consider splitting `projects-page.tsx` (state + dialogs + list) for maintainability.
