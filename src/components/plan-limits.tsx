@@ -1,4 +1,5 @@
-import { ADD_ONS, ONBOARDING_MAX_CENTS, ONBOARDING_MIN_CENTS, TIERS, TRIAL_DAYS, type PlanLimits } from "@/lib/control/tiers";
+import { ADD_ONS, ONBOARDING_MAX_CENTS, ONBOARDING_MIN_CENTS, TIERS, type PlanLimits } from "@/lib/control/tiers";
+import { TRIAL_DAYS } from "@/lib/billing/trial";
 
 const money = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 const num = (n: number) => n.toLocaleString("en-US");

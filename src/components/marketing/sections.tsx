@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
-import { ONBOARDING_MAX_CENTS, ONBOARDING_MIN_CENTS, PRICE_CENTS, SEAT_CENTS, TIERS, TRIAL_DAYS } from "@/lib/control/tiers";
+import { ONBOARDING_MAX_CENTS, ONBOARDING_MIN_CENTS, PRICE_CENTS, SEAT_CENTS, TIERS } from "@/lib/control/tiers";
+import { TRIAL_DAYS } from "@/lib/billing/trial";
 
 const container = "mx-auto w-full max-w-6xl px-5 sm:px-8";
 const card = "rounded-2xl border border-white/80 bg-white/70 p-5 shadow-[0_10px_30px_-14px_rgb(40_80_200/0.3)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue/40 hover:bg-white/85";

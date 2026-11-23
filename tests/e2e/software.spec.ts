@@ -39,7 +39,7 @@ test.describe("Landing page and the app", () => {
     await expect(pricing).toContainText("$300 to $500");
     await expect(pricing.getByRole("heading", { name: "Custom package" })).toBeVisible();
     await expect(pricing.getByRole("link", { name: "Request a custom quote" })).toBeVisible();
-    await expect(pricing.getByRole("link", { name: "Start your free 14-day trial" })).toHaveAttribute("href", "/signup");
+    await expect(pricing.getByRole("link", { name: "Start your free 3-day trial" })).toHaveAttribute("href", "/signup");
   });
 
   test("the demo request form sends to the server and confirms on the page", async ({ page }) => {

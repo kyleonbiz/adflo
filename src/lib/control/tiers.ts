@@ -53,7 +53,6 @@ export interface PlanLimits {
   tokenBackstop: number | null;
 }
 
-export const TRIAL_DAYS = 14;
 /** Add-ons. An extra seat is the same $10 the plan charges per seat. Prices in cents. */
 export const ADD_ONS = [
   { label: "Extra seat", priceCents: 1000, per: "seat" },

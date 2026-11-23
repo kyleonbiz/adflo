@@ -2,6 +2,7 @@ import { billingContext, getStripe } from "@/lib/billing/server";
 import { priceConfig } from "@/lib/billing/sync";
 import { json, readJson, sameOrigin } from "@/lib/dms/server/respond";
 import { siteOrigin } from "@/lib/site-url";
+import { TRIAL_DAYS } from "@/lib/billing/trial";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,8 @@ export async function POST(req: Request) {
       ...(c.stripe_customer_id ? { customer: c.stripe_customer_id } : { customer_email: ctx.email || c.owner_email || undefined }),
       client_reference_id: c.id,
       metadata: { client_id: c.id },
-      subscription_data: { metadata: { client_id: c.id } },
+      // A workspace that never subscribed gets the free trial; a returning one (it has had a Stripe customer) is billed straight away.
+      subscription_data: { metadata: { client_id: c.id }, ...(c.stripe_customer_id ? {} : { trial_period_days: TRIAL_DAYS }) },
       allow_promotion_codes: true,
       success_url: `${origin}/app/help?billing=success`,
       cancel_url: `${origin}/app/help?billing=cancelled`,
