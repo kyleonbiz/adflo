@@ -1,4 +1,4 @@
-import { billingContext, getStripe } from "@/lib/billing/server";
+import { billingContext, getStripe, logStripeError } from "@/lib/billing/server";
 import { priceConfig } from "@/lib/billing/sync";
 import { json, readJson, sameOrigin } from "@/lib/dms/server/respond";
 import { siteOrigin } from "@/lib/site-url";
@@ -32,7 +32,8 @@ export async function POST(req: Request) {
       cancel_url: `${origin}/trial/continue`,
     });
     return json({ ok: true, data: { url: session.url } });
-  } catch {
+  } catch (e) {
+    logStripeError("checkout", e);
     return json({ ok: false, error: { code: "internal", message: "Could not start checkout. Try again, or email support@adflo.pro." } }, 502);
   }
 }

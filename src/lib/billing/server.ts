@@ -44,3 +44,9 @@ export async function billingContext(): Promise<BillingContext> {
   if (!client) return { ok: false, status: 409, message: "Your account is not set up for online billing yet. Email support@adflo.pro." };
   return { ok: true, admin, client: client as BillingClient, email: data.user.email ?? "" };
 }
+
+/** Logs why a Stripe call failed: its error type, code, parameter and message (never keys or customer details), so a failed checkout can be diagnosed from the server log. */
+export function logStripeError(where: string, e: unknown): void {
+  const r = (e && typeof e === "object" ? e : {}) as { type?: string; code?: string; param?: string; statusCode?: number; message?: string };
+  console.error(`[billing] ${where} failed:`, JSON.stringify({ type: r.type, code: r.code, param: r.param, status: r.statusCode, message: typeof r.message === "string" ? r.message.slice(0, 300) : undefined }));
+}

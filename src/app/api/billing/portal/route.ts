@@ -1,4 +1,4 @@
-import { billingContext, getStripe } from "@/lib/billing/server";
+import { billingContext, getStripe, logStripeError } from "@/lib/billing/server";
 import { json, sameOrigin } from "@/lib/dms/server/respond";
 import { siteOrigin } from "@/lib/site-url";
 
@@ -13,7 +13,8 @@ export async function POST(req: Request) {
   try {
     const session = await getStripe().billingPortal.sessions.create({ customer: ctx.client.stripe_customer_id, return_url: `${siteOrigin(req.url)}/app/help` });
     return json({ ok: true, data: { url: session.url } });
-  } catch {
+  } catch (e) {
+    logStripeError("portal", e);
     return json({ ok: false, error: { code: "internal", message: "Could not open billing. Try again, or email support@adflo.pro." } }, 502);
   }
 }
