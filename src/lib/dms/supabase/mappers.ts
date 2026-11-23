@@ -66,6 +66,7 @@ export function mapDbError(error: { code?: string; message?: string } | null | u
   const code = error?.code ?? "";
   if (msg.includes("quota_exceeded")) return new DmsError("quota_exceeded", "Not enough storage left in this workspace.");
   if (msg.includes("workspace_limit")) return new DmsError("quota_exceeded", "You already own the maximum number of workspaces.");
+  if (msg.includes("seat_limit")) return new DmsError("quota_exceeded", "All the seats in your plan are in use. Add seats under Help → Billing → Manage billing, or email support@adflo.pro.");
   if (msg.includes("last_owner")) return new DmsError("conflict", "A workspace must keep at least one owner.");
   if (msg.includes("protected_column") || msg.includes("forbidden") || code === "42501") {
     return new DmsError("forbidden", "You do not have permission to do that.");
