@@ -95,7 +95,7 @@ for (const mod of mods) {
       await h.cap(title, body, opts.hold);
       await h.unspot();
       await h.unzoom(); // measure the next target on the un-zoomed page, then zoom again
-      if (target) { await h.spot(target); if (opts.zoom) await h.zoom(target, opts.zoom); }
+      if (target) { await h.spot(target); const z = opts.zoom === undefined ? 1.15 : opts.zoom; if (z) await h.zoom(target, z); } // zoom in on what is being explained, unless a dialog is about to open
     },
     /** Magnifies the page around an element so it is easy to read on a phone. The highlight and cursor zoom with it. */
     async zoom(locator, scale = 1.3) {
@@ -132,6 +132,7 @@ for (const mod of mods) {
       await page.goto(BASE + path, { waitUntil: "networkidle" });
       await page.waitForFunction(() => !document.querySelector(".animate-pulse"), null, { timeout: 6000 }).catch(() => {}); // loading skeletons gone
       await page.waitForTimeout(ms);
+      if (!trimStart) trimStart = (Date.now() - t0) / 1000; // the first page load is not part of the video
     },
     async scroll(px, ms = 1500) { await page.mouse.wheel(0, px); await page.waitForTimeout(ms); },
     async type(label, text) {

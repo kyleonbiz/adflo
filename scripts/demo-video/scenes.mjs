@@ -5,7 +5,7 @@
 
 export const MODULES = [
   {
-    id: "dashboard", title: "Dashboard", pain: "See what needs attention before it becomes a problem",
+    id: "dashboard", problem: "Where do you even start each morning?", title: "Dashboard", pain: "See what needs attention before it becomes a problem",
     async run({ page, go, wait, scroll, step }) {
       await go("/app/overview", 1500);
       await step("Start every day here", "The dashboard shows your outstanding invoices, open tasks and everything that needs attention, updated as you work.", page.getByText("Outstanding invoices").locator("xpath=ancestor::*[contains(@class,'rounded')][1]"));
@@ -19,7 +19,7 @@ export const MODULES = [
     },
   },
   {
-    id: "licenses", title: "Licenses & Renewals", pain: "Never miss a license, permit or insurance renewal",
+    id: "licenses", problem: "When does your insurance expire?", title: "Licenses & Renewals", pain: "Never miss a license, permit or insurance renewal",
     async run({ page, go, wait, scroll, step }) {
       await go("/app/licenses", 1500);
       await step("Every license, permit and policy in one place", "Track contractor licenses, insurance, registrations and certifications, each with its issuer, number and expiry date.");
@@ -33,7 +33,7 @@ export const MODULES = [
     },
   },
   {
-    id: "equipment", title: "Equipment", pain: "Know where every tool, vehicle and unit is, and who has it",
+    id: "equipment", problem: "Who has your equipment right now?", title: "Equipment", pain: "Know where every tool, vehicle and unit is, and who has it",
     async run({ page, go, wait, type, step }) {
       await go("/app/equipment", 1500);
       await step("Track every tool, vehicle and unit", "Keep tools, vehicles, appliances, HVAC units and keys in one list, with the dates that matter.");
@@ -57,7 +57,7 @@ export const MODULES = [
         await wait(1300);
       }
       await step("Overdue service is flagged automatically", "Anything past its service date is marked, and the summary tiles count what needs attention.", page.getByTestId("equipment-row").first());
-      await step("Log service in one click", "Choose Log service and AdFlo records it. If you set a repeat interval, the next date is worked out for you.", page.getByRole("button", { name: "Log service for Refrigerant recovery machine" }));
+      await step("Log service in one click", "Choose Log service and AdFlo records it. If you set a repeat interval, the next date is worked out for you.", page.getByRole("button", { name: "Log service for Refrigerant recovery machine" }), { zoom: false });
       await page.getByRole("button", { name: "Log service for Refrigerant recovery machine" }).click({ timeout: 4000 }).catch(() => {});
       await wait(1500);
       await step("Service dates show up where you plan", "Service and inspection dates appear on your calendar and dashboard, next to your licenses and invoices.");
@@ -65,13 +65,13 @@ export const MODULES = [
     },
   },
   {
-    id: "invoices", title: "Invoices", pain: "Know what you are owed and chase overdue payments",
+    id: "invoices", problem: "What are you still owed?", title: "Invoices", pain: "Know what you are owed and chase overdue payments",
     async run({ page, go, wait, step }) {
       await go("/app/invoices", 1500);
       await step("See what you are owed", "Totals for outstanding, overdue, due in the next 7 days, and paid this month, at the top of the page.", page.getByText("Outstanding").first().locator("xpath=ancestor::*[contains(@class,'grid')][1]"));
       await step("Overdue invoices rise to the top", "Invoices are grouped by status and sorted by urgency, with the number of days overdue shown.", page.getByText("INV-1041").first().locator("xpath=ancestor::*[.//button[contains(.,'Mark paid')]][1]"));
       await step("Chase payment with a reminder", "Each overdue invoice has a Remind button, so following up takes one click.");
-      await step("Record a payment in seconds", "Choose Mark paid, confirm the date, and your totals update straight away.", page.getByRole("button", { name: "Mark paid" }).nth(1));
+      await step("Record a payment in seconds", "Choose Mark paid, confirm the date, and your totals update straight away.", page.getByRole("button", { name: "Mark paid" }).nth(1), { zoom: false });
       await page.getByRole("button", { name: "Mark paid" }).nth(1).click({ timeout: 5000 });
       await wait(1500);
       await page.getByRole("dialog").getByRole("button", { name: "Mark paid" }).click({ timeout: 5000 });
@@ -81,7 +81,7 @@ export const MODULES = [
     },
   },
   {
-    id: "contacts", title: "Contacts", pain: "Keep every customer, vendor and partner in one place",
+    id: "contacts", problem: "Where did you save that customer's number?", title: "Contacts", pain: "Keep every customer, vendor and partner in one place",
     async run({ page, go, wait, step }) {
       await go("/app/contacts", 1500);
       await step("One directory for everyone you work with", "Customers, vendors and partners, with company, email, phone and the date you last got in touch.");
@@ -97,7 +97,7 @@ export const MODULES = [
     },
   },
   {
-    id: "vendors", title: "Vendors", pain: "Collect subcontractor paperwork and catch expiring insurance",
+    id: "vendors", problem: "Does every subcontractor have current insurance on file?", title: "Vendors", pain: "Collect subcontractor paperwork and catch expiring insurance",
     async run({ page, go, wait, scroll, step }) {
       await go("/app/vendors", 1500);
       await step("Subcontractor and supplier paperwork, organized", "Each vendor has a checklist of the documents you require, such as a W-9, a certificate of insurance and a signed contract.");
@@ -109,7 +109,7 @@ export const MODULES = [
     },
   },
   {
-    id: "tasks", title: "Tasks & Projects", pain: "Keep every job and task moving",
+    id: "tasks", problem: "What needs doing this week, and who owns it?", title: "Tasks & Projects", pain: "Keep every job and task moving",
     async run({ page, go, wait, step }) {
       await go("/app/projects", 1500);
       await step("Every task and job in one place", "See active projects, open tasks, overdue tasks and what you finished this month.", page.getByText("Active projects").first().locator("xpath=ancestor::*[contains(@class,'grid')][1]"));
@@ -128,7 +128,7 @@ export const MODULES = [
     },
   },
   {
-    id: "forms", title: "Forms & Paperwork", pain: "Collect the information you need without chasing it",
+    id: "forms", problem: "How many times do you collect the same information?", title: "Forms & Paperwork", pain: "Collect the information you need without chasing it",
     async run({ page, go, wait, scroll, step }) {
       await go("/app/forms", 1500);
       await step("Collect information without chasing it", "Build a form once, send it to anyone, and collect the answers in one place.");
@@ -140,7 +140,7 @@ export const MODULES = [
     },
   },
   {
-    id: "calendar", title: "Calendar", pain: "Every deadline from every part of your business, in one calendar",
+    id: "calendar", problem: "Which deadlines are coming up?", title: "Calendar", pain: "Every deadline from every part of your business, in one calendar",
     async run({ page, go, wait, step }) {
       await go("/app/calendar", 1500);
       await step("Every deadline in one calendar", "License renewals, invoices due, tasks and equipment service dates all appear together, so nothing hides in a separate list.");
@@ -154,7 +154,7 @@ export const MODULES = [
     },
   },
   {
-    id: "reporting", title: "Reporting", pain: "See the state of the business without building spreadsheets",
+    id: "reporting", problem: "How is the business doing, without building a spreadsheet?", title: "Reporting", pain: "See the state of the business without building spreadsheets",
     async run({ page, go, wait, scroll, step }) {
       await go("/app/reporting", 1500);
       await step("See where to look first", "The overview ranks overdue and expiring items across every service, most urgent first.", page.getByText("Where to look first").first().locator("xpath=ancestor::*[contains(@class,'rounded')][1]"));
@@ -169,7 +169,7 @@ export const MODULES = [
     },
   },
   {
-    id: "activity", title: "Activity Log", pain: "Know who did what, and when",
+    id: "activity", problem: "Who changed that, and when?", title: "Activity Log", pain: "Know who did what, and when",
     async run({ page, go, wait, step }) {
       await go("/app/projects", 1000);
       const task = page.getByLabel("New task").first();
@@ -189,7 +189,7 @@ export const MODULES = [
     },
   },
   {
-    id: "addy", title: "Addy, your assistant", pain: "Ask in plain language, then review and approve",
+    id: "addy", problem: "Need an invoice started without hunting through menus?", title: "Addy, your assistant", pain: "Ask in plain language, then review and approve",
     async run({ page, go, wait, step }) {
       await go("/app/assistant", 1500);
       await step("Meet Addy, your administrative assistant", "Addy answers questions about AdFlo and prepares drafts for you to review. You set up and manage your account yourself.");
@@ -208,7 +208,7 @@ export const MODULES = [
     },
   },
   {
-    id: "documents", title: "Documents", pain: "Find any document in seconds",
+    id: "documents", problem: "Where is that insurance certificate?", title: "Documents", pain: "Find any document in seconds",
     async run({ page, go, wait, step }) {
       await go("/app", 1500);
       await step("A home for every business document", "Folders for invoices, receipts, contracts, tax documents, HR documents and insurance keep paperwork where you expect it.", page.getByText("All files").first().locator("xpath=ancestor::*[contains(@class,'grid')][1]"));

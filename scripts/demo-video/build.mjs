@@ -48,14 +48,15 @@ function wrap(ctx, text, maxWidth) {
 const roundRect = (ctx, x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); };
 
 /** The caption panel for one step, as a PNG: step label, headline and an explanation. */
-function captionPng(file, n, total, title, body, large = false) {
+function captionPng(file, n, total, title, body, size = "medium") {
+  const large = size === "large";
   const W = 1560, PAD = 36, BODY_W = W - PAD * 2;
-  const [HS, BS, LH] = large ? [66, 40, 54] : [44, 30, 42];
+  const [HS, BS, LH] = large ? [66, 40, 54] : [54, 34, 46]; // large: campaign videos; medium: module videos
   const probe = createCanvas(10, 10).getContext("2d");
   probe.font = `${BS}px InterM`;
   const lines = body ? wrap(probe, body, BODY_W) : [];
   const LABEL = large ? 0 : 40;
-  const H = PAD + LABEL + (large ? 74 : 52) + (lines.length ? 12 + lines.length * LH : 0) + PAD - 4;
+  const H = PAD + LABEL + (large ? 74 : 62) + (lines.length ? 12 + lines.length * LH : 0) + PAD - 4;
   const c = createCanvas(W, H), ctx = c.getContext("2d");
   roundRect(ctx, 0, 0, W, H, 24); ctx.fillStyle = "rgba(11,26,60,0.95)"; ctx.fill();
   ctx.lineWidth = 2; ctx.strokeStyle = "rgba(124,196,255,0.4)"; roundRect(ctx, 1, 1, W - 2, H - 2, 24); ctx.stroke();
@@ -63,7 +64,7 @@ function captionPng(file, n, total, title, body, large = false) {
   if (!large) { ctx.font = "22px InterB"; ctx.fillStyle = "#7cc4ff"; ctx.fillText(`STEP ${n} OF ${total}`, PAD, PAD); }
   ctx.font = `${HS}px InterB`; ctx.fillStyle = "#ffffff"; ctx.fillText(title, PAD, PAD + LABEL);
   ctx.font = `${BS}px InterM`; ctx.fillStyle = "#d6e3ff";
-  lines.forEach((l, i) => ctx.fillText(l, PAD, PAD + LABEL + (large ? 74 : 52) + 12 + i * LH));
+  lines.forEach((l, i) => ctx.fillText(l, PAD, PAD + LABEL + (large ? 74 : 62) + 12 + i * LH));
   writeFileSync(file, c.toBuffer("image/png"));
   return { w: W, h: H };
 }
@@ -83,7 +84,7 @@ function footage(id) {
   const chain = [`[0:v]fps=${FPS},scale=1920:1080,format=yuv420p[b0]`];
   meta.caps.forEach((c, i) => {
     const png = join(WORK, `${id}-cap${i}.png`);
-    const { h } = captionPng(png, i + 1, meta.caps.length, c.title, c.body, large);
+    const { h } = captionPng(png, i + 1, meta.caps.length, c.title, c.body, large ? "large" : "medium");
     const start = c.at + 0.15;
     const shownUntil = Math.min(meta.caps[i + 1]?.at ?? total, c.at + (c.hold ?? Infinity) + 0.3); // a caption leaves when its time is up
     const end = Math.min(shownUntil + 0.15, total - 0.1) - 0.05;
@@ -121,16 +122,22 @@ const drawLogo = (ctx, logo, y, w = 520) => ctx.drawImage(logo, (1920 - w) / 2, 
 function introCard(m) {
   const meta = JSON.parse(readFileSync(join(OUT, `${m.id}.json`), "utf8"));
   const steps = meta.caps.map((c) => c.title);
-  const seconds = 3.5 + steps.length * 0.8;
+  const seconds = 4 + steps.length * 0.7;
   return card(`intro-${m.id}`, seconds, (ctx, logo) => {
-    drawLogo(ctx, logo, 110, 380);
-    ctx.fillStyle = "#fff"; ctx.font = "72px InterB"; ctx.fillText(m.title, 960, 270);
-    ctx.fillStyle = "#b8c7ee"; ctx.font = "36px InterM"; ctx.fillText(m.pain, 960, 370);
+    drawLogo(ctx, logo, 70, 300);
+    // The problem first, then what AdFlo does about it, then what the video covers.
+    ctx.font = "78px InterB";
+    const lines = wrap(ctx, m.problem, 1500);
+    ctx.fillStyle = "#fff";
+    lines.forEach((l, i) => ctx.fillText(l, 960, 210 + i * 94));
+    const y1 = 210 + lines.length * 94 + 14;
+    ctx.fillStyle = "#7cc4ff"; ctx.font = "42px InterM"; ctx.fillText(m.pain, 960, y1);
     ctx.textAlign = "left";
-    ctx.fillStyle = "#7cc4ff"; ctx.font = "24px InterB"; ctx.fillText("WHAT YOU WILL LEARN", 480, 500);
-    ctx.fillStyle = "#fff"; ctx.font = "34px InterM";
+    const y2 = Math.max(y1 + 110, 520);
+    ctx.fillStyle = "#b8c7ee"; ctx.font = "24px InterB"; ctx.fillText("WHAT YOU WILL LEARN", 480, y2);
+    ctx.font = "34px InterM";
     steps.forEach((s, i) => {
-      const y = 552 + i * 56;
+      const y = y2 + 52 + i * 50;
       ctx.fillStyle = "#3b82f6"; ctx.beginPath(); ctx.arc(494, y + 20, 6, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "#fff"; ctx.fillText(s, 520, y);
     });
@@ -155,7 +162,7 @@ const concat = (parts, out) => {
 };
 
 const mods = MODULES.filter((m) => !m.campaign && existsSync(join(OUT, `${m.id}.webm`)));
-const end = await endCard();
+const end = await closing(5);
 for (const m of mods.filter((m) => wanted.length === 0 || wanted.includes(m.id))) {
   concat([await introCard(m), footage(m.id), end], join(FINAL, `${m.id}.mp4`));
   console.log("built", m.id);
