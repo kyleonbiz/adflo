@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { fromLegacy, monthlyDrafts } from "@/lib/control/billing";
+import { clientDraft, fromLegacy, monthlyDrafts } from "@/lib/control/billing";
 import type { Invoice } from "@/lib/invoices/types";
-import type { ClientRecord, Plan } from "@/lib/control/types";
+import { effectivePriceCents, extraSeats, type ClientRecord, type Plan } from "@/lib/control/types";
 
 const client = (o: Partial<ClientRecord>): ClientRecord => ({ id: "c1", name: "Acme", status: "active", plan: "standard", seatsLimit: 3, ownerName: "", ownerEmail: "pat@acme.test", notes: "", workspaceId: null, startedOn: null, createdAt: "", priceOverrideCents: null, priceNote: "", ...o } as ClientRecord);
 const plans: Plan[] = [{ id: "p1", name: "standard", priceCents: 9900, seatsIncluded: 3, active: true }];
@@ -20,6 +20,47 @@ describe("monthlyDrafts", () => {
     const [first] = monthlyDrafts([client({})], plans, [], TODAY);
     expect(monthlyDrafts([client({})], plans, [first], TODAY)).toHaveLength(0);
     expect(monthlyDrafts([client({})], plans, [{ ...first, status: "void" } as Invoice], TODAY)).toHaveLength(1);
+  });
+});
+
+const seatPlans: Plan[] = [
+  { id: "p2", name: "core +", priceCents: 5900, seatsIncluded: 3, active: true },
+  { id: "p3", name: "enterprise", priceCents: 0, seatsIncluded: 25, active: true },
+];
+
+describe("per-seat billing", () => {
+  it("charges $10 for each seat beyond the plan's included seats", () => {
+    expect(extraSeats({ plan: "core +", priceOverrideCents: null, seatsLimit: 5 }, seatPlans)).toEqual({ count: 2, included: 3 });
+    expect(effectivePriceCents({ plan: "core +", priceOverrideCents: null, seatsLimit: 3 }, seatPlans)).toBe(5900);
+    expect(effectivePriceCents({ plan: "core +", priceOverrideCents: null, seatsLimit: 1 }, seatPlans)).toBe(5900);
+    expect(effectivePriceCents({ plan: "core +", priceOverrideCents: null, seatsLimit: 5 }, seatPlans)).toBe(7900);
+    expect(effectivePriceCents({ plan: "core +", priceOverrideCents: null, seatsLimit: 10 }, seatPlans)).toBe(12900);
+  });
+  it("treats a client's own price as all-in and does not bill seats on a plan with no set price", () => {
+    expect(effectivePriceCents({ plan: "core +", priceOverrideCents: 4900, seatsLimit: 10 }, seatPlans)).toBe(4900);
+    expect(extraSeats({ plan: "enterprise", priceOverrideCents: null, seatsLimit: 40 }, seatPlans).count).toBe(0);
+    expect(effectivePriceCents({ plan: "enterprise", priceOverrideCents: null, seatsLimit: 40 }, seatPlans)).toBe(0);
+  });
+  it("puts the extra seats on their own invoice line, totalled with the plan", () => {
+    const [d] = monthlyDrafts([client({ plan: "core +", seatsLimit: 5 })], seatPlans, [], TODAY);
+    expect(d.items).toEqual([
+      { description: "AdFlo core + · November 2026", qty: 1, rateCents: 5900 },
+      { description: "Extra seats beyond the 3 included ($10 each) · November 2026", qty: 2, rateCents: 1000 },
+    ]);
+    expect(d.amountCents).toBe(7900);
+  });
+  it("makes a single line when there are no extra seats, and nothing for an unpriced plan", () => {
+    const [d] = monthlyDrafts([client({ plan: "core +", seatsLimit: 3 })], seatPlans, [], TODAY);
+    expect(d.items).toHaveLength(1);
+    expect(d.amountCents).toBe(5900);
+    expect(monthlyDrafts([client({ plan: "enterprise", seatsLimit: 40 })], seatPlans, [], TODAY)).toHaveLength(0);
+  });
+  it("does not bill a client twice for the month once the seat line is on the invoice", () => {
+    const [first] = monthlyDrafts([client({ plan: "core +", seatsLimit: 6 })], seatPlans, [], TODAY);
+    expect(monthlyDrafts([client({ plan: "core +", seatsLimit: 6 })], seatPlans, [first], TODAY)).toHaveLength(0);
+  });
+  it("starts a manual invoice with the total and a note of the extra seats", () => {
+    expect(clientDraft(client({ plan: "core +", seatsLimit: 4 }), seatPlans, TODAY)).toEqual({ client: "Acme", clientEmail: "pat@acme.test", description: "AdFlo core + · November 2026 + 1 extra seat", amount: "69.00" });
   });
 });
 

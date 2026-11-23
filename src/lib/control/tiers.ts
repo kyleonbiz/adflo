@@ -55,6 +55,9 @@ export const ADD_ONS = [
   { label: "Extra 250 Claude actions", priceCents: 1500, per: "250 actions" },
 ] as const;
 
+/** What each seat beyond a plan's included seats costs per month, in cents. */
+export const SEAT_PRICE_CENTS: number = ADD_ONS[0].priceCents;
+
 /** The plans offered, in order. Core + is the whole platform with its automations plus Claude and OCR; Enterprise is the same with larger limits, quoted. */
 export const TIERS: readonly { name: string; label: string; audience: string; blurb: string; seatsIncluded: number; features: readonly FeatureKey[]; limits: PlanLimits; support: string }[] = [
   {

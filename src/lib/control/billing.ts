@@ -1,7 +1,8 @@
 import { addDays } from "@/lib/dates";
 import { describeItems, generateInvoiceNumber, invoiceTotals } from "@/lib/invoices/logic";
 import type { Invoice } from "@/lib/invoices/types";
-import { effectivePriceCents, type ClientRecord, type Plan } from "./types";
+import { SEAT_PRICE_CENTS } from "./tiers";
+import { basePriceCents, effectivePriceCents, extraSeats, formatMoney, type ClientRecord, type Plan } from "./types";
 
 /**
  * The Control center bills AdFlo's own clients with the same invoices the client app uses (items, tax, a link the
@@ -14,9 +15,9 @@ export const monthLabel = (iso: string) => `${MONTHS[Number(iso.slice(5, 7)) - 1
 
 const sender = { name: ADFLO_SENDER.fromName, address: ADFLO_SENDER.fromAddress, phone: ADFLO_SENDER.fromPhone, email: ADFLO_SENDER.fromEmail };
 
-/** One subscription invoice as a draft: a single line, due in two weeks. */
-function draftInvoice(c: Pick<ClientRecord, "id" | "name" | "ownerEmail">, description: string, cents: number, today: string, number: string, id: string): Invoice {
-  const items = [{ description, qty: 1, rateCents: cents }];
+/** One subscription invoice as a draft: the plan line plus any extra-seat line, due in two weeks. */
+function draftInvoice(c: Pick<ClientRecord, "id" | "name" | "ownerEmail">, description: string, cents: number, today: string, number: string, id: string, extraItems: Invoice["items"] = []): Invoice {
+  const items = [{ description, qty: 1, rateCents: cents }, ...extraItems];
   return {
     id, number, clientId: c.id, client: c.name, clientEmail: c.ownerEmail, description: describeItems(items), items, taxRate: 0, sender,
     paymentMethods: ADFLO_SENDER.paymentMethods.split("\n"), amountCents: invoiceTotals(items, 0).totalCents, issuedOn: today, dueOn: addDays(today, 14),
@@ -24,8 +25,14 @@ function draftInvoice(c: Pick<ClientRecord, "id" | "name" | "ownerEmail">, descr
   };
 }
 
+/** The extra-seat line for a month: one line, quantity = seats beyond the plan's, at the seat price. Empty when there are none. */
+export function seatItems(c: Pick<ClientRecord, "plan" | "priceOverrideCents" | "seatsLimit">, plans: Plan[], label: string): Invoice["items"] {
+  const { count, included } = extraSeats(c, plans);
+  return count > 0 ? [{ description: `Extra seats beyond the ${included} included (${formatMoney(SEAT_PRICE_CENTS)} each) · ${label}`, qty: count, rateCents: SEAT_PRICE_CENTS }] : [];
+}
+
 /**
- * Drafts for this month's subscriptions: one per ACTIVE client with a price, skipping any client that already
+ * Drafts for this month's subscriptions: one per ACTIVE client with a price (plus a line for seats beyond the plan's), skipping any client that already
  * has an invoice for the month (voided ones do not count). Trials, paused and cancelled clients are not billed.
  */
 export function monthlyDrafts(clients: ClientRecord[], plans: Plan[], existing: Invoice[], today: string): Invoice[] {
@@ -33,11 +40,11 @@ export function monthlyDrafts(clients: ClientRecord[], plans: Plan[], existing: 
   const out: Invoice[] = [];
   for (const c of clients) {
     if (c.status !== "active") continue;
-    const cents = effectivePriceCents(c, plans);
+    const cents = basePriceCents(c, plans);
     if (!cents || cents <= 0) continue;
     const line = `AdFlo ${c.plan} · ${label}`;
     if (existing.some((i) => i.clientId === c.id && i.status !== "void" && i.items.some((it) => it.description === line))) continue;
-    out.push(draftInvoice(c, line, cents, today, generateInvoiceNumber(today, [...existing, ...out].map((i) => i.number)), `inv-${c.id}-${today.slice(0, 7)}`));
+    out.push(draftInvoice(c, line, cents, today, generateInvoiceNumber(today, [...existing, ...out].map((i) => i.number)), `inv-${c.id}-${today.slice(0, 7)}`, seatItems(c, plans, label)));
   }
   return out;
 }
@@ -45,7 +52,8 @@ export function monthlyDrafts(clients: ClientRecord[], plans: Plan[], existing: 
 /** What "New invoice" for one client starts with: their name, owner email and monthly price. */
 export function clientDraft(c: ClientRecord, plans: Plan[], today: string) {
   const cents = effectivePriceCents(c, plans);
-  return { client: c.name, clientEmail: c.ownerEmail, description: `AdFlo ${c.plan} · ${monthLabel(today)}`, ...(cents ? { amount: (cents / 100).toFixed(2) } : {}) };
+  const extra = extraSeats(c, plans).count;
+  return { client: c.name, clientEmail: c.ownerEmail, description: `AdFlo ${c.plan} · ${monthLabel(today)}${extra > 0 ? ` + ${extra} extra seat${extra === 1 ? "" : "s"}` : ""}`, ...(cents ? { amount: (cents / 100).toFixed(2) } : {}) };
 }
 
 /** Labelled examples shown in the preview before anything is saved. */

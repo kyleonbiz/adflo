@@ -1,3 +1,4 @@
+import { SEAT_PRICE_CENTS } from "./tiers";
 export const CLIENT_STATUSES = ["trial", "active", "suspended", "cancelled"] as const;
 export type ClientStatus = (typeof CLIENT_STATUSES)[number];
 
@@ -62,10 +63,28 @@ export interface StaffMember { userId: string; role: StaffRole; displayName: str
 
 export const formatMoney = (cents: number) => `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: cents % 100 ? 2 : 0, maximumFractionDigits: 2 })}`;
 
-/** What a client pays per month: their own price when set, otherwise the plan's. */
-export function effectivePriceCents(c: Pick<ClientRecord, "plan" | "priceOverrideCents">, plans: Plan[]): number | null {
+type Priced = Pick<ClientRecord, "plan" | "priceOverrideCents"> & { seatsLimit?: number };
+
+/** The monthly price before extra seats: the client's own price when set, otherwise the plan's. */
+export function basePriceCents(c: Priced, plans: Plan[]): number | null {
   if (c.priceOverrideCents != null) return c.priceOverrideCents;
   return plans.find((p) => p.name.toLowerCase() === c.plan.toLowerCase())?.priceCents ?? null;
+}
+
+/**
+ * Seats billed on top of the plan: the seats the client is allowed minus the seats the plan includes. None for a client
+ * with their own price (it is all-in), or on a plan with no set price (such as Enterprise, quoted per customer).
+ */
+export function extraSeats(c: Priced, plans: Plan[]): { count: number; included: number } {
+  const plan = plans.find((p) => p.name.toLowerCase() === c.plan.toLowerCase());
+  if (c.priceOverrideCents != null || !plan || plan.priceCents <= 0 || c.seatsLimit == null) return { count: 0, included: plan?.seatsIncluded ?? 0 };
+  return { count: Math.max(0, c.seatsLimit - plan.seatsIncluded), included: plan.seatsIncluded };
+}
+
+/** What a client pays per month: base price plus any extra seats. Null when there is no price to bill. */
+export function effectivePriceCents(c: Priced, plans: Plan[]): number | null {
+  const base = basePriceCents(c, plans);
+  return base == null ? null : base + extraSeats(c, plans).count * SEAT_PRICE_CENTS;
 }
 
 export interface AuditEntry {
