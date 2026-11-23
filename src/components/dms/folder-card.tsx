@@ -30,7 +30,7 @@ export function FolderCard({ name, count, color, active, isAll, onSelect, onRena
   return (
     <div
       className={cn(
-        "group relative rounded-xl border bg-card transition-all hover:-translate-y-0.5 hover:shadow-panel",
+        "group relative rounded-xl border bg-card transition-colors hover:border-primary/40",
         active ? "border-brand-indigo bg-brand-blue/10 shadow-panel" : "hover:border-input",
       )}
     >

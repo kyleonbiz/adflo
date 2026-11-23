@@ -38,7 +38,7 @@ export function AppFrame({ base, topRight, children, variant = "app", navBadges 
                   </button>
                 </DialogPrimitive.Trigger>
                 <DialogPrimitive.Portal>
-                  <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-slate-950/30 backdrop-blur-[2px] lg:hidden" />
+                  <DialogPrimitive.Overlay className="fixed inset-0 z-50 animate-fade-in bg-slate-950/30 lg:hidden" />
                   <DialogPrimitive.Content className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] animate-fade-in overflow-y-auto overflow-x-hidden sidebar-glass shadow-float outline-none lg:hidden">
                     <DialogPrimitive.Title className="sr-only">Menu</DialogPrimitive.Title>
                     <DialogPrimitive.Description className="sr-only">Choose a service</DialogPrimitive.Description>

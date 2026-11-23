@@ -44,7 +44,7 @@ export function DocumentCard({
 
   return (
     <article
-      className="group relative flex w-full flex-col rounded-2xl border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-panel"
+      className="group relative flex w-full flex-col rounded-2xl border bg-card shadow-sm transition-colors hover:border-primary/40"
       data-testid="document-card"
     >
       <button

@@ -11,7 +11,7 @@ const DialogClose = DialogPrimitive.Close;
 function DialogOverlay({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
   return (
     <DialogPrimitive.Overlay
-      className={cn("fixed inset-0 z-50 animate-fade-in bg-slate-950/35 backdrop-blur-md", className)}
+      className={cn("fixed inset-0 z-50 animate-fade-in bg-slate-950/45", className)}
       {...props}
     />
   );
