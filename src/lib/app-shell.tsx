@@ -21,6 +21,13 @@ import { TrialBanner } from "@/components/trial-banner";
 import { trialDaysLeft, trialPhase } from "@/lib/billing/trial";
 import { loadTrial } from "@/lib/billing/trial-server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { loadMyTickets } from "@/lib/support/data";
+import { supportBellItems } from "@/lib/support/alerts";
+
+/** Support requests AdFlo has replied to, for the bell. A failed read just means no support items, never a broken page. */
+async function loadSupportItems(supabase: Awaited<ReturnType<typeof createServerSupabase>>) {
+  try { return supportBellItems(await loadMyTickets(supabase)); } catch { return []; }
+}
 
 /** The visitor's day for the bell in the top bar; the bell works out its own list from the records in the browser. */
 async function loadNotifications() {
@@ -90,7 +97,7 @@ export async function renderAppShell(
     // Loaded only here, so the preview never downloads the database client it does not use.
     const { RecordsProvider } = await import("@/components/records-provider");
     return (
-      <Frame userName={fullName} features={features} industries={await loadLiveIndustries(supabase)} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} isStaff={!!(await findStaff(supabase))} />}>
+      <Frame userName={fullName} features={features} industries={await loadLiveIndustries(supabase)} wrap={(c) => <RecordsProvider workspaceId={membership.workspaceId}>{c}</RecordsProvider>} topRight={<AppTopBar workspaceName={ws?.name} userLabel={fullName} notifications={await loadNotifications()} isStaff={!!(await findStaff(supabase))} supportItems={await loadSupportItems(supabase)} />}>
         {ws?.deletion_requested_at && <DeletionBanner requestedAt={ws.deletion_requested_at as string} />}
         {pathAllowed(features, nextPath) ? content("live", { name: fullName }) : <NotInPlan />}
       </Frame>

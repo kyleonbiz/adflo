@@ -23,11 +23,11 @@ const SHOWN = 8;
  * The bell in the top bar: the same "needs your attention" items as the dashboard (already computed on
  * the server), minus the ones snoozed in this browser. Opens a short list; each row goes to its service.
  */
-export function NotificationBell({ items: given, serverToday, overviewHref = "/app/overview" }: { items?: AttentionItem[]; serverToday: string; overviewHref?: string }) {
+export function NotificationBell({ items: given, extra = [], serverToday, overviewHref = "/app/overview" }: { items?: AttentionItem[]; /** Items from the server that are not in the browser-held records, such as replies from AdFlo Support. */ extra?: AttentionItem[]; serverToday: string; overviewHref?: string }) {
   const today = useToday(serverToday) ?? serverToday;
   const sources = useDashboardSources(useToday());
   const computed = useMemo(() => buildDashboard(sources, today).items, [sources, today]);
-  const items = given ?? computed;
+  const items = [...extra, ...(given ?? computed)];
   const snoozed = useSnoozed();
   const settings = useSettings();
   const seen = useSeen();

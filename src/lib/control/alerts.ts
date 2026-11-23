@@ -34,7 +34,7 @@ export function buildControlAlerts({ clients, tickets, errors, sent, now = new D
   // Support: a ticket is waiting on us while it is open. "Waiting on client" and closed ones are not ours to act on.
   const open = tickets.filter((t) => t.status === "open").sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   capped(
-    open.map((t) => ({ id: `ticket-${t.id}`, severity: t.priority === "high" ? "critical" : "warning", area: "Support", label: t.priority === "high" ? "High priority ticket" : "Open ticket", text: `${t.clientName || "A client"}: ${t.subject}`, href: `/control/support/${t.id}` })),
+    open.map((t) => ({ id: `ticket-${t.id}`, severity: t.priority === "high" ? "critical" : "warning", area: "Support", label: t.lastFrom === "client" ? "Client replied" : t.source === "client" ? (t.priority === "high" ? "High priority request" : "New request") : t.priority === "high" ? "High priority ticket" : "Open ticket", text: `${t.clientName || "A client"}: ${t.subject}`, href: `/control/support/${t.id}` })),
     { id: "tickets-more", severity: "warning", area: "Support", label: "Open tickets", text: "{n} more open tickets", href: "/control/support" },
   );
 

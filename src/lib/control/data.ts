@@ -117,7 +117,7 @@ const TICKET_COLUMNS = "id, ticket_no, client_id, subject, body, status, priorit
 const toTicket = (r: TicketRow): Ticket => ({
   id: r.id, ticketNo: r.ticket_no, clientId: r.client_id, clientName: (Array.isArray(r.clients) ? r.clients[0]?.name : r.clients?.name) ?? "", subject: r.subject, body: r.body,
   status: r.status, priority: r.priority, assignee: r.assignee, createdAt: r.created_at, updatedAt: r.updated_at,
-  category: r.category, source: r.source, workspaceId: r.workspace_id, requesterName: r.requester_name, requesterEmail: r.requester_email,
+  category: r.category, source: r.source, workspaceId: r.workspace_id, requesterName: r.requester_name, requesterEmail: r.requester_email, lastFrom: null,
 });
 
 /** Newest first, open ones before closed. Pass `clientId` for one client's tickets. */
@@ -127,7 +127,16 @@ export async function loadTickets(supabase: SupabaseClient, clientId?: string): 
   const { data, error } = await q;
   if (error) throw new Error("Could not load tickets.");
   const rank = { open: 0, pending: 1, closed: 2 } as const;
-  return (data as unknown as TicketRow[]).map(toTicket).sort((a, b) => rank[a.status] - rank[b.status]);
+  const tickets = (data as unknown as TicketRow[]).map(toTicket);
+  // Who spoke last, so the bell can tell a new request from a client who has replied. Best effort: without it the bell still lists the ticket.
+  const open = tickets.filter((t) => t.status === "open").map((t) => t.id);
+  if (open.length > 0) {
+    const { data: msgs } = await supabase.from("ticket_messages").select("ticket_id, author_kind").in("ticket_id", open).order("created_at", { ascending: false }).limit(1000);
+    const last = new Map<string, "client" | "staff">();
+    for (const m of (msgs ?? []) as { ticket_id: string; author_kind: "client" | "staff" }[]) if (!last.has(m.ticket_id)) last.set(m.ticket_id, m.author_kind);
+    for (const t of tickets) t.lastFrom = last.get(t.id) ?? null;
+  }
+  return tickets.sort((a, b) => rank[a.status] - rank[b.status]);
 }
 
 export async function loadTicket(supabase: SupabaseClient, id: string): Promise<{ ticket: Ticket; notes: TicketNote[]; messages: TicketMessage[] } | null> {
@@ -156,8 +165,8 @@ export async function loadTimeline(supabase: SupabaseClient, clientId: string): 
 }
 
 export const SAMPLE_TICKETS: Ticket[] = [
-  { id: "sample-t1", ticketNo: 2, clientId: "sample-1", clientName: "Sample: Acme Roofing", subject: "Cannot upload a PDF", body: "", status: "open", priority: "high", assignee: null, createdAt: "2026-11-03T14:00:00Z", updatedAt: "2026-11-03T14:00:00Z", category: "problem", source: "client", workspaceId: "sample-w1", requesterName: "Sample Owner", requesterEmail: "owner@example.test" },
-  { id: "sample-t2", ticketNo: 1, clientId: "sample-2", clientName: "Sample: Birch & Co", subject: "Add a seat for a new hire", body: "", status: "pending", priority: "normal", assignee: null, createdAt: "2026-11-02T10:00:00Z", updatedAt: "2026-11-02T10:00:00Z", category: "request", source: "client", workspaceId: "sample-w2", requesterName: "Sample Owner", requesterEmail: "owner@example.test" },
+  { id: "sample-t1", ticketNo: 2, clientId: "sample-1", clientName: "Sample: Acme Roofing", subject: "Cannot upload a PDF", body: "", status: "open", priority: "high", assignee: null, createdAt: "2026-11-03T14:00:00Z", updatedAt: "2026-11-03T14:00:00Z", category: "problem", source: "client", workspaceId: "sample-w1", requesterName: "Sample Owner", requesterEmail: "owner@example.test", lastFrom: null },
+  { id: "sample-t2", ticketNo: 1, clientId: "sample-2", clientName: "Sample: Birch & Co", subject: "Add a seat for a new hire", body: "", status: "pending", priority: "normal", assignee: null, createdAt: "2026-11-02T10:00:00Z", updatedAt: "2026-11-02T10:00:00Z", category: "request", source: "client", workspaceId: "sample-w2", requesterName: "Sample Owner", requesterEmail: "owner@example.test", lastFrom: "staff" },
 ];
 
 export const SAMPLE_TEMPLATES: AgreementTemplate[] = [{ id: "sample-a1", title: "Terms of Service", version: 2, body: "# Terms of Service\nSample text. The real agreement appears here once the Owner publishes it.\n\n## What you agree to\n- Pay invoices when they are due\n- Keep your account details up to date\n\n## Next steps\n1. Read the terms\n2. Tick both boxes and accept", effectiveDate: "2026-10-01", createdAt: "2026-10-01T00:00:00Z", accepted: true },

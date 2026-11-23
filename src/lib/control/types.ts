@@ -123,6 +123,8 @@ export interface Ticket {
   /** "client" when a workspace member asked from the app (and can see replies); "staff" when staff logged it for their own use. */
   source: "client" | "staff";
   workspaceId: string | null; requesterName: string; requesterEmail: string;
+  /** Who wrote the latest reply in the conversation; null when there are no replies yet. */
+  lastFrom: "client" | "staff" | null;
 }
 export interface TicketNote { id: string; authorEmail: string; body: string; createdAt: string }
 /** A reply in the conversation the client can see (notes are the internal side). */

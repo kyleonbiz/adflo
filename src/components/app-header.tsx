@@ -3,10 +3,11 @@ import { CircleHelp, LogOut, ShieldCheck } from "lucide-react";
 import { ControlBell } from "@/components/control/control-bell";
 import { NotificationBell } from "@/components/notification-bell";
 import type { ControlAlert } from "@/lib/control/alerts";
+import type { AttentionItem } from "@/lib/dashboard/logic";
 import { Button } from "@/components/ui/button";
 
 /** The right-hand side of the top bar for signed-in pages: workspace name, mode badge, who is signed in. */
-export function AppTopBar({ workspaceName, userLabel, badge, notifications, controlAlerts, signOutTo, isStaff }: { workspaceName?: string; userLabel?: string; badge?: string; signOutTo?: "control"; notifications?: { today: string }; /** The Control center bell: given only on staff pages. */ controlAlerts?: ControlAlert[]; isStaff?: boolean }) {
+export function AppTopBar({ workspaceName, userLabel, badge, notifications, controlAlerts, signOutTo, isStaff, supportItems }: { workspaceName?: string; userLabel?: string; badge?: string; signOutTo?: "control"; notifications?: { today: string }; /** The Control center bell: given only on staff pages. */ controlAlerts?: ControlAlert[]; isStaff?: boolean; /** Replies from AdFlo Support, shown in the bell. */ supportItems?: AttentionItem[] }) {
   return (
     <>
       {notifications && (
@@ -19,7 +20,7 @@ export function AppTopBar({ workspaceName, userLabel, badge, notifications, cont
           <ShieldCheck className="size-4" aria-hidden /> <span className="hidden sm:inline">Control center</span><span className="sr-only sm:hidden">Control center</span>
         </Link>
       )}
-      {notifications && <NotificationBell serverToday={notifications.today} />}
+      {notifications && <NotificationBell serverToday={notifications.today} extra={supportItems} />}
       {controlAlerts && <ControlBell items={controlAlerts} />}
       {workspaceName && (
         <span className="hidden truncate rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground sm:inline">{workspaceName}</span>

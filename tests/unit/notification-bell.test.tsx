@@ -30,6 +30,14 @@ describe("NotificationBell", () => {
     expect(screen.getByRole("link", { name: "Open dashboard" })).toHaveAttribute("href", "/app/overview");
   });
 
+  it("adds server items such as a reply from AdFlo Support to the browser's own", async () => {
+    const reply: AttentionItem = { id: "support-t1-1", area: "Support", severity: "warning", label: "AdFlo replied", text: "AF-7: Cannot upload", href: "/app/support/t1" };
+    render(<NotificationBell items={[item("a", "warning")]} extra={[reply]} serverToday="2026-10-26" />);
+    expect(screen.getByTestId("notification-count")).toHaveTextContent("2");
+    await userEvent.click(screen.getByRole("button", { name: /Notifications, 2/ }));
+    expect(screen.getByRole("link", { name: /AF-7: Cannot upload/ })).toHaveAttribute("href", "/app/support/t1");
+  });
+
   it("caps the list and points to the dashboard for the rest", async () => {
     const many = Array.from({ length: 12 }, (_, i) => item(`n${i}`, "warning"));
     render(<NotificationBell items={many} serverToday="2026-10-26" />);

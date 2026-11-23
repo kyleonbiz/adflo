@@ -21,7 +21,7 @@ export interface DashboardSources {
 }
 
 export type Severity = "critical" | "warning" | "info";
-export type Area = "Invoices" | "Licenses" | "Vendors" | "Tasks" | "Documents" | "Equipment";
+export type Area = "Invoices" | "Licenses" | "Vendors" | "Tasks" | "Documents" | "Equipment" | "Support";
 
 /** One headline card: a number, where it links, and a one-line status under it. */
 export interface Kpi {
