@@ -127,7 +127,7 @@ export function LicenseCard({ license, today, actions, focusToken = 0, selected,
         </button>
         {open && (
           <div id={panelId} className="space-y-3 px-4 pb-4">
-            <p className="text-xs"><Link href={`/app?q=${encodeURIComponent(license.name)}`} className="font-medium text-primary underline-offset-2 hover:underline">Find files for this license in Documents</Link></p>
+            <p className="text-xs"><Link href={`/app?q=${encodeURIComponent(license.name)}`} className="inline-block py-1 font-medium text-primary underline-offset-2 hover:underline">Find files for this license in Documents</Link></p>
             {license.requiredDocuments.length > 0 && (
               <ul className="space-y-1">
                 {license.requiredDocuments.map((d) => (
