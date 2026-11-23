@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { BILLING_LABEL } from "@/lib/billing/sync";
+import { TRIAL_DAYS } from "@/lib/billing/trial";
 
 interface State { plan: string; status: string | null; interval: string | null; periodEnd: string | null; cancelAtPeriodEnd: boolean; subscribed: boolean }
 
@@ -48,10 +49,10 @@ export function BillingPanel() {
         </>
       ) : (
         <>
-          <p className="mt-1 text-sm text-muted-foreground">Subscribe to Core + to pay online by card. You can change or cancel any time from Manage billing.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Start your {TRIAL_DAYS}-day free trial of Core +. Your card is charged when the trial ends, and you can cancel before then. You can change or cancel any time from Manage billing.</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button type="button" size="sm" disabled={busy} onClick={() => void go("/api/billing/checkout", { interval: "month" })}>Subscribe monthly</Button>
-            <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void go("/api/billing/checkout", { interval: "year" })}>Subscribe yearly</Button>
+            <Button type="button" size="sm" disabled={busy} onClick={() => void go("/api/billing/checkout", { interval: "month" })}>Start free trial, billed monthly</Button>
+            <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void go("/api/billing/checkout", { interval: "year" })}>Start free trial, billed yearly</Button>
           </div>
         </>
       )}

@@ -27,7 +27,7 @@ describe("checkout", () => {
   it("starts a subscription for the chosen interval and tags it with the client", async () => {
     const res = await checkout(req("/api/billing/checkout", { interval: "year" }));
     expect((await res.json()).data.url).toContain("checkout.stripe.test");
-    expect(m.created[0]).toMatchObject({ mode: "subscription", client_reference_id: "c1", metadata: { client_id: "c1" }, line_items: [{ price: "price_y", quantity: 1 }] });
+    expect(m.created[0]).toMatchObject({ mode: "subscription", client_reference_id: "c1", metadata: { client_id: "c1" }, line_items: [{ price: "price_y", quantity: 1 }], subscription_data: { trial_period_days: 3 } });
   });
   it("refuses an unknown interval, and a client that already subscribes", async () => {
     expect((await checkout(req("/api/billing/checkout", { interval: "week" }))).status).toBe(400);
