@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { agenda, buildEvents, byDay, EVENT_KINDS, monthGrid, monthLabel, monthOf, nextMonth, type CalendarEvent, type EventKind } from "@/lib/calendar/logic";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
-import { clearReminder, setReminderOn, type Reminder } from "@/lib/reminders/logic";
+import { clearReminder, setReminderOn } from "@/lib/reminders/logic";
 import { Input } from "@/components/ui/input";
 import { useCalendarSources } from "@/lib/calendar/sources";
 import { addDays, addMonths, formatDayLong, formatDayShort } from "@/lib/dates";
@@ -57,19 +57,19 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
   const [selected, setSelected] = useState<string | null>(null);
   const reminders = useReminders();
   const [note, setNote] = useState("");
-  const [removed, setRemoved] = useState<Reminder | null>(null);
+  const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
   const [window, setWindow] = useState<30 | 60 | 90>(60);
 
   const removeReminder = (e: CalendarEvent) => {
     const r = reminders.find((x) => x.id === e.id);
     if (!r) return;
     saveReminders(clearReminder(reminders, r.id));
-    setRemoved(r);
+    setNotice({ text: `Reminder removed: ${r.text}`, undo: () => { saveReminders(setReminderOn(reminders, { id: r.id, text: r.text, area: r.area, href: r.href }, r.on)); setNotice(null); } });
   };
-  const undoRemove = () => {
-    if (!removed) return;
-    saveReminders(setReminderOn(reminders, { id: removed.id, text: removed.text, area: removed.area, href: removed.href }, removed.on));
-    setRemoved(null);
+  const addReminder = (text: string, day: string) => {
+    const id = `rem-note-${Math.random().toString(36).slice(2, 8)}`;
+    saveReminders(setReminderOn(reminders, { id, text, area: "Tasks", href: "/app/calendar" }, day));
+    setNotice({ text: `Reminder added for ${formatDayShort(day)}: ${text}`, undo: () => { saveReminders(clearReminder(reminders, id)); setNotice(null); } });
   };
 
   const all = useMemo(() => (today ? buildEvents(sources, today) : []), [sources, today]);
@@ -98,11 +98,11 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
 
   return (
     <div className="space-y-5">
-      {removed && (
+      {notice && (
         <p role="status" className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm shadow-panel">
-          <span className="min-w-0 flex-1 truncate">Reminder removed: {removed.text}</span>
-          <Button type="button" size="sm" variant="outline" onClick={undoRemove}>Undo</Button>
-          <Button type="button" size="icon-sm" variant="ghost" aria-label="Dismiss" onClick={() => setRemoved(null)}><X /></Button>
+          <span className="min-w-0 flex-1 truncate">{notice.text}</span>
+          {notice.undo && <Button type="button" size="sm" variant="outline" onClick={notice.undo}>Undo</Button>}
+          <Button type="button" size="icon-sm" variant="ghost" aria-label="Dismiss" onClick={() => setNotice(null)}><X /></Button>
         </p>
       )}
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -245,7 +245,7 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
                 e.preventDefault();
                 const text = note.trim();
                 if (!text) return;
-                saveReminders(setReminderOn(reminders, { id: `rem-note-${Math.random().toString(36).slice(2, 8)}`, text, area: "Tasks", href: "/app/calendar" }, chosen));
+                addReminder(text, chosen);
                 setNote("");
               }}
             >

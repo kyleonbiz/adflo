@@ -73,6 +73,7 @@ test.describe("calendar", () => {
     await page.getByRole("button", { name: "Add", exact: true }).click();
     const row = page.getByTestId("calendar-day-event").filter({ hasText: "Renew the van registration" });
     await expect(row).toHaveCount(1);
+    await expect(page.getByRole("status")).toContainText("Reminder added");
     await page.getByRole("button", { name: "Remove reminder Renew the van registration" }).click();
     await expect(row).toHaveCount(0);
     await expect(page.getByRole("status")).toContainText("Reminder removed");
