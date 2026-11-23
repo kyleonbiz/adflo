@@ -69,7 +69,7 @@ export const MODULES = [
     async run({ page, go, wait, step }) {
       await go("/app/invoices", 1500);
       await step("See what you are owed", "Totals for outstanding, overdue, due in the next 7 days, and paid this month, at the top of the page.", page.getByText("Outstanding").first().locator("xpath=ancestor::*[contains(@class,'grid')][1]"));
-      await step("Overdue invoices rise to the top", "Invoices are grouped by status and sorted by urgency, with the number of days overdue shown.", page.getByText("INV-1041").first().locator("xpath=ancestor::*[self::li or self::div][contains(@class,'border') or contains(@class,'rounded')][1]"));
+      await step("Overdue invoices rise to the top", "Invoices are grouped by status and sorted by urgency, with the number of days overdue shown.", page.getByText("INV-1041").first().locator("xpath=ancestor::*[.//button[contains(.,'Mark paid')]][1]"));
       await step("Chase payment with a reminder", "Each overdue invoice has a Remind button, so following up takes one click.");
       await step("Record a payment in seconds", "Choose Mark paid, confirm the date, and your totals update straight away.", page.getByRole("button", { name: "Mark paid" }).nth(1));
       await page.getByRole("button", { name: "Mark paid" }).nth(1).click({ timeout: 5000 });
@@ -225,6 +225,68 @@ export const MODULES = [
       await page.getByPlaceholder(/Search names/).first().click();
       await page.getByPlaceholder(/Search names/).first().pressSequentially("insurance", { delay: 110 });
       await wait(1500);
+    },
+  },
+  // ---- Campaign videos (not part of the module set or the tour) ----
+  {
+    // The 60-second product explainer. Structure: problem and dashboard, compliance, equipment, calendar, invoices,
+    // the whole platform. Benefit-led captions, large type and zoom-ins so it reads on a phone.
+    id: "explainer", title: "AdFlo explainer", campaign: true, large: true,
+    async run({ page, go, wait, type, step, mark }) {
+      const card = (loc) => loc.locator("xpath=ancestor::*[contains(@class,'rounded')][1]");
+      await go("/app/overview", 700);
+      mark(); // cut the first page load
+      await step("Running a business is more than the work", "Paperwork, compliance, equipment, deadlines and invoices. AdFlo brings it all together.", card(page.getByText("Needs your attention")), { hold: 5, zoom: 1.12 });
+
+      await go("/app/licenses", 600);
+      await step("Keep licenses and insurance organized", "Every renewal, with the days left.", page.getByText("Documents missing").locator("xpath=ancestor::*[contains(@class,'grid')][1]"), { hold: 3.5, zoom: 1.2 });
+      await step("Know what is missing before it expires", "Missing documents and renewal tasks are flagged for you.", card(page.getByText("Renewal tasks")), { hold: 3.5, zoom: 1.25 });
+
+      await go("/app/equipment", 600);
+      await step("Know what you own, and who has it", "Every tool, vehicle and unit, with its location and owner.", null, { hold: 4 });
+      await page.getByRole("button", { name: "Add equipment" }).first().click();
+      await wait(400);
+      const fast = async (label, text) => { const f = page.getByRole("dialog").getByLabel(label); await f.click(); await f.pressSequentially(text, { delay: 28 }); };
+      await fast("Name", "Refrigerant recovery machine");
+      await fast("Assigned to", "Jo Park");
+      await fast("Where it is kept", "Shop, cage A");
+      await page.getByRole("dialog").getByLabel("Next service").fill("2020-01-15");
+      await page.getByRole("dialog").getByRole("button", { name: "Add equipment" }).click();
+      await wait(900);
+      await step("Never miss a service date", "Overdue service is flagged automatically.", page.getByTestId("equipment-row").first(), { hold: 3.5, zoom: 1.3 });
+
+      await go("/app/calendar", 600);
+      await step("Keep every deadline visible", "Renewals, invoices, tasks and service dates in one calendar.", card(page.getByTestId("calendar-month")), { hold: 5.5, zoom: 1.12 });
+
+      await go("/app/invoices", 600);
+      await step("Know what you have billed", "And what is still outstanding.", page.getByText("Outstanding").first().locator("xpath=ancestor::*[contains(@class,'grid')][1]"), { hold: 3, zoom: 1.2 });
+      await step("Spot overdue invoices instantly", "Then follow up in one click.", page.getByText("INV-1041").first().locator("xpath=ancestor::*[.//button[contains(.,'Mark paid')]][1]"), { hold: 3, zoom: 1.25 });
+
+      await go("/app/overview", 600);
+      await step("One place for your business administration", "Works alongside your accounting and project software.", null, { hold: 5 });
+    },
+  },
+  {
+    // The 20-30 second companion ad: three questions every contractor should be able to answer.
+    id: "ad", title: "AdFlo ad", campaign: true, large: true,
+    async run({ page, go, wait, type, step, mark }) {
+      // Set-up before the camera starts: two pieces of equipment, so the equipment list is not empty. Cut from the video.
+      await go("/app/equipment", 500);
+      for (const [name, serial, who, where, next] of [["Service van 3", "1FTBW2CM8GKA12345", "Sam Rivera", "Yard, bay 2", "2026-12-20"], ["Refrigerant recovery machine", "RRM-2201", "Jo Park", "Shop, cage A", "2020-01-15"]]) {
+        await page.getByRole("button", { name: "Add equipment" }).first().click();
+        await wait(400);
+        await type("Name", name); await type("Serial, VIN, plate or key tag", serial); await type("Assigned to", who); await type("Where it is kept", where);
+        await page.getByRole("dialog").getByLabel("Next service").fill(next);
+        await page.getByRole("dialog").getByRole("button", { name: "Add equipment" }).click();
+        await wait(800);
+      }
+      await go("/app/licenses", 600);
+      mark();
+      await step("When does your insurance expire?", "AdFlo shows it, with the days left.", page.getByText("General Liability Insurance").first().locator("xpath=ancestor::*[contains(@class,'rounded')][1]"), { hold: 5, zoom: 1.2 });
+      await go("/app/equipment", 600);
+      await step("Who has your equipment?", "Every tool and truck, and who has it.", page.getByTestId("equipment-row").first().locator("xpath=ancestor::ul[1]"), { hold: 5, zoom: 1.2 });
+      await go("/app/invoices", 600);
+      await step("What are you still owed?", "Outstanding and overdue, at a glance.", page.getByText("Outstanding").first().locator("xpath=ancestor::*[contains(@class,'grid')][1]"), { hold: 5, zoom: 1.2 });
     },
   },
 ];

@@ -22,7 +22,7 @@ function pageSetup() {
     const d = document.createElement("div");
     d.style.cssText = "position:fixed;z-index:2147483647;width:22px;height:22px;border-radius:50%;background:rgba(37,99,235,.55);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);pointer-events:none;left:-40px;top:-40px;transform:translate(-50%,-50%)";
     document.body.appendChild(d);
-    addEventListener("mousemove", (e) => { d.style.left = e.clientX + "px"; d.style.top = e.clientY + "px"; }, true);
+    addEventListener("mousemove", (e) => { const off = document.documentElement.style.transform ? scrollY : 0; d.style.left = e.clientX + "px"; d.style.top = (e.clientY + off) + "px"; }, true);
     const NOTICE = /^(Records are saved in this browser|Dates come from the records in this browser|Finish guided setup|Preview only|The log is kept in this browser|Reports read the records)/;
     const hide = () => {
       document.querySelectorAll("nextjs-portal").forEach((el) => { el.style.display = "none"; });
@@ -56,43 +56,83 @@ for (const mod of mods) {
   const page = await ctx.newPage();
   const t0 = Date.now();
   const caps = [];
-  let lastAt = 0, lastHold = 0;
+  let lastAt = 0, lastHold = 0, trimStart = 0;
   const h = {
     page,
     wait: (ms) => page.waitForTimeout(ms),
     /** A caption: a short headline plus one or two sentences. It stays up long enough to read; the next one waits for it. */
-    async cap(title, body = "") {
+    async cap(title, body = "", holdSeconds) {
       const since = (Date.now() - t0) / 1000 - lastAt;
       if (caps.length && since < lastHold) await page.waitForTimeout((lastHold - since) * 1000);
       lastAt = (Date.now() - t0) / 1000;
       const words = `${title} ${body}`.trim().split(/\s+/).length;
-      lastHold = 2.2 + words / 3.2;
-      caps.push({ at: lastAt, title, body });
+      lastHold = holdSeconds ?? 2.2 + words / 3.2;
+      caps.push({ at: lastAt, title, body, hold: lastHold });
     },
     /** Waits out whatever is left of the current caption. */
-    async finish() {
+    async finish(extra = 0.6) {
       const since = (Date.now() - t0) / 1000 - lastAt;
-      if (since < lastHold) await page.waitForTimeout((lastHold - since) * 1000 + 600);
+      if (caps.length && since < lastHold) await page.waitForTimeout((lastHold - since + extra) * 1000);
     },
     /** Highlights an element (scrolling it clear of the caption panel first) and dims the rest. */
     async spot(locator, pad = 12) {
       try {
         await locator.first().scrollIntoViewIfNeeded({ timeout: 4000 });
-        let box = await locator.first().boundingBox();
-        if (box && box.y + box.height > 760) { await page.mouse.wheel(0, box.y + box.height - 720); await page.waitForTimeout(700); box = await locator.first().boundingBox(); }
+        let box = await locator.first().boundingBox({ timeout: 3000 });
+        if (box && box.y + box.height > 760) { await page.mouse.wheel(0, box.y + box.height - 720); await page.waitForTimeout(700); box = await locator.first().boundingBox({ timeout: 3000 }); }
         if (!box) return;
         if (caps.length) caps[caps.length - 1].ty = box.y + box.height / 2;
         await page.evaluate(({ x, y, w, hh }) => {
           const r = document.getElementById("demo-spot");
-          Object.assign(r.style, { left: x + "px", top: y + "px", width: w + "px", height: hh + "px", opacity: "1" });
+          const off = document.documentElement.style.transform ? scrollY : 0; // fixed elements follow the zoomed page
+          Object.assign(r.style, { left: x + "px", top: y + off + "px", width: w + "px", height: hh + "px", opacity: "1" });
         }, { x: box.x - pad, y: box.y - pad, w: box.width + pad * 2, hh: box.height + pad * 2 });
         await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 20 });
       } catch { /* the highlight is a nicety; carry on without it */ }
     },
     /** Caption, then (once the previous caption has had its time) move the highlight to the new target, if any. */
-    async step(title, body, target) { await h.cap(title, body); await h.unspot(); if (target) await h.spot(target); },
+    async step(title, body, target, opts = {}) {
+      await h.cap(title, body, opts.hold);
+      await h.unspot();
+      await h.unzoom(); // measure the next target on the un-zoomed page, then zoom again
+      if (target) { await h.spot(target); if (opts.zoom) await h.zoom(target, opts.zoom); }
+    },
+    /** Magnifies the page around an element so it is easy to read on a phone. The highlight and cursor zoom with it. */
+    async zoom(locator, scale = 1.3) {
+      try {
+        const box = await locator.first().boundingBox({ timeout: 3000 });
+        if (!box) return;
+        await page.evaluate(({ cx, cy, sc }) => {
+          const el = document.documentElement;
+          if (!el.style.transform) { // fixed elements now sit in the zoomed page, so shift them by the scroll position
+            const r = document.getElementById("demo-spot"); if (r && r.style.top) r.style.top = parseFloat(r.style.top) + scrollY + "px";
+          }
+          el.style.transition = "transform .9s ease";
+          el.style.transformOrigin = `${cx}px ${cy + scrollY}px`;
+          el.style.transform = `scale(${sc})`;
+        }, { cx: box.x + box.width / 2, cy: box.y + box.height / 2, sc: scale });
+        await page.waitForTimeout(950);
+      } catch { /* optional */ }
+    },
+    async unzoom() {
+      const was = await page.evaluate(() => {
+        const el = document.documentElement;
+        if (!el.style.transform) return false;
+        const r = document.getElementById("demo-spot"); if (r && r.style.top) r.style.top = parseFloat(r.style.top) - scrollY + "px";
+        el.style.transform = "";
+        return true;
+      }).catch(() => false);
+      if (was) await page.waitForTimeout(1000); // let the zoom-out finish before measuring
+    },
+    /** Marks the moment the real content starts. Everything recorded before it (set-up) is cut from the final video. */
+    mark() { trimStart = (Date.now() - t0) / 1000; },
     async unspot() { await page.evaluate(() => { const r = document.getElementById("demo-spot"); if (r) r.style.opacity = "0"; }).catch(() => {}); await page.waitForTimeout(500); },
-    async go(path, ms = 1500) { await page.goto(BASE + path, { waitUntil: "networkidle" }); await page.waitForTimeout(ms); },
+    async go(path, ms = 1500) {
+      await h.finish(0);
+      await page.goto(BASE + path, { waitUntil: "networkidle" });
+      await page.waitForFunction(() => !document.querySelector(".animate-pulse"), null, { timeout: 6000 }).catch(() => {}); // loading skeletons gone
+      await page.waitForTimeout(ms);
+    },
     async scroll(px, ms = 1500) { await page.mouse.wheel(0, px); await page.waitForTimeout(ms); },
     async type(label, text) {
       const f = page.getByRole("dialog").getByLabel(label);
@@ -100,6 +140,7 @@ for (const mod of mods) {
       await f.pressSequentially(text, { delay: 55 });
     },
   };
+  if (process.env.DEMO_DEBUG) for (const k of ["go", "step", "spot", "zoom", "unzoom", "unspot"]) { const f = h[k]; h[k] = async (...a) => { const t = Date.now(); const r = await f(...a); console.log(`  ${k} ${(Date.now() - t) / 1000}s`, typeof a[0] === "string" ? a[0].slice(0, 40) : ""); return r; }; }
   await mod.run(h);
   await h.finish();
   const duration = (Date.now() - t0) / 1000;
@@ -107,7 +148,7 @@ for (const mod of mods) {
   const file = readdirSync(tmp).find((f) => f.endsWith(".webm"));
   renameSync(join(tmp, file), join(OUT, `${mod.id}.webm`));
   rmSync(tmp, { recursive: true, force: true });
-  writeFileSync(join(OUT, `${mod.id}.json`), JSON.stringify({ id: mod.id, title: mod.title, pain: mod.pain, duration, caps }, null, 2));
+  writeFileSync(join(OUT, `${mod.id}.json`), JSON.stringify({ id: mod.id, title: mod.title, pain: mod.pain, duration, trimStart, caps }, null, 2));
   console.log("recorded", mod.id, duration.toFixed(1) + "s");
 }
 await browser.close();
