@@ -66,6 +66,22 @@ test.describe("calendar", () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
+  test("a reminder added on the calendar can be removed, and removal can be undone", async ({ page }) => {
+    await page.goto("/app/calendar");
+    await page.getByRole("tab", { name: "Month", exact: true }).click();
+    await page.getByLabel("Add a reminder for this day").fill("Renew the van registration");
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    const row = page.getByTestId("calendar-day-event").filter({ hasText: "Renew the van registration" });
+    await expect(row).toHaveCount(1);
+    await page.getByRole("button", { name: "Remove reminder Renew the van registration" }).click();
+    await expect(row).toHaveCount(0);
+    await expect(page.getByRole("status")).toContainText("Reminder removed");
+    await page.getByRole("button", { name: "Undo" }).click();
+    await expect(row).toHaveCount(1);
+    await page.getByRole("button", { name: "Remove reminder Renew the van registration" }).click();
+    await expect(row).toHaveCount(0);
+  });
+
   test("week view shows seven days and a reminder added on the day appears in it", async ({ page }) => {
     await page.goto("/app/calendar");
     await page.getByRole("tab", { name: "Month", exact: true }).click();
