@@ -97,3 +97,36 @@ export function parseGoal(raw: string): number | null {
   const n = Number(raw.replace(/[$,\s]/g, ""));
   return Number.isFinite(n) && n > 0 && n <= 10_000_000 ? Math.round(n * 100) : null;
 }
+
+/** One day's recurring-revenue figures, as stored in `revenue_snapshots`. */
+export interface Snapshot { day: string; mrrCents: number; activeClients: number; trialClients: number; seatsSold: number; extraSeatCents: number; trialPotentialCents: number }
+
+/** Today's snapshot, worked out from the clients and plans (trials are kept apart and never in the revenue). */
+export function snapshotFrom(clients: ClientRecord[], plans: Plan[], today: string): Snapshot {
+  const s = summarizeSales(clients, plans, null, today);
+  return { day: today, mrrCents: s.mrrCents, activeClients: s.activeClients, trialClients: s.trialClients, seatsSold: s.seatsSold, extraSeatCents: s.extraSeatCents, trialPotentialCents: s.trialPotentialCents };
+}
+
+export interface Trend {
+  first: Snapshot; last: Snapshot; changeCents: number;
+  /** Change since the closest snapshot to 30 days before the latest, or null when the history is shorter than that. */
+  change30Cents: number | null;
+}
+
+/** The movement across a run of snapshots (oldest first); null until there are two days to compare. */
+export function trendOf(points: Snapshot[]): Trend | null {
+  if (points.length < 2) return null;
+  const first = points[0], last = points[points.length - 1];
+  const cutoff = new Date(Date.parse(`${last.day}T00:00:00Z`) - 30 * 86_400_000).toISOString().slice(0, 10);
+  const base = [...points].reverse().find((p) => p.day <= cutoff) ?? null;
+  return { first, last, changeCents: last.mrrCents - first.mrrCents, change30Cents: base ? last.mrrCents - base.mrrCents : null };
+}
+
+/** Labelled examples for the preview: about eight weeks of steady growth ending today. */
+export function sampleSnapshots(today: string): Snapshot[] {
+  const end = Date.parse(`${today}T00:00:00Z`);
+  return Array.from({ length: 9 }, (_, i) => {
+    const mrr = [0, 5900, 5900, 11800, 17700, 17700, 24600, 30500, 36400][i];
+    return { day: new Date(end - (8 - i) * 7 * 86_400_000).toISOString().slice(0, 10), mrrCents: mrr, activeClients: Math.ceil(mrr / 5900), trialClients: 2, seatsSold: Math.ceil(mrr / 5900) * 3, extraSeatCents: 0, trialPotentialCents: 11800 };
+  });
+}

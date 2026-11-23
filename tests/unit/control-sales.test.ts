@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_GOAL_CENTS, lastMonths, parseGoal, summarizeSales } from "@/lib/control/sales";
+import { DEFAULT_GOAL_CENTS, lastMonths, parseGoal, sampleSnapshots, snapshotFrom, summarizeSales, trendOf, type Snapshot } from "@/lib/control/sales";
 import type { Invoice } from "@/lib/invoices/types";
 import type { ClientRecord, Plan } from "@/lib/control/types";
 
@@ -92,5 +92,36 @@ describe("lastMonths and parseGoal", () => {
     expect(parseGoal("10,000")).toBe(1_000_000);
     expect(parseGoal("$12500.50")).toBe(1_250_050);
     for (const bad of ["", "0", "-5", "abc", "99999999"]) expect(parseGoal(bad)).toBeNull();
+  });
+});
+
+const snap = (day: string, mrrCents: number): Snapshot => ({ day, mrrCents, activeClients: 0, trialClients: 0, seatsSold: 0, extraSeatCents: 0, trialPotentialCents: 0 });
+
+describe("revenue snapshots", () => {
+  it("takes today's figures from the clients, keeping trials out of the revenue", () => {
+    const s = snapshotFrom([client({ id: "a" }), client({ id: "b", seatsLimit: 5 }), client({ id: "c", status: "trial" })], plans, TODAY);
+    // $99 with one seat, and $99 + 4 extra seats at $10; the trial would add $99 if it converted
+    expect(s).toEqual({ day: TODAY, mrrCents: 9900 + 13900, activeClients: 2, trialClients: 1, seatsSold: 6, extraSeatCents: 4000, trialPotentialCents: 9900 });
+  });
+  it("has no trend until there are two days to compare", () => {
+    expect(trendOf([])).toBeNull();
+    expect(trendOf([snap("2026-11-20", 5900)])).toBeNull();
+  });
+  it("measures the change since the start and over the last 30 days", () => {
+    const t = trendOf([snap("2026-09-01", 0), snap("2026-10-20", 5900), snap("2026-11-10", 11800), snap("2026-11-20", 17700)]);
+    expect(t).toMatchObject({ changeCents: 17700, change30Cents: 11800 }); // 30 days before Nov 20 is Oct 21, so Oct 20 is the base
+    expect(t?.first.day).toBe("2026-09-01");
+  });
+  it("has no 30-day figure when the history is shorter than 30 days", () => {
+    expect(trendOf([snap("2026-11-10", 5900), snap("2026-11-20", 11800)])).toMatchObject({ changeCents: 5900, change30Cents: null });
+  });
+  it("shows a falling trend as a negative change", () => {
+    expect(trendOf([snap("2026-11-01", 11800), snap("2026-11-20", 5900)])?.changeCents).toBe(-5900);
+  });
+  it("makes labelled sample history ending today, oldest first", () => {
+    const s = sampleSnapshots(TODAY);
+    expect(s).toHaveLength(9);
+    expect(s[8].day).toBe(TODAY);
+    expect(s.map((p) => p.day)).toEqual([...s.map((p) => p.day)].sort());
   });
 });

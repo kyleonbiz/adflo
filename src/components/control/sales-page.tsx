@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToday } from "@/components/modules/use-today";
 import { SAMPLE_INVOICES } from "@/lib/control/billing";
 import { useSavedInvoices } from "@/lib/control/billing-storage";
-import { DEFAULT_GOAL_CENTS, parseGoal, summarizeSales } from "@/lib/control/sales";
+import { DEFAULT_GOAL_CENTS, parseGoal, summarizeSales, trendOf, type Snapshot } from "@/lib/control/sales";
 import { formatMoney, type ClientRecord, type Plan } from "@/lib/control/types";
 
 const KEY = "adflo.control.salesGoal";
@@ -23,7 +23,7 @@ const saveGoal = (cents: number) => { try { window.localStorage.setItem(KEY, Str
  * many clients were added each month. Revenue comes from the clients' plans, prices and seats; the money collected
  * comes from the billing invoices, which are saved in this browser.
  */
-export function SalesPage({ clients, plans, today, sample }: { clients: ClientRecord[]; plans: Plan[]; today: string; sample: boolean }) {
+export function SalesPage({ clients, plans, snapshots, today, sample }: { clients: ClientRecord[]; plans: Plan[]; snapshots: Snapshot[]; today: string; sample: boolean }) {
   const goal = useSyncExternalStore(subscribe, read, () => DEFAULT_GOAL_CENTS);
   const saved = useSavedInvoices();
   const day = useToday() ?? today;
@@ -32,6 +32,7 @@ export function SalesPage({ clients, plans, today, sample }: { clients: ClientRe
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const peak = Math.max(1, ...s.months.map((m) => m.added));
+  const trend = trendOf(snapshots);
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +90,8 @@ export function SalesPage({ clients, plans, today, sample }: { clients: ClientRe
         <SummaryTile icon={CircleDollarSign} label="Invoiced, not yet paid" value={s.outstandingCents === null ? "—" : formatMoney(s.outstandingCents)} tone={s.outstandingCents ? "text-amber-600" : "text-emerald-600"} href="/control/billing" />
       </div>
 
+      <RevenueTrend snapshots={snapshots} trend={trend} goalCents={goal} sample={sample} />
+
       <div className="grid gap-5 lg:grid-cols-2">
         <section aria-label="Revenue by plan" className="rounded-2xl border bg-card p-5 shadow-panel">
           <h2 className="text-lg font-semibold">By plan</h2>
@@ -123,5 +126,52 @@ export function SalesPage({ clients, plans, today, sample }: { clients: ClientRe
       </div>
       {!sample && saved === null && <p className="text-xs text-muted-foreground">Collected and invoiced figures read the billing invoices saved in this browser; they show a dash until some exist here.</p>}
     </div>
+  );
+}
+
+const money = (cents: number) => formatMoney(cents);
+const signed = (cents: number) => `${cents < 0 ? "-" : "+"}${formatMoney(Math.abs(cents))}`;
+const dayLabel = (iso: string) => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+/** Recurring revenue day by day, from the saved daily snapshots. A line with the goal marked when it is within the chart. */
+function RevenueTrend({ snapshots, trend, goalCents, sample }: { snapshots: Snapshot[]; trend: ReturnType<typeof trendOf>; goalCents: number; sample: boolean }) {
+  const W = 640, H = 200, L = 8, R = 8, T = 12, B = 8;
+  return (
+    <section aria-label="Revenue trend" className="rounded-2xl border bg-card p-5 shadow-panel">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 className="text-lg font-semibold">Revenue trend</h2>
+        {trend && (
+          <p className="text-sm text-muted-foreground">
+            {trend.change30Cents !== null ? <>Last 30 days <span className={`font-medium ${trend.change30Cents < 0 ? "text-red-700" : "text-emerald-700"}`}>{signed(trend.change30Cents)}</span> a month · </> : null}
+            Since {dayLabel(trend.first.day)} <span className={`font-medium ${trend.changeCents < 0 ? "text-red-700" : "text-emerald-700"}`}>{signed(trend.changeCents)}</span> a month
+          </p>
+        )}
+      </div>
+      {!trend ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {snapshots.length === 1 ? `Tracking started ${dayLabel(snapshots[0].day)} at ${money(snapshots[0].mrrCents)} a month. ` : "Nothing recorded yet. "}
+          The line appears once a second day has been recorded; one figure is saved each day, and again whenever this page is opened.
+        </p>
+      ) : (() => {
+        const t0 = Date.parse(`${snapshots[0].day}T00:00:00Z`), span = Math.max(1, Date.parse(`${snapshots[snapshots.length - 1].day}T00:00:00Z`) - t0);
+        const top = Math.max(100, ...snapshots.map((p) => p.mrrCents)) * 1.15;
+        const x = (day: string) => L + ((Date.parse(`${day}T00:00:00Z`) - t0) / span) * (W - L - R);
+        const y = (c: number) => T + (1 - c / top) * (H - T - B);
+        const points = snapshots.map((p) => `${x(p.day).toFixed(1)},${y(p.mrrCents).toFixed(1)}`).join(" ");
+        const showGoal = goalCents <= top;
+        return (
+          <>
+            <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Monthly recurring revenue from ${dayLabel(trend.first.day)} to ${dayLabel(trend.last.day)}: ${money(trend.first.mrrCents)} to ${money(trend.last.mrrCents)}`} className="mt-3 h-52 w-full text-primary">
+              <line x1={L} x2={W - R} y1={y(0)} y2={y(0)} stroke="currentColor" strokeOpacity="0.2" />
+              {showGoal && <line x1={L} x2={W - R} y1={y(goalCents)} y2={y(goalCents)} stroke="currentColor" strokeOpacity="0.5" strokeDasharray="5 4" />}
+              <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+              <circle cx={x(trend.last.day)} cy={y(trend.last.mrrCents)} r="4" fill="currentColor" />
+            </svg>
+            <div className="mt-1 flex justify-between text-xs text-muted-foreground"><span>{dayLabel(trend.first.day)}</span><span>{money(trend.last.mrrCents)} a month on {dayLabel(trend.last.day)}</span></div>
+            <p className="mt-2 text-xs text-muted-foreground">{showGoal ? "The dashed line is your goal. " : `Your ${money(goalCents)} goal is above this chart. `}{sample ? "Sample figures. " : ""}One figure is recorded each day.</p>
+          </>
+        );
+      })()}
+    </section>
   );
 }

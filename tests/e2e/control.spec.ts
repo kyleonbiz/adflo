@@ -256,4 +256,9 @@ test("control center preview: the sales and revenue counter shows revenue agains
   await goal.getByLabel("Monthly goal (dollars)").fill("5,000");
   await goal.getByRole("button", { name: "Set goal" }).click();
   await expect(goal.getByText("of $5,000 a month")).toBeVisible();
+
+  // The trend line comes from the daily snapshots (sample history in the preview).
+  const trend = page.getByRole("region", { name: "Revenue trend" });
+  await expect(trend.getByRole("img", { name: /Monthly recurring revenue from/ })).toBeVisible();
+  await expect(trend.getByText("Last 30 days")).toBeVisible();
 });
