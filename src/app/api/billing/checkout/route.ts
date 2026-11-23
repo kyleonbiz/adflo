@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       subscription_data: { metadata: { client_id: c.id }, ...(c.stripe_customer_id ? {} : { trial_period_days: TRIAL_DAYS }) },
       allow_promotion_codes: true,
       success_url: `${origin}/app/help?billing=success`,
-      cancel_url: `${origin}/app/help?billing=cancelled`,
+      cancel_url: `${origin}/app/checkout?billing=cancelled`,
     });
     return json({ ok: true, data: { url: session.url } });
   } catch {
