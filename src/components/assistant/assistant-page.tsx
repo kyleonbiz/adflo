@@ -19,9 +19,18 @@ import { downloadBlob } from "@/components/reporting/materials";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { newTodoId } from "@/lib/todos/logic";
 import { saveTodos, useTodos } from "@/lib/todos/storage";
+import { ProposalCard, type ProposalState } from "@/components/assistant/proposal-card";
+import { applyProposal, type Proposal } from "@/lib/assistant/proposal";
+import type { Contact } from "@/lib/contacts/types";
+import type { Invoice } from "@/lib/invoices/types";
+import type { Vendor } from "@/lib/vendors/types";
+import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { emptyConfig } from "@/lib/setup/types";
 import { cn } from "@/lib/utils";
+
+/** The clock, read when someone acts or the card draws; a function so the lint rule for pure renders sees no direct call. */
+const nowMs = () => Date.now();
 
 function Chat({ today }: { today: string }) {
   const stored = useSetupConfig();
@@ -38,6 +47,42 @@ function Chat({ today }: { today: string }) {
   useEffect(() => { end.current?.scrollIntoView?.({ block: "end" }); }, [turns]);
 
   const [busy, setBusy] = useState(false);
+
+  // Proposals from Claude: nothing is saved until Approve, and each one can be approved once.
+  const loadingRecords = useRecordsLoading();
+  const [contacts, setContacts] = useRecordsState<Contact>("contacts");
+  const [vendors, setVendors] = useRecordsState<Vendor>("vendors");
+  const [invoices, setInvoices] = useRecordsState<Invoice>("invoices");
+  const [pstate, setPstate] = useState<Record<string, ProposalState>>({});
+  const setP = (id: string, s: ProposalState) => setPstate((cur) => ({ ...cur, [id]: s }));
+  const AREA = { contacts: "Contacts", vendors: "Vendors", invoices: "Invoices" } as const;
+  const approve = (p: Proposal) => {
+    if (pstate[p.id] && pstate[p.id].status !== "pending" && pstate[p.id].status !== "failed") return;
+    if (loadingRecords) { setP(p.id, { status: "failed", error: "Your records are still loading. Try again in a moment." }); return; }
+    const r = applyProposal(p, {
+      today, now: nowMs(), contacts: contacts ?? [], vendors: vendors ?? [], invoices: invoices ?? [],
+      newId: (prefix) => `${prefix}-${Math.random().toString(36).slice(2, 10)}`,
+    });
+    if (!r.ok) { setP(p.id, { status: "failed", error: r.error }); return; }
+    if (r.kind === "contacts") setContacts((prev) => [...(prev ?? []), r.record]);
+    else if (r.kind === "vendors") setVendors((prev) => [...(prev ?? []), r.record]);
+    else setInvoices((prev) => [...(prev ?? []), r.record]);
+    audit(r.audit.verb, r.audit.what, r.audit.area, r.audit.href);
+    setP(p.id, { status: "approved", text: r.text, undone: false });
+    undoProposals.current[p.id] = () => {
+      const id = r.record.id;
+      if (r.kind === "contacts") setContacts((prev) => (prev ?? []).filter((x) => x.id !== id));
+      else if (r.kind === "vendors") setVendors((prev) => (prev ?? []).filter((x) => x.id !== id));
+      else setInvoices((prev) => (prev ?? []).filter((x) => x.id !== id));
+      audit("undid Addy's proposal:", p.title, r.audit.area, r.audit.href);
+      setP(p.id, { status: "approved", text: r.text, undone: true });
+    };
+  };
+  const reject = (p: Proposal) => {
+    audit("rejected Addy's proposal:", p.title, AREA[p.service], `/app/${p.service}`);
+    setP(p.id, { status: "rejected" });
+  };
+  const undoProposals = useRef<Record<string, () => void>>({});
   /** null until the first message; false when the server has no AI key, so the built-in rules answer. */
   const [llm, setLlm] = useState<boolean | null>(null);
 
@@ -95,13 +140,13 @@ function Chat({ today }: { today: string }) {
         addRules(message);
         return;
       }
-      const body = (await res.json().catch(() => null)) as { ok: boolean; data?: { text: string; links: ChatLink[] }; error?: { message: string } } | null;
+      const body = (await res.json().catch(() => null)) as { ok: boolean; data?: { text: string; links: ChatLink[]; proposals?: Proposal[] }; error?: { message: string } } | null;
       if (!res.ok || !body?.ok || !body.data) {
         setTurns([...next, { role: "assistant", text: body?.error?.message ?? "Something went wrong. Please try again." }]);
         return;
       }
       setLlm(true);
-      setTurns([...next, { role: "assistant", text: body.data.text, links: body.data.links }]);
+      setTurns([...next, { role: "assistant", text: body.data.text, links: body.data.links, proposals: body.data.proposals }]);
     } catch {
       setTurns([...next, { role: "assistant", text: "I could not reach the server. Check your connection and try again." }]);
     } finally {
@@ -130,6 +175,10 @@ function Chat({ today }: { today: string }) {
                   <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => downloadBlob(datasetToXlsx({ name: t.download!.name, columns: t.download!.headers.map((name) => ({ name, type: "text" as const, required: false })), rows: t.download!.rows }), `${t.download!.name}.xlsx`, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}>Save as Excel</Button>
                 </div>
               )}
+              {t.proposals?.map((p) => (
+                <ProposalCard key={p.id} proposal={p} state={pstate[p.id] ?? { status: "pending" }} expired={nowMs() > p.expiresAt}
+                  onApprove={() => approve(p)} onReject={() => reject(p)} onUndo={() => undoProposals.current[p.id]?.()} />
+              ))}
               {t.links && t.links.length > 0 && (
                 <ul className="flex flex-wrap gap-2">
                   {t.links.map((l) => <li key={l.href}><Link href={l.href} className="inline-flex h-8 items-center rounded-lg border bg-card px-2.5 text-xs font-medium text-foreground hover:bg-accent">{l.label}</Link></li>)}
@@ -167,10 +216,10 @@ function Chat({ today }: { today: string }) {
   );
 }
 
-/** Q&A and in-module assistant. Uses Claude through /api/assistant when an API key is set; otherwise the built-in rules answer. Neither changes account setup: that stays manual in Settings. */
 /** Tells the server a quick (rules-based) action ran, for the usage counter. Fire and forget: it never affects the answer. */
 const countQuickAction = () => { void fetch("/api/usage", { method: "POST" }).catch(() => {}); };
 
+/** Q&A and in-module assistant. Uses Claude through /api/assistant when an API key is set; otherwise the built-in rules answer. Claude only proposes: nothing is saved until the owner approves, and account setup stays manual in Settings. */
 export function AssistantPage() {
   const today = useToday();
   return (

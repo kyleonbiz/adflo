@@ -1,10 +1,11 @@
 import { MODULES, moduleHref } from "@/lib/modules/registry";
 import { IMPORTABLE, runSetupChecks, setupScore } from "@/lib/setup/logic";
 import { DRAFT_SERVICES } from "./guardrails";
+import type { Proposal } from "./proposal";
 import type { SetupConfig } from "@/lib/setup/types";
 
 export interface Link { label: string; href: string }
-export interface Turn { role: "assistant" | "user"; text: string; chips?: string[]; links?: Link[]; download?: { name: string; headers: string[]; rows: (string | number)[][] } }
+export interface Turn { role: "assistant" | "user"; text: string; proposals?: Proposal[]; chips?: string[]; links?: Link[]; download?: { name: string; headers: string[]; rows: (string | number)[][] } }
 /** `matched` is true when a fixed rule recognised the request; false means it only fell back to the help text, so the caller may hand it to the AI model. */
 interface Reply { turns: Turn[]; config: SetupConfig; matched?: boolean }
 
@@ -45,7 +46,7 @@ function status(config: SetupConfig): Reply {
   return { turns: [{ role: "assistant", text, links }], config };
 }
 
-const HELP_TEXT = "I can answer questions about AdFlo and your records, tell you what is left to do in Settings, and open a new invoice, contact, vendor, project or license form with the details filled in. I can also add something to your to-do list for today, set a reminder (for example, remind me to renew the permit in 3 days) and tick off a to-do, and each of those has an Undo. I can run a report on your records, explain it in plain words and export it to CSV or Excel, for example \"run a report on invoices\", \"explain the vendor report\", \"export invoices to Excel\" or \"how are we doing\". I do not set up your account: you do that in Settings. Apart from the actions above, I only open forms: you fill them in and save, and I never delete, approve, pay, send or sign anything.";
+const HELP_TEXT = "I can answer questions about AdFlo and your records, tell you what is left to do in Settings, and open a new invoice, contact, vendor, project or license form with the details filled in. I can also add something to your to-do list for today, set a reminder (for example, remind me to renew the permit in 3 days) and tick off a to-do, and each of those has an Undo. I can run a report on your records, explain it in plain words and export it to CSV or Excel, for example \"run a report on invoices\", \"explain the vendor report\", \"export invoices to Excel\" or \"how are we doing\". I do not set up your account: you do that in Settings. For a new contact, vendor or draft invoice I can propose it for you to Approve, Reject or Edit (nothing is saved until you approve). For everything else I only open forms: you fill them in and save. I never delete, approve, pay, send or sign anything.";
 
 /** "New invoice", "add a contact": opens that service's blank form. The assistant only opens it; the owner fills in and saves. */
 function draftRequest(lower: string): Turn | null {

@@ -12,10 +12,9 @@ describe("assistant tools", () => {
     expect(s.config).toEqual(emptyConfig());
     expect(s.links).toEqual([]);
   });
-  it("reads the setup without changing it", () => {
+  it("no longer reads the setup: the rules engine answers status and how-to questions", () => {
     const s = fresh();
-    expect(JSON.parse(runTool(s, "get_status", {}))).toHaveProperty("score");
-    expect(JSON.parse(runTool(s, "list_services", {})).length).toBeGreaterThan(0);
+    for (const name of ["get_status", "list_services"]) expect(JSON.parse(runTool(s, name, {})).error).toMatch(/unknown tool/i);
     expect(s.config).toEqual(emptyConfig());
   });
   it("only offers open industries, while every industry stays built", () => {
