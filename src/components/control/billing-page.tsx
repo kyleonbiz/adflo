@@ -29,8 +29,8 @@ export function BillingPage({ clients, plans, today, sample, newForClient }: { c
   return (
     <div className="space-y-5">
       {restoreMsg && <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">{restoreMsg}</p>}
-      <p role="note" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Billing invoices live in this browser only. Use Back up regularly: clearing browser data removes them.</p>
-      {sample && saved === null && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Examples are shown until you make a change. Invoices are saved in this browser only.</p>}
+      <p role="note" className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">Billing invoices live in this browser only. Use Back up regularly: clearing browser data removes them.</p>
+      {sample && saved === null && <p className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">Examples are shown until you make a change. Invoices are saved in this browser only.</p>}
       <InvoicesView
         invoices={list} onChange={saveInvoices} audit={() => {}}
         title="Billing" subtitle="Invoice your clients and track who has paid. Invoices are saved in this browser only, and AdFlo does not take payments."

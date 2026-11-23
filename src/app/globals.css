@@ -15,8 +15,8 @@
   --secondary-foreground: #1a2145;
   --muted: #f1f4fb;
   --muted-foreground: #565b70;
-  --accent: #e8efff;
-  --accent-foreground: #3436b9;
+  --accent: #eff1f6;
+  --accent-foreground: #0d1330;
   --destructive: #c81e1e;
   --border: #e3e7f0;
   --input: #cdd4e3;
@@ -119,6 +119,7 @@
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
   }
+  h1, h2, h3 { letter-spacing: -0.015em; }
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;

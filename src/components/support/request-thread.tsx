@@ -50,7 +50,7 @@ export function RequestThread({ ticket }: { ticket: MyTicketDetail }) {
             </li>
           ))}
         </ul>
-        {ticket.status === "pending" && <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">AdFlo Support is waiting on your reply.</p>}
+        {ticket.status === "pending" && <p role="status" className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">AdFlo Support is waiting on your reply.</p>}
         {closed && <p className="text-sm text-muted-foreground">This request is marked as solved. Replying will reopen it.</p>}
         <form onSubmit={async (e) => { e.preventDefault(); if (await send(`/api/support/tickets/${ticket.id}/messages`, "POST", { body: reply })) setReply(""); }} className="space-y-2">
           <label htmlFor="reply" className="sr-only">Your reply</label>

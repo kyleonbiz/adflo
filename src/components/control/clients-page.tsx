@@ -110,7 +110,7 @@ export function ClientDialog({ client, plans, isOwner, onClose, onSaved }: { cli
               <span><span className="font-medium">Create their workspace and invite the owner</span><span className="block text-xs text-muted-foreground">Makes an empty workspace named after the client. The owner joins it when they sign up with the email above. It also emails the owner their invitation, with a link to confirm it before they sign up.</span></span>
             </label>
           )}
-          {form.status === "suspended" && client?.status !== "suspended" && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Suspending is recorded in the audit log. No data is deleted.</p>}
+          {form.status === "suspended" && client?.status !== "suspended" && <p className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">Suspending is recorded in the audit log. No data is deleted.</p>}
           {message && <p role="alert" className="text-sm text-destructive">{message}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
@@ -216,9 +216,9 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
         </div>
         {canEdit && <Button onClick={() => setDialog("new")}><Plus /> Add client</Button>}
       </div>
-      {mailNote && <p role={mailNote.ok ? "status" : "alert"} className={mailNote.ok ? "rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800" : "rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900"}>{mailNote.text}</p>}
-      {warning && <p role="alert" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">The client was saved, but its workspace could not be created: {warning} Open the client and use the AdFlo account card to finish.</p>}
-      {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample clients. Connect the database to manage real ones.</p>}
+      {mailNote && <p role={mailNote.ok ? "status" : "alert"} className={mailNote.ok ? "py-1 pl-3 text-sm border-l-2 border-emerald-500 text-foreground" : "py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground"}>{mailNote.text}</p>}
+      {warning && <p role="alert" className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">The client was saved, but its workspace could not be created: {warning} Open the client and use the AdFlo account card to finish.</p>}
+      {sample && <p className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">Preview with sample clients. Connect the database to manage real ones.</p>}
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-52 flex-1 sm:max-w-xs">
@@ -268,7 +268,7 @@ export function ClientsPage({ clients, plans, canEdit, isOwner = false, sample, 
                     <td className="whitespace-nowrap px-3 py-3"><StatusBadge status={c.status} /></td>
                     <td className="whitespace-nowrap px-3 py-3"><div className="capitalize">{c.plan}</div><div className="mt-0.5 text-xs tabular-nums text-muted-foreground">{price == null ? "No price" : `${formatMoney(price)} / mo`}</div></td>
                     <td className="whitespace-nowrap px-3 py-3 tabular-nums">{c.seatsUsed ?? "—"} / {c.seatsLimit}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">{c.lastActive ? new Date(c.lastActive).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "—"}{isQuiet(c) && <span className="ml-2 rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-800">Quiet</span>}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-muted-foreground">{c.lastActive ? new Date(c.lastActive).toLocaleDateString("en-US", { dateStyle: "medium", timeZone: "UTC" }) : "—"}{isQuiet(c) && <span className="ml-2 rounded py-1 pl-3 text-[11px] font-medium border-l-2 border-amber-500 text-foreground">Quiet</span>}</td>
                     <td className="max-w-[14rem] px-3 py-3"><div className="truncate">{c.ownerName || "—"}</div>{c.ownerEmail && <div className="mt-0.5 truncate text-xs text-muted-foreground">{c.ownerEmail}</div>}</td>
                     <td className="px-3 py-3">{c.workspaceId ? <span className="text-emerald-700">Created</span> : <Link href={`/control/clients/${c.id}`} className="whitespace-nowrap text-amber-800 hover:underline">Not created</Link>}{canEdit && !sample && <RemindInvitation client={c} onSent={() => router.refresh()} />}</td>
                     {canEdit && <td className="whitespace-nowrap px-3 py-3"><AccountSwitch client={c} onChanged={() => router.refresh()} /></td>}

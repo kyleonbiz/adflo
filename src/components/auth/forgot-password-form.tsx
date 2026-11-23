@@ -37,7 +37,7 @@ export function ForgotPasswordForm({ demo = false }: { demo?: boolean }) {
   if (sent) {
     return (
       <div className="space-y-4">
-        <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p role="status" className="py-1 pl-3 text-sm border-l-2 border-emerald-500 text-foreground">
           If an account exists for {email.trim()}, a reset link is on its way. {demo ? "This is a demo, so no email is actually sent." : "Check your inbox and spam folder."}
         </p>
         <Button asChild className="w-full"><Link href="/login">Back to log in</Link></Button>

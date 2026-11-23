@@ -128,8 +128,8 @@ function UploadRow({ item, onCancel, onRetry }: { item: UploadItem; onCancel: ()
     <li
       className={cn(
         "rounded-xl border p-3",
-        item.status === "error" && "border-red-200 bg-red-50/60",
-        item.status === "success" && "border-emerald-200 bg-emerald-50/50",
+        item.status === "error" && "border-red-300",
+        item.status === "success" && "border-emerald-300",
       )}
       data-testid="upload-row"
       data-status={item.status}

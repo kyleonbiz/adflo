@@ -75,7 +75,7 @@ export function ActivityPage({ preview }: { preview?: string }) {
 
       {shown.length === 0 ? (
         <section className="rounded-2xl border bg-card p-8 text-center shadow-panel" data-testid="activity-empty">
-          <span className="mx-auto flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary"><History className="size-5" aria-hidden /></span>
+          <span className="mx-auto flex size-11 items-center justify-center text-primary"><History className="size-5" aria-hidden /></span>
           <h2 className="mt-3 text-lg font-semibold">{entries.length === 0 ? "Nothing has happened yet" : "Nothing matches those filters"}</h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
             {entries.length === 0 ? "When someone adds, changes, sends or deletes something, it shows here with their name and the time." : "Clear a filter to see more."}

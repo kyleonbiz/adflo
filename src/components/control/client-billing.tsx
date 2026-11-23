@@ -33,7 +33,7 @@ export function ClientTiles({ client, plans, today, sample, openTickets }: { cli
         <SummaryTile icon={CircleDollarSign} label={s.overdueCount ? `Owes (${s.overdueCount} overdue)` : "Owes"} value={formatMoney(s.outstandingCents)} tone={s.overdueCount ? "text-red-600" : "text-sky-600"} href="#billing" />
         <SummaryTile icon={LifeBuoy} label="Open tickets" value={openTickets} tone={openTickets ? "text-amber-600" : "text-emerald-600"} href="#support" />
       </div>
-      {over && <p role="alert" className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800"><AlertTriangle className="size-4 shrink-0" aria-hidden /> {client.seatsUsed} people are in this workspace but the plan allows {client.seatsLimit}. Raise the seat limit or ask them to remove someone.</p>}
+      {over && <p role="alert" className="flex items-center gap-2 py-1 pl-3 text-sm border-l-2 border-red-500 text-destructive"><AlertTriangle className="size-4 shrink-0" aria-hidden /> {client.seatsUsed} people are in this workspace but the plan allows {client.seatsLimit}. Raise the seat limit or ask them to remove someone.</p>}
     </div>
   );
 }

@@ -62,7 +62,7 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }
           {canAdd && <Button asChild><Link href="/control/clients"><Plus /> Add a client</Link></Button>}
         </div>
       </div>
-      {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample clients.</p>}
+      {sample && <p className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">Preview with sample clients.</p>}
       {auto && <AutoNote auto={auto} />}
       {bulkMsg && <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">{bulkMsg}</p>}
       <ConfirmDialog
@@ -79,7 +79,7 @@ export function OnboardingPage({ rows, canAdd, canRemind = false, sample, auto }
       </div>
 
       {fresh.length > 0 && (
-        <section aria-label="New clients to onboard" className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-panel">
+        <section aria-label="New clients to onboard" className="space-y-3 rounded-xl border bg-card p-4 shadow-panel">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="warning">New</Badge>
             <h2 className="font-semibold">New clients to onboard ({fresh.length})</h2>

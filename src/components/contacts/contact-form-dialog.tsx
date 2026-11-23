@@ -88,7 +88,7 @@ function Body({
             </Field>
           </div>
           {matches.length > 0 && (
-            <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 sm:col-span-2">
+            <div role="alert" className="py-1 pl-3 text-sm sm:col-span-2 border-l-2 border-amber-500 text-foreground">
               <p className="font-medium">This looks like someone already in your list:</p>
               <ul className="mt-1 list-disc pl-5">
                 {matches.map((m) => <li key={m.contact.id}>{m.contact.name} <span className="text-xs">({m.reasons.join(", ").toLowerCase()})</span></li>)}

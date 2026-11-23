@@ -35,7 +35,7 @@ export function LeftoverWorkspaces({ workspaces, canDelete }: { workspaces: Unli
   }
 
   return (
-    <section aria-label="Workspaces with no client" className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
+    <section aria-label="Workspaces with no client" className="space-y-3 rounded-xl border bg-card p-5">
       <div>
         <h2 className="font-semibold">Workspaces with no client ({workspaces.length})</h2>
         <p className="text-sm text-muted-foreground">Every workspace belongs to a client, so these are leftovers. Connect one from its client&apos;s AdFlo account card, or delete it.</p>
@@ -52,7 +52,7 @@ export function LeftoverWorkspaces({ workspaces, canDelete }: { workspaces: Unli
               {canDelete && <Button variant="ghost" size="sm" className="text-destructive hover:bg-red-50" disabled={busy} onClick={() => { setOpen(w.id); setTyped(""); setMsg(null); }}><Trash2 /> Delete workspace and data</Button>}
             </div>
             {open === w.id && (
-              <div role="alertdialog" aria-label={`Delete ${w.name}`} className="space-y-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-900">
+              <div role="alertdialog" aria-label={`Delete ${w.name}`} className="space-y-3 py-1 pl-3 border-l-2 border-red-500 text-destructive">
                 <p className="font-medium">Delete this workspace and everything in it for good?</p>
                 <p>All of its documents, files, records and team are erased now, with no 30-day wait. People&apos;s sign-in accounts are kept. This cannot be undone.</p>
                 <div className="space-y-1.5">

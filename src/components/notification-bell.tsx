@@ -66,7 +66,7 @@ export function NotificationBell({ items: given, extra = [], serverToday, overvi
                     <Link href={i.href} className="flex min-w-0 flex-1 items-start gap-2 rounded-md px-3 py-2 text-sm outline-none hover:bg-accent focus-visible:bg-accent">
                       <span aria-hidden className={cn("mt-1.5 size-2 shrink-0 rounded-full", DOT[i.severity])} />
                       <span className="min-w-0">
-                        <span className="block text-xs text-muted-foreground">{i.area} · {i.label}{fresh.has(i.id) && <span className="ml-1.5 rounded bg-primary/10 px-1 font-medium text-primary" data-testid="bell-new">New</span>}</span>
+                        <span className="block text-xs text-muted-foreground">{i.area} · {i.label}{fresh.has(i.id) && <span className="ml-1.5 font-medium text-primary" data-testid="bell-new">New</span>}</span>
                         <span className="block">{i.text}</span>
                       </span>
                     </Link>

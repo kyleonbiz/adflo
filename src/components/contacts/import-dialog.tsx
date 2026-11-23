@@ -167,7 +167,7 @@ function Body({
               </div>
             )}
             {parsed.extraCells.length > 0 && (
-              <p role="note" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <p role="note" className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">
                 {parsed.extraCells.length} row{parsed.extraCells.length === 1 ? " has" : "s have"} more values than there are headers (first on line {parsed.extraCells[0].line}). The extra values are ignored.
               </p>
             )}

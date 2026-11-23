@@ -31,7 +31,7 @@ export function FolderCard({ name, count, color, active, isAll, onSelect, onRena
     <div
       className={cn(
         "group relative rounded-xl border bg-card transition-colors hover:border-primary/40",
-        active ? "border-brand-indigo bg-brand-blue/10 shadow-panel" : "hover:border-input",
+        active ? "border-primary ring-1 ring-primary" : "hover:border-input",
       )}
     >
       <button
@@ -41,11 +41,11 @@ export function FolderCard({ name, count, color, active, isAll, onSelect, onRena
         aria-label={`${name}, ${count} ${count === 1 ? "document" : "documents"}`}
         className="flex w-full items-center gap-3 rounded-xl p-3.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-xl", style.tile)}>
+        <span className={cn("flex size-8 shrink-0 items-center justify-center")}>
           <Icon className={cn("size-5", style.icon)} aria-hidden />
         </span>
         <span className="min-w-0 flex-1 pr-5">
-          <span className={cn("block truncate text-sm font-semibold", active && "text-brand-purple-deep")}>{name}</span>
+          <span className={cn("block truncate text-sm font-semibold")}>{name}</span>
           <span className="block text-xs text-muted-foreground tabular-nums">
             {count} {count === 1 ? "file" : "files"}
           </span>

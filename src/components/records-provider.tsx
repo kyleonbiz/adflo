@@ -22,7 +22,7 @@ function SaveProblem() {
   if (!problem) return null;
   const text = problem.loading ? MESSAGE.loading : MESSAGE[problem.problem];
   return (
-    <div role="alert" data-testid="records-problem" className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+    <div role="alert" data-testid="records-problem" className="mb-4 flex flex-wrap items-center justify-between gap-2 py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">
       <span className="flex items-center gap-2"><AlertTriangle className="size-4 shrink-0" aria-hidden /> {text}</span>
       {problem.problem === "failed" && <Button size="sm" variant="outline" onClick={() => { retryRemote(); retryActivity(); }}>Try now</Button>}
     </div>

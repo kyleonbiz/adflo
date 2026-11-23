@@ -54,7 +54,7 @@ export function StaffLoginForm({ next }: { next?: string }) {
         </div>
         <Link href="/forgot-password" className="inline-block pt-1 text-sm font-semibold text-primary hover:underline">Forgot password?</Link>
       </div>
-      {error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-destructive">{error}</p>}
+      {error && <p role="alert" className="py-1 pl-3 text-sm border-l-2 border-red-500 text-destructive">{error}</p>}
       <Button type="submit" size="lg" className="auth-submit w-full" disabled={busy}>
         {busy ? "Please wait…" : "Sign in"}{!busy && <ChevronRight className="size-4" aria-hidden />}
       </Button>

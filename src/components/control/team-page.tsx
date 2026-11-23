@@ -37,7 +37,7 @@ export function TeamPage({ staff, selfId, sample }: { staff: StaffMember[]; self
         <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
         <p className="text-sm text-muted-foreground">People who can sign in to the Control center. Each needs an AdFlo account and sets up two-factor on first sign-in.</p>
       </div>
-      {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample people.</p>}
+      {sample && <p className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">Preview with sample people.</p>}
       <ul className="divide-y rounded-2xl border bg-card shadow-panel">
         {staff.map((m) => (
           <li key={m.userId} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">

@@ -23,7 +23,7 @@ export function AcceptForm({ token }: { token: string }) {
     } catch { setMessage("Could not reach the server. Try again."); } finally { setBusy(false); }
   }
 
-  if (done) return <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">Thank you. Your acceptance is recorded.</p>;
+  if (done) return <p role="status" className="py-1 pl-3 text-sm font-medium border-l-2 border-emerald-500 text-foreground">Thank you. Your acceptance is recorded.</p>;
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
       <div className="grid gap-4 sm:grid-cols-2">

@@ -24,7 +24,7 @@ export function EmptyState({
       className="flex flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/30 px-6 py-14 text-center"
       data-testid="empty-state"
     >
-      <span className="flex size-14 items-center justify-center rounded-2xl bg-accent text-brand-purple">
+      <span className="flex size-14 items-center justify-center text-primary">
         <copy.Icon className="size-7" aria-hidden />
       </span>
       <h3 className="mt-4 text-base font-semibold">{copy.title}</h3>
@@ -57,10 +57,10 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className="flex flex-col items-center justify-center rounded-2xl border border-red-200 bg-red-50/60 px-6 py-12 text-center"
+      className="flex flex-col items-center justify-center rounded-xl border bg-card px-6 py-12 text-center"
       data-testid="error-state"
     >
-      <span className="flex size-12 items-center justify-center rounded-2xl bg-red-100 text-destructive">
+      <span className="flex size-12 items-center justify-center text-destructive">
         <AlertCircle className="size-6" aria-hidden />
       </span>
       <h3 className="mt-4 text-base font-semibold">{title}</h3>

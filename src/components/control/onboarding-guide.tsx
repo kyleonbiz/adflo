@@ -89,7 +89,7 @@ export function OnboardingGuide({ client, canEdit, onEdit }: { client: ClientRec
         })}
       </ol>
       {error && <p role="alert" className="mt-2 text-sm text-destructive">{error}</p>}
-      {done === total && <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Every step is done. This client is fully set up.</p>}
+      {done === total && <p className="mt-3 py-1 pl-3 text-sm border-l-2 border-emerald-500 text-foreground">Every step is done. This client is fully set up.</p>}
     </section>
   );
 }

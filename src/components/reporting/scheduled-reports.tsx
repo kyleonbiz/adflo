@@ -57,7 +57,7 @@ export function ScheduledReports({ reports, today }: { reports: ModuleReport[]; 
   return (
     <div className="space-y-5" data-testid="scheduled-reports">
       {due.length > 0 && (
-        <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900" data-testid="due-banner">
+        <p role="status" className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground" data-testid="due-banner">
           {due.length === 1 ? "1 report is due." : `${due.length} reports are due.`} Print or download them below.
         </p>
       )}

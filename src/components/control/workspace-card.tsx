@@ -196,7 +196,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
           )}
         </div>
         {confirming && (
-          <div role="alertdialog" aria-label="Confirm" className="flex flex-wrap items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <div role="alertdialog" aria-label="Confirm" className="flex flex-wrap items-center gap-2 py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">
             {confirming === "suspend" ? "Pause this account, for example for missed payments? Their people lose access to their workspace right away. It is recorded in the audit log, and nothing is deleted. Turn the switch back on to restore it." : "Cancel this client? Their people lose access to their workspace. Their data is kept."}
             <Button variant="destructive" size="sm" disabled={busy} onClick={() => changeStatus(confirming === "suspend" ? "suspended" : "cancelled")}>{confirming === "suspend" ? "Suspend" : "Cancel client"}</Button>
             <Button variant="outline" size="sm" onClick={() => setConfirming(null)}>Keep</Button>
@@ -285,7 +285,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
           </div>
 
           {erasing && (
-            <div role="alertdialog" aria-label="Delete workspace and data" className="space-y-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <div role="alertdialog" aria-label="Delete workspace and data" className="space-y-3 py-1 pl-3 text-sm border-l-2 border-red-500 text-destructive">
               <p className="font-medium">Delete this workspace and everything in it for good?</p>
               <p>This removes its documents and their stored files, records, activity and members right away, with no 30-day wait. It cannot be undone. People&apos;s sign-in accounts and the client record are kept.</p>
               <label className="block space-y-1">
@@ -300,7 +300,7 @@ export function WorkspaceCard({ client, plans, unlinked, canEdit, isOwner = fals
           )}
 
           {deleting && (
-            <div role="alertdialog" aria-label="Delete client" className="space-y-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+            <div role="alertdialog" aria-label="Delete client" className="space-y-3 py-1 pl-3 text-sm border-l-2 border-red-500 text-destructive">
               <p className="font-medium">Delete {client.name} permanently?</p>
               <p>This removes the client record with its onboarding steps, the agreements sent to them and the reminder log. Support tickets are kept but no longer linked to a client.{linked ? <> <strong>Their workspace is deleted too</strong>: its documents, stored files, records and team are erased right away, with no 30-day wait.</> : ""} The owner&apos;s and members&apos; sign-in accounts are removed too (unless they also belong to another client). This cannot be undone.</p>
               {client.status === "active" && <p className="rounded bg-white/70 px-2 py-1.5">This client is active. Cancel them first, then delete.</p>}

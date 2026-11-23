@@ -76,11 +76,11 @@ export function DocumentManagementPage({ api, startUpload, initialSearch }: { ap
   else if (query.folderId) emptyVariant = "folder";
 
   return (
-    <div className="rounded-2xl border border-white/70 bg-[#f7f8fc] shadow-panel" data-testid="workspace">
+    <div className="rounded-xl border bg-card shadow-panel" data-testid="workspace">
       {notice && (
         <div
           role="note"
-          className="flex items-start gap-2 rounded-t-2xl px-5 pt-3 text-xs text-muted-foreground sm:px-8"
+          className="flex items-start gap-2 rounded-t-xl px-5 pt-3 text-xs text-muted-foreground sm:px-8"
         >
           {api.mode === "demo" ? <Info className="mt-px size-3 shrink-0 text-brand-indigo" aria-hidden /> : <FlaskConical className="mt-px size-3 shrink-0 text-amber-500" aria-hidden />}
           <p>{notice}</p>

@@ -69,7 +69,7 @@ export function SupportPage({ tickets, clients, directory, canEdit, sample }: { 
         <div><h1 className="text-2xl font-semibold tracking-tight">Support</h1><p className="text-sm text-muted-foreground">Requests from clients, who has them, and where they stand.</p></div>
         {canEdit && <Button onClick={() => setCreating(true)}><Plus /> New ticket</Button>}
       </div>
-      {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample tickets.</p>}
+      {sample && <p className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">Preview with sample tickets.</p>}
       <div className="flex flex-wrap gap-2">
         {(["open", "pending", "closed", "all"] as const).map((s) => (
           <button key={s} type="button" aria-pressed={filter === s} onClick={() => setFilter(s)} className={cn("h-8 rounded-full border px-3 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring", filter === s ? "border-primary bg-accent text-accent-foreground" : "bg-card text-muted-foreground hover:bg-muted")}>

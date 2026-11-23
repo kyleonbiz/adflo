@@ -33,7 +33,7 @@ function Body({ form, onAdd, onClose }: { form: FormTemplate; onAdd: (responses:
         <textarea id="resp-text" rows={8} value={text} onChange={(e) => setText(e.target.value)} className={textareaClass} placeholder="Paste one or several emails. AdFlo finds the answers in them." />
       </div>
       {problems.length > 0 && (
-        <ul role="alert" className="space-y-1 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
+        <ul role="alert" className="space-y-1 py-1 pl-3 text-xs border-l-2 border-amber-500 text-foreground">
           {problems.map((p) => <li key={p}>{p}</li>)}
         </ul>
       )}

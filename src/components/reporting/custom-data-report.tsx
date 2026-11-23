@@ -133,7 +133,7 @@ export function CustomDataReport({ today }: { today: string }) {
           </section>
 
           {setAside && (setAside.rejected.length > 0 || setAside.repeated > 0) && (
-            <section aria-labelledby="aside-heading" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <section aria-labelledby="aside-heading" className="rounded-2xl py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 id="aside-heading" className="font-semibold">Rows set aside</h2>
                 {setAside.rejected.length > 0 && (

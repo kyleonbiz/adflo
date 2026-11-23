@@ -32,7 +32,7 @@ export function ExpiringDocuments({ api, version, onOpen }: { api: DmsApi; versi
 
   if (docs.length === 0) return null;
   return (
-    <section aria-labelledby="expiring-docs-heading" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950" data-testid="expiring-documents">
+    <section aria-labelledby="expiring-docs-heading" className="rounded-xl border bg-card p-4 shadow-panel" data-testid="expiring-documents">
       <h3 id="expiring-docs-heading" className="flex items-center gap-2 text-sm font-semibold"><AlarmClock className="size-4" aria-hidden /> Expiring documents ({docs.length})</h3>
       <ul className="mt-2 divide-y divide-amber-200 text-sm">
         {docs.slice(0, 6).map((d) => (

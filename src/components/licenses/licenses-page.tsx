@@ -253,7 +253,7 @@ export function LicensesPage({ preview, initialQuery = "", startNew, draft }: { 
       )}
 
       {summary.needsReview > 0 && (
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900" data-testid="review-banner">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground" data-testid="review-banner">
           <span>
             {summary.needsReview === 1 ? "1 license still needs" : `${summary.needsReview} licenses still need`} review. Every license must be checked against its document before you rely on it.
           </span>

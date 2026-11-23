@@ -8,11 +8,11 @@ import { cn } from "@/lib/utils";
  * colour for the same meaning as the dashboard: blue for totals, cyan for info, amber for waiting, red for late, green for good.
  */
 const SQUARE: Record<string, string> = {
-  "text-primary": "bg-blue-50 text-blue-600",
-  "text-sky-600": "bg-cyan-50 text-cyan-700",
-  "text-amber-600": "bg-amber-50 text-amber-600",
-  "text-red-600": "bg-red-50 text-red-600",
-  "text-emerald-600": "bg-emerald-50 text-emerald-600",
+  "text-primary": "text-blue-600",
+  "text-sky-600": "text-cyan-700",
+  "text-amber-600": "text-amber-600",
+  "text-red-600": "text-red-600",
+  "text-emerald-600": "text-emerald-600",
 };
 
 /** A headline number in the dashboard's card style. Give it an `href` to link to where the detail lives, or an `onClick` to act on the page (e.g. set a filter). */
@@ -24,8 +24,8 @@ export function SummaryTile({ icon: Icon, label, value, tone, href, onClick, pre
         <p className="text-sm text-muted-foreground">{label}</p>
         <p className="break-words text-2xl font-semibold tabular-nums sm:text-3xl">{value}</p>
       </div>
-      <span className={cn("ml-auto grid size-10 shrink-0 place-items-center rounded-lg", SQUARE[tone] ?? "bg-blue-50 text-blue-600")}>
-        <Icon className="size-5" aria-hidden />
+      <span className={cn("ml-auto grid size-10 shrink-0 place-items-center", SQUARE[tone] ?? "text-blue-600")}>
+        <Icon className="size-6" aria-hidden />
       </span>
     </div>
   );

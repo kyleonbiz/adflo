@@ -35,7 +35,7 @@ export function MonitoringPage({ checks, errors, problems, canEdit, sample }: { 
   return (
     <div className="space-y-5">
       <div><h1 className="text-2xl font-semibold tracking-tight">Monitoring</h1><p className="text-sm text-muted-foreground">Is AdFlo healthy, what has gone wrong, and which clients are affected.</p></div>
-      {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample data.</p>}
+      {sample && <p className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">Preview with sample data.</p>}
 
       <section className="rounded-2xl border bg-card p-5 shadow-panel" aria-label="Health">
         <h2 className="font-semibold">Health</h2>

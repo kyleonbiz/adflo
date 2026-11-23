@@ -39,7 +39,7 @@ export function PlansPage({ plans, canEdit, sample }: { plans: Plan[]; canEdit: 
         <h1 className="text-2xl font-semibold tracking-tight">Plans &amp; pricing</h1>
         <p className="text-sm text-muted-foreground">What each plan costs per month and how many seats it includes. Clients can also have their own price.</p>
       </div>
-      {sample && <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Preview with sample plans.</p>}
+      {sample && <p className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">Preview with sample plans.</p>}
       <div className="overflow-x-auto rounded-2xl border bg-card shadow-panel">
         <table className="w-full min-w-[32rem] text-left text-sm">
           <thead className="border-b text-xs uppercase tracking-wide text-muted-foreground"><tr><th className="px-4 py-3 font-medium">Plan</th><th className="px-4 py-3 text-right font-medium">Price / month</th><th className="px-4 py-3 text-right font-medium">Seats included</th><th className="px-4 py-3 font-medium">Status</th></tr></thead>

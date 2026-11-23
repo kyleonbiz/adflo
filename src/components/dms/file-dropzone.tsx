@@ -40,7 +40,7 @@ export function FileDropzone({
       }}
       className={cn(
         "relative rounded-2xl border-2 border-dashed transition-colors",
-        over ? "border-brand-indigo bg-brand-blue/10" : "border-slate-200 bg-white hover:border-brand-indigo/50 hover:bg-brand-blue/5",
+        over ? "border-primary bg-muted" : "border-input bg-white hover:border-primary/50 hover:bg-muted/50",
         disabled && "pointer-events-none opacity-60",
       )}
       data-testid="dropzone"

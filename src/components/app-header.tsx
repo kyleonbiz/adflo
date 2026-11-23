@@ -25,7 +25,7 @@ export function AppTopBar({ workspaceName, userLabel, badge, notifications, cont
       {workspaceName && (
         <span className="hidden truncate rounded-md bg-muted px-2 py-1 text-xs font-medium text-muted-foreground sm:inline">{workspaceName}</span>
       )}
-      {badge && <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900">{badge}</span>}
+      {badge && <span className="rounded-md border px-2 py-1 text-xs font-medium text-muted-foreground">{badge}</span>}
       {userLabel && (
         <form action="/auth/signout" method="post" className="flex items-center gap-2">
           {signOutTo && <input type="hidden" name="to" value={signOutTo} />}

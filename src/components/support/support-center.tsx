@@ -83,7 +83,7 @@ export function SupportCenter({ tickets }: { tickets: MyTicket[] }) {
         </div>
         <Button onClick={() => setCreating(true)}><Plus /> New request</Button>
       </div>
-      {waiting > 0 && <p role="status" className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{waiting === 1 ? "1 request is" : `${waiting} requests are`} waiting on you.</p>}
+      {waiting > 0 && <p role="status" className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">{waiting === 1 ? "1 request is" : `${waiting} requests are`} waiting on you.</p>}
       <div className="flex gap-2">
         {(["active", "closed"] as const).map((v) => (
           <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} className={cn("h-8 rounded-full border px-3 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring", view === v ? "border-primary bg-accent text-accent-foreground" : "bg-card text-muted-foreground hover:bg-muted")}>

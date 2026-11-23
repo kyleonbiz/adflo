@@ -9,7 +9,7 @@ export function EmptyState({ icon: Icon, title, description, points, children }:
   return (
     <section aria-label={title} className="rounded-2xl border bg-card p-6 shadow-panel sm:p-8" data-testid="empty-state">
       <div className="flex items-start gap-4">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon className="size-5" aria-hidden /></span>
+        <span className="flex size-11 shrink-0 items-center justify-center text-primary"><Icon className="size-5" aria-hidden /></span>
         <div className="min-w-0">
           <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground">{description}</p>

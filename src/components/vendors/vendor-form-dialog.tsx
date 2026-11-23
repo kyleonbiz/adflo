@@ -154,7 +154,7 @@ function VendorFormBody({
               </Field>
             </div>
             {matches.length > 0 && (
-              <div ref={warning} tabIndex={-1} role="alert" className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 outline-none focus-visible:ring-2 focus-visible:ring-ring sm:col-span-2" data-testid="duplicate-warning">
+              <div ref={warning} tabIndex={-1} role="alert" className="space-y-2 py-1 pl-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring sm:col-span-2 border-l-2 border-amber-500 text-foreground" data-testid="duplicate-warning">
                 <p className="flex items-center gap-2 font-medium"><TriangleAlert className="size-4" aria-hidden /> This may already be in your vendor list</p>
                 <ul className="list-disc pl-5">
                   {matches.map((m) => <li key={m.vendor.id}>{m.vendor.name}: {m.reasons.join(", ").toLowerCase()}</li>)}

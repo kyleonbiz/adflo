@@ -30,7 +30,7 @@ function Chain({ kind }: { kind: (typeof CHAIN_KINDS)[number] }) {
         <ol className="space-y-1.5">
           {steps.map((s, i) => (
             <li key={s} data-testid="chain-step" className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{i + 1}</span>
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold">{i + 1}</span>
               <span className="min-w-0 flex-1 truncate">{s}</span>
               <Button size="icon-sm" variant="ghost" aria-label={`Move ${s} up`} disabled={i === 0} onClick={() => move(i, -1)}><ArrowUp /></Button>
               <Button size="icon-sm" variant="ghost" aria-label={`Move ${s} down`} disabled={i === steps.length - 1} onClick={() => move(i, 1)}><ArrowDown /></Button>

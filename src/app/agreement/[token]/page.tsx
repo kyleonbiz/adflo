@@ -40,9 +40,9 @@ export default async function AgreementPage({ params }: PageProps<"/agreement/[t
                 <section className="rounded-2xl bg-card p-6 shadow-float sm:p-8" aria-label="Acceptance">
                   <h2 className="mb-4 text-lg font-semibold tracking-tight">Your acceptance</h2>
                   {view.accepted_at ? (
-                    <p role="status" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">Accepted by {view.accepted_name} on {new Date(view.accepted_at).toLocaleDateString("en-US", { dateStyle: "long", timeZone: "UTC" })}.</p>
+                    <p role="status" className="py-1 pl-3 text-sm font-medium border-l-2 border-emerald-500 text-foreground">Accepted by {view.accepted_name} on {new Date(view.accepted_at).toLocaleDateString("en-US", { dateStyle: "long", timeZone: "UTC" })}.</p>
                   ) : view.expired ? (
-                    <p role="alert" className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">This link has expired. Ask AdFlo to send you a new one.</p>
+                    <p role="alert" className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">This link has expired. Ask AdFlo to send you a new one.</p>
                   ) : (
                     <AcceptForm token={token} />
                   )}

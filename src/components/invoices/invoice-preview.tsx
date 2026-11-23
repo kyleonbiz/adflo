@@ -92,7 +92,7 @@ function Body({ invoice, today, onDownload, onEdit }: { invoice: Invoice; today:
       </section>
 
       {invoice.paymentMethods.length > 0 && (
-        <section aria-label="Payment instructions" className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+        <section aria-label="Payment instructions" className="rounded-xl border p-4 text-sm">
           <h3 className="flex items-center gap-2 font-semibold"><CreditCard className="size-4 text-primary" aria-hidden />Payment instructions</h3>
           <p className="mt-2">Please make payment by {invoice.dueOn}</p>
           <p className="mt-2 font-medium">Payment methods:</p>

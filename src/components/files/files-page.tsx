@@ -131,7 +131,7 @@ export function FilesPage({ preview }: { preview?: string }) {
           </section>
 
           {(notes.skipped.length > 0 || notes.truncated || notes.unhashed > 0) && (
-            <section aria-label="Notes" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <section aria-label="Notes" className="rounded-2xl py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground">
               <ul className="list-disc space-y-1 pl-5">
                 {notes.truncated && <li>Only the first {MAX_FILES.toLocaleString()} files were used.</li>}
                 {notes.unhashed > 0 && <li>{notes.unhashed} file{notes.unhashed === 1 ? " was" : "s were"} not read (too big, or a list), so duplicates among them are only &quot;likely&quot;.</li>}

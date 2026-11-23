@@ -58,7 +58,7 @@ export function SampleDataBanner() {
   if (!loaded || inDatabase) return null;
   const label = SAMPLE_SETS.find((s) => s.id === loaded)?.label ?? "Sample";
   return (
-    <div role="note" data-testid="sample-loaded" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2.5 text-sm text-sky-900">
+    <div role="note" data-testid="sample-loaded" className="flex flex-wrap items-center justify-between gap-2 py-1 pl-3 text-sm border-l-2 border-sky-500 text-foreground">
       <span>You are looking at sample data ({label.toLowerCase()}). Nothing here is real.</span>
       <Button size="sm" variant="outline" onClick={clearAllRecords}>Clear sample data</Button>
     </div>

@@ -25,7 +25,7 @@ export function DeleteConfirmationDialog({
     <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <DialogContent variant="alert" showClose={false} role="alertdialog">
         <div className="flex gap-4">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-destructive">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full border-l-2 border-red-500 text-destructive pl-3">
             <AlertTriangle className="size-5" aria-hidden />
           </span>
           <div className="min-w-0">

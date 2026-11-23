@@ -120,7 +120,7 @@ function BuilderBody({ form, onClose, onSave }: { form?: FormTemplate; onClose: 
         </div>
 
         {problems.length > 0 && (
-          <ul role="alert" className="space-y-1 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <ul role="alert" className="space-y-1 py-1 pl-3 text-sm border-l-2 border-red-500 text-destructive">
             {problems.map((p) => <li key={p}>{p}</li>)}
           </ul>
         )}

@@ -139,12 +139,12 @@ export function AuthForm({ mode, next, demo = false, invitedEmail }: { mode: "lo
         )}
       </Field>
       {formError && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-destructive">
+        <p role="alert" className="py-1 pl-3 text-sm border-l-2 border-red-500 text-destructive">
           {formError}
         </p>
       )}
       {info && (
-        <p role="status" className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p role="status" className="py-1 pl-3 text-sm border-l-2 border-emerald-500 text-foreground">
           {info}
         </p>
       )}

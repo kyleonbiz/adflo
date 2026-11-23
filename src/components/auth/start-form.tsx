@@ -20,7 +20,7 @@ export function StartForm({ defaultName }: { defaultName: string }) {
         <Label htmlFor="name" className="sr-only">Your name</Label>
         <Input id="name" name="name" placeholder="Your name" autoComplete="name" required minLength={2} maxLength={120} defaultValue={defaultName} className="auth-input" />
       </div>
-      {state.error && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-destructive">{state.error}</p>}
+      {state.error && <p role="alert" className="py-1 pl-3 text-sm border-l-2 border-red-500 text-destructive">{state.error}</p>}
       <Button type="submit" size="lg" className="auth-submit w-full" disabled={pending}>
         {pending ? "Please wait…" : "Continue"}{!pending && <ChevronRight className="size-4" aria-hidden="true" />}
       </Button>

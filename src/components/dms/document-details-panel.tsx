@@ -340,7 +340,7 @@ function ActionRow({
       aria-pressed={pressed}
       className={cn(
         "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
-        danger ? "bg-red-50 text-destructive hover:bg-red-100" : "bg-white text-foreground shadow-[0_0_0_1px_rgb(228_230_240)] hover:bg-muted",
+        danger ? "hover:bg-red-100 border-l-2 border-red-500 text-destructive pl-3" : "bg-white text-foreground shadow-[0_0_0_1px_rgb(228_230_240)] hover:bg-muted",
       )}
     >
       <Icon className={cn("size-4", pressed && "fill-amber-400 text-amber-500")} />

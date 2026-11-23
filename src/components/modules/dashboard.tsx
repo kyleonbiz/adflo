@@ -115,8 +115,8 @@ const NOTE = {
   bad: { Icon: ArrowDown, tone: "text-red-600" },
 } as const;
 const KPI_ICON: Record<string, { Icon: LucideIcon; box: string }> = {
-  money: { Icon: Receipt, box: "bg-emerald-50 text-emerald-600" },
-  tasks: { Icon: FolderKanban, box: "bg-amber-50 text-amber-600" },
+  money: { Icon: Receipt, box: "text-emerald-600" },
+  tasks: { Icon: FolderKanban, box: "text-amber-600" },
 };
 
 function KpiCard({ kpi, bars }: { kpi: Kpi; bars: number[] }) {
@@ -131,7 +131,7 @@ function KpiCard({ kpi, bars }: { kpi: Kpi; bars: number[] }) {
       <div className="mt-3 flex items-end justify-between gap-2">
         <p className={cn("flex items-center gap-1.5 text-sm font-medium", tone)}><NoteIcon className="size-4" aria-hidden /> {kpi.note.text}</p>
         {icon ? (
-          <span className={cn("grid size-10 shrink-0 place-items-center rounded-lg", icon.box)}><icon.Icon className="size-5" aria-hidden /></span>
+          <span className={cn("grid size-10 shrink-0 place-items-center", icon.box)}><icon.Icon className="size-6" aria-hidden /></span>
         ) : (
           <MiniBars values={bars} label="Needs attention by area" />
         )}
@@ -239,7 +239,7 @@ function FinishSetup() {
   const setup = useSetupConfig();
   if (setup?.completedOn) return null;
   return (
-    <aside aria-label="Finish setup" data-testid="finish-setup" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3">
+    <aside aria-label="Finish setup" data-testid="finish-setup" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 shadow-panel">
       <p className="text-sm"><span className="font-semibold">Finish guided setup.</span> <span className="text-muted-foreground">Pick your industry and the services you use, and AdFlo sets up templates and reminders for you.</span></p>
       <Button asChild size="sm"><Link href="/app/setup?tab=setup">Continue setup</Link></Button>
     </aside>
