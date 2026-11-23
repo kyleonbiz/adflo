@@ -10,6 +10,9 @@ export function Toaster({ notices, onDismiss }: { notices: Notice[]; onDismiss: 
       className="pointer-events-none fixed inset-x-0 bottom-4 z-[70] flex flex-col items-center gap-2 px-4 sm:items-end sm:px-6"
       role="region"
       aria-label="Notifications"
+      // An open dialog hides everything outside it from screen readers, except elements with an aria-live attribute. "off"
+      // keeps this container reachable without changing how each toast is announced (they are status/alert regions already).
+      aria-live="off"
     >
       {notices.map((n) => (
         <div
