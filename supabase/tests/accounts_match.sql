@@ -12,6 +12,8 @@ insert into public.clients (id, name, owner_name, owner_email) values (:cl, 'Mat
 
 -- From here the real rules apply.
 set adflo.test_fixture = off;
+-- The invitation-only rules below are tested with public sign-up switched off; the self-serve tests at the end switch it on.
+update public.signup_settings set open = false;
 
 select t.fails('nothing but provisioning can create a workspace', $$insert into public.workspaces (name) values ('Random Co')$$, 'only be created for a client');
 select t.ok('no workspace was made', not exists (select 1 from public.workspaces where name = 'Random Co'));
@@ -61,11 +63,57 @@ select t.as_staff(:stf::uuid);
 select t.ok('the client history shows the staff member by name', (select count(*) from public.control_client_timeline(:cl) where staff_email = 'staff-am@adflo.test' and staff_name = 'Am Staff') > 0);
 reset role;
 
+
+-- Self-serve sign-up: open to anyone while the switch is on, and a new account starts its own workspace.
+select t.ok('sign-up is on by default in a fresh database', (select open from public.signup_settings) is not null);
+update public.signup_settings set open = true;
+insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000a1', 'Nina@Newco.test');
+select t.fails('an email that is not an email still cannot sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), 'not-an-email')$$, 'sign-up is by invitation');
+select t.as_user('ac000000-0000-4000-8000-0000000000a1');
+select public.self_serve_start('Newco Builders', 'Nina New');
+reset role;
+select t.ok('the new account owns a workspace linked to a trial client',
+  (select c.status || '|' || c.plan || '|' || m.role from public.clients c join public.workspace_members m on m.workspace_id = c.workspace_id and m.user_id = 'ac000000-0000-4000-8000-0000000000a1' where c.name = 'Newco Builders') = 'trial|core +|owner');
+select t.ok('with the standard folders', (select count(*) from public.document_folders f join public.clients c on c.workspace_id = f.workspace_id where c.name = 'Newco Builders' and f.is_system) = 6);
+select t.as_user('ac000000-0000-4000-8000-0000000000a1');
+select t.ok('asking again returns the same workspace', public.self_serve_start('Another Name', 'Nina') = (select workspace_id from public.workspace_members where user_id = 'ac000000-0000-4000-8000-0000000000a1'));
+reset role;
+insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000a2', 'nora@newco.test');
+select t.as_user('ac000000-0000-4000-8000-0000000000a2');
+select t.fails('a company name that is taken is refused', $$select public.self_serve_start('newco builders', 'Nora')$$, 'already exists');
+select t.fails('a one-letter company name is refused', $$select public.self_serve_start('X', 'Nora')$$, 'company name');
+reset role;
+select t.fails('nothing else can create a workspace', $$insert into public.workspaces (name) values ('Sneaky Co')$$, 'only be created for a client');
+-- Someone with an open invitation joins their company's workspace instead of starting another.
+insert into public.workspace_invites (workspace_id, email, role) select workspace_id, 'ned@newco.test', 'editor' from public.clients where name = 'Newco Builders';
+insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000a3', 'ned@newco.test');
+select t.as_user('ac000000-0000-4000-8000-0000000000a3');
+select t.fails('an invited person cannot start a second workspace', $$select public.self_serve_start('Ned Co', 'Ned')$$, 'invitation');
+reset role;
+-- Staff can close sign-up again, and then it is invitation-only as before.
+select t.as_staff(:stf::uuid);
+select public.control_set_signup_open(false);
+reset role;
+select t.fails('with sign-up closed a stranger cannot sign up again', $$insert into auth.users (id, email) values (gen_random_uuid(), 'late@nowhere.test')$$, 'sign-up is by invitation');
+insert into public.workspace_invites (workspace_id, email, role) select workspace_id, 'ona@newco.test', 'editor' from public.clients where name = 'Newco Builders';
+insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000a4', 'ona@newco.test');
+select t.ok('and the invited can still sign up', exists (select 1 from auth.users where email = 'ona@newco.test'));
+select t.as_user('ac000000-0000-4000-8000-0000000000a2');
+select t.fails('and a person with no workspace cannot start one', $$select public.self_serve_start('Closed Co', 'Nora')$$, 'invitation only');
+reset role;
+select t.as_user('ac000000-0000-4000-8000-0000000000a1');
+select t.fails('an ordinary user cannot flip the switch', $$select public.control_set_signup_open(true)$$, 'forbidden');
+reset role;
+
 -- Clean up what this file made, so nothing leaks into later runs.
 set adflo.test_fixture = on;
+select set_config('request.jwt.claim.sub', '', false); -- the last test user is not staff, so the audit trail must not name them
 delete from public.clients where id = :cl;
-delete from public.workspaces where name = 'Match Co';
-delete from auth.users where email in ('Mia@Match.test', 'STAFF-AM@adflo.test') or id in ('ac000000-0000-4000-8000-0000000000f3', 'ac000000-0000-4000-8000-0000000000f4');
+delete from public.workspaces where name in ('Match Co', 'Newco Builders');
+delete from public.clients where name = 'Newco Builders';
+delete from public.workspace_invites where email in ('ned@newco.test', 'ona@newco.test');
+update public.signup_settings set open = true;
+delete from auth.users where email in ('Mia@Match.test', 'STAFF-AM@adflo.test') or id in ('ac000000-0000-4000-8000-0000000000f3', 'ac000000-0000-4000-8000-0000000000f4', 'ac000000-0000-4000-8000-0000000000a1', 'ac000000-0000-4000-8000-0000000000a2', 'ac000000-0000-4000-8000-0000000000a3', 'ac000000-0000-4000-8000-0000000000a4');
 delete from public.staff_members where user_id = :stf;
 delete from public.staff_audit_log where staff_email = 'staff-am@adflo.test';
 delete from auth.users where id = :stf;

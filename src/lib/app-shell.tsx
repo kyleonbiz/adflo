@@ -57,8 +57,12 @@ export async function renderAppShell(
     // Pending invites for this (verified) email take effect before the no-workspace notice is considered.
     await acceptPendingInvites(supabase, fullName);
     const membership = await findMembership(supabase, data.user.id);
-    // Nobody creates a workspace from the sign-in flow: AdFlo makes it in the Control center and the owner joins by email.
-    if (!membership) return <NoWorkspaceNotice email={email} />;
+    // No workspace yet: while sign-up is open a new account sets up its own company; staff and closed sign-up see the notice.
+    if (!membership) {
+      const { data: open } = await supabase.rpc("signup_is_open");
+      if (open === true && !(await findStaff(supabase))) redirect("/start");
+      return <NoWorkspaceNotice email={email} />;
+    }
     // A client switched off in the Control Center sees a plain notice instead of the app. Nothing is deleted.
     const standing = await getWorkspaceStanding(supabase, membership.workspaceId);
     if (isPaused(standing)) return <PausedNotice standing={standing} email={email} />;

@@ -51,13 +51,13 @@ export function AuthForm({ mode, next, demo = false, invitedEmail }: { mode: "lo
         password: values.password,
         options: {
           data: { full_name: values.fullName },
-          emailRedirectTo: `${publicOrigin()}/auth/callback`,
+          emailRedirectTo: `${publicOrigin()}/auth/callback${invitedEmail ? "" : "?next=/start"}`,
         },
       });
       if (error) {
         // The database refuses an email AdFlo has not invited, and Supabase reports that as a generic "database error".
         const refused = error.code === "unexpected_failure" || /database error/i.test(error.message);
-        return setFormError(refused ? "Sign-up is by invitation. Open the link in your invitation email and confirm it first, then sign up with the email it was sent to. Need help? Contact support@adflo.pro." : error.message);
+        return setFormError(refused ? "We could not create an account for that email. If you were invited, open the link in your invitation email and sign up with the email it was sent to. Need help? Contact support@adflo.pro." : error.message);
       }
       // Supabase answers a sign-up for an address that already has an account as if it worked, and sends nothing. Its
       // tell is a user with no identities. Say so, instead of promising an email that will never come.
