@@ -21,6 +21,14 @@ test.describe("invoices module", () => {
     await expect(page.getByRole("combobox", { name: "Sort invoices" })).toContainText("Client");
   });
 
+  test("searching for something that matches nothing says so", async ({ page }) => {
+    await page.goto("/app/invoices");
+    await expect(page.getByTestId("invoice-card").first()).toBeVisible();
+    await page.getByLabel("Search invoices").fill("zzz-no-such-client");
+    await expect(page.getByText("No invoices match these filters.")).toBeVisible();
+    await expect(page.getByTestId("invoice-card")).toHaveCount(0);
+  });
+
   test("late invoices offer a payment reminder, and ones not yet due do not", async ({ page }) => {
     await page.goto("/app/invoices");
     const late = page.getByTestId("invoice-card").filter({ hasText: "INV-0041" });

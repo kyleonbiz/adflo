@@ -219,6 +219,14 @@ test.describe("projects view", () => {
     await expect(page.getByRole("option", { name: "Quarterly Tax Prep" })).toHaveCount(0);
   });
 
+  test("searching the tasks list for something that matches nothing says so", async ({ page }) => {
+    await page.goto("/app/projects");
+    await expect(page.getByTestId("task-row").first()).toBeVisible();
+    await page.getByLabel("Search tasks").fill("zzz-no-such-task");
+    await expect(page.getByText("No tasks match these filters.")).toBeVisible();
+    await expect(page.getByTestId("task-row")).toHaveCount(0);
+  });
+
   test("sorts, filters from the summary tiles and clears filters", async ({ page }) => {
     await page.goto("/app/projects?view=projects");
     await expect(page.getByTestId("project-card")).toHaveCount(4);

@@ -3,7 +3,7 @@
 import { PreviewNote } from "@/components/ui/preview-note";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { CalendarPlus, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarPlus, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { downloadText } from "@/components/import/csv-source";
 import { toIcs } from "@/lib/ics";
 import { useToday } from "@/components/modules/use-today";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { agenda, buildEvents, byDay, EVENT_KINDS, monthGrid, monthLabel, monthOf, nextMonth, type CalendarEvent, type EventKind } from "@/lib/calendar/logic";
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
-import { setReminderOn } from "@/lib/reminders/logic";
+import { clearReminder, setReminderOn } from "@/lib/reminders/logic";
 import { Input } from "@/components/ui/input";
 import { useCalendarSources } from "@/lib/calendar/sources";
 import { addDays, addMonths, formatDayLong, formatDayShort } from "@/lib/dates";
@@ -32,7 +32,7 @@ const KIND_STYLE: Record<EventKind, string> = {
 const LATE_STYLE = "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-100";
 const pill = (e: CalendarEvent) => (e.late ? LATE_STYLE : KIND_STYLE[e.kind]);
 
-function EventRow({ e, testId }: { e: CalendarEvent; testId: string }) {
+function EventRow({ e, testId, onRemove }: { e: CalendarEvent; testId: string; onRemove?: (e: CalendarEvent) => void }) {
   return (
     <li data-testid={testId} className="flex items-center gap-3 py-2">
       <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-xs font-medium", pill(e))}>{e.late ? "Late" : e.kind}</span>
@@ -40,6 +40,9 @@ function EventRow({ e, testId }: { e: CalendarEvent; testId: string }) {
         <span className="block truncate font-medium">{e.title}</span>
         <span className="block truncate text-xs text-muted-foreground">{e.detail}</span>
       </Link>
+      {e.kind === "Reminders" && onRemove && (
+        <Button type="button" size="icon-sm" variant="ghost" aria-label={`Remove reminder ${e.title}`} title="Remove reminder" onClick={() => onRemove(e)}><X /></Button>
+      )}
     </li>
   );
 }
@@ -54,7 +57,20 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
   const [selected, setSelected] = useState<string | null>(null);
   const reminders = useReminders();
   const [note, setNote] = useState("");
+  const [notice, setNotice] = useState<{ text: string; undo?: () => void } | null>(null);
   const [window, setWindow] = useState<30 | 60 | 90>(60);
+
+  const removeReminder = (e: CalendarEvent) => {
+    const r = reminders.find((x) => x.id === e.id);
+    if (!r) return;
+    saveReminders(clearReminder(reminders, r.id));
+    setNotice({ text: `Reminder removed: ${r.text}`, undo: () => { saveReminders(setReminderOn(reminders, { id: r.id, text: r.text, area: r.area, href: r.href }, r.on)); setNotice(null); } });
+  };
+  const addReminder = (text: string, day: string) => {
+    const id = `rem-note-${Math.random().toString(36).slice(2, 8)}`;
+    saveReminders(setReminderOn(reminders, { id, text, area: "Tasks", href: "/app/calendar" }, day));
+    setNotice({ text: `Reminder added for ${formatDayShort(day)}: ${text}`, undo: () => { saveReminders(clearReminder(reminders, id)); setNotice(null); } });
+  };
 
   const all = useMemo(() => (today ? buildEvents(sources, today) : []), [sources, today]);
   const events = useMemo(() => (kind === "all" ? all : all.filter((e) => e.kind === kind)), [all, kind]);
@@ -82,6 +98,13 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
 
   return (
     <div className="space-y-5">
+      {notice && (
+        <p role="status" className="flex items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm shadow-panel">
+          <span className="min-w-0 flex-1 truncate">{notice.text}</span>
+          {notice.undo && <Button type="button" size="sm" variant="outline" onClick={notice.undo}>Undo</Button>}
+          <Button type="button" size="icon-sm" variant="ghost" aria-label="Dismiss" onClick={() => setNotice(null)}><X /></Button>
+        </p>
+      )}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Calendar</h1>
@@ -144,7 +167,7 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
                 {[...byDay(w.events)].map(([day, list]) => (
                   <div key={day} className="mt-2">
                     <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{formatDayLong(day)}</h3>
-                    <ul className="divide-y">{list.map((e) => <EventRow key={e.id} e={e} testId="next-month-event" />)}</ul>
+                    <ul className="divide-y">{list.map((e) => <EventRow key={e.id} e={e} testId="next-month-event" onRemove={removeReminder} />)}</ul>
                   </div>
                 ))}
               </div>
@@ -167,7 +190,7 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
               return (
                 <div key={day} data-testid="week-day" className={cn("rounded-xl border bg-card p-2 shadow-panel", day === today && "ring-2 ring-primary/40")}>
                   <h3 className="text-xs font-semibold text-muted-foreground">{formatDayShort(day)}{day === today ? " · Today" : ""}</h3>
-                  {list.length === 0 ? <p className="mt-1 text-xs text-muted-foreground">Nothing due</p> : <ul className="mt-1 divide-y">{list.map((e) => <EventRow key={e.id} e={e} testId="week-event" />)}</ul>}
+                  {list.length === 0 ? <p className="mt-1 text-xs text-muted-foreground">Nothing due</p> : <ul className="mt-1 divide-y">{list.map((e) => <EventRow key={e.id} e={e} testId="week-event" onRemove={removeReminder} />)}</ul>}
                 </div>
               );
             })}
@@ -214,7 +237,7 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
             {chosenEvents.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">Nothing is due on this day.</p>
             ) : (
-              <ul className="mt-2 divide-y">{chosenEvents.map((e) => <EventRow key={e.id} e={e} testId="calendar-day-event" />)}</ul>
+              <ul className="mt-2 divide-y">{chosenEvents.map((e) => <EventRow key={e.id} e={e} testId="calendar-day-event" onRemove={removeReminder} />)}</ul>
             )}
             <form
               className="mt-3 flex gap-2 border-t pt-3"
@@ -222,7 +245,7 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
                 e.preventDefault();
                 const text = note.trim();
                 if (!text) return;
-                saveReminders(setReminderOn(reminders, { id: `rem-note-${Math.random().toString(36).slice(2, 8)}`, text, area: "Tasks", href: "/app/calendar" }, chosen));
+                addReminder(text, chosen);
                 setNote("");
               }}
             >
@@ -243,13 +266,13 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
               {late.length > 0 && (
                 <div className="rounded-2xl border border-red-200 bg-card p-4 shadow-panel">
                   <h2 className="text-base font-semibold text-red-700">Late</h2>
-                  <ul className="mt-1 divide-y">{late.map((e) => <EventRow key={e.id} e={e} testId="agenda-event" />)}</ul>
+                  <ul className="mt-1 divide-y">{late.map((e) => <EventRow key={e.id} e={e} testId="agenda-event" onRemove={removeReminder} />)}</ul>
                 </div>
               )}
               {[...byDay(ahead)].map(([day, list]) => (
                 <div key={day} className="rounded-2xl border bg-card p-4 shadow-panel">
                   <h2 className="text-base font-semibold">{day === today ? `Today, ${formatDayLong(day)}` : formatDayLong(day)}</h2>
-                  <ul className="mt-1 divide-y">{list.map((e) => <EventRow key={e.id} e={e} testId="agenda-event" />)}</ul>
+                  <ul className="mt-1 divide-y">{list.map((e) => <EventRow key={e.id} e={e} testId="agenda-event" onRemove={removeReminder} />)}</ul>
                 </div>
               ))}
             </>
