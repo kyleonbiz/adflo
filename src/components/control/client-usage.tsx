@@ -6,7 +6,7 @@ import type { Usage } from "@/lib/control/usage";
 const n = (v: number) => v.toLocaleString("en-US");
 
 /** One metered line: used of limit with a bar, turning amber at 80% and red at the limit. */
-function Meter({ label, used, limit }: { label: string; used: number; limit: number | null }) {
+export function Meter({ label, used, limit }: { label: string; used: number; limit: number | null }) {
   const pct = limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const tone = limit && used >= limit ? "bg-red-500" : limit && pct >= 80 ? "bg-amber-400" : "bg-emerald-500";
   return (

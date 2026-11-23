@@ -38,5 +38,10 @@ select public.dms_invite_member(:'wsn', 'a@p.test', 'viewer');
 select public.dms_invite_member(:'wsn', 'b@p.test', 'viewer');
 select public.dms_invite_member(:'wsn', 'c@p.test', 'viewer');
 select t.ok('a workspace with no client record has no seat limit', (select count(*) from public.workspace_invites where workspace_id = :'wsn') = 3);
+select t.as_user(:so);
+select t.ok('a member reads seats in use and the limit', (select (public.workspace_seats(:'wss')::jsonb) @> '{"used":3,"limit":3}'::jsonb));
+select t.as_user(:sp);
+select t.ok('a member of a workspace with no client sees no limit', (select (public.workspace_seats(:'wsn')::jsonb)->'limit' = 'null'::jsonb));
+select t.ok('a non-member reads nothing', (select public.workspace_seats(:'wss')) is null);
 reset role;
 \echo ALL SEATS TESTS PASSED
