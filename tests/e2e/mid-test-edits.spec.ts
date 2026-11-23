@@ -39,6 +39,8 @@ test.describe("documents", () => {
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Expiration Date (Optional)").fill("2099-03-01");
     await expect(page.getByText("Expiry date saved.")).toBeVisible();
+    // The dialog is open, and it hides the rest of the page from screen readers. The confirmation must stay reachable by role.
+    await expect(page.getByRole("region", { name: "Notifications" }).getByRole("status")).toContainText("Expiry date saved.");
     await dialog.getByLabel("Expiration Date (Optional)").fill("");
     await expect(page.getByText("Expiry date cleared.")).toBeVisible();
   });
