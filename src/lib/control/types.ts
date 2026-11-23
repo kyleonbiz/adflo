@@ -1,4 +1,4 @@
-import { SEAT_PRICE_CENTS } from "./tiers";
+import { SEAT_PRICE_CENTS, limitsFor } from "./tiers";
 export const CLIENT_STATUSES = ["trial", "active", "suspended", "cancelled"] as const;
 export type ClientStatus = (typeof CLIENT_STATUSES)[number];
 
@@ -77,12 +77,13 @@ export function basePriceCents(c: Priced, plans: Plan[]): number | null {
 }
 
 /**
- * Seats billed on top of the plan: the seats the client is allowed minus the seats the plan includes. None for a client
- * with their own price (it is all-in), or on a plan with no set price (such as Enterprise, quoted per customer).
+ * Seats billed on top of the plan: the seats the client is allowed minus the seats the plan includes. Only the current
+ * plans with a set price are seat-billed (Core +). None for a client with their own price (it is all-in), on Enterprise
+ * (quoted per customer), or on a legacy plan, whose clients keep the price they signed up at.
  */
 export function extraSeats(c: Priced, plans: Plan[]): { count: number; included: number } {
   const plan = plans.find((p) => p.name.toLowerCase() === c.plan.toLowerCase());
-  if (c.priceOverrideCents != null || !plan || plan.priceCents <= 0 || c.seatsLimit == null) return { count: 0, included: plan?.seatsIncluded ?? 0 };
+  if (c.priceOverrideCents != null || !plan || plan.priceCents <= 0 || c.seatsLimit == null || limitsFor(plan.name)?.priceCents == null) return { count: 0, included: plan?.seatsIncluded ?? 0 };
   return { count: Math.max(0, c.seatsLimit - plan.seatsIncluded), included: plan.seatsIncluded };
 }
 

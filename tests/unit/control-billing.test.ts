@@ -40,6 +40,9 @@ describe("per-seat billing", () => {
     expect(effectivePriceCents({ plan: "core +", priceOverrideCents: 4900, seatsLimit: 10 }, seatPlans)).toBe(4900);
     expect(extraSeats({ plan: "enterprise", priceOverrideCents: null, seatsLimit: 40 }, seatPlans).count).toBe(0);
     expect(effectivePriceCents({ plan: "enterprise", priceOverrideCents: null, seatsLimit: 40 }, seatPlans)).toBe(0);
+    // A legacy plan keeps the price it was sold at, however many seats the client has.
+    expect(effectivePriceCents({ plan: "standard", priceOverrideCents: null, seatsLimit: 8 }, plans)).toBe(9900);
+    expect(extraSeats({ plan: "standard", priceOverrideCents: null, seatsLimit: 8 }, plans).count).toBe(0);
   });
   it("puts the extra seats on their own invoice line, totalled with the plan", () => {
     const [d] = monthlyDrafts([client({ plan: "core +", seatsLimit: 5 })], seatPlans, [], TODAY);
