@@ -5,11 +5,11 @@ import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { startWorkspace, type StartState } from "@/app/start/actions";
+import { startTrial, type StartState } from "@/app/start/actions";
 
 /** Two questions between confirming an email and starting the trial: the company's name and the owner's. */
 export function StartForm({ defaultName }: { defaultName: string }) {
-  const [state, action, pending] = useActionState<StartState, FormData>(startWorkspace, {});
+  const [state, action, pending] = useActionState<StartState, FormData>(startTrial, {});
   return (
     <form action={action} className="space-y-4">
       <div className="space-y-1.5">

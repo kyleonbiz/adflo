@@ -29,7 +29,14 @@ export async function billingContext(): Promise<BillingContext> {
   const { data } = await supabase.auth.getUser();
   if (!data.user) return { ok: false, status: 401, message: "Sign in first." };
   const membership = await findMembership(supabase, data.user.id);
-  if (!membership) return { ok: false, status: 404, message: "No workspace found." };
+  if (!membership) {
+    // A free trial has no workspace yet: its client record is found by the owner's own (verified) email.
+    const admin = createServiceSupabase();
+    const email = (data.user.email ?? "").trim().toLowerCase();
+    const { data: trial } = admin && email ? await admin.from("clients").select(BILLING_COLUMNS).eq("self_serve", true).eq("owner_email", email).is("workspace_id", null).maybeSingle() : { data: null };
+    if (!admin || !trial) return { ok: false, status: 404, message: "No workspace found." };
+    return { ok: true, admin, client: trial as BillingClient, email };
+  }
   if (membership.role !== "owner" && membership.role !== "admin") return { ok: false, status: 403, message: "Only the workspace owner or an admin can change billing." };
   const admin = createServiceSupabase();
   if (!admin) return { ok: false, status: 501, message: "Online billing is not set up yet. Email support@adflo.pro." };

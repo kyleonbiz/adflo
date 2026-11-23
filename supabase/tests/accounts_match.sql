@@ -64,31 +64,42 @@ select t.ok('the client history shows the staff member by name', (select count(*
 reset role;
 
 
--- Self-serve sign-up: open to anyone while the switch is on, and a new account starts its own workspace.
+-- Self-serve sign-up: open to anyone while the switch is on, and a new account starts a 3-day trial with no workspace until it pays.
 select t.ok('sign-up is on by default in a fresh database', (select open from public.signup_settings) is not null);
 update public.signup_settings set open = true;
 insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000a1', 'Nina@Newco.test');
 select t.fails('an email that is not an email still cannot sign up', $$insert into auth.users (id, email) values (gen_random_uuid(), 'not-an-email')$$, 'sign-up is by invitation');
 select t.as_user('ac000000-0000-4000-8000-0000000000a1');
-select public.self_serve_start('Newco Builders', 'Nina New');
+select * from public.start_trial('Newco Builders', 'Nina New');
 reset role;
-select t.ok('the new account owns a workspace linked to a trial client',
-  (select c.status || '|' || c.plan || '|' || m.role from public.clients c join public.workspace_members m on m.workspace_id = c.workspace_id and m.user_id = 'ac000000-0000-4000-8000-0000000000a1' where c.name = 'Newco Builders') = 'trial|core +|owner');
-select t.ok('with the standard folders', (select count(*) from public.document_folders f join public.clients c on c.workspace_id = f.workspace_id where c.name = 'Newco Builders' and f.is_system) = 6);
+select t.ok('a trial starts: a self-serve trial client for 3 days, and no workspace yet',
+  (select c.status || '|' || c.plan || '|' || c.self_serve || '|' || (c.workspace_id is null) || '|' || (c.trial_ends_at between now() + interval '2 days 23 hours' and now() + interval '3 days 1 hour') from public.clients c where c.name = 'Newco Builders') = 'trial|adflo|true|true|true');
 select t.as_user('ac000000-0000-4000-8000-0000000000a1');
-select t.ok('asking again returns the same workspace', public.self_serve_start('Another Name', 'Nina') = (select workspace_id from public.workspace_members where user_id = 'ac000000-0000-4000-8000-0000000000a1'));
+select t.ok('asking again returns the same trial', (select count(*) from public.start_trial('Another Name', 'Nina')) = 1);
+select t.ok('the trial owner sees their own trial, not paid, no workspace', (select not paid and not has_workspace and company = 'Newco Builders' from public.my_trial()));
+select t.fails('a trial owner cannot activate a workspace themselves', $$select public.activate_trial_workspace((select client_id from public.my_trial()), 'ac000000-0000-4000-8000-0000000000a1')$$, 'permission denied');
 reset role;
+select t.ok('still only one client for Nina', (select count(*) from public.clients where lower(owner_email) = 'nina@newco.test') = 1);
+select t.fails('activation is refused until payment is confirmed', $$select public.activate_trial_workspace((select id from public.clients where name = 'Newco Builders'), 'ac000000-0000-4000-8000-0000000000a1')$$, 'Payment has not been confirmed');
+update public.clients set stripe_subscription_id = 'sub_test_1', billing_status = 'active' where name = 'Newco Builders';
+select t.fails('and refused for a different account', $$select public.activate_trial_workspace((select id from public.clients where name = 'Newco Builders'), 'ac000000-0000-4000-8000-0000000000a2')$$, 'does not own');
+select public.activate_trial_workspace((select id from public.clients where name = 'Newco Builders'), 'ac000000-0000-4000-8000-0000000000a1');
+select t.ok('after payment the owner has a workspace with the standard folders',
+  (select m.role from public.workspace_members m join public.clients c on c.workspace_id = m.workspace_id where c.name = 'Newco Builders' and m.user_id = 'ac000000-0000-4000-8000-0000000000a1') = 'owner'
+  and (select count(*) from public.document_folders f join public.clients c on c.workspace_id = f.workspace_id where c.name = 'Newco Builders' and f.is_system) = 6);
+select t.ok('and the client is active with the trial over', (select status = 'active' and trial_ends_at is null from public.clients where name = 'Newco Builders'));
+select t.ok('activating twice returns the same workspace', public.activate_trial_workspace((select id from public.clients where name = 'Newco Builders'), 'ac000000-0000-4000-8000-0000000000a1') = (select workspace_id from public.clients where name = 'Newco Builders'));
 insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000a2', 'nora@newco.test');
 select t.as_user('ac000000-0000-4000-8000-0000000000a2');
-select t.fails('a company name that is taken is refused', $$select public.self_serve_start('newco builders', 'Nora')$$, 'already exists');
-select t.fails('a one-letter company name is refused', $$select public.self_serve_start('X', 'Nora')$$, 'company name');
+select t.fails('a company name that is taken is refused', $$select * from public.start_trial('newco builders', 'Nora')$$, 'already exists');
+select t.fails('a one-letter company name is refused', $$select * from public.start_trial('X', 'Nora')$$, 'company name');
 reset role;
 select t.fails('nothing else can create a workspace', $$insert into public.workspaces (name) values ('Sneaky Co')$$, 'only be created for a client');
 -- Someone with an open invitation joins their company's workspace instead of starting another.
 insert into public.workspace_invites (workspace_id, email, role) select workspace_id, 'ned@newco.test', 'editor' from public.clients where name = 'Newco Builders';
 insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000a3', 'ned@newco.test');
 select t.as_user('ac000000-0000-4000-8000-0000000000a3');
-select t.fails('an invited person cannot start a second workspace', $$select public.self_serve_start('Ned Co', 'Ned')$$, 'invitation');
+select t.fails('an invited person cannot start a second workspace', $$select * from public.start_trial('Ned Co', 'Ned')$$, 'invitation');
 reset role;
 -- Staff can close sign-up again, and then it is invitation-only as before.
 select t.as_staff(:stf::uuid);
@@ -99,7 +110,7 @@ insert into public.workspace_invites (workspace_id, email, role) select workspac
 insert into auth.users (id, email) values ('ac000000-0000-4000-8000-0000000000a4', 'ona@newco.test');
 select t.ok('and the invited can still sign up', exists (select 1 from auth.users where email = 'ona@newco.test'));
 select t.as_user('ac000000-0000-4000-8000-0000000000a2');
-select t.fails('and a person with no workspace cannot start one', $$select public.self_serve_start('Closed Co', 'Nora')$$, 'invitation only');
+select t.fails('and a person with no workspace cannot start one', $$select * from public.start_trial('Closed Co', 'Nora')$$, 'invitation only');
 reset role;
 select t.as_user('ac000000-0000-4000-8000-0000000000a1');
 select t.fails('an ordinary user cannot flip the switch', $$select public.control_set_signup_open(true)$$, 'forbidden');

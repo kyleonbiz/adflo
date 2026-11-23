@@ -11,7 +11,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Set up your company" };
 export const dynamic = "force-dynamic";
 
-/** Where a new account lands after confirming its email: name the company, then start the free trial at checkout. */
+/** Where a new account lands after confirming its email: name the company, then open the trial (sample data, no workspace). */
 export default async function StartPage() {
   if (!getSupabaseEnv()) redirect("/app/overview");
   const supabase = await createServerSupabase();
@@ -22,10 +22,12 @@ export default async function StartPage() {
   // An invitation for this email takes effect first: invited people join their company's workspace instead of starting one.
   await acceptPendingInvites(supabase, fullName);
   if (await findMembership(supabase, data.user.id)) redirect("/app/overview");
+  const { data: trial } = await supabase.rpc("my_trial");
+  if (Array.isArray(trial) && trial.length > 0) redirect("/app/overview"); // already has a trial
   const { data: open } = await supabase.rpc("signup_is_open");
   if (open !== true || (await findStaff(supabase))) return <NoWorkspaceNotice email={email} />;
   return (
-    <AuthCard title="Set up your company" subtitle="Two quick questions, then start your free trial.">
+    <AuthCard title="Set up your company" subtitle="Two quick questions, then explore AdFlo free for 3 days. No card needed.">
       <StartForm defaultName={fullName} />
     </AuthCard>
   );

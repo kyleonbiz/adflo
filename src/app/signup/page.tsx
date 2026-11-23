@@ -32,7 +32,7 @@ export default async function SignupPage({ searchParams }: PageProps<"/signup">)
   }
 
   return (
-    <AuthCard title="Create your account" subtitle={invited ? "Your invitation is confirmed. Choose a password." : "Start your 3-day free trial. Create your account, then set up your company."}>
+    <AuthCard title="Create your account" subtitle={invited ? "Your invitation is confirmed. Choose a password." : "Start your 3-day free trial. No credit card needed."}>
       <AuthForm mode="signup" demo={!getSupabaseEnv()} invitedEmail={invited} />
     </AuthCard>
   );

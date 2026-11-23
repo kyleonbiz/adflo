@@ -17,6 +17,9 @@ import { FALLBACK_LIVE } from "@/lib/setup/types";
 import { DeletionBanner } from "@/components/settings/deletion-banner";
 import { getSupabaseEnv } from "@/lib/supabase/env";
 import { findStaff } from "@/lib/control/gate";
+import { TrialBanner } from "@/components/trial-banner";
+import { trialDaysLeft, trialPhase } from "@/lib/billing/trial";
+import { loadTrial } from "@/lib/billing/trial-server";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 /** The visitor's day for the bell in the top bar; the bell works out its own list from the records in the browser. */
@@ -57,8 +60,22 @@ export async function renderAppShell(
     // Pending invites for this (verified) email take effect before the no-workspace notice is considered.
     await acceptPendingInvites(supabase, fullName);
     const membership = await findMembership(supabase, data.user.id);
-    // No workspace yet: while sign-up is open a new account sets up its own company; staff and closed sign-up see the notice.
+    // No workspace yet. A free trial explores the app on sample data; once it ends the account is paused until it pays, and
+    // payment builds the real workspace. Anyone else new, while sign-up is open, names their company first.
     if (!membership) {
+      const trial = await loadTrial();
+      if (trial) {
+        const phase = trialPhase(trial);
+        if (phase === "expired") redirect("/trial/continue");
+        if (phase === "paid" || phase === "workspace") redirect("/trial/welcome");
+        const endsOn = new Date(trial.endsAt ?? Date.now()).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/New_York" });
+        return (
+          <Frame userName={fullName} topRight={<AppTopBar badge="Free trial" userLabel={fullName} notifications={await loadNotifications()} />}>
+            <TrialBanner daysLeft={trialDaysLeft(trial.endsAt)} endsOn={endsOn} />
+            {content("preview", { name: fullName })}
+          </Frame>
+        );
+      }
       const { data: open } = await supabase.rpc("signup_is_open");
       if (open === true && !(await findStaff(supabase))) redirect("/start");
       return <NoWorkspaceNotice email={email} />;

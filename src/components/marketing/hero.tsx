@@ -28,7 +28,7 @@ export function Hero() {
             See how it works
           </a>
         </div>
-        <p className="mt-3 text-sm text-white/80">Try AdFlo free for 3 days. Set up your account in minutes.</p>
+        <p className="mt-3 text-sm text-white/80">Try AdFlo free for 3 days. No credit card needed.</p>
         <ul className="mt-8 flex flex-wrap items-center justify-center gap-2.5" aria-label="What AdFlo covers">
           {FEATURES.map((label) => (
             <li key={label} className="rounded-full border border-white/30 bg-white/15 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
