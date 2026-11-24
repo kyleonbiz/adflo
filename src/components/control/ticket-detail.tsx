@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TICKET_CATEGORY_LABEL, TICKET_PRIORITIES, TICKET_STATUSES, TICKET_STATUS_LABEL, ticketKey, type DirectoryEntry, type Ticket, type TicketMessage, type TicketNote } from "@/lib/control/types";
+import { TOPIC_LABEL, triageTicket } from "@/lib/control/triage";
 import { cn } from "@/lib/utils";
 import { TicketBadges } from "./support-page";
 
@@ -21,6 +22,7 @@ export function TicketDetail({ ticket, notes, messages, directory, canEdit }: { 
   const conversational = ticket.source === "client" && !!ticket.workspaceId;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const triage = triageTicket(ticket);
 
   async function send(url: string, method: string, body: unknown): Promise<boolean> {
     setBusy(true); setError("");
@@ -55,6 +57,15 @@ export function TicketDetail({ ticket, notes, messages, directory, canEdit }: { 
           <p className="text-sm text-muted-foreground">Visible to the client in their app{ticket.requesterEmail ? ` and emailed to ${ticket.requesterEmail}` : ""}. Replying to an open ticket marks it waiting on the client; their reply reopens it.</p>
           {messages.length === 0 ? <p className="text-sm text-muted-foreground">No replies yet.</p> : (
             <ul className="space-y-2">{messages.map((m) => (<li key={m.id} className={cn("rounded-xl border p-4 text-sm shadow-panel", m.authorKind === "staff" ? "border-primary/30 bg-accent/40" : "bg-card")}><p className="whitespace-pre-wrap">{m.body}</p><p className="mt-2 text-xs text-muted-foreground">{m.authorKind === "staff" ? `${m.authorName} (staff)` : `${m.authorName || "Client"} (client)`} · {stamp(m.createdAt)}</p></li>))}</ul>
+          )}
+          {canEdit && ticket.status !== "closed" && (
+            <div className="space-y-2 rounded-xl border bg-card p-4 text-sm" data-testid="triage" aria-label="Suggested triage">
+              <p><span className="font-medium">Looks like: {TOPIC_LABEL[triage.topic]}.</span>{triage.reason ? <> <span className="text-amber-700">Suggested high priority: {triage.reason}.</span></> : null} <span className="text-muted-foreground">Suggested from what the request says; nothing is sent or changed for you.</span></p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="outline" disabled={!!reply.trim()} onClick={() => setReply(triage.reply)}>Draft a reply</Button>
+                {triage.reason && ticket.priority !== "high" && <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => send(`/api/control/tickets/${ticket.id}`, "PATCH", { priority: "high" })}>Set high priority</Button>}
+              </div>
+            </div>
           )}
           {canEdit && (
             <form onSubmit={async (e) => { e.preventDefault(); if (await send(`/api/control/tickets/${ticket.id}/messages`, "POST", { body: reply })) setReply(""); }} className="space-y-2">

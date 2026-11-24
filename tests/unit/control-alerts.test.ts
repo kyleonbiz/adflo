@@ -88,4 +88,20 @@ describe("Control center bell", () => {
     expect(a.map((x) => x.severity)).toEqual(["critical", "warning", "info"]);
     expect(build({ tickets: [ticket()], errors: [error()] }).map((x) => x.id)).toEqual(["ticket-t1", "errors"]);
   });
+
+  it("raises a request that says it is urgent, even if nobody set the priority", () => {
+    const a = build({ tickets: [ticket({ id: "t1", subject: "Cannot sign in", body: "I can't log in since this morning" }), ticket({ id: "t2", subject: "Colour idea" })] });
+    expect(a.map((x) => [x.id, x.severity])).toEqual([["ticket-t1", "critical"], ["ticket-t2", "warning"]]);
+  });
+
+  it("says when a client that used AdFlo has gone quiet, but not one that has not started", () => {
+    const quiet = client({ id: "q", name: "Quiet Co", status: "active", lastActive: ago(45) });
+    const fresh = client({ id: "n", name: "New Co", status: "active", lastActive: null });
+    const busy = client({ id: "b", name: "Busy Co", status: "active", lastActive: ago(2) });
+    const a = build({ clients: [quiet, fresh, busy] });
+    const q = a.filter((x) => x.label === "Gone quiet");
+    expect(q).toHaveLength(1);
+    expect(q[0]).toMatchObject({ id: "quiet-q", severity: "info", area: "Clients", href: "/control/clients/q" });
+    expect(q[0].text).toContain("45 days");
+  });
 });

@@ -1,5 +1,6 @@
 import { onboardingRows } from "./onboarding";
-import { agreementState, type AppError, type ClientRecord, type SentAgreement, type Ticket } from "./types";
+import { triageTicket } from "./triage";
+import { agreementState, isQuiet, type AppError, type ClientRecord, type SentAgreement, type Ticket } from "./types";
 
 export type AlertSeverity = "critical" | "warning" | "info";
 /** One thing for the Control center bell: what it is about, where it is, and where to go to deal with it. */
@@ -19,6 +20,8 @@ const WAITING_DAYS = 7;
 
 const RANK: Record<AlertSeverity, number> = { critical: 0, warning: 1, info: 2 };
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+/** High priority by staff's own setting, or by what a client's request says (it cannot be sign-in, lost data or a double charge and wait). */
+const urgent = (t: Ticket) => t.priority === "high" || (t.source === "client" && t.priority === "normal" && triageTicket(t).priority === "high");
 const clientHref = (id: string, hash = "") => `/control/clients/${id}${hash}`;
 
 /**
@@ -34,7 +37,7 @@ export function buildControlAlerts({ clients, tickets, errors, sent, now = new D
   // Support: a ticket is waiting on us while it is open. "Waiting on client" and closed ones are not ours to act on.
   const open = tickets.filter((t) => t.status === "open").sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
   capped(
-    open.map((t) => ({ id: `ticket-${t.id}`, severity: t.priority === "high" ? "critical" : "warning", area: "Support", label: t.lastFrom === "client" ? "Client replied" : t.source === "client" ? (t.priority === "high" ? "High priority request" : "New request") : t.priority === "high" ? "High priority ticket" : "Open ticket", text: `${t.clientName || "A client"}: ${t.subject}`, href: `/control/support/${t.id}` })),
+    open.map((t) => ({ id: `ticket-${t.id}`, severity: urgent(t) ? "critical" : "warning", area: "Support", label: t.lastFrom === "client" ? "Client replied" : t.source === "client" ? (urgent(t) ? "High priority request" : "New request") : urgent(t) ? "High priority ticket" : "Open ticket", text: `${t.clientName || "A client"}: ${t.subject}`, href: `/control/support/${t.id}` })),
     { id: "tickets-more", severity: "warning", area: "Support", label: "Open tickets", text: "{n} more open tickets", href: "/control/support" },
   );
 
@@ -56,6 +59,13 @@ export function buildControlAlerts({ clients, tickets, errors, sent, now = new D
   capped(
     welcomeDue.map((c) => ({ id: `welcome-${c.id}`, severity: "info", area: "Onboarding", label: "Welcome due", text: `${c.name}'s owner has signed in. Send the welcome message.`, href: clientHref(c.id, "#account") })),
     { id: "welcome-more", severity: "info", area: "Onboarding", label: "Welcome due", text: "{n} more owners are waiting for a welcome", href: "/control/onboarding" },
+  );
+
+  // Clients who used AdFlo and then stopped: the early sign of one that may leave.
+  const quiet = clients.filter((c) => c.lastActive && isQuiet(c, now.getTime())).sort((a, b) => Date.parse(a.lastActive!) - Date.parse(b.lastActive!));
+  capped(
+    quiet.map((c) => ({ id: `quiet-${c.id}`, severity: "info", area: "Clients", label: "Gone quiet", text: `${c.name}: nobody has signed in for ${plural(Math.floor((now.getTime() - Date.parse(c.lastActive!)) / DAY), "day")}. A quick check-in may help.`, href: clientHref(c.id) })),
+    { id: "quiet-more", severity: "info", area: "Clients", label: "Gone quiet", text: "{n} more clients have gone quiet", href: "/control/clients" },
   );
 
   // Agreements: news when signed, a nudge when left too long.
