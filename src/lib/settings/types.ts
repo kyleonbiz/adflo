@@ -16,7 +16,7 @@ export const NOTIFICATION_INFO: Record<NotificationKey, { label: string; detail:
   renewals: { label: "License and insurance renewals", detail: "A heads-up before a license, bond or certificate expires." },
   overdueInvoices: { label: "Overdue invoices", detail: "When a customer invoice passes its due date." },
   formResponses: { label: "New form responses", detail: "When someone sends back a form you shared." },
-  weeklyDigest: { label: "Weekly summary", detail: "One Monday email with what is due and what changed." },
+  weeklyDigest: { label: "Weekly summary", detail: "One Monday email with what is late and what is due this week: invoices, renewals, tasks, equipment and reminders." },
 };
 
 export interface NotificationPrefs {
