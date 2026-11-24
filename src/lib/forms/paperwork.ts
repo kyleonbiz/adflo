@@ -58,6 +58,20 @@ export const PAPERWORK: readonly Paperwork[] = [
   paper("general", "nda", "Confidentiality acknowledgment", "Record that someone agreed to keep information private", [
     f("Full name"), f("Company"), f("Date", "date"), f("I agree to keep this information confidential", "checkbox"),
   ]),
+  paper("general", "safety-orientation", "Safety orientation acknowledgment", "Record that someone was shown the safety basics before starting", [
+    f("Full name"), f("Date", "date"), f("I completed the safety orientation", "checkbox"), f("I know where the first aid kit and fire extinguishers are", "checkbox"),
+    f("I will report any hazard or injury right away", "checkbox"), f("Questions or concerns", "longtext", false),
+  ]),
+  paper("general", "equipment-issue", "Equipment and key issue acknowledgment", "Record what was handed out, so it can be asked for back", [
+    f("Full name"), f("Date issued", "date"), f("Items issued (tools, vehicle, keys, codes, cards)", "longtext"), f("I received the items listed and will return them when asked", "checkbox"),
+  ]),
+  paper("general", "emergency-contact", "Emergency contact", "Who to call if something happens at work", [
+    f("Full name"), f("Emergency contact name"), f("Relationship"), f("Phone"), f("Another phone number", "text", false),
+  ]),
+  paper("general", "property-return", "Return of company property", "Record what came back when someone left", [
+    f("Full name"), f("Date returned", "date"), f("Items returned (tools, vehicle, keys, codes, cards)", "longtext"), f("Items not yet returned", "longtext", false),
+    f("I have returned all company property I had", "checkbox"),
+  ]),
   paper("general", "meeting-minutes", "Meeting minutes", "A record of what was decided and who does what next", [
     f("Meeting title"), f("Date", "date"), f("Location or call link", "text", false), f("Chaired by"), f("Attendees", "longtext"),
     f("Discussion", "longtext"), f("Decisions made", "longtext"), f("Action items and owners", "longtext", false), f("Next meeting date", "date", false),

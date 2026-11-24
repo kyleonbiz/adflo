@@ -4,6 +4,7 @@ import Link from "next/link";
 import { MailCheck } from "lucide-react";
 import { GHOSTED_AFTER, REMINDER_GAP_DAYS } from "@/lib/vendors/follow-up";
 import { OVERDUE_NOTICE_DAYS } from "@/lib/invoices/auto";
+import { FIRST_REMINDER_AFTER_DAYS, MAX_PACKET_REMINDERS, REMINDER_GAP_DAYS as PACKET_GAP_DAYS } from "@/lib/packets/logic";
 import { useRecordsInDatabase } from "@/lib/records/storage";
 import { saveSettings, useSettings } from "@/lib/settings/storage";
 import type { AutomationPrefs } from "@/lib/settings/types";
@@ -25,7 +26,7 @@ export function AutomationsSection({ base }: { base: "/app" }) {
   const a = settings.automation;
   const set = (patch: Partial<AutomationPrefs>) => saveSettings({ ...settings, automation: { ...a, ...patch } });
   const replyTo = settings.details.email.trim();
-  const emailsCustomers = a.vendorChase || a.invoiceReminders || a.recurringInvoices === "send";
+  const emailsCustomers = a.vendorChase || a.invoiceReminders || a.recurringInvoices === "send" || a.packetReminders;
 
   return (
     <div className="space-y-5">
@@ -44,6 +45,14 @@ export function AutomationsSection({ base }: { base: "/app" }) {
         <li>Before the due date it follows the reminder days on each invoice (for example 7 and 1). Then on the due date, and {OVERDUE_NOTICE_DAYS.length} overdue notices: {OVERDUE_NOTICE_DAYS.join(", ")} days after.</li>
         <li>It stops the moment you mark the invoice paid or void. Each reminder goes out once, and is recorded on the invoice.</li>
         <li>The email is in your business&apos;s name and links to the invoice. Replies go to the invoice&apos;s own &quot;from&quot; email{replyTo ? <>, or {replyTo}</> : <>, or your workspace owner</>}.</li>
+      </Card>
+
+      <Card id="auto-packet-reminders" title="Remind people about unfinished onboarding packets" on={a.packetReminders} onToggle={() => set({ packetReminders: !a.packetReminders })}
+        detail="When you email someone a packet (a new hire, subcontractor or client) and they have not sent everything back, AdFlo reminds them for you.">
+        <li>Only for packets you have emailed with the Email packet button on Forms &amp; Paperwork. A packet you only keep as a checklist is never emailed.</li>
+        <li>The first reminder goes {FIRST_REMINDER_AFTER_DAYS} days after it was sent, then {PACKET_GAP_DAYS} days apart, up to {MAX_PACKET_REMINDERS} times. Then it shows &quot;No reply&quot; and it is up to you.</li>
+        <li>Each reminder lists only what is still outstanding. Steps you do yourself are never asked of the person.</li>
+        <li>It stops by itself once you tick off everything the person had to provide. Replies go to you{replyTo ? <>, at {replyTo}</> : <>, at your workspace owner until you add a business email</>}.</li>
       </Card>
 
       <section aria-label="Recurring invoices" className="space-y-4 rounded-2xl border bg-card p-5 shadow-panel">

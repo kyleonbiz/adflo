@@ -34,6 +34,8 @@ export interface AutomationPrefs {
   invoiceReminders: boolean;
   /** Create the next invoice of a recurring series on its issue date: "draft" for approval, or "send" straight to the customer. */
   recurringInvoices: "off" | "draft" | "send";
+  /** Remind people who were emailed an onboarding packet and have not sent everything back: after 3 days, then weekly, up to three times. */
+  packetReminders: boolean;
 }
 
 export interface AppSettings {
@@ -47,5 +49,5 @@ export const defaultSettings = (): AppSettings => ({
   version: 1,
   details: { email: "", phone: "", address: "", timezone: "America/New_York" },
   notifications: { enabled: { renewals: true, overdueInvoices: true, formResponses: true, weeklyDigest: false }, leadDays: 30 },
-  automation: { vendorChase: false, invoiceReminders: false, recurringInvoices: "off" },
+  automation: { vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false },
 });

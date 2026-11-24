@@ -22,12 +22,36 @@ describe("settings: automation", () => {
 
 describe("settings: invoice automation", () => {
   it("is off by default, and only exact values switch it on", () => {
-    expect(defaultSettings().automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off" });
-    expect(parseSettings(JSON.stringify({ version: 1 })).automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off" });
+    expect(defaultSettings().automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false });
+    expect(parseSettings(JSON.stringify({ version: 1 })).automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false });
     for (const bad of ["true", 1, "yes", {}]) expect(parseSettings(JSON.stringify({ version: 1, automation: { invoiceReminders: bad } })).automation.invoiceReminders).toBe(false);
     for (const bad of ["Draft", "on", true, 1, null, "auto"]) expect(parseSettings(JSON.stringify({ version: 1, automation: { recurringInvoices: bad } })).automation.recurringInvoices).toBe("off");
     expect(parseSettings(JSON.stringify({ version: 1, automation: { invoiceReminders: true, recurringInvoices: "draft" } })).automation).toMatchObject({ invoiceReminders: true, recurringInvoices: "draft" });
     expect(parseSettings(JSON.stringify({ version: 1, automation: { recurringInvoices: "send" } })).automation.recurringInvoices).toBe("send");
+  });
+});
+
+describe("Automations section: packets", () => {
+  const packets = () => screen.getByRole("switch", { name: "Remind people about unfinished onboarding packets" });
+
+  it("is off to start with, and says exactly when it reminds", () => {
+    render(<AutomationsSection base="/app" />);
+    expect(packets()).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByText(/The first reminder goes 3 days after it was sent, then 7 days apart, up to 3 times/)).toBeInTheDocument();
+  });
+
+  it("switches on and off, saves, and asks for a business email", async () => {
+    render(<AutomationsSection base="/app" />);
+    await userEvent.click(packets());
+    expect(saved().automation.packetReminders).toBe(true);
+    expect(screen.getByRole("note")).toHaveTextContent(/Add your business email/);
+    await userEvent.click(packets());
+    expect(saved().automation.packetReminders).toBe(false);
+  });
+
+  it("only an exact true switches it on when settings are read", () => {
+    for (const bad of ["true", 1, "yes", {}, null]) expect(parseSettings(JSON.stringify({ version: 1, automation: { packetReminders: bad } })).automation.packetReminders).toBe(false);
+    expect(parseSettings(JSON.stringify({ version: 1, automation: { packetReminders: true } })).automation.packetReminders).toBe(true);
   });
 });
 
