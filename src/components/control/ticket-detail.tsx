@@ -18,8 +18,8 @@ export function TicketDetail({ ticket, notes, messages, directory, canEdit }: { 
   const router = useRouter();
   const [note, setNote] = useState("");
   const [reply, setReply] = useState("");
-  // Replies reach the client through their workspace; a ticket staff logged for themselves has no one on the other end.
-  const conversational = ticket.source === "client" && !!ticket.workspaceId;
+  // Replies reach the client through their workspace, so only a ticket linked to it (the client's own request, or one staff shared) has a conversation.
+  const conversational = !!ticket.workspaceId;
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const triage = triageTicket(ticket);
@@ -53,7 +53,10 @@ export function TicketDetail({ ticket, notes, messages, directory, canEdit }: { 
 
       {conversational ? (
         <section className="space-y-3" aria-label="Conversation">
-          <h2 className="font-semibold">Conversation</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-semibold">Conversation</h2>
+            {canEdit && ticket.source === "staff" && <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => send(`/api/control/tickets/${ticket.id}`, "PATCH", { shared: false })}>Stop sharing</Button>}
+          </div>
           <p className="text-sm text-muted-foreground">Visible to the client in their app{ticket.requesterEmail ? ` and emailed to ${ticket.requesterEmail}` : ""}. Replying to an open ticket marks it waiting on the client; their reply reopens it.</p>
           {messages.length === 0 ? <p className="text-sm text-muted-foreground">No replies yet.</p> : (
             <ul className="space-y-2">{messages.map((m) => (<li key={m.id} className={cn("rounded-xl border p-4 text-sm shadow-panel", m.authorKind === "staff" ? "border-primary/30 bg-accent/40" : "bg-card")}><p className="whitespace-pre-wrap">{m.body}</p><p className="mt-2 text-xs text-muted-foreground">{m.authorKind === "staff" ? `${m.authorName} (staff)` : `${m.authorName || "Client"} (client)`} · {stamp(m.createdAt)}</p></li>))}</ul>
@@ -76,7 +79,10 @@ export function TicketDetail({ ticket, notes, messages, directory, canEdit }: { 
           )}
         </section>
       ) : (
-        <p className="rounded-xl border border-dashed bg-card px-4 py-3 text-sm text-muted-foreground">Logged by staff, so it is internal: the client does not see it. Use notes below.</p>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed bg-card px-4 py-3 text-sm text-muted-foreground">
+          <p>Internal: the client does not see this ticket. {ticket.clientId ? "Share it to talk with them here." : "It has no client to share with."} Use notes for anything private.</p>
+          {canEdit && ticket.clientId && <Button type="button" size="sm" disabled={busy} onClick={() => send(`/api/control/tickets/${ticket.id}`, "PATCH", { shared: true })}>Share with client</Button>}
+        </div>
       )}
 
       <section className="space-y-3" aria-label="Notes">

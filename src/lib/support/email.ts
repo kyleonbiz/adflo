@@ -29,6 +29,22 @@ export function replyToClientEmail(d: { ticketNo: number; subject: string; staff
   };
 }
 
+/** Tells a client that AdFlo Support opened (or shared) a request with them. */
+export function sharedWithClientEmail(d: { ticketNo: number; subject: string; body: string; requestUrl: string }): { subject: string; text: string; html: string } {
+  const key = ticketKey(d.ticketNo);
+  return {
+    subject: `[${key}] ${d.subject}`,
+    text: `AdFlo Support opened a request for you: ${key} (${d.subject}).\n\n${d.body ? `${excerpt(d.body)}\n\n` : ""}See it and reply here: ${d.requestUrl}\n`,
+    html: brandedEmail({
+      preheader: `AdFlo Support opened ${key} for you`,
+      headline: "AdFlo Support opened a request for you",
+      intro: [`${key}: ${d.subject}`, ...(d.body ? [excerpt(d.body)] : [])],
+      buttons: [{ label: "Open the conversation", url: d.requestUrl }],
+      fine: ["You can reply from your AdFlo account so everything stays in one place."],
+    }),
+  };
+}
+
 /** Tells the support inbox a client opened a request or replied. */
 export function newActivityEmail(d: { kind: "new" | "reply"; ticketNo: number; subject: string; workspace: string; who: string; body: string; controlUrl: string }): { subject: string; text: string; html: string } {
   const key = ticketKey(d.ticketNo);

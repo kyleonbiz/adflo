@@ -28,3 +28,13 @@ describe("support email", () => {
     await expect(notifyQuietly("", { subject: "s", text: "t", html: "" })).resolves.toBeUndefined();
   });
 });
+
+import { sharedWithClientEmail } from "@/lib/support/email";
+describe("shared ticket email", () => {
+  it("tells the client AdFlo opened a request and links to it", () => {
+    const m = sharedWithClientEmail({ ticketNo: 9, subject: "Your plan", body: "We noticed something", requestUrl: "https://adflo.pro/app/support/t9" });
+    expect(m.subject).toBe("[AF-9] Your plan");
+    expect(m.text).toContain("https://adflo.pro/app/support/t9");
+    expect(m.html).toContain("AdFlo Support opened a request for you");
+  });
+});

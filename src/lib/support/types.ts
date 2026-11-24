@@ -13,4 +13,4 @@ export interface MyTicket { id: string; ticketNo: number; subject: string; categ
 /** One reply in the conversation. */
 export interface MyMessage { id: string; authorKind: "client" | "staff"; authorName: string; body: string; createdAt: string }
 /** One request with its conversation. The first message is the request itself (`body`). */
-export interface MyTicketDetail { id: string; ticketNo: number; subject: string; body: string; category: TicketCategory; status: TicketStatus; createdAt: string; requesterName: string; messages: MyMessage[] }
+export interface MyTicketDetail { id: string; ticketNo: number; subject: string; body: string; category: TicketCategory; status: TicketStatus; /** "staff" when AdFlo Support opened it for the client. */ source: "client" | "staff"; createdAt: string; requesterName: string; messages: MyMessage[] }

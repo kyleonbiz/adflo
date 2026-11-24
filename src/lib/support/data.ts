@@ -14,9 +14,9 @@ export async function loadMyTicket(supabase: SupabaseClient, id: string): Promis
   const { data, error } = await supabase.rpc("support_ticket", { p_id: id });
   if (error) throw new Error("Could not load that request.");
   if (!data) return null;
-  const t = data as { id: string; ticket_no: number; subject: string; body: string; category: TicketCategory; status: TicketStatus; created_at: string; requester_name: string; messages: { id: string; author_kind: MyMessage["authorKind"]; author_name: string; body: string; created_at: string }[] };
+  const t = data as { id: string; ticket_no: number; subject: string; body: string; category: TicketCategory; status: TicketStatus; source?: "client" | "staff"; created_at: string; requester_name: string; messages: { id: string; author_kind: MyMessage["authorKind"]; author_name: string; body: string; created_at: string }[] };
   return {
-    id: t.id, ticketNo: t.ticket_no, subject: t.subject, body: t.body, category: t.category, status: t.status, createdAt: t.created_at, requesterName: t.requester_name,
+    id: t.id, ticketNo: t.ticket_no, subject: t.subject, body: t.body, category: t.category, status: t.status, source: t.source ?? "client", createdAt: t.created_at, requesterName: t.requester_name,
     messages: t.messages.map((m) => ({ id: m.id, authorKind: m.author_kind, authorName: m.author_name, body: m.body, createdAt: m.created_at })),
   };
 }

@@ -83,6 +83,25 @@ select t.fails('billing staff cannot reply', $$insert into public.ticket_message
 select t.as_user(:carol::uuid);
 select t.ok('carol opens requests up to the hourly limit', (select count(public.support_create_ticket('Q' || g, 'details', 'question')) from generate_series(1, 10) g) = 10);
 select t.fails('the 11th request in an hour is refused', $$select public.support_create_ticket('one more', 'details', 'question')$$, 'rate_limited');
+
+-- Sharing a staff-logged ticket with the client.
+select t.as_staff(:sup::uuid);
+select t.affected('staff logs a ticket for the client, shared', $$insert into public.support_tickets (client_id, workspace_id, subject, body, created_by, requester_name) select id, workspace_id, 'We changed your plan', 'Details', '00000000-0000-4000-8000-0000000005a1', 'AdFlo Support' from public.clients where workspace_id = '00000000-0000-4000-8000-0000000005a6'$$, 1);
+select t.as_user(:alice::uuid);
+select t.ok('the client sees the shared ticket as AdFlo''s', t.count($$select 1 from public.support_my_tickets() where subject = 'We changed your plan' and requester_name = 'AdFlo Support'$$) = 1);
+select t.ok('the client view says the ticket was opened by staff', (select public.support_ticket((select id from public.support_my_tickets() where subject = 'We changed your plan')) ->> 'source') = 'staff');
+select t.affected('the client replies on it', $$select public.support_reply((select id from public.support_my_tickets() where subject = 'We changed your plan'), 'Thanks, got it')$$, 1);
+select t.as_user(:carol::uuid);
+select t.ok('another workspace still cannot see it', t.count($$select 1 from public.support_my_tickets() where subject = 'We changed your plan'$$) = 0);
+select t.as_staff(:sup::uuid);
+select t.affected('staff stops sharing it', $$update public.support_tickets set workspace_id = null where subject = 'We changed your plan'$$, 1);
+select t.as_user(:alice::uuid);
+select t.ok('the client no longer sees it once unshared', t.count($$select 1 from public.support_my_tickets() where subject = 'We changed your plan'$$) = 0);
+select t.as_staff(:sup::uuid);
+select t.affected('staff shares it again', $$update public.support_tickets set workspace_id = '00000000-0000-4000-8000-0000000005a6' where subject = 'We changed your plan'$$, 1);
+select t.as_user(:alice::uuid);
+select t.ok('the conversation is kept across unsharing', jsonb_array_length(public.support_ticket((select id from public.support_my_tickets() where subject = 'We changed your plan')) -> 'messages') = 1);
+
 select t.as_user('00000000-0000-4000-8000-0000000005ab'::uuid);
 select t.fails('someone with no workspace cannot open a request', $$select public.support_create_ticket('x', 'y', 'question')$$, 'not_a_member');
 select t.as_anon();

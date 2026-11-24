@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push, refresh }) }));
 
 const t = (o: Partial<MyTicket>): MyTicket => ({ id: "t1", ticketNo: 7, subject: "Cannot upload", category: "problem", status: "open", createdAt: "2026-11-20T10:00:00Z", lastActivity: "2026-11-21T10:00:00Z", requesterName: "Alice", ...o });
 const detail = (o: Partial<MyTicketDetail> = {}): MyTicketDetail => ({
-  id: "t1", ticketNo: 7, subject: "Cannot upload", body: "The PDF fails", category: "problem", status: "pending", createdAt: "2026-11-20T10:00:00Z", requesterName: "Alice",
+  id: "t1", ticketNo: 7, subject: "Cannot upload", body: "The PDF fails", category: "problem", status: "pending", source: "client", createdAt: "2026-11-20T10:00:00Z", requesterName: "Alice",
   messages: [{ id: "m1", authorKind: "staff", authorName: "Sam", body: "Can you send the file?", createdAt: "2026-11-21T10:00:00Z" }], ...o,
 });
 const fetchMock = vi.fn();
@@ -66,6 +66,13 @@ describe("RequestThread", () => {
     expect(items[1]).toContain("Can you send the file?");
     expect(items[1]).toContain("AdFlo Support");
     expect(screen.getByText("AdFlo Support is waiting on your reply.")).toBeInTheDocument();
+  });
+  it("shows a request AdFlo opened as AdFlo's own, not the client's", () => {
+    render(<RequestThread ticket={detail({ source: "staff", requesterName: "AdFlo Support", body: "We spotted a problem with your plan" })} />);
+    const first = screen.getAllByRole("listitem")[0];
+    expect(first).toHaveTextContent("We spotted a problem with your plan");
+    expect(first.textContent).toMatch(/^AdFlo Support ·/);
+    expect(first.textContent).not.toContain("AdFlo Support · AdFlo Support");
   });
   it("sends a reply and refreshes", async () => {
     fetchMock.mockReturnValue(ok({ ok: true }, 201));

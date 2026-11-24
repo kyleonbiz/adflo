@@ -18,7 +18,7 @@ export function RequestThread({ ticket }: { ticket: MyTicketDetail }) {
   const [busy, setBusy] = useState(false);
   const closed = ticket.status === "closed";
   // The request itself is the first message; the rest follow in order.
-  const thread = [{ id: "first", authorKind: "client" as const, authorName: ticket.requesterName || "You", body: ticket.body, createdAt: ticket.createdAt }, ...ticket.messages];
+  const thread = [{ id: "first", authorKind: ticket.source === "staff" ? "staff" as const : "client" as const, authorName: ticket.source === "staff" ? "" : ticket.requesterName || "You", body: ticket.body, createdAt: ticket.createdAt }, ...ticket.messages];
 
   async function send(url: string, method: string, body: unknown): Promise<boolean> {
     setBusy(true); setError("");
@@ -45,7 +45,7 @@ export function RequestThread({ ticket }: { ticket: MyTicketDetail }) {
         <ul className="space-y-3">
           {thread.map((m) => (
             <li key={m.id} className={cn("rounded-2xl border p-4 text-sm shadow-panel", m.authorKind === "staff" ? "border-primary/30 bg-accent/40" : "bg-card")}>
-              <p className="mb-1.5 text-xs font-medium text-muted-foreground">{m.authorKind === "staff" ? `${m.authorName} · AdFlo Support` : m.authorName} · <span suppressHydrationWarning>{stamp(m.createdAt)}</span></p>
+              <p className="mb-1.5 text-xs font-medium text-muted-foreground">{m.authorKind === "staff" ? (m.authorName ? `${m.authorName} · AdFlo Support` : "AdFlo Support") : m.authorName} · <span suppressHydrationWarning>{stamp(m.createdAt)}</span></p>
               <p className="whitespace-pre-wrap">{m.body}</p>
             </li>
           ))}

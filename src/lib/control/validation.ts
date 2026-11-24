@@ -1,6 +1,6 @@
 import { isUuid } from "./patterns";
 import { cleanFeatures, type FeatureKey } from "./tiers";
-import { CHECKLIST_STEPS, CLIENT_STATUSES, STAFF_ROLES, TICKET_PRIORITIES, TICKET_STATUSES, type ChecklistStep, type ClientStatus, type StaffRole, type TicketPriority, type TicketStatus } from "./types";
+import { CHECKLIST_STEPS, CLIENT_STATUSES, STAFF_ROLES, TICKET_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES, type ChecklistStep, type ClientStatus, type StaffRole, type TicketCategory, type TicketPriority, type TicketStatus } from "./types";
 
 interface ClientInput {
   name: string;
@@ -168,7 +168,7 @@ function describeGeneric(action: string, detail: Record<string, unknown>): strin
 
 const body_ = (v: unknown) => (typeof v === "string" ? v.replace(CONTROL, "").trim() : "");
 
-export function parseTicketInput(raw: unknown): Parsed<{ subject: string; body: string; clientId: string | null; priority: TicketPriority }> {
+export function parseTicketInput(raw: unknown): Parsed<{ subject: string; body: string; clientId: string | null; priority: TicketPriority; category: TicketCategory; share: boolean }> {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const errors: Record<string, string> = {};
   const subject = clean(r.subject);
@@ -179,16 +179,22 @@ export function parseTicketInput(raw: unknown): Parsed<{ subject: string; body: 
   if (clientId !== null && !isUuid(clientId)) errors.clientId = "Choose a client from the list.";
   const priority = r.priority === undefined ? "normal" : r.priority;
   if (!TICKET_PRIORITIES.includes(priority as TicketPriority)) errors.priority = "Choose low, normal or high.";
-  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { subject, body, clientId: clientId as string | null, priority: priority as TicketPriority } };
+  const category = r.category === undefined || r.category === "" ? "question" : r.category;
+  if (!TICKET_CATEGORIES.includes(category as TicketCategory)) errors.category = "Choose a kind of ticket.";
+  // Sharing makes the ticket visible to the client, so it is only ever on when asked for, and only with a client to share with.
+  const share = r.share === true;
+  if (share && clientId === null) errors.clientId = "Choose a client to share this ticket with.";
+  return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: { subject, body, clientId: clientId as string | null, priority: priority as TicketPriority, category: category as TicketCategory, share } };
 }
 
-export function parseTicketPatch(raw: unknown): Parsed<{ status?: TicketStatus; priority?: TicketPriority; assignee?: string | null }> {
+export function parseTicketPatch(raw: unknown): Parsed<{ status?: TicketStatus; priority?: TicketPriority; assignee?: string | null; shared?: boolean }> {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const errors: Record<string, string> = {};
-  const out: { status?: TicketStatus; priority?: TicketPriority; assignee?: string | null } = {};
+  const out: { status?: TicketStatus; priority?: TicketPriority; assignee?: string | null; shared?: boolean } = {};
   if ("status" in r) { if (!TICKET_STATUSES.includes(r.status as TicketStatus)) errors.status = "Unknown status."; else out.status = r.status as TicketStatus; }
   if ("priority" in r) { if (!TICKET_PRIORITIES.includes(r.priority as TicketPriority)) errors.priority = "Unknown priority."; else out.priority = r.priority as TicketPriority; }
   if ("assignee" in r) { if (r.assignee === null || r.assignee === "") out.assignee = null; else if (isUuid(r.assignee)) out.assignee = r.assignee; else errors.assignee = "Choose a teammate."; }
+  if ("shared" in r) { if (typeof r.shared !== "boolean") errors.shared = "Say whether to share the ticket."; else out.shared = r.shared; }
   if (!Object.keys(out).length && !Object.keys(errors).length) errors.status = "Nothing to change.";
   return Object.keys(errors).length ? { ok: false, errors } : { ok: true, value: out };
 }

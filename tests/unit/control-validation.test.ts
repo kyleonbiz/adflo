@@ -95,15 +95,24 @@ describe("plans, staff and checklist input", () => {
 describe("support input", () => {
   const id = "00000000-0000-4000-8000-000000000001";
   it("checks a new ticket", () => {
-    expect(parseTicketInput({ subject: " Upload fails ", clientId: id })).toEqual({ ok: true, value: { subject: "Upload fails", body: "", clientId: id, priority: "normal" } });
+    expect(parseTicketInput({ subject: " Upload fails ", clientId: id })).toEqual({ ok: true, value: { subject: "Upload fails", body: "", clientId: id, priority: "normal", category: "question", share: false } });
     expect(parseTicketInput({ subject: "", clientId: "nope", priority: "urgent" }).ok).toBe(false);
-    expect(parseTicketInput({ subject: "No client" })).toMatchObject({ ok: true, value: { clientId: null } });
+    expect(parseTicketInput({ subject: "No client" })).toMatchObject({ ok: true, value: { clientId: null, share: false } });
+    expect(parseTicketInput({ subject: "Shared", clientId: id, share: true, category: "problem" })).toMatchObject({ ok: true, value: { share: true, category: "problem" } });
+    expect(parseTicketInput({ subject: "Truthy is not enough", clientId: id, share: "true" })).toMatchObject({ ok: true, value: { share: false } });
+    const noClient = parseTicketInput({ subject: "Nobody to share with", share: true });
+    expect(noClient.ok).toBe(false);
+    if (!noClient.ok) expect(noClient.errors.clientId).toMatch(/client/);
+    expect(parseTicketInput({ subject: "x", category: "bug" }).ok).toBe(false);
   });
   it("checks a ticket change", () => {
     expect(parseTicketPatch({ status: "closed" })).toEqual({ ok: true, value: { status: "closed" } });
     expect(parseTicketPatch({ assignee: "" })).toEqual({ ok: true, value: { assignee: null } });
     expect(parseTicketPatch({ assignee: "bob" }).ok).toBe(false);
     expect(parseTicketPatch({}).ok).toBe(false);
+    expect(parseTicketPatch({ shared: true })).toEqual({ ok: true, value: { shared: true } });
+    expect(parseTicketPatch({ shared: false })).toEqual({ ok: true, value: { shared: false } });
+    expect(parseTicketPatch({ shared: "yes" }).ok).toBe(false);
   });
   it("checks notes and reset emails", () => {
     expect(parseNote({ body: "  hi " })).toEqual({ ok: true, value: { body: "hi" } });

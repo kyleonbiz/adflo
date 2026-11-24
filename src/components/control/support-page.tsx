@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { TICKET_CATEGORY_LABEL, TICKET_PRIORITIES, TICKET_STATUSES, TICKET_STATUS_LABEL, ticketKey, type ClientRecord, type DirectoryEntry, type Ticket, type TicketStatus } from "@/lib/control/types";
+import { TICKET_CATEGORIES, TICKET_CATEGORY_LABEL, TICKET_PRIORITIES, TICKET_STATUSES, TICKET_STATUS_LABEL, ticketKey, type ClientRecord, type DirectoryEntry, type Ticket, type TicketStatus } from "@/lib/control/types";
 import { cn } from "@/lib/utils";
 
 const SELECT = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
@@ -21,16 +21,18 @@ export function TicketBadges({ t }: { t: Pick<Ticket, "status" | "priority"> }) 
   return <span className="flex flex-wrap items-center gap-1.5"><Badge variant={STATUS_VARIANT[t.status]}>{TICKET_STATUS_LABEL[t.status]}</Badge>{t.priority !== "normal" && <Badge variant={PRIORITY_VARIANT[t.priority]}>{t.priority === "high" ? "High priority" : "Low priority"}</Badge>}</span>;
 }
 
-function NewTicketDialog({ clients, defaultClientId, onClose }: { clients: Pick<ClientRecord, "id" | "name">[]; defaultClientId?: string; onClose: () => void }) {
+function NewTicketDialog({ clients, defaultClientId, onClose }: { clients: Pick<ClientRecord, "id" | "name" | "workspaceId">[]; defaultClientId?: string; onClose: () => void }) {
   const router = useRouter();
-  const [f, setF] = useState({ subject: "", body: "", clientId: defaultClientId ?? "", priority: "normal" });
+  const [f, setF] = useState({ subject: "", body: "", clientId: defaultClientId ?? "", priority: "normal", category: "question", share: true });
+  const chosen = clients.find((c) => c.id === f.clientId);
+  const canShare = !!chosen?.workspaceId;
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   async function submit(e: React.FormEvent) {
     e.preventDefault(); setBusy(true); setErrors({}); setMessage("");
     try {
-      const res = await fetch("/api/control/tickets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(f) });
+      const res = await fetch("/api/control/tickets", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...f, share: f.share && canShare }) });
       const json = await res.json().catch(() => null);
       if (res.ok && json?.ok) { router.push(`/control/support/${json.id}`); return; }
       setErrors(json?.error?.fields ?? {}); setMessage(json?.error?.message ?? "Could not save. Try again.");
@@ -47,6 +49,12 @@ function NewTicketDialog({ clients, defaultClientId, onClose }: { clients: Pick<
             <div className="space-y-1.5"><Label htmlFor="t-client">Client</Label><select id="t-client" className={SELECT} value={f.clientId} onChange={(e) => setF({ ...f, clientId: e.target.value })}><option value="">No client</option>{clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
             <div className="space-y-1.5"><Label htmlFor="t-priority">Priority</Label><select id="t-priority" className={SELECT} value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}>{TICKET_PRIORITIES.map((p) => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}</select></div>
           </div>
+          <div className="space-y-1.5"><Label htmlFor="t-category">Kind</Label><select id="t-category" className={SELECT} value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>{TICKET_CATEGORIES.map((c) => <option key={c} value={c}>{TICKET_CATEGORY_LABEL[c]}</option>)}</select></div>
+          {chosen && (canShare ? (
+            <label className="flex items-start gap-2 rounded-lg border bg-card p-3 text-sm"><input type="checkbox" className="mt-0.5 size-4" checked={f.share} onChange={(e) => setF({ ...f, share: e.target.checked })} /><span><span className="font-medium">Share with {chosen.name}</span><span className="block text-xs text-muted-foreground">They see this ticket and your replies in their app, and get an email. Internal notes stay private.</span></span></label>
+          ) : (
+            <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">{chosen.name} has no AdFlo workspace yet, so this ticket stays internal.</p>
+          ))}
           <div className="space-y-1.5"><Label htmlFor="t-body">Details</Label><textarea id="t-body" rows={4} value={f.body} onChange={(e) => setF({ ...f, body: e.target.value })} className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30" />{errors.body && <p role="alert" className="text-xs text-destructive">{errors.body}</p>}</div>
           {message && <p role="alert" className="text-sm text-destructive">{message}</p>}
           <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={onClose}>Cancel</Button><Button type="submit" disabled={busy}>{busy ? "Saving…" : "Create ticket"}</Button></div>
@@ -57,7 +65,7 @@ function NewTicketDialog({ clients, defaultClientId, onClose }: { clients: Pick<
 }
 
 /** The support queue. */
-export function SupportPage({ tickets, clients, directory, canEdit, sample }: { tickets: Ticket[]; clients: Pick<ClientRecord, "id" | "name">[]; directory: DirectoryEntry[]; canEdit: boolean; sample?: boolean }) {
+export function SupportPage({ tickets, clients, directory, canEdit, sample }: { tickets: Ticket[]; clients: Pick<ClientRecord, "id" | "name" | "workspaceId">[]; directory: DirectoryEntry[]; canEdit: boolean; sample?: boolean }) {
   const [filter, setFilter] = useState<TicketStatus | "all">("open");
   const [creating, setCreating] = useState(false);
   const who = new Map(directory.map((d) => [d.userId, d.displayName]));
@@ -85,7 +93,7 @@ export function SupportPage({ tickets, clients, directory, canEdit, sample }: { 
             <li key={t.id}>
               {(() => {
                 const inner = (<>
-                  <span className="min-w-0"><span className="block truncate text-sm font-medium"><span className="mr-1.5 font-mono text-xs font-normal text-muted-foreground">{ticketKey(t.ticketNo)}</span>{t.subject}</span><span className="block truncate text-xs text-muted-foreground">{t.clientName || "No client"} · {TICKET_CATEGORY_LABEL[t.category]}{t.source === "client" ? " · from the app" : ""} · opened {when(t.createdAt)}{t.assignee ? ` · ${who.get(t.assignee) ?? "Teammate"}` : " · Unassigned"}</span></span>
+                  <span className="min-w-0"><span className="block truncate text-sm font-medium"><span className="mr-1.5 font-mono text-xs font-normal text-muted-foreground">{ticketKey(t.ticketNo)}</span>{t.subject}</span><span className="block truncate text-xs text-muted-foreground">{t.clientName || "No client"} · {TICKET_CATEGORY_LABEL[t.category]}{t.source === "client" ? " · from the app" : t.workspaceId ? " · shared with client" : ""} · opened {when(t.createdAt)}{t.assignee ? ` · ${who.get(t.assignee) ?? "Teammate"}` : " · Unassigned"}</span></span>
                   <TicketBadges t={t} />
                 </>);
                 const cls = "flex flex-wrap items-center justify-between gap-2 px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring";
