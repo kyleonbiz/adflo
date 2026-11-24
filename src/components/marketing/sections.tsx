@@ -95,6 +95,21 @@ const VALUE = [
   "Scale administrative operations without scaling the workload to match",
 ];
 
+const TRUST = [
+  { title: "Roles and permissions", text: "Invite your team and give each person a role: Viewer, Editor, Admin or Owner. Only owners can close the workspace." },
+  { title: "Activity you can review", text: "An activity log and audit trail show what changed in your records." },
+  { title: "You approve what Addy prepares", text: "Drafts open for review. Nothing is saved, sent or signed without you." },
+  { title: "Your data stays yours", text: "Admins and owners can export your workspace data at any time. Read how we handle it in our privacy policy." },
+];
+
+const FAQS = [
+  { q: "Who is AdFlo for?", a: "Contractors and skilled trades are our initial focus, and AdFlo is also built for property managers and other businesses that carry a lot of paperwork. It is not limited to one trade or industry." },
+  { q: "What does it help me organize?", a: "Documents and records, licenses, insurance and renewal dates, vendors, forms and signing, invoices, and equipment and asset records such as tools, vehicles and keys." },
+  { q: "Does it replace my accounting or project software?", a: "No. AdFlo is the administrative layer alongside your accounting, payroll and construction or property management software. It is not a CRM, an ERP or accounting software." },
+  { q: "How do seats work?", a: "The base subscription includes your seat. Each additional teammate is one extra seat at the same flat monthly price. See pricing below." },
+  { q: "How do I get started?", a: "Choose Get Started and try AdFlo free. If you would rather talk first, schedule a demo and we will walk you through it." },
+];
+
 /** The longer marketing story that sits under the hero and demo workspace on the landing page. */
 export function LandingSections() {
   return (
@@ -145,7 +160,7 @@ export function LandingSections() {
       <AdminCostCalculator />
 
       <section className={`${container} pb-14 sm:pb-20`} aria-labelledby="capabilities-title">
-        <p className={eyebrow}>Platform capabilities</p>
+        <p className={eyebrow}>Platform</p>
         <h2 id="capabilities-title" className={h2}>Every module earns its place: saving time, money and effort</h2>
         <p className="mt-2 max-w-2xl text-muted-foreground">Tools that share one set of records, so the Dashboard, the bell and Reporting always agree. Here is what each one is best at.</p>
         <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -252,6 +267,19 @@ export function LandingSections() {
         </div>
       </section>
 
+      <section id="trust" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="trust-title">
+        <p className={eyebrow}>Trust and control</p>
+        <h2 id="trust-title" className={h2}>Clear controls over who sees and changes your records</h2>
+        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {TRUST.map((t) => (
+            <li key={t.title} className={card}>
+              <h3 className="font-semibold">{t.title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{t.text}</p>
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section id="pricing" className="scroll-mt-4 border-y border-brand-blue/10 bg-white/40" aria-labelledby="pricing-title">
         <div className={`${container} py-14 sm:py-20`}>
           <p className={eyebrow}>Pricing</p>
@@ -290,15 +318,28 @@ export function LandingSections() {
         </div>
       </section>
 
+      <section id="faq" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="faq-title">
+        <p className={eyebrow}>Resources</p>
+        <h2 id="faq-title" className={h2}>Frequently asked questions</h2>
+        <div className="mt-8 grid gap-3 lg:grid-cols-2">
+          {FAQS.map((f) => (
+            <details key={f.q} className={`${card} group`}>
+              <summary className="cursor-pointer font-semibold">{f.q}</summary>
+              <p className="mt-2 text-sm text-foreground/80">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
       <section id="demo" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="cta-title">
         <div className="grid gap-10 lg:grid-cols-2 lg:items-start">
           <div>
-            <h2 id="cta-title" className={h2}>Take control of your business operations.</h2>
+            <h2 id="cta-title" className={h2}>Keep the administrative side organized.</h2>
             <p className="mt-3 text-foreground/80">
               Discover how AdFlo can help your organization simplify administrative work, streamline workflows and operate more efficiently.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/signup" className={`rounded-lg px-5 py-3 font-medium ${primaryBtn}`}>Start your free trial</Link>
+              <Link href="/signup" className={`rounded-lg px-5 py-3 font-medium ${primaryBtn}`}>Get Started</Link>
               <a href="#demo-form" className="rounded-lg border border-brand-blue/30 bg-white/70 px-5 py-3 font-medium text-foreground transition hover:bg-white">Schedule a demo</a>
               <Link href="/login" className="rounded-lg border border-brand-blue/30 bg-white/70 px-5 py-3 font-medium text-foreground transition hover:bg-white">Log in</Link>
             </div>

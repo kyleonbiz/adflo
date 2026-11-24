@@ -17,18 +17,18 @@ export default function HomePage() {
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6" aria-label="Main">
           <Brand wordmark light className="w-28 sm:w-32" />
           <div className="flex items-center gap-2">
-          <a href="#pricing" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Pricing</a>
-          <Link href="/partners" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Partners</Link>
-          <a href="#demo" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Book a demo</a>
+          <a href="#platform" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Platform</a>
+          <a href="#who" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Solutions</a>
+          <a href="#faq" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Resources</a>
+          <Link href="/login" className="px-2 py-1.5 text-sm font-medium text-white/90 hover:text-white">Sign In</Link>
           <Button asChild size="sm" className="px-4">
-            <Link href="/signup">Start free trial</Link>
+            <Link href="/signup">Get Started</Link>
           </Button>
-          <Link href="/login" className="px-2 py-1.5 text-sm font-medium text-white/90 hover:text-white">Log in</Link>
           </div>
         </nav>
         <main>
           <Hero />
-          <div className="mx-auto max-w-7xl px-3 pb-16 sm:px-6">
+          <div className="mx-auto max-w-5xl px-3 pb-16 sm:px-6">
             <div className="glass-frame rounded-xl p-2.5 sm:p-5">
               <DemoWorkspace />
             </div>
@@ -40,6 +40,7 @@ export default function HomePage() {
         <LandingSections />
         <footer className="border-t bg-white py-6 text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} AdFlo · Administrative management platform ·{" "}
+          <a href="#pricing" className="underline underline-offset-2 hover:text-foreground">Pricing</a> ·{" "}
           <Link href="/partners" className="underline underline-offset-2 hover:text-foreground">Partners</Link> ·{" "}
           <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy</Link>
         </footer>
