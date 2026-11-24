@@ -54,6 +54,10 @@
     {
       "path": "/api/maintenance/trial-nudges",
       "schedule": "27 15 * * *"
+    },
+    {
+      "path": "/api/maintenance/monthly-billing",
+      "schedule": "17 10 1-3 * *"
     }
   ]
 }
