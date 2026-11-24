@@ -64,7 +64,7 @@ ${(c.intro ?? []).map((p) => para(p)).join("\n")}
 ${panel}${code}${steps}${(c.buttons ?? []).map(button).join("\n")}
 ${(c.fine ?? []).map((p) => para(p, MUTED, 13)).join("\n")}
 </td></tr>
-<tr><td style="padding:8px 32px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid #e5e9f2;padding-top:18px;font:13px/1.6 ${FONT};color:${MUTED};">Questions? Just reply to this email.<br><strong style="color:${NAVY};">AdFlo</strong> &middot; The administrative management platform for contractors and property managers.<br><a href="${CANONICAL_ORIGIN}" style="color:${MUTED};">adflo.pro</a></td></tr></table></td></tr>
+<tr><td style="padding:8px 32px 30px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="border-top:1px solid #e5e9f2;padding-top:18px;font:13px/1.6 ${FONT};color:${MUTED};">Questions? Just reply to this email.<br><strong style="color:${NAVY};">AdFlo</strong> &middot; The administrative management platform for contractors and property managers.<br><a href="${CANONICAL_ORIGIN}" style="color:${MUTED};">www.adflo.pro</a></td></tr></table></td></tr>
 </table>
 </td></tr></table>
 </body></html>
