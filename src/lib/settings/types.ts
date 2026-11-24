@@ -26,14 +26,22 @@ export interface NotificationPrefs {
 }
 export const LEAD_DAYS = [7, 14, 30, 60] as const;
 
+/** Things AdFlo does by itself on the business's behalf. All off until the owner switches them on. */
+export interface AutomationPrefs {
+  /** Email vendors who still owe a required document (a missing, expired or soon-expiring certificate of insurance, a W-9, a license). */
+  vendorChase: boolean;
+}
+
 export interface AppSettings {
   version: 1;
   details: BusinessDetails;
   notifications: NotificationPrefs;
+  automation: AutomationPrefs;
 }
 
 export const defaultSettings = (): AppSettings => ({
   version: 1,
   details: { email: "", phone: "", address: "", timezone: "America/New_York" },
   notifications: { enabled: { renewals: true, overdueInvoices: true, formResponses: true, weeklyDigest: false }, leadDays: 30 },
+  automation: { vendorChase: false },
 });

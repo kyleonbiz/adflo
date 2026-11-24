@@ -26,6 +26,10 @@
     {
       "path": "/api/maintenance/revenue-snapshot",
       "schedule": "55 23 * * *"
+    },
+    {
+      "path": "/api/maintenance/vendor-chase",
+      "schedule": "37 14 * * 1-5"
     }
   ]
 }

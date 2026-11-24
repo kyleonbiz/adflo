@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ApprovalsSection } from "./approvals-section";
+import { AutomationsSection } from "./automations-section";
 import { NotificationsSection } from "./notifications-section";
 import { ProfileSection } from "./profile-section";
 import { DemoDataSection } from "@/components/modules/sample-data";
@@ -13,6 +14,7 @@ const SETTINGS_TABS = [
   { id: "profile", label: "Business profile", blurb: "Your business details, used across AdFlo." },
   { id: "team", label: "Team", blurb: "Who can open this workspace, and what they can do." },
   { id: "notifications", label: "Notifications", blurb: "Which reminders you want, and how early." },
+  { id: "automations", label: "Automations", blurb: "Things AdFlo does for you automatically. Each one is off until you switch it on." },
   { id: "approvals", label: "Approvals", blurb: "Who signs off, in what order, before a request or form goes ahead." },
   { id: "setup", label: "Guided setup", blurb: "Five short steps to get your services, templates and checks in place." },
   { id: "demo", label: "Demo data", blurb: "Try AdFlo with sample records, or clear everything back to a blank start." },
@@ -55,6 +57,7 @@ export function SettingsPage({ tab: requested, mode, base, preview }: { tab: Set
       {tab === "profile" && <ProfileSection />}
       {tab === "team" && <TeamSection mode={mode} />}
       {tab === "notifications" && <NotificationsSection />}
+      {tab === "automations" && <AutomationsSection base={base} />}
       {tab === "approvals" && <ApprovalsSection />}
       {tab === "setup" && <SetupPage base={base} preview={preview} />}
       {tab === "demo" && <DemoDataSection />}

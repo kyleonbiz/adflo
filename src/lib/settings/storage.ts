@@ -15,6 +15,7 @@ export function parseSettings(raw: string): AppSettings {
     const d = (r.details ?? {}) as Record<string, unknown>;
     const n = (r.notifications ?? {}) as Record<string, unknown>;
     const en = (n.enabled ?? {}) as Record<string, unknown>;
+    const au = (r.automation ?? {}) as Record<string, unknown>;
     const str = (v: unknown, max: number, fallback: string) => (typeof v === "string" ? v.slice(0, max) : fallback);
     return {
       version: 1,
@@ -28,6 +29,7 @@ export function parseSettings(raw: string): AppSettings {
         enabled: Object.fromEntries(NOTIFICATION_KEYS.map((k) => [k, typeof en[k] === "boolean" ? en[k] : base.notifications.enabled[k]])) as AppSettings["notifications"]["enabled"],
         leadDays: (LEAD_DAYS as readonly unknown[]).includes(n.leadDays) ? (n.leadDays as AppSettings["notifications"]["leadDays"]) : base.notifications.leadDays,
       },
+      automation: { vendorChase: au.vendorChase === true },
     };
   } catch { return base; }
 }
