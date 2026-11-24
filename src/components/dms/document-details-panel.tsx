@@ -10,6 +10,7 @@ import { formatBytes } from "@/lib/dms/validation";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { DeleteConfirmationDialog } from "./delete-confirmation-dialog";
+import { CertificateCard } from "./certificate-card";
 import { DocumentReminder } from "./document-reminder";
 import { DocumentMetadata, FileDetails, SectionLabel } from "./document-metadata";
 import { FolderPicker } from "./folder-picker";
@@ -253,6 +254,8 @@ export function DocumentDetailsPanel({
                     </div>
                   </section>
                 )}
+
+                {!inTrash && <CertificateCard doc={doc} api={api} />}
 
                 {!inTrash && <DocumentReminder docId={doc.id} docName={doc.displayName} />}
 

@@ -1,6 +1,7 @@
 import type {
   Bootstrap,
   Category,
+  CertificateRead,
   DocumentDetail,
   DocumentPage,
   DocumentQuery,
@@ -41,6 +42,8 @@ export interface DmsApi {
   bootstrap(): Promise<Bootstrap>;
   listDocuments(q: DocumentQuery): Promise<DocumentPage>;
   getDocument(id: string): Promise<DocumentDetail>;
+  /** Reads an insurance document as a certificate of insurance (insured, policies, dates). */
+  readCertificate(id: string): Promise<CertificateRead>;
   uploadFile(args: UploadArgs): Promise<DocumentRecord>;
   updateDocument(id: string, changes: DocumentChanges): Promise<DocumentRecord>;
   deleteDocument(id: string): Promise<void>;

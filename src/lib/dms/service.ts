@@ -1,3 +1,4 @@
+import { extractCertificate } from "@/lib/licenses/certificate";
 import { classifyDocument } from "./autosort";
 import { DmsError } from "./errors";
 import { computeContent } from "./index-content";
@@ -16,6 +17,7 @@ import type {
 import type {
   Bootstrap,
   Category,
+  CertificateRead,
   ContentStatus,
   DocumentDetail,
   DocumentPage,
@@ -369,6 +371,21 @@ export class DocumentService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Reads an insurance document as a certificate of insurance: who is insured and each policy with its insurer, number and dates.
+   * On demand (when someone opens the document), so nothing extra is stored. Says why when it cannot: not an insurance document, no
+   * readable text (a photo or an unsupported type), or text that does not look like a certificate.
+   */
+  async readCertificate(documentId: string): Promise<CertificateRead> {
+    this.require("read");
+    const doc = await this.loadDocument(documentId);
+    if (doc.category !== "insurance") return { status: "not_insurance" };
+    const outcome = await computeContent(this.storage, { storageKey: doc.storageKey, fileName: doc.originalName, mimeType: doc.mimeType });
+    if (outcome.status !== "indexed" || !outcome.text) return { status: "unreadable" };
+    const certificate = extractCertificate(outcome.text);
+    return certificate ? { status: "found", certificate } : { status: "no_certificate" };
   }
 
   /** Indexes up to `limit` documents of this workspace that are still waiting (backfill / retry). */
