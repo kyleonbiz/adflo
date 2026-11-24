@@ -9,8 +9,9 @@ export function Hero() {
       <div className="relative mx-auto max-w-4xl px-4 pb-10 pt-8 text-center sm:px-6 sm:pb-12 sm:pt-12">
         <p className="text-sm font-medium text-white/70">The administrative management platform</p>
         <h1 id="hero-title" className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-          Stop chasing paperwork. Run your business from one place.
+          Your business administration, finally organized.
         </h1>
+        <p className="mt-3 text-xl font-medium text-white/90 sm:text-2xl">Less paperwork. More control.</p>
         <p className="mx-auto mt-4 max-w-2xl text-base text-white/90 sm:text-lg">
           Licenses, insurance, vendors, invoices and equipment, organized with reminders so nothing slips. Built for contractors and property managers, and it works alongside your accounting and payroll software.
         </p>

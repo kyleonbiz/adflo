@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   BadgeCheck, BarChart3, CalendarDays, Check, FileSignature, FolderKanban, Receipt, Sparkles, Store, Users, Layers, Eye,
-  AlertTriangle, Clock, PiggyBank, Workflow,
+  AlertTriangle, Clock, Target, Workflow,
 } from "lucide-react";
 import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
@@ -29,27 +29,27 @@ const PROBLEMS = [
 
 const CAPABILITIES = [
   { icon: Layers, name: "Documents & records", best: "Finding any contract, certificate or file in seconds.",
-    time: "Search instead of digging through folders and inboxes.", money: "No paying twice for paperwork you already have.", flow: "One organized home for every business record." },
+    time: "Search instead of digging through folders and inboxes.", money: "Fewer lost, duplicate and out-of-date files.", flow: "One organized home for every business record." },
   { icon: Receipt, name: "Invoices", best: "Knowing exactly what is open, overdue and paid.",
-    time: "Due dates in view, so no more chasing spreadsheets.", money: "Catch late payments and avoid missed or late-fee bills.", flow: "Everyone works from the same up-to-date status." },
+    time: "Due dates in view, so no more chasing spreadsheets.", money: "Overdue invoices get noticed sooner.", flow: "Everyone works from the same up-to-date status." },
   { icon: Store, name: "Vendors", best: "Keeping suppliers, terms and contracts under control.",
-    time: "Payment terms and tax-form checks in one profile.", money: "Contract end alerts stop unwanted auto-renewals.", flow: "A dated notes log keeps the whole team in the loop." },
+    time: "Payment terms and tax-form checks in one profile.", money: "Contract end dates are flagged before they renew.", flow: "A dated notes log keeps the whole team in the loop." },
   { icon: BadgeCheck, name: "Licenses & Renewals", best: "Never letting a license or permit lapse.",
-    time: "Expiry dates tracked for you, ahead of the deadline.", money: "Avoid fines, lapses and rush renewal fees.", flow: "A compliance score shows what needs attention first." },
+    time: "Expiry dates tracked for you, ahead of the deadline.", money: "Renewal dates are flagged ahead of time.", flow: "A compliance score shows what needs attention first." },
   { icon: FolderKanban, name: "Projects & tasks", best: "Getting work done with clear owners and deadlines.",
-    time: "Recurring tasks and Remind me on every task.", money: "Fewer dropped balls means less costly rework.", flow: "Milestones and progress visible without status meetings." },
+    time: "Recurring tasks and Remind me on every task.", money: "Clear owners mean fewer dropped tasks.", flow: "Milestones and progress visible without status meetings." },
   { icon: FileSignature, name: "Forms & signing", best: "Collecting paperwork and signatures without the back-and-forth.",
-    time: "Ready-made forms replace printing, scanning and emailing.", money: "Cut paper, postage and courier costs.", flow: "Typed-name signatures and signed-copy PDFs, filed automatically." },
+    time: "Ready-made forms replace printing, scanning and emailing.", money: "Less printing, scanning and emailing back and forth.", flow: "Typed-name signatures and signed-copy PDFs, filed automatically." },
   { icon: Users, name: "Contacts", best: "Having every person and vendor one click away.",
-    time: "Drop a contact straight into any form.", money: "Stop re-keying details and fixing the typos.", flow: "People and vendors together, one source of truth." },
+    time: "Drop a contact straight into any form.", money: "Less re-typing and fewer typos.", flow: "People and vendors together, one source of truth." },
   { icon: CalendarDays, name: "Calendar", best: "Seeing what is coming up before it is urgent.",
-    time: "Due dates, expiries and reminders on one month grid.", money: "Deadlines you see early cost far less to meet.", flow: "One view replaces five separate calendars." },
+    time: "Due dates, expiries and reminders on one month grid.", money: "Deadlines are easier to see early.", flow: "One view replaces five separate calendars." },
   { icon: BarChart3, name: "Reporting", best: "Answering “how are we doing?” without building a report.",
-    time: "Headline numbers ready, plus scheduled reports.", money: "Spot overdue and expiring items driving costs.", flow: "CSV and Excel export for your accountant or board." },
+    time: "Headline numbers ready, plus scheduled reports.", money: "Overdue and expiring items are easy to spot.", flow: "CSV and Excel export for your accountant or board." },
 ];
 
 const ADDY_DOES = [
-  { icon: Sparkles, title: "Answers your questions", text: "Ask how something works, what is coming up or what is left to do. Addy answers from your own records. You set up your account yourself, so nothing is turned on by mistake." },
+  { icon: Sparkles, title: "Answers your questions", text: "Ask how something works, what is coming up or what is left to do. Addy answers from your own records. Addy will not set up your account for you." },
   { icon: Receipt, title: "Creates invoices", text: "“Invoice Acme $1,200 due Friday.” Addy fills it in, you review it and approve." },
   { icon: Layers, title: "Creates documents", text: "Drafts the letters, notices and records you need, filed in the right place." },
   { icon: FileSignature, title: "Prepares forms and paperwork", text: "Picks the right form, fills in what she knows and gets it ready for signing." },
@@ -116,7 +116,7 @@ export function LandingSections() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-sm text-foreground/70">AdFlo is the administrative layer alongside your accounting, payroll and project software. It does not replace them.</p>
+        <p className="mt-4 text-sm text-foreground/70">AdFlo is not a CRM, not an ERP, and not accounting, bookkeeping or payroll software. It is the administrative layer alongside them and does not replace them.</p>
         <Link href="/signup" className={`mt-5 inline-block rounded-lg px-5 py-3 font-medium ${primaryBtn}`}>Start your free trial</Link>
       </section>
 
@@ -155,7 +155,7 @@ export function LandingSections() {
               <h3 className="mt-3 font-semibold">{name}</h3>
               <p className="mt-1 text-sm text-foreground/85"><span className="font-medium text-primary">Best for:</span> {best}</p>
               <dl className="mt-3 space-y-2 border-t border-brand-blue/10 pt-3 text-sm text-muted-foreground">
-                {[{ Ic: Clock, label: "Saves time", v: time }, { Ic: PiggyBank, label: "Saves money", v: money }, { Ic: Workflow, label: "Smoother workflow", v: flow }].map(({ Ic, label, v }) => (
+                {[{ Ic: Clock, label: "Saves time", v: time }, { Ic: Target, label: "Why it helps", v: money }, { Ic: Workflow, label: "Smoother workflow", v: flow }].map(({ Ic, label, v }) => (
                   <div key={label} className="flex gap-2.5">
                     <Ic className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
                     <div><dt className="font-medium text-foreground">{label}</dt><dd>{v}</dd></div>
@@ -285,7 +285,7 @@ export function LandingSections() {
             <a href="#demo-form" className="shrink-0 rounded-lg border border-brand-blue/30 bg-white/80 px-5 py-3 text-center font-medium text-foreground transition hover:bg-white">Request a custom quote</a>
           </div>
           <p className="mt-6 max-w-3xl text-sm text-muted-foreground">
-            AdFlo is the administrative layer that sits alongside your accounting, payroll and construction or property management software. It does not replace them, so it does not price like them.
+            AdFlo is not a CRM, not an ERP, and not accounting, bookkeeping or payroll software. It is the administrative layer that sits alongside your accounting, payroll and construction or property management software. It does not replace them, so it does not price like them.
           </p>
         </div>
       </section>
