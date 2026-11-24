@@ -1,9 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   BadgeCheck, BarChart3, CalendarDays, Check, FileSignature, FolderKanban, Receipt, Sparkles, Store, Users, Layers, Eye,
   AlertTriangle, Clock, Target, Workflow,
 } from "lucide-react";
-import { AdminCostCalculator } from "@/components/marketing/admin-cost-calculator";
 import { DemoRequestForm } from "@/components/marketing/demo-request-form";
 import { ONBOARDING_MAX_CENTS, ONBOARDING_MIN_CENTS, PRICE_CENTS, SEAT_CENTS, TIERS } from "@/lib/control/tiers";
 import { TRIAL_DAYS } from "@/lib/billing/trial";
@@ -46,6 +46,13 @@ const CAPABILITIES = [
     time: "Due dates, expiries and reminders on one month grid.", money: "Deadlines are easier to see early.", flow: "One view replaces five separate calendars." },
   { icon: BarChart3, name: "Reporting", best: "Answering “how are we doing?” without building a report.",
     time: "Headline numbers ready, plus scheduled reports.", money: "Overdue and expiring items are easy to spot.", flow: "CSV and Excel export for your accountant or board." },
+];
+
+const SHOTS = [
+  { file: "dashboard", title: "Dashboard", text: "Open invoices, tasks and what needs attention, in one view." },
+  { file: "licenses", title: "Licenses & Renewals", text: "Expiry dates, follow-ups and renewal tasks tracked for you." },
+  { file: "equipment", title: "Equipment", text: "Tools, vehicles and keys, with service dates that are flagged." },
+  { file: "invoices", title: "Invoices", text: "What is open, overdue and paid, with reminders." },
 ];
 
 const ADDY_DOES = [
@@ -157,7 +164,19 @@ export function LandingSections() {
         </div>
       </section>
 
-      <AdminCostCalculator />
+      <section id="screens" className={`${container} scroll-mt-4 pb-14 sm:pb-20`} aria-labelledby="screens-title">
+        <p className={eyebrow}>The product</p>
+        <h2 id="screens-title" className={h2}>See AdFlo in use</h2>
+        <p className="mt-2 max-w-2xl text-muted-foreground">Screens from the app, shown with sample data.</p>
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {SHOTS.map((sh) => (
+            <figure key={sh.file}>
+              <Image src={`/screenshots/${sh.file}.png`} alt={`The ${sh.title} screen in AdFlo, with sample data`} width={1440} height={900} sizes="(min-width: 768px) 560px, 100vw" className="w-full rounded-lg border shadow-sm" />
+              <figcaption className="mt-3 text-sm"><span className="font-semibold">{sh.title}.</span> <span className="text-muted-foreground">{sh.text}</span></figcaption>
+            </figure>
+          ))}
+        </div>
+      </section>
 
       <section className={`${container} pb-14 sm:pb-20`} aria-labelledby="capabilities-title">
         <p className={eyebrow}>Platform</p>
