@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alreadyTracked, certificateExpiry, certificateToLicenses, daysUntilExpiry, extractCertificate } from "@/lib/licenses/certificate";
+import { alreadyTracked, certificateExpiry, certificateToLicenses, daysUntilExpiry, extractCertificate, renewalTarget } from "@/lib/licenses/certificate";
 
 // An ACORD 25 as it often comes out of a PDF: rows of the coverage table on single lines.
 const ACORD_ROWS = `CERTIFICATE OF LIABILITY INSURANCE                                  DATE (MM/DD/YYYY) 11/01/2026
@@ -100,5 +100,22 @@ describe("turning a certificate into tracked records", () => {
     expect(alreadyTracked(c.policies[0], licenses)).toBe(true);
     expect(alreadyTracked(c.policies[0], [{ ...licenses[0], expiresOn: "2026-11-01" }])).toBe(false);
     expect(alreadyTracked(c.policies[0], [{ ...licenses[0], category: "permit" }])).toBe(false);
+  });
+});
+
+describe("renewalTarget", () => {
+  const p = { kind: "General liability", insurer: "Travelers", policyNumber: "GL-2", effectiveOn: "2026-11-01", expiresOn: "2027-11-01" };
+  const lic = (o: Record<string, unknown> = {}) => ({ id: "a", name: "General liability insurance", category: "insurance", holder: "Acme Roofing LLC", expiresOn: "2026-11-01", ...o }) as never;
+  it("finds the one tracked policy for the same coverage that ends earlier", () => {
+    expect((renewalTarget(p, "Acme Roofing LLC", [lic()]) as { id: string }).id).toBe("a");
+    expect(renewalTarget(p, "ACME ROOFING, L.L.C.", [lic({ holder: "Acme Roofing Inc" })])).not.toBeNull(); // company endings are ignored
+  });
+  it("never guesses: another coverage, another insured, a later date, a far date or two candidates give nothing", () => {
+    expect(renewalTarget(p, "Acme Roofing LLC", [lic({ name: "Umbrella / excess liability insurance" })])).toBeNull();
+    expect(renewalTarget(p, "Other Co", [lic()])).toBeNull();
+    expect(renewalTarget(p, null, [lic({ expiresOn: "2027-11-01" })])).toBeNull();
+    expect(renewalTarget(p, null, [lic({ expiresOn: "2023-01-01" })])).toBeNull();
+    expect(renewalTarget(p, null, [lic(), lic({ id: "b" })])).toBeNull();
+    expect(renewalTarget(p, null, [lic({ category: "permit" })])).toBeNull();
   });
 });

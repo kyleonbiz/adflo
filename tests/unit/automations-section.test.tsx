@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AutomationsSection } from "@/components/settings/automations-section";
 import { SETTINGS_KEY, parseSettings } from "@/lib/settings/storage";
@@ -22,8 +22,8 @@ describe("settings: automation", () => {
 
 describe("settings: invoice automation", () => {
   it("is off by default, and only exact values switch it on", () => {
-    expect(defaultSettings().automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false, autoTasks: false });
-    expect(parseSettings(JSON.stringify({ version: 1 })).automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false, autoTasks: false });
+    expect(defaultSettings().automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false, autoTasks: false, vendorPacket: "off" });
+    expect(parseSettings(JSON.stringify({ version: 1 })).automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false, autoTasks: false, vendorPacket: "off" });
     for (const bad of ["true", 1, "yes", {}]) expect(parseSettings(JSON.stringify({ version: 1, automation: { invoiceReminders: bad } })).automation.invoiceReminders).toBe(false);
     for (const bad of ["Draft", "on", true, 1, null, "auto"]) expect(parseSettings(JSON.stringify({ version: 1, automation: { recurringInvoices: bad } })).automation.recurringInvoices).toBe("off");
     expect(parseSettings(JSON.stringify({ version: 1, automation: { invoiceReminders: true, recurringInvoices: "draft" } })).automation).toMatchObject({ invoiceReminders: true, recurringInvoices: "draft" });
@@ -57,7 +57,7 @@ describe("Automations section: packets", () => {
 
 describe("Automations section: invoices", () => {
   const reminders = () => screen.getByRole("switch", { name: "Remind customers about unpaid invoices" });
-  const choice = (name: RegExp) => screen.getByRole("radio", { name });
+  const choice = (name: RegExp) => within(screen.getByRole("radiogroup", { name: "Create recurring invoices automatically" })).getByRole("radio", { name });
 
   it("starts with both invoice automations off", () => {
     render(<AutomationsSection base="/app" />);
@@ -139,5 +139,20 @@ describe("Automations section: follow-up tasks", () => {
     await userEvent.click(tasks());
     expect(saved().automation.autoTasks).toBe(true);
     for (const bad of ["true", 1, "yes", {}, null]) expect(parseSettings(JSON.stringify({ version: 1, automation: { autoTasks: bad } })).automation.autoTasks).toBe(false);
+  });
+});
+
+describe("Automations section: new vendor packet", () => {
+  it("is off to start with, picks start-only or start-and-email, saves, and only exact values count", async () => {
+    render(<AutomationsSection base="/app" />);
+    const group = screen.getByRole("radiogroup", { name: "Start the subcontractor packet for new vendors" });
+    const radios = group.querySelectorAll('[role="radio"]');
+    expect(radios[0]).toHaveAttribute("aria-checked", "true");
+    await userEvent.click(radios[2] as HTMLElement);
+    expect(saved().automation.vendorPacket).toBe("send");
+    expect(screen.getByRole("note")).toHaveTextContent(/Add your business email/); // it emails vendors, so replies need a home
+    await userEvent.click(radios[1] as HTMLElement);
+    expect(saved().automation.vendorPacket).toBe("draft");
+    for (const bad of ["Send", true, 1, "yes", null]) expect(parseSettings(JSON.stringify({ version: 1, automation: { vendorPacket: bad } })).automation.vendorPacket).toBe("off");
   });
 });

@@ -38,6 +38,8 @@ export interface AutomationPrefs {
   packetReminders: boolean;
   /** Add a follow-up task (once each) to the Projects list when a renewal window opens, equipment comes due, an invoice is two weeks late, or a vendor or packet goes quiet. */
   autoTasks: boolean;
+  /** Start the subcontractor onboarding packet for a newly added vendor that has an email: "draft" only adds it to Forms & Paperwork, "send" also emails it. */
+  vendorPacket: "off" | "draft" | "send";
 }
 
 export interface AppSettings {
@@ -51,5 +53,5 @@ export const defaultSettings = (): AppSettings => ({
   version: 1,
   details: { email: "", phone: "", address: "", timezone: "America/New_York" },
   notifications: { enabled: { renewals: true, overdueInvoices: true, formResponses: true, weeklyDigest: false }, leadDays: 30 },
-  automation: { vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false, autoTasks: false },
+  automation: { vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false, autoTasks: false, vendorPacket: "off" },
 });

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
 import { GHOSTED_AFTER, REMINDER_GAP_DAYS } from "@/lib/vendors/follow-up";
+import { NEW_VENDOR_DAYS } from "@/lib/vendors/auto-packet";
 import { EQUIPMENT_LEAD_DAYS, INVOICE_LATE_DAYS } from "@/lib/projects/auto-tasks";
 import { OVERDUE_NOTICE_DAYS } from "@/lib/invoices/auto";
 import { FIRST_REMINDER_AFTER_DAYS, MAX_PACKET_REMINDERS, REMINDER_GAP_DAYS as PACKET_GAP_DAYS } from "@/lib/packets/logic";
@@ -10,6 +11,12 @@ import { useRecordsInDatabase } from "@/lib/records/storage";
 import { saveSettings, useSettings } from "@/lib/settings/storage";
 import type { AutomationPrefs } from "@/lib/settings/types";
 import { cn } from "@/lib/utils";
+
+const PACKET_CHOICES: { value: AutomationPrefs["vendorPacket"]; label: string; detail: string }[] = [
+  { value: "off", label: "Off", detail: "You start each packet yourself." },
+  { value: "draft", label: "Start it for me", detail: "Recommended. The packet appears in Forms & Paperwork and you email it when you are ready." },
+  { value: "send", label: "Start it and email it", detail: "The vendor gets the packet by email the day it is started." },
+];
 
 const RECURRING_CHOICES: { value: AutomationPrefs["recurringInvoices"]; label: string; detail: string }[] = [
   { value: "off", label: "Off", detail: "You create each recurring invoice yourself." },
@@ -27,7 +34,7 @@ export function AutomationsSection({ base }: { base: "/app" }) {
   const a = settings.automation;
   const set = (patch: Partial<AutomationPrefs>) => saveSettings({ ...settings, automation: { ...a, ...patch } });
   const replyTo = settings.details.email.trim();
-  const emailsCustomers = a.vendorChase || a.invoiceReminders || a.recurringInvoices === "send" || a.packetReminders;
+  const emailsCustomers = a.vendorChase || a.invoiceReminders || a.recurringInvoices === "send" || a.packetReminders || a.vendorPacket === "send";
 
   return (
     <div className="space-y-5">
@@ -64,6 +71,33 @@ export function AutomationsSection({ base }: { base: "/app" }) {
         <li>A vendor or an onboarding packet that has not replied to the automatic reminders.</li>
         <li>Each situation gets one task. Finish it or delete it as you like: it is never added again, and a renewed license starts fresh next time.</li>
       </Card>
+
+      <section aria-label="New vendor packet" className="space-y-4 rounded-2xl border bg-card p-5 shadow-panel">
+        <div className="min-w-0">
+          <p id="auto-vendor-packet" className="text-sm font-medium">Start the subcontractor packet for new vendors</p>
+          <p className="text-xs text-muted-foreground">When you add a vendor with an email address, AdFlo starts the New subcontractor packet for them: the compliance record, W-9, certificate of insurance, license copy, confidentiality acknowledgment and subcontract agreement.</p>
+        </div>
+        <div role="radiogroup" aria-labelledby="auto-vendor-packet" className="grid gap-2 sm:grid-cols-3">
+          {PACKET_CHOICES.map((c) => (
+            <button
+              key={c.value} type="button" role="radio" aria-checked={a.vendorPacket === c.value} onClick={() => set({ vendorPacket: c.value })}
+              className={cn("rounded-xl border p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring", a.vendorPacket === c.value ? "border-primary bg-accent" : "bg-card hover:bg-muted/50")}
+            >
+              <span className="block text-sm font-medium">{c.label}</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">{c.detail}</span>
+            </button>
+          ))}
+        </div>
+        <div className="space-y-2 rounded-xl border bg-muted/40 p-4 text-sm">
+          <p className="font-medium">How it works</p>
+          <ul className="list-disc space-y-1.5 pl-5 text-muted-foreground">
+            <li>Only for a vendor added in the last {NEW_VENDOR_DAYS} days that has an email, and that has no packet to that address yet. Inactive vendors are skipped.</li>
+            <li>Once per vendor: finishing or deleting the packet never starts another.</li>
+            <li>An emailed packet is reminded about by the packet reminders above, if you have those on.</li>
+            <li>Weekday mornings. Each one is written to the activity log.</li>
+          </ul>
+        </div>
+      </section>
 
       <section aria-label="Recurring invoices" className="space-y-4 rounded-2xl border bg-card p-5 shadow-panel">
         <div className="min-w-0">

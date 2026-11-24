@@ -55,6 +55,21 @@ describe("CertificateCard", () => {
     expect(saved<License>("licenses").filter((l) => l.number === "GL-4471920")).toHaveLength(1);
   });
 
+  it("renews a tracked policy that this certificate replaces, instead of adding a second record", async () => {
+    const old = { id: "gl", name: "General liability insurance", category: "insurance", number: "GL-OLD-1", expiresOn: inDays(-20), issuer: "Travelers", holder: "Acme Roofing LLC", issuedOn: inDays(-385), renewalTermMonths: 12, reminderDays: [30], stage: "not_started", requiredDocuments: [{ id: "d", label: "Certificate", received: true }], notes: "", verifiedOn: inDays(-380), remindedOn: [inDays(-30)] };
+    window.localStorage.setItem("adflo.records.licenses.v1", JSON.stringify([old]));
+    render(<CertificateCard doc={doc()} api={apiFor({ status: "found", certificate })} />);
+    await userEvent.click(await screen.findByRole("button", { name: "Renew General liability insurance" }));
+    await waitFor(() => expect(saved<License>("licenses")[0].expiresOn).toBe(certificate.policies[0].expiresOn));
+    const [gl, ...others] = saved<License>("licenses");
+    expect(gl).toMatchObject({ id: "gl", number: "GL-4471920", stage: "not_started", remindedOn: [] });
+    expect(gl.renewals).toEqual([expect.objectContaining({ previousExpiresOn: inDays(-20), newExpiresOn: certificate.policies[0].expiresOn })]);
+    expect(gl.requiredDocuments.every((d) => !d.received)).toBe(true);
+    expect(gl.verifiedOn).toBeUndefined(); // still flagged for a quick check against the paper
+    expect(others).toHaveLength(0);
+    expect(await screen.findByRole("status")).toHaveTextContent("Renewed 1 tracked policy");
+  });
+
   it("offers to update the vendor's certificate when the insured is one of your vendors", async () => {
     const vendor = { id: "v1", name: "Acme Roofing", category: "Construction & trades", contactName: "", email: "", phone: "", taxId: "", notes: "", status: "active", createdOn: "2026-01-01", documents: [{ id: "vd1", type: "Certificate of insurance", required: true, receivedOn: null, expiresOn: null }] };
     window.localStorage.setItem("adflo.records.vendors.v1", JSON.stringify([vendor]));

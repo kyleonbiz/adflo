@@ -170,6 +170,21 @@ export function alreadyTracked(p: CertificatePolicy, licenses: Pick<License, "na
   return licenses.some((l) => l.category === "insurance" && l.expiresOn === p.expiresOn && (p.policyNumber ? l.number.replace(/\W/g, "").toLowerCase() === p.policyNumber.replace(/\W/g, "").toLowerCase() : l.name.toLowerCase().includes(p.kind.toLowerCase().split(" ")[0])));
 }
 
+const plainName = (s: string) => s.toLowerCase().replace(/\./g, "").replace(/\b(incorporated|inc|llc|l l c|ltd|limited|corp|corporation|co|company)\b/g, " ").replace(/[^a-z0-9]/g, "");
+
+/**
+ * The tracked policy this certificate renews: the one insurance record for the same coverage (and the same insured, when both are
+ * known) that ends earlier than the certificate's policy, within a couple of years. A renewed policy often gets a new number, so the
+ * number is not compared. Null when there is none or more than one, so a renewal is never guessed between two records.
+ */
+export function renewalTarget(p: CertificatePolicy, insured: string | null, licenses: License[]): License | null {
+  const name = insuranceName(p.kind).toLowerCase();
+  const hits = licenses.filter((l) => l.category === "insurance" && l.name.toLowerCase() === name && l.expiresOn < p.expiresOn
+    && Date.parse(`${p.expiresOn}T00:00:00Z`) - Date.parse(`${l.expiresOn}T00:00:00Z`) <= 800 * 86_400_000
+    && (!insured || !l.holder || plainName(l.holder) === plainName(insured)));
+  return hits.length === 1 ? hits[0] : null;
+}
+
 /** Days from `today` to the earliest expiry (negative when it has lapsed). */
 export function daysUntilExpiry(c: Certificate, today: string): number {
   const end = Date.parse(`${certificateExpiry(c)}T00:00:00Z`);

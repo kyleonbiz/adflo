@@ -10,7 +10,8 @@ import { useToday } from "@/components/modules/use-today";
 import type { DmsApi } from "@/lib/dms/client/api";
 import type { CertificateRead, DocumentRecord } from "@/lib/dms/types";
 import { daysBetween, formatDayShort } from "@/lib/dates";
-import { alreadyTracked, certificateExpiry, certificateToLicenses, type Certificate } from "@/lib/licenses/certificate";
+import { alreadyTracked, certificateExpiry, certificateToLicenses, renewalTarget, type Certificate } from "@/lib/licenses/certificate";
+import { renewLicense } from "@/lib/licenses/logic";
 import type { License } from "@/lib/licenses/types";
 import { useRecordsLoading, useRecordsState } from "@/lib/records/storage";
 import type { Vendor, VendorDocument } from "@/lib/vendors/types";
@@ -74,7 +75,10 @@ export function CertificateCard({ doc, api }: { doc: DocumentRecord; api: DmsApi
       {read && read.status === "found" && (() => {
         const c = read.certificate;
         const vendor = matchingVendor(c, vendors);
-        const fresh = c.policies.filter((p) => !alreadyTracked(p, licenses ?? []));
+        const notTracked = c.policies.filter((p) => !alreadyTracked(p, licenses ?? []));
+        // A policy that is already tracked with an earlier end date is a renewal of it, not a second record.
+        const renewals = notTracked.flatMap((p) => { const l = renewalTarget(p, c.insured, licenses ?? []); return l ? [{ policy: p, license: l }] : []; });
+        const fresh = notTracked.filter((p) => !renewals.some((r) => r.policy === p));
         const expiry = certificateExpiry(c);
         const say = (text: string) => setDone({ key, text });
 
@@ -82,6 +86,14 @@ export function CertificateCard({ doc, api }: { doc: DocumentRecord; api: DmsApi
           if (fresh.length === 0) return say("These policies are already tracked.");
           setLicenses((prev) => [...(prev ?? []), ...certificateToLicenses({ ...c, policies: fresh }, { newId, documentName: doc.displayName })]);
           say(`Tracking ${fresh.length} ${fresh.length === 1 ? "policy" : "policies"}. You will be reminded 60, 30 and 7 days before each ends.`);
+        };
+        const renewTracked = () => {
+          // Each tracked policy gets the new end date and starts again from "not started"; it stays flagged for a quick check against the paper.
+          setLicenses((prev) => (prev ?? []).map((l) => {
+            const r = renewals.find((x) => x.license.id === l.id);
+            return r ? { ...renewLicense(l, today, { expiresOn: r.policy.expiresOn, number: r.policy.policyNumber ?? undefined }), verifiedOn: undefined } : l;
+          }));
+          say(`Renewed ${renewals.length} tracked ${renewals.length === 1 ? "policy" : "policies"}. Their old alerts are cleared and the new end dates are on your calendar.`);
         };
         const updateVendor = () => {
           if (!vendor) return;
@@ -120,8 +132,9 @@ export function CertificateCard({ doc, api }: { doc: DocumentRecord; api: DmsApi
               </p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {vendor && <Button size="sm" onClick={updateVendor}>Update {vendor.name}&apos;s certificate</Button>}
-                <Button size="sm" variant={vendor ? "outline" : "default"} onClick={trackOwn} disabled={loadingRecords}>{vendor ? "Track as our own policies" : fresh.length === 0 ? "Already tracked" : "Track these policies"}</Button>
+                {renewals.length > 0 && <Button size="sm" onClick={renewTracked} disabled={loadingRecords}>Renew {renewals.length === 1 ? `${renewals[0].license.name}` : `${renewals.length} tracked policies`}</Button>}
+                {vendor && <Button size="sm" variant={renewals.length ? "outline" : "default"} onClick={updateVendor}>Update {vendor.name}&apos;s certificate</Button>}
+                {(fresh.length > 0 || renewals.length === 0) && <Button size="sm" variant={vendor || renewals.length ? "outline" : "default"} onClick={trackOwn} disabled={loadingRecords}>{vendor ? "Track as our own policies" : fresh.length === 0 ? "Already tracked" : "Track these policies"}</Button>}
               </div>
             )}
             {!message && <p className="text-xs text-muted-foreground">Read from the document. Check it against the certificate: tracked policies are marked for review until you confirm them.</p>}
