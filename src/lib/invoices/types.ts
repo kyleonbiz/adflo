@@ -56,6 +56,10 @@ export interface Invoice {
   notes: string;
   /** The day a PDF copy was saved to Documents. Absent when it has not been. */
   savedToDocumentsOn?: string;
+  /** The scheduled dates (not send dates) of the automatic payment reminders already emailed to the client, so each goes out once. */
+  remindersSent?: string[];
+  /** The day this invoice was created automatically as the next in its recurring series. Absent for invoices made by hand. */
+  autoCreatedOn?: string;
 }
 
 export type AlertSeverity = "info" | "warning" | "critical";

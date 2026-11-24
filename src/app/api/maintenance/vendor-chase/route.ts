@@ -1,5 +1,6 @@
 import { secretMatches } from "@/app/api/maintenance/cleanup-uploads/route";
 import { recordJobRun } from "@/lib/control/job-runs";
+import { replyAddress } from "@/lib/mail/reply-to";
 import { reminderAddress, reminderMailReady, sendReminderEmail } from "@/lib/mail/send";
 import { chaseEmail, chaseTargets, logAutoChase, withoutNote } from "@/lib/vendors/auto-chase";
 import type { Vendor } from "@/lib/vendors/types";
@@ -16,7 +17,6 @@ const MAX_PER_RUN = 300;
 
 type Row = { id: string; data: Record<string, unknown> };
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
-const EMAIL = /^[^\s@<>,;]+@[^\s@<>,;]+\.[^\s@<>,;]{2,}$/;
 const oneLine = (s: string) => s.replace(/[\r\n\u0000-\u001f<>",;]+/g, " ").replace(/\s{2,}/g, " ").trim();
 // Saved records are plain JSON that a person (or an old version of the app) wrote: skip one that lacks the shape the chase needs.
 const goodVendor = (r: Row): boolean => typeof r.data.name === "string" && typeof r.data.email === "string" && Array.isArray(r.data.documents) && r.data.documents.every(isObj);
@@ -63,12 +63,7 @@ async function run(req: Request) {
       due += targets.length;
 
       // Replies must reach the business: the email in Settings, else the first owner or admin.
-      const details = isObj(settings?.details) ? (settings!.details as Record<string, unknown>) : {};
-      let replyTo = typeof details.email === "string" && EMAIL.test(details.email.trim()) ? details.email.trim() : "";
-      if (!replyTo && !dry) {
-        const { data: members } = await admin.from("workspace_members").select("email, role").eq("workspace_id", c.workspace_id).in("role", ["owner", "admin"]).order("created_at").limit(3);
-        replyTo = ((members ?? []) as { email: string }[]).map((m) => m.email?.trim()).find((e) => e && EMAIL.test(e)) ?? "";
-      }
+      const replyTo = dry ? "x" : await replyAddress(admin, c.workspace_id, settings);
       if (!replyTo && !dry) { noReplyAddress++; continue; }
       if (dry) continue;
 

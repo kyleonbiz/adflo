@@ -124,6 +124,10 @@ export function nextRecurringInvoice(inv: Invoice, all: Invoice[], id: string): 
     dueOn: addDays(issuedOn, termDays),
     status: "draft",
     paidOn: null,
+    // Per-invoice history never carries over to the next one in the series.
+    savedToDocumentsOn: undefined,
+    remindersSent: undefined,
+    autoCreatedOn: undefined,
   };
 }
 

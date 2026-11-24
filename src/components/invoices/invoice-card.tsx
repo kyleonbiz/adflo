@@ -49,6 +49,8 @@ export function InvoiceCard({ invoice, today, actions, selected, onSelect }: { i
             <span className="font-semibold">{invoice.number}</span>
             <Badge variant={STATE_BADGE[state]}>{STATE_LABEL[state]}</Badge>
             {invoice.savedToDocumentsOn && <span className="text-xs text-muted-foreground">In Documents</span>}
+            {invoice.autoCreatedOn && <span className="text-xs text-muted-foreground">Created automatically</span>}
+            {!!invoice.remindersSent?.length && <span className="text-xs text-muted-foreground">Reminded {invoice.remindersSent.length} {invoice.remindersSent.length === 1 ? "time" : "times"}</span>}
             {invoice.recurrence !== "none" && (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Repeat className="size-3.5" aria-hidden /> {RECURRENCES.find((r) => r.value === invoice.recurrence)?.label}

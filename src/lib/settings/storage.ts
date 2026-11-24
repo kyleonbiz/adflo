@@ -29,7 +29,7 @@ export function parseSettings(raw: string): AppSettings {
         enabled: Object.fromEntries(NOTIFICATION_KEYS.map((k) => [k, typeof en[k] === "boolean" ? en[k] : base.notifications.enabled[k]])) as AppSettings["notifications"]["enabled"],
         leadDays: (LEAD_DAYS as readonly unknown[]).includes(n.leadDays) ? (n.leadDays as AppSettings["notifications"]["leadDays"]) : base.notifications.leadDays,
       },
-      automation: { vendorChase: au.vendorChase === true },
+      automation: { vendorChase: au.vendorChase === true, invoiceReminders: au.invoiceReminders === true, recurringInvoices: au.recurringInvoices === "draft" || au.recurringInvoices === "send" ? au.recurringInvoices : "off" },
     };
   } catch { return base; }
 }

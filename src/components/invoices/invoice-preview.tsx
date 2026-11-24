@@ -107,6 +107,13 @@ function Body({ invoice, today, onDownload, onEdit }: { invoice: Invoice; today:
         </section>
       )}
 
+      {(invoice.autoCreatedOn || !!invoice.remindersSent?.length) && (
+        <ul className="space-y-1 text-xs text-muted-foreground" aria-label="Automatic activity">
+          {invoice.autoCreatedOn && <li>Created automatically on {formatDayLong(invoice.autoCreatedOn)} as the next in its recurring series.</li>}
+          {!!invoice.remindersSent?.length && <li>Reminders emailed to the client: {invoice.remindersSent.map((d) => formatDayLong(d)).join(", ")}.</li>}
+        </ul>
+      )}
+
       {(reminder || notice) && (
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
           <BellRing className="size-3.5" aria-hidden />

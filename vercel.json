@@ -30,6 +30,10 @@
     {
       "path": "/api/maintenance/vendor-chase",
       "schedule": "37 14 * * 1-5"
+    },
+    {
+      "path": "/api/maintenance/invoice-automation",
+      "schedule": "17 13 * * *"
     }
   ]
 }
