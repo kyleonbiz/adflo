@@ -25,6 +25,21 @@ test.describe("equipment", () => {
     await expect(row(page, "Rooftop unit 2")).not.toContainText("Service overdue");
   });
 
+  test("a vehicle and an appliance each show their warranty end date in the list", async ({ page }) => {
+    await page.goto("/app/equipment");
+    for (const [type, name, ends] of [["Vehicle", "Service van", "2099-06-30"], ["Appliance", "Break room fridge", "2020-03-01"]] as const) {
+      await page.getByRole("button", { name: "Add equipment" }).first().click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Name").fill(name);
+      await dialog.getByRole("combobox", { name: "Type" }).click();
+      await page.getByRole("option", { name: type }).click();
+      await dialog.getByLabel("Warranty ends").fill(ends);
+      await dialog.getByRole("button", { name: "Add equipment" }).click();
+    }
+    await expect(row(page, "Service van").getByTestId("equipment-warranty")).toContainText("Warranty ends");
+    await expect(row(page, "Break room fridge").getByTestId("equipment-warranty")).toContainText("Warranty ended");
+  });
+
   test("opens a prepared draft from Addy with the details filled in, and nothing is saved until you press save", async ({ page }) => {
     await page.goto("/app/equipment?new=1&name=Box%20truck&type=vehicle&identifier=VIN9");
     const dialog = page.getByRole("dialog");

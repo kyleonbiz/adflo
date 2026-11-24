@@ -233,6 +233,11 @@ export function EquipmentPage({ preview, draft, startNew }: { preview?: string; 
                         <p className="truncate text-sm text-muted-foreground">
                           {[e.identifier, e.location && `Kept at ${e.location}`, e.assignedTo && `With ${e.assignedTo}`, e.nextServiceOn && `Next service ${formatDayLong(e.nextServiceOn)}`].filter(Boolean).join(" · ") || "No details yet"}
                         </p>
+                        {e.warrantyEndsOn && (
+                          <p className="truncate text-sm text-muted-foreground" data-testid="equipment-warranty">
+                            Warranty {e.warrantyEndsOn < today ? "ended" : "ends"} {formatDayLong(e.warrantyEndsOn)}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         {(e.status === "in_service" || e.status === "in_repair") && (
