@@ -76,6 +76,7 @@ export function UploadDialog({
             <div className="space-y-1.5">
               <Label htmlFor="upload-folder">Destination folder</Label>
               <FolderPicker id="upload-folder" folders={folders} value={folderId} onChange={onFolderChange} />
+              {folderId === null && <p className="text-xs text-muted-foreground">With All files selected, files that clearly say what they are (an invoice, a certificate of insurance, a W-9) are filed in the matching folder.</p>}
             </div>
 
             <FileDropzone accept={accept} hint={hint} onFiles={queue.addFiles} />
@@ -83,7 +84,7 @@ export function UploadDialog({
             {queue.items.length > 0 && (
               <ul className="space-y-2" aria-label="Upload progress">
                 {queue.items.map((item) => (
-                  <UploadRow key={item.id} item={item} onCancel={() => queue.cancel(item.id)} onRetry={() => queue.retry(item.id)} />
+                  <UploadRow key={item.id} item={item} filedIn={folders.find((f) => f.id === item.filedInFolderId)?.name} onCancel={() => queue.cancel(item.id)} onRetry={() => queue.retry(item.id)} />
                 ))}
               </ul>
             )}
@@ -122,7 +123,7 @@ export function UploadDialog({
   );
 }
 
-function UploadRow({ item, onCancel, onRetry }: { item: UploadItem; onCancel: () => void; onRetry: () => void }) {
+function UploadRow({ item, filedIn, onCancel, onRetry }: { item: UploadItem; filedIn?: string; onCancel: () => void; onRetry: () => void }) {
   const kind = fileKindOf(item.file.type, item.file.name);
   return (
     <li
@@ -145,7 +146,7 @@ function UploadRow({ item, onCancel, onRetry }: { item: UploadItem; onCancel: ()
           <p className="text-xs text-muted-foreground">
             {formatBytes(item.file.size)}
             {item.status === "uploading" && ` · ${item.progress}%`}
-            {item.status === "success" && " · Uploaded"}
+            {item.status === "success" && (filedIn ? ` · Uploaded and filed in ${filedIn}` : " · Uploaded")}
           </p>
         </div>
         {item.status === "uploading" && (

@@ -14,6 +14,8 @@ export interface UploadItem {
   status: UploadStatus;
   progress: number;
   error?: string;
+  /** The folder an upload was filed in automatically (it was dropped into "All files" and its name said what it is). */
+  filedInFolderId?: string;
 }
 
 const CONCURRENCY = 2;
@@ -57,7 +59,7 @@ export function useUploadQueue(opts: {
           onProgress: (loaded, total) => patch(job.id, { progress: total ? Math.round((loaded / total) * 100) : 0 }),
         })
         .then((doc) => {
-          patch(job.id, { status: "success", progress: 100 });
+          patch(job.id, { status: "success", progress: 100, filedInFolderId: !job.folderId && doc.folderId ? doc.folderId : undefined });
           live.current.onUploaded(doc);
         })
         .catch((e) => {

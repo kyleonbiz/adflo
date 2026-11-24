@@ -1,3 +1,4 @@
+import { classifyDocument } from "./autosort";
 import { DmsError } from "./errors";
 import { computeContent } from "./index-content";
 import {
@@ -314,7 +315,31 @@ export class DocumentService {
       documentId,
       { name: doc.displayName, sizeBytes: doc.sizeBytes, version: versionNumber },
     );
-    return doc;
+    // A file dropped into "All files" is filed by what its name says it is (its contents are read later, once indexed).
+    return this.autoSort(doc, null);
+  }
+
+  /**
+   * Files a first upload that nobody put anywhere (no folder, no category chosen) into the matching standard folder, from its name
+   * and, once its text is known, its contents. Only when the kind is clear; anything unclear stays where it was put. Never touches a
+   * document someone has already filed, and never throws: sorting is a convenience that must not break an upload. Recorded in the
+   * activity log so it can be seen, and a move back is one click.
+   */
+  private async autoSort(doc: DocumentRecord, text: string | null): Promise<DocumentRecord> {
+    if (doc.folderId !== null || doc.category !== "other" || doc.currentVersion !== 1) return doc;
+    const hit = classifyDocument(doc.originalName, text);
+    if (!hit) return doc;
+    try {
+      const ws = this.ctx.workspaceId;
+      const fresh = await this.repo.getDocument(ws, doc.id);
+      if (!fresh || fresh.folderId !== null || fresh.category !== "other") return doc; // filed by someone meanwhile
+      const folder = (await this.repo.listFolders(ws)).find((f) => f.isSystem && f.defaultCategory === hit.category);
+      const updated = await this.repo.updateDocument(ws, doc.id, { category: hit.category, ...(folder ? { folderId: folder.id } : {}) });
+      await this.audit("document.auto_sorted", "document", doc.id, { name: doc.displayName, category: hit.category, folder: folder?.name ?? null, by: hit.by });
+      return updated;
+    } catch {
+      return doc;
+    }
   }
 
   /**
@@ -339,6 +364,7 @@ export class DocumentService {
         versionNumber,
         ...outcome,
       });
+      if (stored && outcome.text) await this.autoSort(doc, outcome.text);
       return stored ? outcome.status : null;
     } catch {
       return null;
