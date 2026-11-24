@@ -13,15 +13,15 @@ import type { Invoice } from "@/lib/invoices/types";
 import { STATE_BADGE, STATE_LABEL } from "@/components/invoices/status";
 import { effectivePriceCents, formatMoney, type ClientRecord, type Plan } from "@/lib/control/types";
 
-/** This client's invoices from the same browser-saved list the Billing screen uses. */
-function useClientInvoices(clientId: string, today: string, sample: boolean): Invoice[] {
+/** This client's invoices: from the database when connected (passed in), otherwise from the browser-saved list the Billing screen uses. */
+function useClientInvoices(clientId: string, today: string, sample: boolean, fromDatabase?: Invoice[]): Invoice[] {
   const saved = useSavedInvoices();
-  return useMemo(() => (saved ?? (sample ? SAMPLE_INVOICES(today) : [])).filter((i) => i.clientId === clientId), [saved, sample, today, clientId]);
+  return useMemo(() => (fromDatabase ?? saved ?? (sample ? SAMPLE_INVOICES(today) : [])).filter((i) => i.clientId === clientId), [fromDatabase, saved, sample, today, clientId]);
 }
 
 /** The headline numbers at the top of a client's profile. */
-export function ClientTiles({ client, plans, today, sample, openTickets }: { client: ClientRecord; plans: Plan[]; today: string; sample: boolean; openTickets: number }) {
-  const invoices = useClientInvoices(client.id, today, sample);
+export function ClientTiles({ client, plans, today, sample, openTickets, invoices: fromDatabase }: { client: ClientRecord; plans: Plan[]; today: string; sample: boolean; openTickets: number; invoices?: Invoice[] }) {
+  const invoices = useClientInvoices(client.id, today, sample, fromDatabase);
   const s = summarize(invoices, today);
   const price = effectivePriceCents(client, plans);
   const over = client.seatsUsed != null && client.seatsUsed > client.seatsLimit;
@@ -39,8 +39,8 @@ export function ClientTiles({ client, plans, today, sample, openTickets }: { cli
 }
 
 /** The Billing section on a client's profile. */
-export function ClientBilling({ client, today, sample }: { client: ClientRecord; today: string; sample: boolean }) {
-  const invoices = useClientInvoices(client.id, today, sample);
+export function ClientBilling({ client, today, sample, invoices: fromDatabase }: { client: ClientRecord; today: string; sample: boolean; invoices?: Invoice[] }) {
+  const invoices = useClientInvoices(client.id, today, sample, fromDatabase);
   const rows = [...invoices].sort((a, b) => b.number.localeCompare(a.number));
   const s = summarize(invoices, today);
   const paidTotal = invoices.filter((i) => i.status === "paid").reduce((t, i) => t + i.amountCents, 0);
@@ -54,7 +54,7 @@ export function ClientBilling({ client, today, sample }: { client: ClientRecord;
         </div>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        {invoices.length === 0 ? "No invoices for this client yet." : `${formatMoney(paidTotal)} paid in total${s.outstandingCents ? ` · ${formatMoney(s.outstandingCents)} waiting to be paid` : ""}.`} Invoices are saved in this browser only.
+        {invoices.length === 0 ? "No invoices for this client yet." : `${formatMoney(paidTotal)} paid in total${s.outstandingCents ? ` · ${formatMoney(s.outstandingCents)} waiting to be paid` : ""}.`} {fromDatabase ? "" : "Invoices are saved in this browser only."}
       </p>
       {rows.length > 0 && (
         <div className="mt-3 overflow-x-auto">

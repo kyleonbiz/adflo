@@ -2,6 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildControlAlerts, type ControlAlert } from "./alerts";
 import { TIERS } from "./tiers";
+import { isBillingInvoice } from "./billing-db";
+import type { Invoice } from "@/lib/invoices/types";
 import { type AuditEntry, type ClientRecord, type ClientStatus, type DirectoryEntry, type Plan, type StaffMember, type StaffRole, type Ticket, type TicketMessage, type TicketNote, type TimelineEvent, type AgreementTemplate, type SentAgreement, type AppError, type UnlinkedWorkspace } from "./types";
 
 interface ClientRow {
@@ -220,4 +222,10 @@ export async function loadControlAlerts(supabase: SupabaseClient, clients?: Clie
     soft(loadSent(supabase), [] as SentAgreement[]),
   ]);
   return buildControlAlerts({ clients: c, tickets, errors, sent });
+}
+
+/** AdFlo's own invoices to its clients, from the database, newest first. Invoices that are not well formed are left out. */
+export async function loadBillingInvoices(supabase: SupabaseClient): Promise<Invoice[]> {
+  const { data } = await supabase.from("control_invoices").select("id, data").order("created_at", { ascending: false }).limit(5000);
+  return ((data ?? []) as { id: string; data: unknown }[]).map((r) => ({ ...(r.data as object), id: r.id })).filter(isBillingInvoice);
 }

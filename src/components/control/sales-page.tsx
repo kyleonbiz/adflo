@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToday } from "@/components/modules/use-today";
 import { SAMPLE_INVOICES } from "@/lib/control/billing";
+import type { Invoice } from "@/lib/invoices/types";
 import { useSavedInvoices } from "@/lib/control/billing-storage";
 import { DEFAULT_GOAL_CENTS, parseGoal, summarizeSales, trendOf, type Snapshot } from "@/lib/control/sales";
 import { formatMoney, type ClientRecord, type Plan } from "@/lib/control/types";
@@ -21,13 +22,13 @@ const saveGoal = (cents: number) => { try { window.localStorage.setItem(KEY, Str
 /**
  * The sales and revenue counter: recurring revenue against the goal, who is paying, the trials in the pipeline and how
  * many clients were added each month. Revenue comes from the clients' plans, prices and seats; the money collected
- * comes from the billing invoices, which are saved in this browser.
+ * comes from the billing invoices.
  */
-export function SalesPage({ clients, plans, snapshots, today, sample }: { clients: ClientRecord[]; plans: Plan[]; snapshots: Snapshot[]; today: string; sample: boolean }) {
+export function SalesPage({ clients, plans, snapshots, today, sample, invoices: fromDatabase }: { clients: ClientRecord[]; plans: Plan[]; snapshots: Snapshot[]; today: string; sample: boolean; invoices?: Invoice[] }) {
   const goal = useSyncExternalStore(subscribe, read, () => DEFAULT_GOAL_CENTS);
   const saved = useSavedInvoices();
   const day = useToday() ?? today;
-  const invoices = saved ?? (sample ? SAMPLE_INVOICES(today) : null);
+  const invoices = fromDatabase ?? saved ?? (sample ? SAMPLE_INVOICES(today) : null);
   const s = summarizeSales(clients, plans, invoices, day, goal);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
@@ -124,7 +125,7 @@ export function SalesPage({ clients, plans, snapshots, today, sample }: { client
           <p className="mt-3 text-xs text-muted-foreground">By the date each client started, or was created when no start date is set.</p>
         </section>
       </div>
-      {!sample && saved === null && <p className="text-xs text-muted-foreground">Collected and invoiced figures read the billing invoices saved in this browser; they show a dash until some exist here.</p>}
+      {!sample && !fromDatabase && saved === null && <p className="text-xs text-muted-foreground">Collected and invoiced figures read the billing invoices saved in this browser; they show a dash until some exist here.</p>}
     </div>
   );
 }

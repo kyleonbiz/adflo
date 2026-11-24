@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { BillingPage } from "@/components/control/billing-page";
-import { loadClients, loadPlans, SAMPLE_CLIENTS, SAMPLE_PLANS } from "@/lib/control/data";
+import { loadBillingInvoices, loadClients, loadPlans, SAMPLE_CLIENTS, SAMPLE_PLANS } from "@/lib/control/data";
 import { renderControlShell } from "@/lib/control/shell";
 
 export const metadata: Metadata = { title: "Billing · Control center" };
@@ -13,7 +13,7 @@ export default async function BillingRoute({ searchParams }: PageProps<"/control
   const today = new Date().toISOString().slice(0, 10);
   return renderControlShell("/control/billing", async (ctx) =>
     ctx.mode === "live"
-      ? <BillingPage clients={await loadClients(ctx.supabase)} plans={await loadPlans(ctx.supabase)} today={today} sample={false} newForClient={newForClient} />
+      ? <BillingPage clients={await loadClients(ctx.supabase)} plans={await loadPlans(ctx.supabase)} today={today} sample={false} newForClient={newForClient} invoices={await loadBillingInvoices(ctx.supabase)} canEdit={ctx.staff.role !== "support"} />
       : <BillingPage clients={SAMPLE_CLIENTS} plans={SAMPLE_PLANS} today={today} sample newForClient={newForClient} />,
   );
 }

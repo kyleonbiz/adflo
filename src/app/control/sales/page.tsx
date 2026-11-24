@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { SalesPage } from "@/components/control/sales-page";
-import { loadClients, loadPlans, SAMPLE_CLIENTS, SAMPLE_PLANS } from "@/lib/control/data";
+import { loadBillingInvoices, loadClients, loadPlans, SAMPLE_CLIENTS, SAMPLE_PLANS } from "@/lib/control/data";
 import { sampleSnapshots } from "@/lib/control/sales";
 import { loadSnapshots, recordRevenueSnapshot } from "@/lib/control/snapshots";
 import { renderControlShell } from "@/lib/control/shell";
@@ -17,7 +17,7 @@ export default function SalesRoute() {
     // Opening the page records today's figures too, so the trend starts at once instead of at the next nightly run.
     const admin = createServiceSupabase();
     if (admin) await recordRevenueSnapshot(admin, today);
-    const [clients, plans, snapshots] = await Promise.all([loadClients(ctx.supabase), loadPlans(ctx.supabase), loadSnapshots(ctx.supabase)]);
-    return <SalesPage clients={clients} plans={plans} snapshots={snapshots} today={today} sample={false} />;
+    const [clients, plans, snapshots, invoices] = await Promise.all([loadClients(ctx.supabase), loadPlans(ctx.supabase), loadSnapshots(ctx.supabase), loadBillingInvoices(ctx.supabase)]);
+    return <SalesPage clients={clients} plans={plans} snapshots={snapshots} today={today} sample={false} invoices={invoices} />;
   });
 }

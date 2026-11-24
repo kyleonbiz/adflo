@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import type { ClientRecord, Plan, UnlinkedWorkspace } from "@/lib/control/types";
 import { ClientTiles } from "./client-billing";
+import type { Invoice } from "@/lib/invoices/types";
 import { ClientUsage } from "./client-usage";
 import { WorkspaceCard } from "./workspace-card";
 import { OnboardingGuide } from "./onboarding-guide";
@@ -17,7 +18,7 @@ import { StatusBadge } from "./status-badge";
 const SECTIONS = [["account", "Account"], ["onboarding", "Onboarding"], ["billing", "Billing"], ["agreements", "Agreements"], ["support", "Support"], ["history", "History"]] as const;
 
 /** One client's profile: summary, quick actions, then every part of their account in one place. */
-export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, openTickets, unlinked = [], children }: { client: ClientRecord; plans: Plan[]; canEdit: boolean; isOwner: boolean; today: string; sample: boolean; openTickets: number; unlinked?: UnlinkedWorkspace[]; children?: React.ReactNode }) {
+export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, openTickets, unlinked = [], invoices, children }: { client: ClientRecord; plans: Plan[]; canEdit: boolean; isOwner: boolean; today: string; sample: boolean; openTickets: number; unlinked?: UnlinkedWorkspace[]; invoices?: Invoice[]; children?: React.ReactNode }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   
@@ -32,7 +33,7 @@ export function ClientDetail({ client, plans, canEdit, isOwner, today, sample, o
         </div>
       </div>
 
-      <ClientTiles client={client} plans={plans} today={today} sample={sample} openTickets={openTickets} />
+      <ClientTiles client={client} plans={plans} today={today} sample={sample} openTickets={openTickets} invoices={invoices} />
 
       <nav aria-label="On this page" className="flex flex-wrap gap-2">
         {SECTIONS.map(([id, label]) => <a key={id} href={`#${id}`} className="h-8 rounded-full border bg-card px-3 text-xs font-medium leading-8 text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring">{label}</a>)}
