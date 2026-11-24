@@ -35,9 +35,18 @@ function foldLine(line: string): string {
 
 const compact = (day: string) => day.replace(/-/g, "");
 
+export interface IcsOptions {
+  /** The calendar's name in the app that subscribes to it. */
+  name?: string;
+  /** How often a subscribing app should check for changes, in hours. */
+  refreshHours?: number;
+}
+
 /** A calendar file (.ics) of all-day events. `stamp` is the creation day, used for DTSTAMP. */
-export function toIcs(events: CalendarEvent[], stamp: string): string {
+export function toIcs(events: CalendarEvent[], stamp: string, opts: IcsOptions = {}): string {
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//AdFlo//Requests//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+  if (opts.name) lines.push(`X-WR-CALNAME:${icsEscape(opts.name)}`);
+  if (opts.refreshHours) lines.push(`REFRESH-INTERVAL;VALUE=DURATION:PT${opts.refreshHours}H`, `X-PUBLISHED-TTL:PT${opts.refreshHours}H`);
   for (const e of events) {
     lines.push(
       "BEGIN:VEVENT",

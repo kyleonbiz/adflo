@@ -22,8 +22,8 @@ describe("settings: automation", () => {
 
 describe("settings: invoice automation", () => {
   it("is off by default, and only exact values switch it on", () => {
-    expect(defaultSettings().automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false });
-    expect(parseSettings(JSON.stringify({ version: 1 })).automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false });
+    expect(defaultSettings().automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false, autoTasks: false });
+    expect(parseSettings(JSON.stringify({ version: 1 })).automation).toEqual({ vendorChase: false, invoiceReminders: false, recurringInvoices: "off", packetReminders: false, autoTasks: false });
     for (const bad of ["true", 1, "yes", {}]) expect(parseSettings(JSON.stringify({ version: 1, automation: { invoiceReminders: bad } })).automation.invoiceReminders).toBe(false);
     for (const bad of ["Draft", "on", true, 1, null, "auto"]) expect(parseSettings(JSON.stringify({ version: 1, automation: { recurringInvoices: bad } })).automation.recurringInvoices).toBe("off");
     expect(parseSettings(JSON.stringify({ version: 1, automation: { invoiceReminders: true, recurringInvoices: "draft" } })).automation).toMatchObject({ invoiceReminders: true, recurringInvoices: "draft" });
@@ -127,5 +127,17 @@ describe("Automations section", () => {
     expect(toggle()).toHaveAttribute("aria-checked", "true");
     expect(screen.getByText(/to office@acme.test/)).toBeInTheDocument();
     expect(screen.queryByRole("note")).toBeNull();
+  });
+});
+
+describe("Automations section: follow-up tasks", () => {
+  const tasks = () => screen.getByRole("switch", { name: "Add follow-up tasks for me" });
+
+  it("is off to start with, switches on and saves, and only an exact true counts", async () => {
+    render(<AutomationsSection base="/app" />);
+    expect(tasks()).toHaveAttribute("aria-checked", "false");
+    await userEvent.click(tasks());
+    expect(saved().automation.autoTasks).toBe(true);
+    for (const bad of ["true", 1, "yes", {}, null]) expect(parseSettings(JSON.stringify({ version: 1, automation: { autoTasks: bad } })).automation.autoTasks).toBe(false);
   });
 });

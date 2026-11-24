@@ -47,3 +47,4 @@ RUN "$PSQL -d dms -f '$HERE/orphan_workspace_delete.sql'" 2>&1 | grep -E "PASS|F
 RUN "$PSQL -d dms -f '$HERE/client_delete_all.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CLIENT DELETE ALL|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/support.sql'" 2>&1 | grep -E "PASS|FAIL|ALL SUPPORT|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/stray_accounts.sql'" 2>&1 | grep -E "PASS|FAIL|ALL STRAY ACCOUNTS|ERROR" | sed 's/^psql:[^ ]* //'
+RUN "$PSQL -d dms -f '$HERE/calendar_feed.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CALENDAR FEED|ERROR" | sed 's/^psql:[^ ]* //'

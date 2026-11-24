@@ -38,6 +38,10 @@
     {
       "path": "/api/maintenance/packet-reminders",
       "schedule": "7 14 * * 1-5"
+    },
+    {
+      "path": "/api/maintenance/auto-tasks",
+      "schedule": "37 12 * * *"
     }
   ]
 }

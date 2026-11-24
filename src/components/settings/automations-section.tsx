@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
 import { GHOSTED_AFTER, REMINDER_GAP_DAYS } from "@/lib/vendors/follow-up";
+import { EQUIPMENT_LEAD_DAYS, INVOICE_LATE_DAYS } from "@/lib/projects/auto-tasks";
 import { OVERDUE_NOTICE_DAYS } from "@/lib/invoices/auto";
 import { FIRST_REMINDER_AFTER_DAYS, MAX_PACKET_REMINDERS, REMINDER_GAP_DAYS as PACKET_GAP_DAYS } from "@/lib/packets/logic";
 import { useRecordsInDatabase } from "@/lib/records/storage";
@@ -55,6 +56,15 @@ export function AutomationsSection({ base }: { base: "/app" }) {
         <li>It stops by itself once you tick off everything the person had to provide. Replies go to you{replyTo ? <>, at {replyTo}</> : <>, at your workspace owner until you add a business email</>}.</li>
       </Card>
 
+      <Card id="auto-tasks" title="Add follow-up tasks for me" on={a.autoTasks} onToggle={() => set({ autoTasks: !a.autoTasks })}
+        detail="AdFlo adds a task to a Renewals and follow-ups project in Projects, so the next step is on your list and your calendar without you having to remember it. Nobody is emailed.">
+        <li>A license, permit or insurance policy that is entering its renewal window, unless its renewal is already marked submitted.</li>
+        <li>Equipment service or an inspection that is {EQUIPMENT_LEAD_DAYS} days away or late.</li>
+        <li>A sent invoice that is {INVOICE_LATE_DAYS} days past due and still unpaid.</li>
+        <li>A vendor or an onboarding packet that has not replied to the automatic reminders.</li>
+        <li>Each situation gets one task. Finish it or delete it as you like: it is never added again, and a renewed license starts fresh next time.</li>
+      </Card>
+
       <section aria-label="Recurring invoices" className="space-y-4 rounded-2xl border bg-card p-5 shadow-panel">
         <div className="min-w-0">
           <p id="auto-recurring" className="text-sm font-medium">Create recurring invoices automatically</p>
@@ -93,7 +103,7 @@ export function AutomationsSection({ base }: { base: "/app" }) {
 
       <p className="flex items-start gap-2 text-xs text-muted-foreground">
         <MailCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-        {inDatabase ? "Saved to your workspace and shared with your team. Vendor follow-ups run on weekday mornings and invoices every morning (US Eastern)." : "In this preview nothing is sent. Connected workspaces send automatically once these are on."}
+        {inDatabase ? "Saved to your workspace and shared with your team. Vendor follow-ups run on weekday mornings and invoices and follow-up tasks every morning (US Eastern)." : "In this preview nothing is sent. Connected workspaces send automatically once these are on."}
       </p>
     </div>
   );

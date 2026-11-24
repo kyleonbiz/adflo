@@ -14,6 +14,7 @@ import { agenda, buildEvents, byDay, EVENT_KINDS, monthGrid, monthLabel, monthOf
 import { saveReminders, useReminders } from "@/lib/reminders/storage";
 import { clearReminder, setReminderOn } from "@/lib/reminders/logic";
 import { Input } from "@/components/ui/input";
+import { CalendarFeedCard } from "@/components/calendar/calendar-feed-card";
 import { useCalendarSources } from "@/lib/calendar/sources";
 import { addDays, addMonths, formatDayLong, formatDayShort } from "@/lib/dates";
 import { cn } from "@/lib/utils";
@@ -279,6 +280,8 @@ export function CalendarPage({ preview, live = false }: { preview?: string; live
           )}
         </section>
       )}
+
+      <CalendarFeedCard />
     </div>
   );
 }

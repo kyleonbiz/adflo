@@ -67,6 +67,8 @@ export interface Project {
   linked?: ProjectLink | null;
   milestones?: Milestone[];
   updates?: ProjectUpdate[];
+  /** Only on the "Renewals and follow-ups" project: the keys of tasks AdFlo has already added, so a task you delete is never added again. */
+  autoCreated?: string[];
 }
 
 export type TaskState = "done" | "overdue" | "due_today" | "due_soon" | "open" | "unscheduled";
