@@ -1,4 +1,5 @@
 import { secretMatches } from "@/app/api/maintenance/cleanup-uploads/route";
+import { logAutomation } from "@/lib/audit/server";
 import { recordJobRun } from "@/lib/control/job-runs";
 import { AUTO_PROJECT_ID, followUps, withNewTasks, type AutoSources } from "@/lib/projects/auto-tasks";
 import type { Project } from "@/lib/projects/types";
@@ -72,7 +73,11 @@ async function run(req: Request) {
       const save = row
         ? await admin.from("workspace_records").update({ data, updated_at: now }).eq("workspace_id", ws).eq("kind", "projects").eq("id", id)
         : await admin.from("workspace_records").insert({ workspace_id: ws, kind: "projects", id, data, updated_at: now });
-      if (save.error) failed++; else added += result.added.length;
+      if (save.error) failed++;
+      else {
+        added += result.added.length;
+        await logAutomation(admin, ws, today, result.added.slice(0, 10).map((t) => ({ job: "auto-tasks", key: t.key, verb: "added the task", what: t.title, area: "Tasks" as const, href: "/app/projects" })));
+      }
     } catch {
       failed++; // never log the records or the error text: it can hold client data
     }

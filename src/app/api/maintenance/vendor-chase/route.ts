@@ -1,4 +1,5 @@
 import { secretMatches } from "@/app/api/maintenance/cleanup-uploads/route";
+import { logAutomation } from "@/lib/audit/server";
 import { recordJobRun } from "@/lib/control/job-runs";
 import { replyAddress } from "@/lib/mail/reply-to";
 import { reminderAddress, reminderMailReady, sendReminderEmail } from "@/lib/mail/send";
@@ -81,6 +82,7 @@ async function run(req: Request) {
           try {
             await sendReminderEmail({ to: t.vendor.email.trim(), ...chaseEmail(t.vendor, today, { business }), from, replyTo });
             sent++;
+            await logAutomation(admin, c.workspace_id, today, [{ job: "vendor-chase", key: row.id, verb: "emailed a reminder to", what: `${oneLine(t.vendor.name)} about missing documents`, area: "Vendors", href: "/app/vendors" }]);
           } catch {
             failed++;
             await admin.from("workspace_records").update({ data: { ...row.data, activity: withoutNote(logged, noteId).activity ?? [] }, updated_at: new Date().toISOString() }).eq("workspace_id", c.workspace_id).eq("kind", "vendors").eq("id", row.id);

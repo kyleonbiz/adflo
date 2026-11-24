@@ -1,4 +1,5 @@
 import { secretMatches } from "@/app/api/maintenance/cleanup-uploads/route";
+import { logAutomation } from "@/lib/audit/server";
 import { recordJobRun } from "@/lib/control/job-runs";
 import { reminderMailReady } from "@/lib/mail/send";
 import { reminderDue, type Assignment } from "@/lib/packets/logic";
@@ -75,8 +76,10 @@ async function run(req: Request) {
         if ((await save({ ...r.data, remindedOn: reminded })).error) { failed++; continue; }
         try {
           const res = await sendPacketEmail(admin, { workspaceId: wsId, business: c.name, origin, settings, assignment: a, kind: "reminder", n: reminded.length });
-          if (res.ok) sent++;
-          else { if (res.code === "no_reply_address") noReply++; await save(r.data); }
+          if (res.ok) {
+            sent++;
+            await logAutomation(admin, wsId, today, [{ job: "packet-reminders", key: r.id, verb: `sent reminder ${reminded.length} to`, what: `${a.recipient} about their ${a.templateName.toLowerCase()} paperwork`, area: "Forms", href: "/app/forms" }]);
+          } else { if (res.code === "no_reply_address") noReply++; await save(r.data); }
         } catch {
           failed++;
           await save(r.data);

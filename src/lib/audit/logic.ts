@@ -1,5 +1,5 @@
 /** One line in the activity log: who did what, and when. Records live in the browser until a database is connected. */
-export const AUDIT_AREAS = ["Invoices", "Licenses", "Contacts", "Vendors", "Tasks", "Forms", "Documents", "Equipment"] as const;
+export const AUDIT_AREAS = ["Invoices", "Licenses", "Contacts", "Vendors", "Tasks", "Forms", "Documents", "Equipment", "Reports"] as const;
 export type AuditArea = (typeof AUDIT_AREAS)[number];
 
 export interface AuditEntry {

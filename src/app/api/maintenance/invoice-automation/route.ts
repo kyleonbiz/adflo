@@ -1,4 +1,5 @@
 import { secretMatches } from "@/app/api/maintenance/cleanup-uploads/route";
+import { logAutomation } from "@/lib/audit/server";
 import { recordJobRun } from "@/lib/control/job-runs";
 import { createNextInvoice, dueReminder, newInvoiceEmail, recurringDue, reminderEmail, withReminderSent, withoutReminderSent, type RecurringMode } from "@/lib/invoices/auto";
 import { formatMoney } from "@/lib/invoices/logic";
@@ -101,10 +102,11 @@ async function run(req: Request) {
           const ins = await admin.from("workspace_records").insert({ workspace_id: wsId, kind: "invoices", id, data: next, updated_at: new Date().toISOString() });
           if (ins.error) { failed++; created--; continue; }
           all.push(next); madeToday.add(id); made.push(next);
+          await logAutomation(admin, wsId, today, [{ job: "invoice-automation", key: `new-${id}`, verb: next.status === "sent" ? "created and sent" : "created a draft of", what: `recurring invoice ${oneLine(next.number)} for ${oneLine(next.client)}`, area: "Invoices", href: "/app/invoices" }]);
           if (next.status === "sent") {
             emails++;
             try {
-              if (await makeSend(next, newInvoiceEmail(next, { origin, business }))) sentNew++;
+              if (await makeSend(next, newInvoiceEmail(next, { origin, business }))) { sentNew++; await logAutomation(admin, wsId, today, [{ job: "invoice-automation", key: `sent-${id}`, verb: "sent the recurring invoice", what: `${oneLine(next.number)} to ${oneLine(next.client)}`, area: "Invoices", href: "/app/invoices" }]); }
               else await admin.from("workspace_records").update({ data: { ...next, status: "draft" }, updated_at: new Date().toISOString() }).eq("workspace_id", wsId).eq("kind", "invoices").eq("id", id);
             } catch {
               failed++;
@@ -130,7 +132,7 @@ async function run(req: Request) {
           if (saved.error) { failed++; continue; }
           emails++;
           try {
-            if (await makeSend(inv, reminderEmail(inv, point, today, { origin, business }))) reminded++;
+            if (await makeSend(inv, reminderEmail(inv, point, today, { origin, business }))) { reminded++; await logAutomation(admin, wsId, today, [{ job: "invoice-automation", key: `rem-${inv.id}`, verb: "emailed a payment reminder for", what: `invoice ${oneLine(inv.number)} to ${oneLine(inv.client)}`, area: "Invoices", href: "/app/invoices" }]); }
             else await save(inv.id, { ...row.data, remindersSent: withoutReminderSent(recorded, point).remindersSent ?? [] });
           } catch {
             failed++;

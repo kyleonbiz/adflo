@@ -25,8 +25,9 @@ const textOf = (reports: ModuleReport[], id: string, today: string) => {
 };
 
 /**
- * Reports that come round on their own. Nothing here is emailed yet: a report that falls due waits on this
- * page, ready to print or save, and moves to its next date once you have taken it.
+ * Reports that come round on their own. A connected workspace has each one emailed on the morning it falls due (to the addresses
+ * listed, or to the owners and admins when none are) and moved to its next date. Anything that is still due here can be printed or
+ * saved by hand, and moves on once you have taken it.
  */
 export function ScheduledReports({ reports, today }: { reports: ModuleReport[]; today: string }) {
   const list = useSchedules();
@@ -58,7 +59,7 @@ export function ScheduledReports({ reports, today }: { reports: ModuleReport[]; 
     <div className="space-y-5" data-testid="scheduled-reports">
       {due.length > 0 && (
         <p role="status" className="py-1 pl-3 text-sm border-l-2 border-amber-500 text-foreground" data-testid="due-banner">
-          {due.length === 1 ? "1 report is due." : `${due.length} reports are due.`} Print or download them below.
+          {due.length === 1 ? "1 report is due." : `${due.length} reports are due.`} They are emailed automatically each morning once your workspace is connected; you can also print or download them below.
         </p>
       )}
 
@@ -86,7 +87,7 @@ export function ScheduledReports({ reports, today }: { reports: ModuleReport[]; 
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="sched-to">Send to (optional)</Label>
-          <Input id="sched-to" value={recipients} onChange={(e) => setRecipients(e.target.value)} placeholder="name@company.com, ..." aria-invalid={!!error} />
+          <Input id="sched-to" value={recipients} onChange={(e) => setRecipients(e.target.value)} placeholder="Blank: your owners and admins" aria-invalid={!!error} />
         </div>
         {error && <p role="alert" className="text-xs text-destructive sm:col-span-2 lg:col-span-4">{error}</p>}
         <div className="sm:col-span-2 lg:col-span-4"><Button type="submit"><CalendarClock /> Schedule report</Button></div>
