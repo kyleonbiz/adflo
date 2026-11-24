@@ -93,11 +93,11 @@ describe("classify", () => {
   it.each([
     ["Invoice_03.pdf", "invoices"], ["INV-1042.pdf", "invoices"], ["invoices_2026.xlsx", "invoices"], ["Receipt Staples.jpg", "receipts"],
     ["Lease Agreement.pdf", "contracts"], ["NDA signed.pdf", "contracts"], ["W-9_Initech.pdf", "tax"], ["w9.pdf", "tax"], ["2025 taxes.pdf", "tax"],
-    ["resume_priya.docx", "hr"], ["Payroll May.xlsx", "hr"], ["notes.txt", null], ["Taxi receipt.pdf", "receipts"], ["Invoiced later.pdf", null], ["whatever.pdf", null],
+    ["resume_priya.docx", "hr"], ["Acme COI 2026.pdf", "insurance"], ["Workers comp policy.pdf", "insurance"], ["Insured later.pdf", null], ["Payroll May.xlsx", "hr"], ["notes.txt", null], ["Taxi receipt.pdf", "receipts"], ["Invoiced later.pdf", null], ["whatever.pdf", null],
   ])("name %j -> %j", (name, cat) => expect(categoryFromName(name)).toBe(cat));
   it.each([
     ["Invoices", "invoices"], ["01 Invoices", "invoices"], ["Docs/Receipts", "receipts"], ["Receipts/2026/Q1", "receipts"], ["Photos 2026", "images"], ["Tax", "tax"],
-    ["Contracts", "contracts"], ["Human Resources", "hr"], ["Downloads", null], ["", null], ["Invoice Archive", null],
+    ["Contracts", "contracts"], ["Human Resources", "hr"], ["Insurance", "insurance"], ["12 Certificates of Insurance", "insurance"], ["Downloads", null], ["", null], ["Invoice Archive", null],
   ])("folder %j -> %j", (dir, cat) => expect(categoryFromFolder(dir)).toBe(cat));
   it("suggests folders by name, then type, then To Sort", () => {
     expect(suggestedFolder("Desktop/Invoice_1.pdf")).toBe("01 Invoices");
@@ -106,6 +106,7 @@ describe("classify", () => {
     expect(suggestedFolder("x/deck.pptx")).toBe("08 Presentations");
     expect(suggestedFolder("x/a.zip")).toBe("09 Archives");
     expect(suggestedFolder("x/mystery.bin")).toBe("00 To Sort");
+    expect(suggestedFolder("x/GL-certificate-insurance.pdf")).toBe("10 Insurance");
     expect(suggestedFolder("x/receipt.jpg")).toBe("02 Receipts"); // a name beats a file type
   });
   it("calls a file misplaced only when its name and its folder clearly disagree", () => {

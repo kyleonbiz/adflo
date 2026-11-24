@@ -1,9 +1,15 @@
+import type { Bill } from "./bill";
 import type { Certificate } from "@/lib/licenses/certificate";
 
 /** What reading an insurance document found. Only "found" carries a certificate; the rest say why not. */
 export type CertificateRead =
   | { status: "found"; certificate: Certificate }
   | { status: "not_insurance" | "unreadable" | "no_certificate" };
+
+/** What reading an invoice or receipt found. Only "found" carries the details; the rest say why not. */
+export type BillRead =
+  | { status: "found"; bill: Bill }
+  | { status: "not_bill" | "unreadable" | "no_details" };
 
 export const ROLES = ["viewer", "editor", "admin", "owner"] as const;
 export type Role = (typeof ROLES)[number];

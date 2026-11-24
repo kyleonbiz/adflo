@@ -1,16 +1,16 @@
 import { splitName, splitPath } from "./paths";
 
-export type Category = "invoices" | "receipts" | "contracts" | "tax" | "hr" | "images" | "sheets" | "slides" | "archives";
+export type Category = "invoices" | "receipts" | "contracts" | "tax" | "hr" | "insurance" | "images" | "sheets" | "slides" | "archives";
 
 const TO_SORT = "00 To Sort";
 export const DUPLICATES_FOLDER = "_Duplicates (review)";
 
 export const FOLDER_FOR: Record<Category, string> = {
   invoices: "01 Invoices", receipts: "02 Receipts", contracts: "03 Contracts", tax: "04 Tax", hr: "05 HR",
-  images: "06 Photos & Images", sheets: "07 Spreadsheets & Reports", slides: "08 Presentations", archives: "09 Archives",
+  images: "06 Photos & Images", sheets: "07 Spreadsheets & Reports", slides: "08 Presentations", archives: "09 Archives", insurance: "10 Insurance",
 };
 export const LABEL_FOR: Record<Category, string> = {
-  invoices: "invoice", receipts: "receipt", contracts: "contract", tax: "tax document", hr: "HR document",
+  invoices: "invoice", receipts: "receipt", contracts: "contract", tax: "tax document", hr: "HR document", insurance: "insurance document",
   images: "photo or image", sheets: "spreadsheet", slides: "presentation", archives: "archive",
 };
 
@@ -21,6 +21,7 @@ const NAME_RULES: [Exclude<Category, "images" | "sheets" | "slides" | "archives"
   ["contracts", /(^|[^a-z0-9])(contracts?|agreements?|nda|leases?|sow)(?![a-z])/i],
   ["tax", /(^|[^a-z0-9])(tax(es)?|w[-_ ]?[0-9]|1099)(?![a-z0-9])/i],
   ["hr", /(^|[^a-z0-9])(resumes?|cv|payroll|timesheets?|offer[-_ ]letter|employees?|hr)(?![a-z])/i],
+  ["insurance", /(^|[^a-z0-9])(insurance|coi|acord|workers?[-_ ]?comp(ensation)?|umbrella|binder)(?![a-z])/i],
 ];
 
 /** What a folder's name says it holds. */
@@ -30,6 +31,7 @@ const FOLDER_RULES: [Category, RegExp][] = [
   ["contracts", /^\W*(\d+\W+)?(contracts?|agreements?|leases?)$/i],
   ["tax", /^\W*(\d+\W+)?(tax(es)?|tax documents?)$/i],
   ["hr", /^\W*(\d+\W+)?(hr|human resources|payroll|employees?)$/i],
+  ["insurance", /^\W*(\d+\W+)?(insurance|insurance documents?|certificates? of insurance)$/i],
   ["images", /^\W*(\d+\W+)?(photos?|pictures?|images?)(\W.*)?$/i],
 ];
 

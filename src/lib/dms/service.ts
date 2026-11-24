@@ -1,5 +1,6 @@
 import { extractCertificate } from "@/lib/licenses/certificate";
 import { classifyDocument } from "./autosort";
+import { extractBill } from "./bill";
 import { DmsError } from "./errors";
 import { computeContent } from "./index-content";
 import {
@@ -15,6 +16,7 @@ import type {
   TeamRepository,
 } from "./ports";
 import type {
+  BillRead,
   Bootstrap,
   Category,
   CertificateRead,
@@ -388,6 +390,33 @@ export class DocumentService {
     return certificate ? { status: "found", certificate } : { status: "no_certificate" };
   }
 
+  /**
+   * Reads an invoice or receipt: who it is from, its number, dates and total. On demand, so nothing extra is stored. Says why when it
+   * cannot: not an invoice or receipt, no readable text, or text with no total or number in it.
+   */
+  async readBill(documentId: string): Promise<BillRead> {
+    this.require("read");
+    const doc = await this.loadDocument(documentId);
+    if (doc.category !== "invoice" && doc.category !== "receipt") return { status: "not_bill" };
+    const outcome = await computeContent(this.storage, { storageKey: doc.storageKey, fileName: doc.originalName, mimeType: doc.mimeType });
+    if (outcome.status !== "indexed" || !outcome.text) return { status: "unreadable" };
+    const bill = extractBill(outcome.text);
+    return bill ? { status: "found", bill } : { status: "no_details" };
+  }
+
+  /**
+   * Other documents that look like the same file: the same size and the same name once "(1)", "copy" and the extension are ignored.
+   * Newest first, at most five. Trash is not searched.
+   */
+  async findDuplicates(documentId: string): Promise<DocumentRecord[]> {
+    this.require("read");
+    const doc = await this.loadDocument(documentId);
+    const stem = nameStem(doc.originalName);
+    if (!stem) return [];
+    const { items } = await this.repo.queryDocuments(this.ctx.workspaceId, documentQuerySchema.parse({ view: "all", search: stem.slice(0, 60), sort: "newest", pageSize: 50 }));
+    return items.filter((d) => d.id !== doc.id && d.status === "ready" && d.sizeBytes === doc.sizeBytes && nameStem(d.originalName) === stem).slice(0, 5);
+  }
+
   /** Indexes up to `limit` documents of this workspace that are still waiting (backfill / retry). */
   async indexPending(opts: { limit?: number; includeFailed?: boolean } = {}) {
     this.require("write");
@@ -687,6 +716,11 @@ export class DocumentService {
     await this.repo.deleteFolder(this.ctx.workspaceId, id);
     await this.audit("folder.deleted", "folder", id, { name: folder.name });
   }
+}
+
+/** A file name for comparing: no folder, extension, "(1)", "copy" or separators, in lower case. */
+export function nameStem(fileName: string): string {
+  return fileName.replace(/^.*[\\/]/, "").replace(/\.[^.]*$/, "").toLowerCase().replace(/\(\d+\)|[-_ ]copy( \d+)?\b|\bcopy of\b/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 export function dedupeTags(tags: string[]): string[] {

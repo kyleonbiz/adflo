@@ -1,7 +1,7 @@
 import type {
   Bootstrap,
   Category,
-  CertificateRead,
+  BillRead, CertificateRead,
   DocumentDetail,
   DocumentPage,
   DocumentQuery,
@@ -44,6 +44,10 @@ export interface DmsApi {
   getDocument(id: string): Promise<DocumentDetail>;
   /** Reads an insurance document as a certificate of insurance (insured, policies, dates). */
   readCertificate(id: string): Promise<CertificateRead>;
+  /** Reads an invoice or receipt (who it is from, number, dates, total). */
+  readBill(id: string): Promise<BillRead>;
+  /** Other documents that look like the same file (same size and name). */
+  findDuplicates(id: string): Promise<DocumentRecord[]>;
   uploadFile(args: UploadArgs): Promise<DocumentRecord>;
   updateDocument(id: string, changes: DocumentChanges): Promise<DocumentRecord>;
   deleteDocument(id: string): Promise<void>;

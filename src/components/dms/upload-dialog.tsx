@@ -147,6 +147,7 @@ function UploadRow({ item, filedIn, onCancel, onRetry }: { item: UploadItem; fil
             {formatBytes(item.file.size)}
             {item.status === "uploading" && ` · ${item.progress}%`}
             {item.status === "success" && (filedIn ? ` · Uploaded and filed in ${filedIn}` : " · Uploaded")}
+            {item.status === "success" && item.duplicateOf && ` · Looks like a copy of ${item.duplicateOf}`}
           </p>
         </div>
         {item.status === "uploading" && (

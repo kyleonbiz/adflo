@@ -2,7 +2,7 @@ import { DmsError, type DmsErrorCode } from "../errors";
 import type { ApiMode, DmsApi, DocumentChanges, UploadArgs } from "./api";
 import type {
   Bootstrap,
-  CertificateRead,
+  BillRead, CertificateRead,
   DocumentDetail,
   DocumentPage,
   DocumentQuery,
@@ -109,6 +109,8 @@ export function createHttpApi(mode: Exclude<ApiMode, "demo">): DmsApi {
     listDocuments: (q) => call<DocumentPage>(`/documents?${queryString(q)}`),
     getDocument: (id) => call<DocumentDetail>(`/documents/${id}`),
     readCertificate: (id) => call<CertificateRead>(`/documents/${id}/certificate`),
+    readBill: (id) => call<BillRead>(`/documents/${id}/bill`),
+    findDuplicates: (id) => call<DocumentRecord[]>(`/documents/${id}/duplicates`),
     updateDocument: (id, changes: DocumentChanges) =>
       call<DocumentRecord>(`/documents/${id}`, { method: "PATCH", json: changes }),
     deleteDocument: (id) => call<void>(`/documents/${id}`, { method: "DELETE" }),

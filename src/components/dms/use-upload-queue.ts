@@ -16,6 +16,8 @@ export interface UploadItem {
   error?: string;
   /** The folder an upload was filed in automatically (it was dropped into "All files" and its name said what it is). */
   filedInFolderId?: string;
+  /** The name of an existing file this upload looks like a copy of (same size and name). */
+  duplicateOf?: string;
 }
 
 const CONCURRENCY = 2;
@@ -61,6 +63,8 @@ export function useUploadQueue(opts: {
         .then((doc) => {
           patch(job.id, { status: "success", progress: 100, filedInFolderId: !job.folderId && doc.folderId ? doc.folderId : undefined });
           live.current.onUploaded(doc);
+          // Noticing a file that was uploaded twice is a convenience: it never blocks or fails the upload.
+          void Promise.resolve(api.findDuplicates?.(doc.id)).then((list) => { if (list?.length) patch(job.id, { duplicateOf: list[0].displayName }); }).catch(() => undefined);
         })
         .catch((e) => {
           if (controller.signal.aborted) patch(job.id, { status: "cancelled", error: "Cancelled" });
