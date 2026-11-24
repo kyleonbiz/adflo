@@ -5,6 +5,7 @@ import { CANONICAL_ORIGIN } from "@/lib/site-url";
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${CANONICAL_ORIGIN}/`, changeFrequency: "weekly", priority: 1 },
+    { url: `${CANONICAL_ORIGIN}/partners`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${CANONICAL_ORIGIN}/privacy`, changeFrequency: "yearly", priority: 0.3 },
   ];
 }

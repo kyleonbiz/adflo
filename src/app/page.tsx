@@ -18,6 +18,7 @@ export default function HomePage() {
           <Brand wordmark light className="w-28 sm:w-32" />
           <div className="flex items-center gap-2">
           <a href="#pricing" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Pricing</a>
+          <Link href="/partners" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Partners</Link>
           <a href="#demo" className="hidden rounded-md px-3 py-1.5 text-sm font-medium text-white/90 hover:text-white sm:block">Book a demo</a>
           <Button asChild size="sm" className="px-4">
             <Link href="/signup">Start free trial</Link>
@@ -39,6 +40,7 @@ export default function HomePage() {
         <LandingSections />
         <footer className="border-t bg-white py-6 text-center text-xs text-muted-foreground">
           © {new Date().getFullYear()} AdFlo · Administrative management platform ·{" "}
+          <Link href="/partners" className="underline underline-offset-2 hover:text-foreground">Partners</Link> ·{" "}
           <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy</Link>
         </footer>
       </div>
