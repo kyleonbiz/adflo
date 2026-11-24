@@ -83,9 +83,11 @@ const APPROACH = [
 ];
 
 const HOW = [
-  { n: "1", title: "Centralize", text: "Bring your administrative operations into one platform." },
-  { n: "2", title: "Streamline", text: "Manage workflows by hand, or let the assistant reduce the repetitive work." },
-  { n: "3", title: "Stay in control", text: "Monitor activity, review results and keep oversight through the Dashboard, the bell and Reporting." },
+  { n: "1", title: "Start your free trial", text: "Create your account and try AdFlo free. No credit card needed." },
+  { n: "2", title: "Choose your industry", text: "Guided setup asks what you do and which services you use, then sets up templates and reminders for you." },
+  { n: "3", title: "Add your records", text: "Upload documents, photos of licenses and certificates, vendors, invoices and equipment. Or ask Addy to prepare them for you to review." },
+  { n: "4", title: "Stay ahead of what is due", text: "Renewal and deadline dates show up on the Dashboard, the calendar and in reminder emails, so nothing lapses quietly." },
+  { n: "5", title: "Bring in your team", text: "Invite teammates by email and give each a role. Everyone works from the same records." },
 ];
 
 const AUDIENCE = [
@@ -246,8 +248,8 @@ export function LandingSections() {
 
       <section id="how-it-works" className={`${container} scroll-mt-4 py-14 sm:py-20`} aria-labelledby="how-title">
         <p className={eyebrow}>How it works</p>
-        <h2 id="how-title" className={h2}>Three simple steps</h2>
-        <ol className="mt-8 grid gap-8 md:grid-cols-3">
+        <h2 id="how-title" className={h2}>From sign-up to organized in five steps</h2>
+        <ol className="mt-8 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {HOW.map((s) => (
             <li key={s.n} className="flex gap-4">
               <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-primary/40 text-sm font-semibold text-primary">{s.n}</span>
@@ -255,6 +257,7 @@ export function LandingSections() {
             </li>
           ))}
         </ol>
+        <Link href="/signup" className={`mt-8 inline-block rounded-lg px-5 py-3 font-medium ${primaryBtn}`}>Get Started</Link>
       </section>
 
       <section id="who" className={`${container} scroll-mt-4 pb-14 sm:pb-20`} aria-labelledby="who-title">
