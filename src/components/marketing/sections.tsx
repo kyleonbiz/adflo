@@ -228,8 +228,8 @@ export function LandingSections() {
 
       <section id="approach" className="scroll-mt-4 border-y border-brand-blue/10 bg-white/40" aria-labelledby="approach-title">
         <div className={`${container} py-14 sm:py-20`}>
-          <p className={eyebrow}>Human + AI</p>
-          <h2 id="approach-title" className={`${h2} max-w-3xl`}>AI does the repetitive work. Your people stay in control.</h2>
+          <p className={eyebrow}>Tech-led, human-managed</p>
+          <h2 id="approach-title" className={`${h2} max-w-3xl`}>Automation and AI lead. Your people manage.</h2>
           <p className="mt-3 max-w-2xl text-muted-foreground">AdFlo doesn’t remove the need for people. It makes their work more efficient.</p>
           <ol className="mt-8 grid gap-4 md:grid-cols-3">
             {APPROACH.map(({ icon: Icon, step, text }, i) => (

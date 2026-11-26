@@ -19,7 +19,7 @@ test.describe("Landing page and the app", () => {
   test("the landing page keeps its hero and demo, and adds the story and demo request form below", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "Your business runs on more than the work." })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "AI does the repetitive work. Your people stay in control." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Automation and AI lead. Your people manage." })).toBeVisible();
     await page.getByRole("link", { name: "Schedule a demo" }).first().click();
     const form = page.getByRole("form", { name: "Request a demo" });
     await expect(form).toBeVisible();
