@@ -34,8 +34,8 @@ const CAPABILITIES = [
     time: "Due dates in view, so no more chasing spreadsheets.", money: "Overdue invoices get noticed sooner.", flow: "Everyone works from the same up-to-date status." },
   { icon: Store, name: "Vendors", best: "Keeping suppliers, terms and contracts under control.",
     time: "Payment terms and tax-form checks in one profile.", money: "Contract end dates are flagged before they renew.", flow: "A dated notes log keeps the whole team in the loop." },
-  { icon: BadgeCheck, name: "Licenses & Renewals", best: "Never letting a license or permit lapse.",
-    time: "Expiry dates tracked for you, ahead of the deadline.", money: "Renewal dates are flagged ahead of time.", flow: "A compliance score shows what needs attention first." },
+  { icon: BadgeCheck, name: "Licenses & Renewals", best: "Staying aware of license and permit renewal dates.",
+    time: "Expiry dates kept in one place, with reminders ahead of the deadline.", money: "Renewal dates are flagged ahead of time.", flow: "A summary shows which items need attention first." },
   { icon: FolderKanban, name: "Projects & tasks", best: "Getting work done with clear owners and deadlines.",
     time: "Recurring tasks and Remind me on every task.", money: "Clear owners mean fewer dropped tasks.", flow: "Milestones and progress visible without status meetings." },
   { icon: FileSignature, name: "Forms & signing", best: "Collecting paperwork and signatures without the back-and-forth.",
@@ -50,7 +50,7 @@ const CAPABILITIES = [
 
 const SHOTS = [
   { file: "dashboard", title: "Dashboard", text: "Open invoices, tasks and what needs attention, in one view." },
-  { file: "licenses", title: "Licenses & Renewals", text: "Expiry dates, follow-ups and renewal tasks tracked for you." },
+  { file: "licenses", title: "Licenses & Renewals", text: "Expiry dates, follow-ups and renewal tasks, organized with reminders." },
   { file: "equipment", title: "Equipment", text: "Tools, vehicles and keys, with service dates that are flagged." },
   { file: "invoices", title: "Invoices", text: "What is open, overdue and paid, with reminders." },
 ];
@@ -86,7 +86,7 @@ const HOW = [
   { n: "1", title: "Start your free trial", text: "Create your account and try AdFlo free. No credit card needed." },
   { n: "2", title: "Choose your industry", text: "Guided setup asks what you do and which services you use, then sets up templates and reminders for you." },
   { n: "3", title: "Add your records", text: "Upload documents, photos of licenses and certificates, vendors, invoices and equipment. Or ask Addy to prepare them for you to review." },
-  { n: "4", title: "Stay ahead of what is due", text: "Renewal and deadline dates show up on the Dashboard, the calendar and in reminder emails, so nothing lapses quietly." },
+  { n: "4", title: "Stay ahead of what is due", text: "Renewal and deadline dates show up on the Dashboard, the calendar and in reminder emails, so you see what is coming up before it is urgent." },
   { n: "5", title: "Bring in your team", text: "Invite teammates by email and give each a role. Everyone works from the same records." },
 ];
 
@@ -140,7 +140,7 @@ export function LandingSections() {
             </div>
           ))}
         </div>
-        <p className="mt-4 text-sm text-foreground/70">AdFlo is not a CRM, not an ERP, and not accounting, bookkeeping or payroll software. It is the administrative layer alongside them and does not replace them.</p>
+        <p className="mt-4 text-sm text-foreground/70">AdFlo is not a CRM, not an ERP, and not accounting, bookkeeping or payroll software. It is the administrative layer alongside them and does not replace them. AdFlo helps you stay organized and aware of important dates. You remain responsible for verifying requirements and completing renewals.</p>
         <Link href="/signup" className={`mt-5 inline-block rounded-lg px-5 py-3 font-medium ${primaryBtn}`}>Start your free trial</Link>
       </section>
 
