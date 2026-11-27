@@ -123,7 +123,7 @@ for (const vp of VIEWPORTS) {
 
     test("filters and folders do not overflow", async ({ page }) => {
       await gotoReady(page, "/app");
-      await page.getByRole("button", { name: /^Contracts, / }).click();
+      await page.getByRole("button", { name: /^Receipts, / }).click();
       await expect(page.getByTestId("empty-state")).toBeVisible();
       await nothingClippedHorizontally(page, page.getByTestId("workspace"), "workspace");
       await page.getByRole("button", { name: "Starred" }).click();

@@ -195,8 +195,9 @@ test.describe("business file reset module", () => {
   });
 
   test("fits a phone screen without horizontal scroll", async ({ page }) => {
-    await page.setViewportSize({ width: 360, height: 800 });
+    // Chromium suppresses the folder picker in a window narrower than 400px, so load the folder first, then shrink to a phone.
     await sample(page);
+    await page.setViewportSize({ width: 360, height: 800 });
     await expect(page.getByTestId("change-row").first()).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
   });
