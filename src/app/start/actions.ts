@@ -23,7 +23,7 @@ export async function startTrial(_prev: StartState, form: FormData): Promise<Sta
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login?next=/start");
-  const { data, error } = await supabase.rpc("start_trial", { p_company: company, p_name: name, p_days: TRIAL_DAYS });
+  const { data, error } = await supabase.rpc("start_trial", { p_company: company, p_name: name });
   if (error) {
     // The function's own messages are written for people; anything else is a plain failure.
     const known = ["company name", "already exists", "invitation", "already belongs", "Staff accounts", "already have a workspace"].some((s) => error.message.includes(s));

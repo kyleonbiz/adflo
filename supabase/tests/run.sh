@@ -50,4 +50,3 @@ RUN "$PSQL -d dms -f '$HERE/support.sql'" 2>&1 | grep -E "PASS|FAIL|ALL SUPPORT|
 RUN "$PSQL -d dms -f '$HERE/stray_accounts.sql'" 2>&1 | grep -E "PASS|FAIL|ALL STRAY ACCOUNTS|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/calendar_feed.sql'" 2>&1 | grep -E "PASS|FAIL|ALL CALENDAR FEED|ERROR" | sed 's/^psql:[^ ]* //'
 RUN "$PSQL -d dms -f '$HERE/automation_activity.sql'" 2>&1 | grep -E "PASS|FAIL|ALL AUTOMATION ACTIVITY|ERROR" | sed 's/^psql:[^ ]* //'
-RUN "$PSQL -d dms -f '$HERE/trial_length.sql'" 2>&1 | grep -E "PASS|FAIL|ALL TRIAL LENGTH|ERROR" | sed 's/^psql:[^ ]* //'
