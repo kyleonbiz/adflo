@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { TRIAL_DAYS } from "@/lib/billing/trial";
 
 const FEATURES = ["Licenses & insurance", "Vendors, forms & signing", "Invoices & projects", "Tools, vehicles & equipment"];
 
@@ -29,7 +30,7 @@ export function Hero() {
             Explore the Platform
           </a>
         </div>
-        <p className="mt-3 text-sm text-white/80">Try AdFlo free for 3 days. No credit card needed.</p>
+        <p className="mt-3 text-sm text-white/80">Try AdFlo free for {TRIAL_DAYS} days. No credit card needed.</p>
         <ul className="mt-8 flex flex-wrap items-center justify-center gap-2.5" aria-label="What AdFlo covers">
           {FEATURES.map((label) => (
             <li key={label} className="rounded-md border border-white/20 px-3 py-1 text-sm font-medium">

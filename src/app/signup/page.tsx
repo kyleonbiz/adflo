@@ -1,3 +1,4 @@
+import { TRIAL_DAYS } from "@/lib/billing/trial";
 import type { Metadata } from "next";
 import { LogOut } from "lucide-react";
 import { AuthCard } from "@/components/auth/auth-card";
@@ -32,7 +33,7 @@ export default async function SignupPage({ searchParams }: PageProps<"/signup">)
   }
 
   return (
-    <AuthCard title="Create your account" subtitle={invited ? "Your invitation is confirmed. Choose a password." : "Start your 3-day free trial. No credit card needed."}>
+    <AuthCard title="Create your account" subtitle={invited ? "Your invitation is confirmed. Choose a password." : `Start your ${TRIAL_DAYS}-day free trial. No credit card needed.`}>
       <AuthForm mode="signup" demo={!getSupabaseEnv()} invitedEmail={invited} />
     </AuthCard>
   );

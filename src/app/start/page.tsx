@@ -1,3 +1,4 @@
+import { TRIAL_DAYS } from "@/lib/billing/trial";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth/auth-card";
@@ -27,7 +28,7 @@ export default async function StartPage() {
   const { data: open } = await supabase.rpc("signup_is_open");
   if (open !== true || (await findStaff(supabase))) return <NoWorkspaceNotice email={email} />;
   return (
-    <AuthCard title="Set up your company" subtitle="Two quick questions, then explore AdFlo free for 3 days. No card needed.">
+    <AuthCard title="Set up your company" subtitle={`Two quick questions, then explore AdFlo free for ${TRIAL_DAYS} days. No card needed.`}>
       <StartForm defaultName={fullName} />
     </AuthCard>
   );

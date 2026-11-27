@@ -1,5 +1,14 @@
-/** Length of the free trial: a new account explores the app with sample data for this long, then is paused until it subscribes. */
-export const TRIAL_DAYS = 3;
+/**
+ * Length of the free trial: a new account explores the app with sample data for this long, then is paused until it subscribes.
+ * Three days unless NEXT_PUBLIC_TRIAL_DAYS says otherwise (a whole number from 1 to 30), so a longer trial can be tested, and undone,
+ * by changing one setting. The sign-up copy, the welcome email and the length the database gives a new trial all follow it.
+ */
+export const TRIAL_DAYS = trialDays(process.env.NEXT_PUBLIC_TRIAL_DAYS);
+
+export function trialDays(raw: string | undefined): number {
+  const n = Number(raw);
+  return raw !== undefined && raw.trim() !== "" && Number.isInteger(n) && n >= 1 && n <= 30 ? n : 3;
+}
 
 export interface TrialInfo { clientId: string; company: string; endsAt: string | null; paid: boolean; hasWorkspace: boolean }
 

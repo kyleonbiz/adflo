@@ -71,7 +71,7 @@ const PLAN_INCLUDES = [
   "Addy, the built-in assistant, and OCR for photos and scans of licenses and certificates",
   "Renewal and deadline emails, so an expiring license reaches your inbox instead of waiting in the app",
   "Your whole team: every extra seat is the same $10 a month, with no tiers to climb",
-  "Priority support, and guided onboarding where we load your first records (a one-time fee, below)",
+  "Priority support. Setup is self-service, and guided onboarding is there if you would like help loading your first records (optional, a one-time fee, below)",
 ];
 
 const ADDY_NEVER = ["Delete anything", "Approve or pay", "Send or sign for you", "Finalize anything without your say-so"];
@@ -316,7 +316,7 @@ export function LandingSections() {
               <p className="mt-2 text-sm font-medium text-foreground">Includes your seat. Add teammates for ${SEAT_CENTS / 100} a month each.</p>
               <p className="mt-1 text-sm text-foreground/80">Or ${TIERS[0].limits.annualCents / 100} a year, plus ${TIERS[0].limits.seatAnnualCents / 100} a year per extra seat: two months free.</p>
               <p className="mt-1 text-sm text-foreground/80">A team of 5 pays ${(PRICE_CENTS + 4 * SEAT_CENTS) / 100} a month.</p>
-              <p className="mt-3 text-sm text-foreground/80">One-time onboarding: ${ONBOARDING_MIN_CENTS / 100} to ${ONBOARDING_MAX_CENTS / 100}, depending on how much we load for you.</p>
+              <p className="mt-3 text-sm text-foreground/80">Optional onboarding help, only if you want it: ${ONBOARDING_MIN_CENTS / 100} to ${ONBOARDING_MAX_CENTS / 100} one time, depending on how much we load for you.</p>
               <Link href="/signup" className={`mt-5 block rounded-lg px-5 py-3 text-center font-medium ${primaryBtn}`}>Start your free {TRIAL_DAYS}-day trial</Link>
             </div>
             <ul className="grid gap-3" aria-label="What the plan includes">

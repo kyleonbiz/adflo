@@ -11,7 +11,7 @@ export function limitRows(t: (typeof TIERS)[number]): { label: string; value: st
   return [
     { label: "Price", value: `${money(l.priceCents)}/month with your seat, plus ${money(l.seatCents)}/month per extra seat` },
     { label: "Annual", value: `${money(l.annualCents)}/year plus ${money(l.seatAnnualCents)}/year per extra seat (two months free)` },
-    { label: "Onboarding (one time)", value: `${money(ONBOARDING_MIN_CENTS)} to ${money(ONBOARDING_MAX_CENTS)}, depending on how much we load for you` },
+    { label: "Onboarding help (optional, one time)", value: `${money(ONBOARDING_MIN_CENTS)} to ${money(ONBOARDING_MAX_CENTS)}, only if you want us to load your records` },
     { label: "Seats", value: `${l.seats} included, more at ${money(l.seatCents)}/month each` },
     { label: "Storage", value: `${l.storageGb} GB` },
     { label: "Max file size", value: `${l.maxFileMb} MB` },

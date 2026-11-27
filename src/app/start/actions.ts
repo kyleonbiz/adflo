@@ -23,14 +23,14 @@ export async function startTrial(_prev: StartState, form: FormData): Promise<Sta
   const supabase = await createServerSupabase();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login?next=/start");
-  const { data, error } = await supabase.rpc("start_trial", { p_company: company, p_name: name });
+  const { data, error } = await supabase.rpc("start_trial", { p_company: company, p_name: name, p_days: TRIAL_DAYS });
   if (error) {
     // The function's own messages are written for people; anything else is a plain failure.
     const known = ["company name", "already exists", "invitation", "already belongs", "Staff accounts", "already have a workspace"].some((s) => error.message.includes(s));
     return { error: known ? error.message : "We could not start your trial. Try again, or email support@adflo.pro." };
   }
   const row = (Array.isArray(data) ? data[0] : data) as { trial_ends_at?: string } | null;
-  // Only a brand-new trial sends mail (asking again returns the same trial, ending about 3 days from now).
+  // Only a brand-new trial sends mail (asking again returns the same trial, ending TRIAL_DAYS days from now).
   const endsAt = row?.trial_ends_at;
   const fresh = !!endsAt && new Date(endsAt).getTime() - Date.now() > (TRIAL_DAYS * 86_400 - 120) * 1000;
   if (fresh && onboardingMailReady()) {
