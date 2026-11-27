@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AlertTriangle, ArrowDown, BellOff, CheckCircle2, Clock, Receipt, FolderKanban, Info, ListPlus, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { AdminHealth } from "@/components/modules/admin-health";
 import { MiniBars, ProgressRing, UpcomingChart, WorkloadChart } from "@/components/modules/dashboard-charts";
 import { SampleDataBanner } from "@/components/modules/sample-data";
 import { TodayTodos } from "@/components/modules/today-todos";
@@ -15,6 +16,8 @@ import type { Area, AttentionItem, DashboardData, Kpi, LicensesPanel, Severity }
 import { isSnoozed, pruneSnoozed, snooze } from "@/lib/dashboard/snooze";
 import { saveSnoozed, useSnoozed } from "@/lib/dashboard/storage";
 import { buildDashboard } from "@/lib/dashboard/logic";
+import { buildHealth, type Health } from "@/lib/dashboard/health";
+import { useDocumentCount } from "@/lib/dashboard/health-documents";
 import { useDashboardSources } from "@/lib/records/sources";
 import { useSetupConfig } from "@/lib/setup/storage";
 import { clearReminder, reminderItems } from "@/lib/reminders/logic";
@@ -246,7 +249,7 @@ function FinishSetup() {
   );
 }
 
-export function Dashboard({ data, serverToday }: { base?: "/app"; data: DashboardData; serverToday: string; name?: string }) {
+export function Dashboard({ data, health, serverToday }: { base?: "/app"; data: DashboardData; health?: Health; serverToday: string; name?: string }) {
   const today = useToday(serverToday) ?? serverToday;
   const bars = data.workload.map((w) => w.attention);
   const [tab, setTab] = useState<"overview" | "licenses">("overview");
@@ -267,6 +270,7 @@ export function Dashboard({ data, serverToday }: { base?: "/app"; data: Dashboar
       <SampleDataBanner />
       <FinishSetup />
       {tab === "licenses" ? <LicensesTab panel={data.licenses} /> : (<>
+      {health && <AdminHealth health={health} />}
       <section aria-label="At a glance" className="grid gap-4 sm:grid-cols-3">
         {data.kpis.map((k) => <KpiCard key={k.id} kpi={k} bars={bars} />)}
       </section>
@@ -308,9 +312,11 @@ export function Dashboard({ data, serverToday }: { base?: "/app"; data: Dashboar
  * The home dashboard on the visitor's own records. The services keep their records in this browser, so
  * the numbers are worked out here from what is saved. The server has none, so its first paint is the empty view.
  */
-export function LiveDashboard({ base, serverToday, name }: { base?: "/app"; serverToday: string; name?: string }) {
+export function LiveDashboard({ base, serverToday, name, live: connected = false }: { base?: "/app"; serverToday: string; name?: string; live?: boolean }) {
   const today = useToday(serverToday) ?? serverToday;
   const sources = useDashboardSources(useToday());
   const live = useMemo(() => buildDashboard(sources, today, base ?? "/app"), [sources, today, base]);
-  return <Dashboard base={base} data={live} serverToday={serverToday} name={name} />;
+  const documents = useDocumentCount(connected);
+  const health = useMemo(() => buildHealth(sources, today, base ?? "/app", documents), [sources, today, base, documents]);
+  return <Dashboard base={base} data={live} health={health} serverToday={serverToday} name={name} />;
 }
